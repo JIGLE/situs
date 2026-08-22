@@ -284,6 +284,13 @@ export function normalizePortalPath(pathname: string): string {
   if (normalized === "/properties") return "/portfolio";
   if (normalized === "/tenants") return "/people";
   if (normalized === "/vendors") return "/contacts";
+  // Redirect-only stubs. A page absent from this table is unreachable no matter what it renders,
+  // because `PortalAccessGuard` replaces the route with /dashboard before the stub's own
+  // `redirect()` can run — the same trap /admin fell into (see the note on its nav entry). Both
+  // of these rendered a redirect to the right place and the guard threw it away first.
+  if (normalized === "/buildings") return "/portfolio";
+  if (normalized === "/contracts") return "/leases";
+  if (normalized === "/owners") return "/people";
   if (normalized === "/maintenance") return "/operations";
   if (normalized === "/analytics" || normalized === "/insights" || normalized === "/reports") {
     return "/intelligence";
