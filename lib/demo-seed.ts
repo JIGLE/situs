@@ -16,48 +16,64 @@ export async function seedDemoData(userId: string): Promise<void> {
   const prisma = getPrismaClient();
 
   // 1. Clean existing records for the sandbox user
-  // Defensive: some developer DBs may be missing migrations/tables. Don't crash the API.
-  const safeDelete = async (action: () => Promise<unknown>, name: string) => {
+  //
+  // This used to swallow every cleanup failure with a `console.warn`, to avoid crashing the API on
+  // a developer DB missing a migration. It did not avoid the crash — it moved it. Against a
+  // database whose `tenants` table lacked `portalAccessRevokedAt`, the tenant cleanup failed, was
+  // swallowed, and the run died three steps later on `Unique constraint failed on Owner.email`,
+  // because the owners it was about to recreate had never been deleted. Half an hour went into
+  // "the seeder is not idempotent" before the actual message turned out to be in a log nobody was
+  // reading.
+  //
+  // Tolerating the delete never helped anyway: if a table or column is missing, the `create` for
+  // that same model further down fails too. The swallow only bought a worse error message.
+  //
+  // So nothing is skipped. Schema drift — P2021 (no such table), P2022 (no such column) — is
+  // reported as what it is, with the remedy attached; everything else is rethrown untouched.
+  const cleanup = async (action: () => Promise<unknown>, name: string) => {
     try {
       await action();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.warn(`[seeder] Skipping ${name} cleanup: ${msg}`);
+      const code = (err as { code?: string })?.code;
+      if (code === "P2021" || code === "P2022") {
+        const detail = err instanceof Error ? err.message.trim() : String(err);
+        throw new Error(
+          `Demo seed cannot clear ${name}: this database is behind prisma/schema.prisma ` +
+            `(${code}). Run \`npx prisma db push\` against the DATABASE_URL this process is ` +
+            `using, then seed again.\n\n${detail}`,
+          { cause: err },
+        );
+      }
+      throw err;
     }
   };
 
-  await safeDelete(() => prisma.receipt.deleteMany({ where: { userId } }), "receipts");
-  await safeDelete(() => prisma.expense.deleteMany({ where: { userId } }), "expenses");
-  await safeDelete(
+  await cleanup(() => prisma.receipt.deleteMany({ where: { userId } }), "receipts");
+  await cleanup(() => prisma.expense.deleteMany({ where: { userId } }), "expenses");
+  await cleanup(
     () => prisma.maintenanceTicket.deleteMany({ where: { userId } }),
     "maintenanceTickets",
   );
-  await safeDelete(() => prisma.correspondence.deleteMany({ where: { userId } }), "correspondence");
+  await cleanup(() => prisma.correspondence.deleteMany({ where: { userId } }), "correspondence");
   // Documents and the bank graph are created below but were never cleared, so re-seeding stacked
   // a fresh copy on top of the last one: measured across a single seed call, documents went
   // 54 → 60 and bank transactions 90 → 100 while every other table held steady. That made the
   // seeder non-idempotent and any count-based baseline (see `scripts/mobile-audit.mjs`) drift
   // upward on every run. Bank rows go child-first — transactions reference accounts reference
   // connections. Units and rent periods are absent by design: they cascade from property/lease.
-  await safeDelete(() => prisma.document.deleteMany({ where: { userId } }), "documents");
-  await safeDelete(
-    () => prisma.bankTransaction.deleteMany({ where: { userId } }),
-    "bankTransactions",
-  );
-  await safeDelete(() => prisma.bankAccount.deleteMany({ where: { userId } }), "bankAccounts");
-  await safeDelete(
-    () => prisma.bankConnection.deleteMany({ where: { userId } }),
-    "bankConnections",
-  );
-  await safeDelete(
+  await cleanup(() => prisma.document.deleteMany({ where: { userId } }), "documents");
+  await cleanup(() => prisma.bankTransaction.deleteMany({ where: { userId } }), "bankTransactions");
+  await cleanup(() => prisma.bankAccount.deleteMany({ where: { userId } }), "bankAccounts");
+  await cleanup(() => prisma.bankConnection.deleteMany({ where: { userId } }), "bankConnections");
+  await cleanup(
     () => prisma.propertyOwner.deleteMany({ where: { property: { userId } } }),
     "propertyOwners",
   );
-  await safeDelete(() => prisma.tenant.deleteMany({ where: { userId } }), "tenants");
-  await safeDelete(() => prisma.property.deleteMany({ where: { userId } }), "properties");
-  await safeDelete(() => prisma.owner.deleteMany({ where: { userId } }), "owners");
+  await cleanup(() => prisma.tenant.deleteMany({ where: { userId } }), "tenants");
+  await cleanup(() => prisma.property.deleteMany({ where: { userId } }), "properties");
+  await cleanup(() => prisma.owner.deleteMany({ where: { userId } }), "owners");
 
-  console.log(`[seeder] Cleared available demo data for user: ${userId}`);
+  console.log(`[seeder] Cleared demo data for user: ${userId}`);
 
   // 2. Create Owners
   const owner = await prisma.owner.create({
