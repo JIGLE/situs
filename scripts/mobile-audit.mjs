@@ -686,6 +686,16 @@ async function auditSurface(context, surface, theme, ids) {
   );
   await page.emulateMedia({ colorScheme: theme === "dark" ? "dark" : "light" });
 
+  // Count 429s. The app rate-limits at 100 requests per minute per IP, and a 26-surface sweep
+  // fans out well past that from a single address — so a run against a server without
+  // `E2E_DISABLE_RATE_LIMIT=true` measures error panels from about surface fourteen onward. The
+  // render guard below catches that the surface is broken; this says WHY, because "did not
+  // render" sent me looking for a layout bug twice before the cause turned out to be the limiter.
+  let rateLimited = 0;
+  page.on("response", (r) => {
+    if (r.status() === 429) rateLimited++;
+  });
+
   const path = surface.path.replace(/\{(\w+)\}/g, (_m, key) => ids[key] ?? "");
   const url = `${BASE}${path}`;
 
@@ -753,6 +763,7 @@ async function auditSurface(context, surface, theme, ids) {
       result.status = "error";
       result.error = `did not render: ${result.renderFailure}`;
     }
+    result.rateLimited = rateLimited;
 
     const shot = join(OUT_DIR, "shots", `${surface.id}-${theme}-${VIEWPORT_WIDTH}.png`);
     mkdirSync(dirname(shot), { recursive: true });
@@ -1066,9 +1077,30 @@ async function main() {
     );
   }
 
+  // Say plainly when the app throttled the run. Without this the failures read as layout defects
+  // — "did not render", on a dozen surfaces, all of them fine when opened by hand — and the run
+  // has to be repeated before anyone thinks to check the limiter. It cost two full sweeps here.
+  const throttled = results.filter((r) => (r.rateLimited ?? 0) > 0);
+  if (throttled.length > 0) {
+    const total = throttled.reduce((a, r) => a + r.rateLimited, 0);
+    console.log(
+      `\n[audit] RATE LIMITED: ${total} response(s) across ${throttled.length} surface-run(s) ` +
+        `came back 429.\n` +
+        `[audit] The app allows 100 requests per minute per IP and this sweep exceeds that from ` +
+        `one address, so\n` +
+        `[audit] the later surfaces measured error panels, not pages. Restart the server with ` +
+        `E2E_DISABLE_RATE_LIMIT=true\n` +
+        `[audit] and re-run — these numbers are not comparable to a clean sweep.`,
+    );
+  }
+
   writeFileSync(
     join(OUT_DIR, `report-${VIEWPORT_WIDTH}.json`),
-    JSON.stringify({ meta, summary, results, neverIdled }, null, 2),
+    JSON.stringify(
+      { meta, summary, results, neverIdled, rateLimitedRuns: throttled.length },
+      null,
+      2,
+    ),
   );
   writeFileSync(join(OUT_DIR, `report-${VIEWPORT_WIDTH}.md`), toMarkdown(results, meta));
   console.log(`\n[audit] wrote ${OUT_DIR}/report-${VIEWPORT_WIDTH}.{json,md}`);
