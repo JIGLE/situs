@@ -57,7 +57,14 @@
     "newProperty": "Nuovo immobile",
     "newPropertyHint": "unità indipendente",
     "newBuilding": "Nuovo edificio",
-    "newBuildingHint": "gruppo di unità"
+    "newBuildingHint": "gruppo di unità",
+    "summary": {
+      "allClear": "Tutti gli immobili sono in regola.",
+      "leaseEnding": "Il contratto termina il {date}",
+      "noActiveLease": "Occupato, nessun contratto attivo",
+      "noPriorMonth": "Nessuna ricevuta il mese scorso",
+      "vsLastMonth": "vs mese precedente"
+    }
   },
   "settings": {
     "title": "Impostazioni",

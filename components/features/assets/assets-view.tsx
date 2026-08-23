@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { PropertiesView, PropertiesViewRef } from "@/components/features/property/property-list";
+import { PortfolioSummary } from "@/components/features/property/portfolio-summary";
 import { ExportButton, ExportColumn } from "@/components/ui/export-button";
 import { useApp } from "@/lib/contexts/app-context";
 import { Button } from "@/components/ui/button";
@@ -126,25 +127,6 @@ export function AssetsView(): React.ReactElement {
     { key: "rent", label: "Rent" },
   ];
 
-  const occupiedCount = properties.filter((p) => p.status === "occupied").length;
-  const occupancyRate = properties.length
-    ? Math.round((occupiedCount / properties.length) * 100)
-    : 0;
-  const monthlyRunRate = properties.reduce((sum, p) => sum + (p.rent || 0), 0);
-
-  const lastMonthTotal = useMemo(() => {
-    const now = new Date();
-    const prevMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
-    const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-    return receipts
-      .filter((r) => {
-        if (r.status !== "paid") return false;
-        const d = new Date((r as unknown as { date?: string }).date ?? r.createdAt);
-        return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
-      })
-      .reduce((sum, r) => sum + r.amount, 0);
-  }, [receipts]);
-
   const tenantHome = useMemo(() => {
     const tenant = tenants[0];
     const activeLease = tenant ? getActiveLease(tenant.id, leases) : null;
@@ -246,36 +228,12 @@ export function AssetsView(): React.ReactElement {
       {/* Compact page header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
+          {/* Title alone. These same figures used to trail the heading as a subtitle AND are
+              what the workspace summary is for; one screen stating a number twice is the thing
+              the declutter rule in CLAUDE.md exists to stop. */}
           <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
             {t("title")}
           </h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
-            {properties.length} {t("stats.trackedUnits").toLowerCase()}
-            {properties.length > 0 && (
-              <>
-                {" · "}
-                {occupiedCount} occupied ({occupancyRate}%)
-                {" · "}
-                <span className="font-medium text-[var(--color-foreground)]">
-                  {formatCurrency(monthlyRunRate)}/mo
-                </span>
-                {lastMonthTotal > 0 &&
-                  (() => {
-                    const delta = monthlyRunRate - lastMonthTotal;
-                    const isPositive = delta >= 0;
-                    return (
-                      <span
-                        className={`text-xs ${isPositive ? "text-emerald-400" : "text-red-400"}`}
-                      >
-                        {" "}
-                        ({isPositive ? "+" : ""}
-                        {formatCurrency(delta)} vs last mo)
-                      </span>
-                    );
-                  })()}
-              </>
-            )}
-          </p>
         </div>
       </div>
 
@@ -286,6 +244,7 @@ export function AssetsView(): React.ReactElement {
         ref={propertiesViewRef}
         density="compact"
         showPageHeader={false}
+        workspaceDefault={<PortfolioSummary />}
         treeActions={
           <>
             <DropdownMenu>

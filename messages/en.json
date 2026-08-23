@@ -57,7 +57,14 @@
     "newProperty": "New property",
     "newPropertyHint": "standalone unit",
     "newBuilding": "New building",
-    "newBuildingHint": "group of units"
+    "newBuildingHint": "group of units",
+    "summary": {
+      "allClear": "Every asset is in order.",
+      "leaseEnding": "Lease ends {date}",
+      "noActiveLease": "Occupied, no active lease",
+      "noPriorMonth": "No receipts last month",
+      "vsLastMonth": "vs last month"
+    }
   },
   "settings": {
     "title": "Settings",

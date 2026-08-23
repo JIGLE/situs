@@ -418,6 +418,14 @@ function measure({ touchFail, touchWarn, minFontPx, tolerance }) {
     // Longest vertical run inside the fold that nothing paints into. Occupancy is marked from
     // LEAF elements only — an ancestor's box spans its children's whitespace, so counting
     // containers would mark the whole page occupied and always report zero.
+    //
+    // READ THIS ALONGSIDE `contentWidthRatio`, never on its own. It measures emptiness, not
+    // quality, and a page that answers its question in 300px scores worse than one that fills
+    // 900px with chrome. Replacing Portfolio's "select an asset" placeholder — a 440px dashed
+    // box containing one sentence — with a summary that actually says something took the width
+    // from 69% to 97% and pushed this number UP by 24px, because the answer is shorter than the
+    // placeholder was. That is an improvement the metric cannot see. Do not add filler to move
+    // it.
     if (foldHeight > 0) {
       const rows = new Uint8Array(Math.ceil(foldHeight));
       for (const el of all) {
