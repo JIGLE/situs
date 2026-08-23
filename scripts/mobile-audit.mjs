@@ -488,8 +488,19 @@ function measure({ touchFail, touchWarn, minFontPx, tolerance }) {
       .slice(0, 6)
       .map(([x, count]) => ({ x, count }));
 
-    // How far down the first repeating data structure starts — the CLAUDE.md declutter rule
-    // ("one heading, one stat row") expressed as a distance rather than an opinion.
+    // How far down the reader can first READ or DO the thing they came for — the CLAUDE.md
+    // declutter rule ("one heading, one stat row") expressed as a distance rather than an
+    // opinion.
+    //
+    // "First repeating data structure" alone was the rule, and it is only half the app. On a
+    // form-shaped page there is no repeating structure near the top, so the scan ran on until it
+    // hit some group of equal-height rows deep inside a panel: `settings-view.tsx` — a header, a
+    // grouped nav rail and one panel — reported 884px against a 900px fold, and I published
+    // "Settings opens on chrome alone" off the back of it. The page is nothing of the sort.
+    //
+    // So a form control counts too, and the metric is the earlier of the two. That is comparable
+    // across a ledger and a settings form, which is the only way a single number can rank them
+    // against each other.
     const isData = (el) =>
       /^(table)$/i.test(el.tagName) ||
       el.getAttribute("role") === "grid" ||
@@ -502,11 +513,24 @@ function measure({ touchFail, touchWarn, minFontPx, tolerance }) {
             ) < 8,
         ) &&
         el.getBoundingClientRect().height > 120);
+    // Buttons in the page header are chrome, not the thing you came for — a "New filing" or
+    // "Save" beside the title would otherwise put every page's content start at ~0 and flatten
+    // the metric to noise. Anything inside the first heading's own band is excluded.
+    const firstHeading = mainEl.querySelector("h1, h2");
+    const headerBottom = firstHeading
+      ? firstHeading.getBoundingClientRect().bottom - mainRect.top
+      : 0;
+    const isControl = (el) => {
+      if (/^(input|textarea|select)$/i.test(el.tagName)) return true;
+      if (!/^button$/i.test(el.tagName) && el.getAttribute("role") !== "button") return false;
+      return el.getBoundingClientRect().top - mainRect.top > headerBottom;
+    };
+
     for (const el of mainEl.querySelectorAll("*")) {
       if (isVisuallyHidden(el)) continue;
       const r = el.getBoundingClientRect();
       if (r.height === 0) continue;
-      if (!isData(el)) continue;
+      if (!isData(el) && !isControl(el)) continue;
       density.contentStartY = Math.round(r.top - mainRect.top);
       break;
     }

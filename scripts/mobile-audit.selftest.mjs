@@ -24,6 +24,17 @@ const page = (body) => `<!doctype html><html><body style="margin:0">
 const filler = (n, style = "") =>
   Array.from({ length: n }, (_, i) => `<p style="${style}">row ${i}</p>`).join("");
 
+/**
+ * A band of page chrome `px` tall that is NOT a repeating structure: a heading, a paragraph and a
+ * rule, all different heights. `filler()` cannot be used for this — six identical paragraphs are
+ * a repeating structure by any honest definition, and the first draft of these cases used it and
+ * measured the spacer instead of the content it was meant to sit above.
+ */
+const chrome = (px) =>
+  `<div style="height:${px}px"><h2 style="font-size:28px;margin:0">Heading</h2>` +
+  `<p style="font-size:13px">A subtitle line of prose.</p><hr style="height:2px">` +
+  `<p style="font-size:11px">A smaller note.</p></div>`;
+
 const CASES = [
   {
     name: "wastedRun",
@@ -71,6 +82,48 @@ const CASES = [
     ),
     read: (m) => m.inertAnimationCount,
     expect: (bad, good) => bad === 1 && good === 0,
+  },
+  {
+    // The list shape: chrome, then a repeating structure.
+    name: "contentStartY (list page)",
+    trigger: page(
+      chrome(420) +
+        `<table><tbody>${Array.from({ length: 4 }, () => "<tr><td>row</td></tr>").join("")}</tbody></table>` +
+        filler(12),
+    ),
+    clean: page(
+      `<table><tbody>${Array.from({ length: 4 }, () => "<tr><td>row</td></tr>").join("")}</tbody></table>` +
+        filler(12),
+    ),
+    read: (m) => m.contentStartY,
+    expect: (bad, good) => bad > 380 && good < 60,
+  },
+  {
+    // The form shape, which the old rule could not see at all: no repeating structure near the
+    // top, so it ran on until it found one somewhere else — or reported 0 having found none.
+    name: "contentStartY (form page)",
+    trigger: page(
+      `<h1>Settings</h1>` + chrome(400) + `<label>Name <input type="text"></label>` + filler(12),
+    ),
+    clean: page(`<h1>Settings</h1><label>Name <input type="text"></label>${filler(12)}`),
+    read: (m) => m.contentStartY,
+    expect: (bad, good) => bad > 380 && good < 150,
+  },
+  {
+    // A header button is chrome. If it counted, every page would report ~0 and the metric would
+    // rank nothing.
+    name: "contentStartY ignores header buttons",
+    trigger: page(
+      `<h1>Tax filing <button>New filing</button></h1>` +
+        chrome(400) +
+        `<label>Year <input type="text"></label>` +
+        filler(12),
+    ),
+    clean: page(
+      `<h1>Tax filing <button>New filing</button></h1><label>Year <input></label>${filler(12)}`,
+    ),
+    read: (m) => m.contentStartY,
+    expect: (bad, good) => bad > 380 && good < 150,
   },
   {
     name: "renderFailure",
