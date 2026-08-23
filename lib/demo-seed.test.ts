@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 /**
@@ -86,5 +89,64 @@ describe("demo seed cleanup", () => {
 
     await expect(seedDemoData("user-1")).rejects.toThrow();
     expect(create).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * Every model the seed creates must also be cleaned, or re-seeding stacks copies.
+ *
+ * This is not hypothetical twice over. Documents and the bank graph were created and never
+ * cleared, so identical runs drifted 54 → 60 documents and 90 → 100 transactions and any
+ * count-based baseline crept upward. Correspondence was the mirror image — cleaned since long
+ * before anything created it — and the result was that every audit run measured the
+ * Correspondence page's empty state and reported 484px of "wasted space" that was really "no
+ * data". Both directions cost real time; both are one grep apart from being impossible.
+ *
+ * Read from the source rather than from a list, for the same reason the redirect-stub sweep is:
+ * a list has to be updated by whoever forgot to update the cleanup.
+ */
+describe("seed cleanup covers everything the seed creates", () => {
+  const source = readFileSync(path.join(process.cwd(), "lib", "demo-seed.ts"), "utf8");
+  // Literal patterns, not a constructed one: `new RegExp(\`...${verb}\`)` trips
+  // `security/detect-non-literal-regexp`, and the rule is right that a pattern assembled from a
+  // variable is worth a second look even when the variable is a constant two lines above.
+  const namesOf = (pattern: RegExp) => new Set([...source.matchAll(pattern)].map((m) => m[1]));
+
+  const created = namesOf(/prisma\.([a-zA-Z]+)\.create/g);
+  const cleaned = namesOf(/prisma\.([a-zA-Z]+)\.deleteMany/g);
+
+  /**
+   * Cascade-covered: deleting the property takes these with it, so an explicit delete would be
+   * redundant rather than missing. Verified against prisma/schema.prisma — Unit and Lease are
+   * `onDelete: Cascade` from Property, RentPeriod from Lease and Property both.
+   */
+  const CASCADES_FROM_PROPERTY = new Set(["unit", "lease", "rentPeriod"]);
+
+  it("finds both sets (an empty sweep would pass vacuously)", () => {
+    expect(created.size).toBeGreaterThan(10);
+    expect(cleaned.size).toBeGreaterThan(10);
+  });
+
+  it.each([...created].filter((m) => !CASCADES_FROM_PROPERTY.has(m)))(
+    "%s is cleaned before it is created",
+    (model) => {
+      expect(cleaned.has(model)).toBe(true);
+      // Order matters as much as presence: a delete that runs after the create clears the fixture
+      // it was meant to replace.
+      expect(source.indexOf(`prisma.${model}.deleteMany`)).toBeLessThan(
+        source.indexOf(`prisma.${model}.create`),
+      );
+    },
+  );
+
+  it("seeds the three domains whose absence was read as a layout defect", () => {
+    for (const model of [
+      "correspondence",
+      "correspondenceTemplate",
+      "maintenanceContact",
+      "taxFiling",
+    ]) {
+      expect(created.has(model)).toBe(true);
+    }
   });
 });

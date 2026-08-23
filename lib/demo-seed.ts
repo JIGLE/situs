@@ -10,6 +10,9 @@ import {
   UnitStatus,
   DocumentType,
   LeaseStatus,
+  TemplateType,
+  CorrespondenceStatus,
+  MaintenanceContactType,
 } from "@prisma/client";
 
 export async function seedDemoData(userId: string): Promise<void> {
@@ -55,6 +58,19 @@ export async function seedDemoData(userId: string): Promise<void> {
     "maintenanceTickets",
   );
   await cleanup(() => prisma.correspondence.deleteMany({ where: { userId } }), "correspondence");
+  // After the letters, because a template must outlive the record of what was sent from it.
+  // Scoped to `userId`, which also means the system-owned templates (userId NULL) are untouched.
+  await cleanup(
+    () => prisma.correspondenceTemplate.deleteMany({ where: { userId } }),
+    "correspondenceTemplates",
+  );
+  await cleanup(
+    () => prisma.maintenanceContact.deleteMany({ where: { userId } }),
+    "maintenanceContacts",
+  );
+  // TaxFiling is unique on (userId, year, country, regime), so without this a second seed
+  // collides rather than replacing.
+  await cleanup(() => prisma.taxFiling.deleteMany({ where: { userId } }), "taxFilings");
   // Documents and the bank graph are created below but were never cleared, so re-seeding stacked
   // a fresh copy on top of the last one: measured across a single seed call, documents went
   // 54 → 60 and bank transactions 90 → 100 while every other table held steady. That made the
@@ -741,6 +757,177 @@ export async function seedDemoData(userId: string): Promise<void> {
         fileSize: Math.floor(Math.random() * 5000000) + 100000, // 100KB - 5MB
         propertyId: prop.id,
         ...(tenant && { tenantId: tenant.id }),
+      },
+    });
+  }
+
+  // 13. Correspondence templates and letters
+  //
+  // The cleanup above has deleted `correspondence` since long before this existed, which is the
+  // giveaway: the fixture was always meant to have some and never did. Every audit run therefore
+  // measured the Correspondence page's empty state and reported 484px of "wasted space" that was
+  // really "no data" — a layout verdict on a screen that had nothing to lay out.
+  // Enum MEMBERS, not `"literal" as Enum`. The cast compiles whatever you write — `"contractor"`
+  // type-checked cleanly against `MaintenanceContactType` and then failed at the database, which
+  // is the wrong place to learn the enum is uppercase.
+  const dbTemplates = [];
+  for (const tpl of [
+    {
+      name: "Rent reminder",
+      type: TemplateType.rent_reminder,
+      subject: "Rent due — {{month}}",
+      content:
+        "Dear {{tenantName}},\n\nThis is a reminder that rent of {{amount}} for {{month}} " +
+        "is due on {{dueDate}}.\n\nThank you,\n{{ownerName}}",
+    },
+    {
+      name: "Welcome letter",
+      type: TemplateType.welcome,
+      subject: "Welcome to {{propertyName}}",
+      content:
+        "Dear {{tenantName}},\n\nWelcome to {{propertyName}}. Your lease begins on " +
+        "{{startDate}}.\n\n{{ownerName}}",
+    },
+    {
+      name: "Annual inspection notice",
+      type: TemplateType.maintenance_request,
+      subject: "Scheduled inspection — {{propertyName}}",
+      content:
+        "Dear {{tenantName}},\n\nA routine inspection is scheduled for {{date}}.\n\n" +
+        "{{ownerName}}",
+    },
+  ]) {
+    dbTemplates.push(
+      await prisma.correspondenceTemplate.create({
+        data: {
+          userId,
+          name: tpl.name,
+          type: tpl.type,
+          subject: tpl.subject,
+          content: tpl.content,
+          variables: JSON.stringify(["tenantName", "propertyName", "amount", "month", "dueDate"]),
+          country: "PT",
+          locale: "pt",
+        },
+      }),
+    );
+  }
+
+  // Statuses spread deliberately: the list renders one row per state, so a fixture that is all
+  // `sent` hides two thirds of the component.
+  const correspondenceData = [
+    { tenantIndex: 0, templateIndex: 0, status: CorrespondenceStatus.sent, daysAgo: 12 },
+    { tenantIndex: 1, templateIndex: 0, status: CorrespondenceStatus.delivered, daysAgo: 9 },
+    { tenantIndex: 2, templateIndex: 1, status: CorrespondenceStatus.delivered, daysAgo: 40 },
+    { tenantIndex: 0, templateIndex: 2, status: CorrespondenceStatus.draft, daysAgo: 2 },
+    { tenantIndex: 1, templateIndex: 1, status: CorrespondenceStatus.sent, daysAgo: 65 },
+  ] as const;
+
+  for (const item of correspondenceData) {
+    const tenant = dbTenants[item.tenantIndex % dbTenants.length];
+    const template = dbTemplates[item.templateIndex];
+    const created = new Date(now.getTime() - item.daysAgo * 24 * 60 * 60 * 1000);
+    await prisma.correspondence.create({
+      data: {
+        userId,
+        templateId: template.id,
+        tenantId: tenant.id,
+        propertyId: tenant.propertyId,
+        subject: template.subject.replace("{{month}}", "June 2026"),
+        content: template.content.replace("{{tenantName}}", tenant.name),
+        status: item.status,
+        sentAt: item.status === CorrespondenceStatus.draft ? null : created,
+        createdAt: created,
+        templateNameSnapshot: template.name,
+        templateVersionSnapshot: template.version,
+        templateOriginSnapshot: "user",
+      },
+    });
+  }
+
+  // 14. Maintenance contacts — what /api/contacts reads, and what Operations links out to.
+  for (const contact of [
+    {
+      type: MaintenanceContactType.CONTRACTOR,
+      company: "Silva Canalizações",
+      contactPerson: "Rui Silva",
+      email: "rui@silvacanalizacoes.pt",
+      phone: "+351 912 345 678",
+      specialties: ["Plumber"],
+      hourlyRate: 45,
+      rating: 4.5,
+    },
+    {
+      type: MaintenanceContactType.CONTRACTOR,
+      company: "ElectroPorto",
+      contactPerson: "Ana Marques",
+      email: "ana@electroporto.pt",
+      phone: "+351 913 222 111",
+      specialties: ["Electrician"],
+      hourlyRate: 52,
+      rating: 4.8,
+    },
+    {
+      type: MaintenanceContactType.CONTRACTOR,
+      company: "ClimaLisboa",
+      contactPerson: "Tiago Nunes",
+      email: "tiago@climalisboa.pt",
+      phone: "+351 914 555 900",
+      specialties: ["HVAC", "Appliance repair"],
+      hourlyRate: 60,
+      rating: 4.1,
+    },
+    {
+      type: MaintenanceContactType.VENDOR,
+      company: "Casa & Cia",
+      contactPerson: "Marta Lopes",
+      email: "marta@casaecia.pt",
+      phone: "+351 915 010 020",
+      specialties: ["Cleaning"],
+      hourlyRate: 28,
+      rating: 4.6,
+    },
+  ]) {
+    await prisma.maintenanceContact.create({
+      data: {
+        userId,
+        type: contact.type,
+        company: contact.company,
+        contactPerson: contact.contactPerson,
+        email: contact.email,
+        phone: contact.phone,
+        specialties: JSON.stringify(contact.specialties),
+        hourlyRate: contact.hourlyRate,
+        rating: contact.rating,
+        isActive: true,
+      },
+    });
+  }
+
+  // 15. Tax filings — one per year and status, so the list shows both `draft` and `final`.
+  const propertyIdsJson = JSON.stringify(dbProperties.map((p) => p.id));
+  for (const filing of [
+    { year: 2025, regime: "STANDARD", gross: 42000, expenses: 9800, status: "final" },
+    { year: 2026, regime: "STANDARD", gross: 18600, expenses: 4200, status: "draft" },
+  ]) {
+    const taxable = filing.gross - filing.expenses;
+    const taxDue = Math.round(taxable * 0.28 * 100) / 100;
+    await prisma.taxFiling.create({
+      data: {
+        userId,
+        year: filing.year,
+        country: "PT",
+        regime: filing.regime,
+        propertyIds: propertyIdsJson,
+        grossIncome: filing.gross,
+        allowableExpenses: filing.expenses,
+        taxableIncome: taxable,
+        taxDue,
+        effectiveRate: Math.round((taxDue / filing.gross) * 10000) / 100,
+        withholdingPaid: 0,
+        balanceDue: taxDue,
+        status: filing.status,
+        payload: JSON.stringify({ source: "demo-seed", year: filing.year }),
       },
     });
   }
