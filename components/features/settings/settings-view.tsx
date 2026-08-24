@@ -217,14 +217,27 @@ export function SettingsView(): React.ReactElement {
       </div>
 
       <div className="grid gap-6 md:grid-cols-[clamp(180px,16vw,260px)_minmax(0,1fr)]">
-        {/* Desktop vertical section nav — same left-border-accent language as
-            the main sidebar, so Settings reads as its own mini nav rather
-            than a page of tabs. */}
+        {/* Desktop vertical section nav.
+
+            This used to borrow the main sidebar's language exactly — `border-l-2` in the country
+            accent, the same active fill, the same `.mono-label` group headings — on the reasoning
+            that Settings should read as its own mini nav. At 1440 the result is two vertical
+            navigations sitting side by side in identical dress, and the eye ranks them equally
+            when one of them is the app and the other is one page of it.
+
+            So the accent bar goes. It is the sidebar's signature for "where you are in the app",
+            and a section rail one level down should not claim it. Weight and foreground colour
+            carry the active state instead, which is enough at this size and leaves the sidebar
+            as the only thing in the viewport wearing the accent.
+
+            The group headings stay. They are not decoration: eight equal-weight entries in
+            arrival order made a reader scan all eight, and three short groups stop most lookups
+            at the heading — see the SECTIONS comment above. */}
         <nav aria-label={t("sectionsLabel")} className="hidden md:block">
-          <div className="space-y-4">
+          <div className="space-y-3">
             {groupedSections.map(({ group, ids }) => (
               <div key={group} className="space-y-0.5">
-                <h3 className="mono-label px-3 pb-1">{t(`groups.${group}`)}</h3>
+                <h3 className="mono-label px-3 pb-0.5">{t(`groups.${group}`)}</h3>
                 {ids.map((section) => (
                   <button
                     key={section}
@@ -232,10 +245,10 @@ export function SettingsView(): React.ReactElement {
                     onClick={() => setActiveSection(section)}
                     aria-current={visibleSection === section ? "page" : undefined}
                     className={cn(
-                      "flex w-full items-center border-l-2 px-3 py-2 text-left text-sm transition-colors",
+                      "flex w-full items-center px-3 py-1.5 text-left text-sm transition-colors",
                       visibleSection === section
-                        ? "border-[var(--country-highlight-readable)] bg-[var(--color-hover)] font-medium text-[var(--country-highlight-readable)]"
-                        : "border-transparent text-[var(--color-muted-foreground)] hover:bg-[var(--color-hover)] hover:text-[var(--color-foreground)]",
+                        ? "bg-[var(--color-hover)] font-medium text-[var(--color-foreground)]"
+                        : "text-[var(--color-muted-foreground)] hover:bg-[var(--color-hover)] hover:text-[var(--color-foreground)]",
                     )}
                   >
                     {sectionLabel(section)}
@@ -270,7 +283,12 @@ export function SettingsView(): React.ReactElement {
           </Select>
         </div>
 
-        <div className="min-w-0">
+        {/* Capped, not full-bleed. The panel column runs ~900px at 1440, and what sits in it is
+            label-over-value pairs and single-column forms — so every field was a short string
+            floating at the left edge of a very wide bordered box, which is what made Settings
+            read as heavy while being mostly empty. `3xl` is wide enough for the two-column
+            grids inside Appearance and Tax and narrow enough that a value stays near its label. */}
+        <div className="min-w-0 max-w-3xl">
           {visibleSection === "account" && <SettingsAccount appVersion={appVersion} />}
           {visibleSection === "tax" && (
             <SettingsTax settings={settings} updateSetting={updateSetting} />
