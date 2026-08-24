@@ -501,7 +501,12 @@ export function OverviewView({
         {/* Recent payments — compact rectilinear list */}
         {dashboardData.recentPayments.length > 0 && (
           <div className="panel">
-            <div className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-3.5">
+            {/* `px-4`, matching `Card`'s padding. This list is a bespoke `.panel` rather than a
+                `Card` — `.panel` is background and border only, padding is per-use — which is
+                why it kept its own `px-5` while every card in the app moved to `p-4`. Two
+                primitives disagreeing by 4px on every row is the kind of thing nobody can name
+                and everybody feels. */}
+            <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
               <p className="mono-label">{t("recentPayments")}</p>
               <button
                 onClick={() => navigate("/financials?tab=receipts")}
@@ -510,9 +515,11 @@ export function OverviewView({
                 {t("seeAll")}
               </button>
             </div>
+            {/* Rows are `py-3`, not `py-4`. Two short lines — a name and a date — were sitting
+                in a 67px row, roughly half of which was padding. */}
             <div className="divide-y divide-[var(--color-border)]">
               {dashboardData.recentPayments.map((receipt) => (
-                <div key={receipt.id} className="flex items-center justify-between px-5 py-4">
+                <div key={receipt.id} className="flex items-center justify-between px-4 py-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-[var(--color-foreground)]">
                       {receipt.tenantName}
