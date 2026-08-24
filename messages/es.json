@@ -723,7 +723,9 @@
     "viewAll": "Ver Todo",
     "back": "Atrás",
     "continue": "Continuar",
-    "processing": "Procesando…"
+    "processing": "Procesando…",
+    "exportCsv": "Exportar como CSV",
+    "exportJson": "Exportar como JSON"
   },
   "landing": {
     "eyebrow": "Operaciones de alquiler para Portugal y España",

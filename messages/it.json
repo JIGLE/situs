@@ -723,7 +723,9 @@
     "viewAll": "Vedi tutti",
     "back": "Indietro",
     "continue": "Continua",
-    "processing": "Elaborazione…"
+    "processing": "Elaborazione…",
+    "exportCsv": "Esporta come CSV",
+    "exportJson": "Esporta come JSON"
   },
   "landing": {
     "eyebrow": "Gestione locazioni in Italia e non solo",

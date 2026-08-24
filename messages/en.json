@@ -723,7 +723,9 @@
     "viewAll": "View All",
     "back": "Back",
     "continue": "Continue",
-    "processing": "Processing…"
+    "processing": "Processing…",
+    "exportCsv": "Export as CSV",
+    "exportJson": "Export as JSON"
   },
   "landing": {
     "eyebrow": "Portugal & Spain rental operations",

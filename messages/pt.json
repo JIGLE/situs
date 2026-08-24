@@ -723,7 +723,9 @@
     "viewAll": "Ver Tudo",
     "back": "Voltar",
     "continue": "Continuar",
-    "processing": "A processar…"
+    "processing": "A processar…",
+    "exportCsv": "Exportar como CSV",
+    "exportJson": "Exportar como JSON"
   },
   "landing": {
     "eyebrow": "Operações de arrendamento para Portugal e Espanha",
