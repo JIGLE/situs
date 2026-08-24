@@ -2574,6 +2574,9 @@
     "loading": "Caricamento…",
     "loadFailedTitle": "Impossibile caricare i tuoi dati",
     "retry": "Riprova",
-    "retrying": "Nuovo tentativo…"
+    "retrying": "Nuovo tentativo…",
+    "auditTrailEmpty": "Accessi, esportazioni e modifiche alle impostazioni compariranno qui.",
+    "themeLight": "Chiaro",
+    "themeDark": "Scuro"
   }
 }

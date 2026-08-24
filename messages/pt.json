@@ -2574,6 +2574,9 @@
     "loading": "A carregar…",
     "loadFailedTitle": "Não foi possível carregar os seus dados",
     "retry": "Tentar novamente",
-    "retrying": "A tentar novamente…"
+    "retrying": "A tentar novamente…",
+    "auditTrailEmpty": "Os inícios de sessão, exportações e alterações às definições aparecerão aqui.",
+    "themeLight": "Claro",
+    "themeDark": "Escuro"
   }
 }

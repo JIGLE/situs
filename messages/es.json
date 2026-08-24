@@ -2574,6 +2574,9 @@
     "loading": "Cargando…",
     "loadFailedTitle": "No se han podido cargar tus datos",
     "retry": "Reintentar",
-    "retrying": "Reintentando…"
+    "retrying": "Reintentando…",
+    "auditTrailEmpty": "Los inicios de sesión, exportaciones y cambios de configuración aparecerán aquí.",
+    "themeLight": "Claro",
+    "themeDark": "Oscuro"
   }
 }

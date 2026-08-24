@@ -41,6 +41,7 @@ function SidebarFooter({
   const { country, resolvedTheme } = useTheme();
   const tNav = useTranslations("navigation");
   const tSettings = useTranslations("settings.nav");
+  const tCommon = useTranslations("common");
   const initials =
     user?.name
       ?.split(" ")
@@ -81,7 +82,12 @@ function SidebarFooter({
               {user?.name || "Portal User"}
             </p>
             <p className="mono-label truncate" title={tSettings("appearance")}>
-              {subtitle ?? `${country} · ${resolvedTheme}`}
+              {/* `resolvedTheme` is the internal mode name — "normal" or "dark" — and it was being
+                  printed straight out, so the light theme announced itself as "PT · NORMAL".
+                  Nobody calls a theme "normal", and it was the one word on the screen that had
+                  not been through i18n. */}
+              {subtitle ??
+                `${country} · ${resolvedTheme === "dark" ? tCommon("themeDark") : tCommon("themeLight")}`}
             </p>
           </div>
         </Link>

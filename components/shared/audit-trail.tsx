@@ -31,10 +31,15 @@ export interface AuditTrailProps {
 
 export function AuditTrail({
   resourceIds,
-  emptyTitle = "Audit trail",
-  emptyDescription = "Activity — payment allocations, receipt emissions, document changes and manual overrides — will appear here.",
+  emptyTitle,
+  emptyDescription,
 }: AuditTrailProps): React.ReactElement {
   const t = useTranslations("common");
+  // Defaults resolve here, not in the parameter list, because `t` does not exist yet up there.
+  // They used to be English string literals, so any caller that did not pass its own copy — the
+  // Account page among them — printed "Audit trail" into a fully translated screen.
+  const resolvedEmptyTitle = emptyTitle ?? t("auditTrail");
+  const resolvedEmptyDescription = emptyDescription ?? t("auditTrailEmpty");
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,8 +79,8 @@ export function AuditTrail({
   if (loading) {
     return (
       <Card>
-        <CardContent className="py-10 text-center text-sm text-[var(--color-muted-foreground)]">
-          Loading…
+        <CardContent className="py-6 text-center text-sm text-[var(--color-muted-foreground)]">
+          {t("loading")}
         </CardContent>
       </Card>
     );
@@ -84,7 +89,7 @@ export function AuditTrail({
   if (error) {
     return (
       <Card>
-        <CardContent className="py-10 text-center text-sm text-[var(--semantic-danger-readable)]">
+        <CardContent className="py-6 text-center text-sm text-[var(--semantic-danger-readable)]">
           {error}
         </CardContent>
       </Card>
@@ -93,15 +98,26 @@ export function AuditTrail({
 
   if (entries.length === 0) {
     return (
+      // An empty list should be a line, not a room. This was `py-14` around a framed icon and two
+      // centred lines — roughly 250px of bordered panel to say that nothing has happened yet, and
+      // once Settings was tightened it became the tallest thing on the Account page. The icon in
+      // its own bordered square was the giveaway: a decorative glyph given the same treatment as
+      // real content.
+      //
+      // The words stay, because they are doing work — `emptyDescription` says what *will* appear
+      // here, which is the useful thing when there is no action for the reader to take.
       <Card>
-        <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
-          <div className="flex h-10 w-10 items-center justify-center border border-[var(--color-border)] bg-[var(--color-surface)]">
-            <History className="h-5 w-5 text-[var(--color-muted-foreground)]" />
+        <CardContent className="flex items-start gap-3 py-4">
+          <History
+            className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-muted-foreground)]"
+            aria-hidden="true"
+          />
+          <div className="min-w-0 space-y-1">
+            <p className="mono-label">{resolvedEmptyTitle}</p>
+            <p className="text-sm text-[var(--color-muted-foreground)]">
+              {resolvedEmptyDescription}
+            </p>
           </div>
-          <p className="mono-label">{emptyTitle}</p>
-          <p className="max-w-sm text-sm text-[var(--color-muted-foreground)]">
-            {emptyDescription}
-          </p>
         </CardContent>
       </Card>
     );

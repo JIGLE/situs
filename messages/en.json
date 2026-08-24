@@ -2574,6 +2574,9 @@
     "loading": "Loading…",
     "loadFailedTitle": "Couldn't load your data",
     "retry": "Try again",
-    "retrying": "Trying again…"
+    "retrying": "Trying again…",
+    "auditTrailEmpty": "Sign-ins, exports and settings changes will appear here.",
+    "themeLight": "Light",
+    "themeDark": "Dark"
   }
 }
