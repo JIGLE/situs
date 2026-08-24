@@ -21,6 +21,6 @@ describe("CorrespondenceView", () => {
   // English copy — otherwise the test pins a translation and breaks whenever it is reworded.
   it("shows empty templates state", () => {
     render(<CorrespondenceView />);
-    expect(screen.getByText("emptyTitle")).toBeDefined();
+    expect(screen.getByText("No templates yet")).toBeDefined();
   });
 });

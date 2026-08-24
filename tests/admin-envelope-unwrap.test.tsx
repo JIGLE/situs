@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import {
+  renderWithProviders as render,
+  screen,
+  waitFor,
+} from "@/tests/helpers/render-with-providers";
 
 /**
  * Both admin views that read through `apiFetch` unwrapped the response envelope twice.
@@ -25,13 +29,9 @@ vi.mock("@/lib/contexts/csrf-context", () => ({
 
 // The views are translated; the harness only needs stable, distinguishable output, so keys pass
 // through. That keeps the assertions on the *data*, which is what regressed.
-vi.mock("next-intl", () => ({
-  useTranslations: () => {
-    const t = (key: string) => key;
-    t.rich = (key: string) => key;
-    return t;
-  },
-}));
+// `next-intl` is not mocked here. It used to be, returning the key (or a small hand-written
+// map of English strings) — which meant this file asserted placeholder text rather than what
+// a user reads. `renderWithProviders` supplies the real provider and catalogue.
 
 describe("admin views unwrap the API envelope exactly once", () => {
   beforeEach(() => {
@@ -74,7 +74,7 @@ describe("admin views unwrap the API envelope exactly once", () => {
     // A blank panel is the one rendering that hides a fault instead of reporting it: you are
     // signed in, so the list cannot legitimately be empty.
     await waitFor(() => {
-      expect(screen.getByText("empty")).toBeInTheDocument();
+      expect(screen.getByText(/No accounts found/)).toBeInTheDocument();
     });
   });
 
@@ -100,7 +100,7 @@ describe("admin views unwrap the API envelope exactly once", () => {
     });
     // `registrationClosed` and the per-provider row both come from `status`, so either one
     // reaching the DOM proves the payload survived the unwrap.
-    expect(screen.getByText("registrationClosed")).toBeInTheDocument();
-    expect(screen.getByText("provider.credentials")).toBeInTheDocument();
+    expect(screen.getByText("Registration is closed")).toBeInTheDocument();
+    expect(screen.getByText("Email and password")).toBeInTheDocument();
   });
 });

@@ -2,10 +2,9 @@ import { describe, it, expect, vi } from "vitest";
 import { renderWithProviders as render } from "@/tests/helpers/render-with-providers";
 import { OverviewView } from "./overview-view";
 
-vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string) => key,
-  NextIntlClientProvider: ({ children }: { children: React.ReactNode }) => children,
-}));
+// `next-intl` is not mocked here. It used to be, returning the key (or a small hand-written
+// map of English strings) — which meant this file asserted placeholder text rather than what
+// a user reads. `renderWithProviders` supplies the real provider and catalogue.
 
 // Mock next-auth
 vi.mock("next-auth/react", () => ({
