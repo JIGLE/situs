@@ -100,6 +100,17 @@ const THEMES = opt("theme", "dark,light").split(",");
 const STRICT = flag("strict");
 
 /**
+ * Also write a full-page screenshot per surface-run, for visual review rather than measurement.
+ *
+ * Off by default, and it must stay that way: CI's two invocations in `ci.yml` compare against a
+ * ratchet, and a flag that changed what they capture would change what they cost for no gain to
+ * the gate. The measurement shot above is deliberately viewport-sized because that is the frame
+ * every metric describes — a full-page image is a different question ("what is on this screen at
+ * all") from the one the numbers answer.
+ */
+const FULLPAGE = flag("fullpage");
+
+/**
  * Ratchet ceilings for `--strict`, in the spirit of `scripts/check-color-tokens.js`: a number
  * that may only ever go down. A run that exceeds any of these exits non-zero.
  *
@@ -807,6 +818,53 @@ async function auditSurface(context, surface, theme, ids) {
     mkdirSync(dirname(shot), { recursive: true });
     await page.screenshot({ path: shot, fullPage: false });
     result.screenshot = shot;
+
+    if (FULLPAGE) {
+      // An overlay surface is a viewport-sized thing by construction. `fullPage: true` expands
+      // to the height of the page *behind* the dialog, which on a long list leaves the dialog
+      // as a small band at the top of a very tall image — worse for review than the viewport
+      // shot, not better. So those four reuse it and the gallery says which is which.
+      if (surface.overlay) {
+        result.screenshotFull = shot;
+        result.screenshotFullIsViewport = true;
+      } else {
+        // `fullPage: true` on its own captures exactly the viewport here, and silently — the
+        // app shell is `h-screen overflow-hidden` with `overflow-y-auto` on <main>
+        // (app/[locale]/(main)/layout.tsx), so the document never scrolls and there is no
+        // "full page" beyond the fold for Playwright to extend into. The first run of this
+        // flag produced 44 images all exactly 1440x900, labelled full-page.
+        //
+        // So release the height first: find every element that is actually scrolling its own
+        // overflow and let it grow, along with its ancestors. Done generically rather than by
+        // class name so the landing page and the tenant portal — different shells — work too.
+        // This runs after `measure()`, so no metric can see it.
+        const released = await page.evaluate(() => {
+          const touched = [];
+          const release = (el) => {
+            touched.push([el, el.style.cssText]);
+            el.style.setProperty("height", "auto", "important");
+            el.style.setProperty("max-height", "none", "important");
+            el.style.setProperty("overflow", "visible", "important");
+          };
+          for (const el of document.querySelectorAll("*")) {
+            const s = getComputedStyle(el);
+            const scrolls = /auto|scroll|hidden/.test(s.overflowY);
+            if (!scrolls || el.scrollHeight <= el.clientHeight + 4) continue;
+            for (let n = el; n && n !== document.documentElement; n = n.parentElement) release(n);
+          }
+          release(document.documentElement);
+          release(document.body);
+          return touched.length;
+        });
+        // A page that genuinely fits releases nothing, which is fine and worth recording — it
+        // is the difference between "nothing below the fold" and "we failed to reach it".
+        result.releasedForFullPage = released;
+        await page.waitForTimeout(250);
+        const full = join(OUT_DIR, "shots", `${surface.id}-${theme}-${VIEWPORT_WIDTH}-full.png`);
+        await page.screenshot({ path: full, fullPage: true });
+        result.screenshotFull = full;
+      }
+    }
   } catch (err) {
     result.status = "error";
     result.error = err instanceof Error ? err.message : String(err);

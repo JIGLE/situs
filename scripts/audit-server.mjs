@@ -37,6 +37,7 @@
  *   node scripts/audit-server.mjs --desktop        # 1440x900 only
  *   node scripts/audit-server.mjs --only portfolio # filter, passed to the harness
  *   node scripts/audit-server.mjs --keep           # leave the scratch database in place
+ *   node scripts/audit-server.mjs --rebuild        # discard .next and build from scratch
  */
 
 import { spawn, spawnSync } from "node:child_process";
@@ -134,7 +135,15 @@ function newestSourceMtime() {
  */
 function ensureBuild() {
   const stamp = join(ROOT, ".next", "BUILD_ID");
-  if (existsSync(stamp) && statSync(stamp).mtimeMs >= newestSourceMtime()) {
+  // `--rebuild` exists so nobody reaches for the obvious trick of deleting BUILD_ID to force
+  // one. That leaves the rest of `.next` in place, including `dev/types/validator.ts`, which
+  // is generated against whatever route tree existed when it was written — a stale one fails
+  // the type check with "Cannot find module ../../app/[locale]/(main)/admin/page.js" for a
+  // route that moved groups months ago, and the error names a path rather than the staleness.
+  if (has("rebuild")) {
+    console.log("[audit-env] --rebuild: discarding .next");
+    rmSync(join(ROOT, ".next"), { recursive: true, force: true });
+  } else if (existsSync(stamp) && statSync(stamp).mtimeMs >= newestSourceMtime()) {
     console.log("[audit-env] build is newer than every source file — skipping rebuild");
     return;
   }
@@ -281,6 +290,9 @@ async function main() {
         // count — is what actually breaks a nav or a tab bar.
         "--locale",
         "pt",
+        // Full-page images alongside the viewport ones. A local run is for looking at the
+        // app; CI's run is for the ratchet and does not ask for these.
+        "--fullpage",
         ...(only ? ["--only", only] : []),
       ];
       console.log(
