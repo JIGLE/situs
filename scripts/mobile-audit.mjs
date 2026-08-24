@@ -158,7 +158,13 @@ const BASELINE = {
   viewportTallChildren: 0,
   touchTargetFails: 4,
   touchTargetWarns: 4,
-  clippedContainers: 6,
+  // Was 6, and documented as non-deterministic (three runs gave 4, 6, 6). It is 0 now, and the
+  // reason it can be pinned rather than ratcheted is that the cause was structural, not flaky:
+  // every instance was an email inside a container that could not grow — `truncate` with a
+  // `title` tooltip a phone cannot show, and a `grid-cols-2` that never collapsed. Both are
+  // fixed at the source, so this measures a property of the layout rather than of the run.
+  // Confirmed 0 on two consecutive full sweeps.
+  clippedContainers: 0,
   smallText: 310,
 };
 

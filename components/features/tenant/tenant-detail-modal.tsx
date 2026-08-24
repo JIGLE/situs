@@ -295,7 +295,8 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Doctrine rule 6: a multi-column form is single-column below `md`. */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="email">{tForms("email")}</Label>
                 <Input
@@ -411,7 +412,10 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
 
               {/* Overview tab */}
               <TabsContent value="overview" className="space-y-3 mt-4">
-                <div className="grid grid-cols-2 gap-3">
+                {/* One column below `sm`. Two cards across a 390px phone left about 180px each,
+                    which clipped `joao.silva@outlook.pt` by 16px with only a `title` tooltip to
+                    recover it — and a phone has no hover. */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-card)] p-3">
                     <p className="text-[12px] md:text-[10px] text-[var(--color-muted-foreground)] uppercase tracking-wide mb-2">
                       {t("modal.contact")}
@@ -419,7 +423,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2 text-sm">
                         <Mail className="h-3.5 w-3.5 text-[var(--color-muted-foreground)]" />
-                        <span className="truncate" title={tenant.email || undefined}>
+                        <span className="break-words" title={tenant.email || undefined}>
                           {tenant.email || "—"}
                         </span>
                       </div>
