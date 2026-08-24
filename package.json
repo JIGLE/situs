@@ -50,7 +50,8 @@
     "actions:check": "python3 scripts/check-action-manifests.py",
     "hygiene": "npm run docs:check && npm run i18n:check:strict && npm run lint:colors && npm run currency:check && npm run css:check && npm run actions:check",
     "css:check": "node scripts/check-class-contract.mjs --strict",
-    "audit:selftest": "node scripts/mobile-audit.selftest.mjs"
+    "audit:selftest": "node scripts/mobile-audit.selftest.mjs",
+    "audit:local": "node scripts/audit-server.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [

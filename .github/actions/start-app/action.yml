@@ -72,6 +72,17 @@ runs:
       env:
         DATABASE_URL: ${{ inputs.database-url }}
 
+    # `lib/utils/env.ts` fails closed on a missing PII_ENCRYPTION_KEY outside development —
+    # except under CI, where `_isCI` skips the whole guard. So every job here has been seeding
+    # tenant-shaped PII (IBAN, NIF, phone) into its database in plaintext, and the encrypted
+    # write/read path — the one control between a stolen database and an Article 33 notice —
+    # has never been exercised by a single CI run. The data is synthetic and the runner is
+    # disposable, so this was never an exposure; it was a blind spot. A key generated per run
+    # closes it without putting one in the repo.
+    - name: Generate a per-run PII encryption key
+      shell: bash
+      run: echo "PII_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+
     - name: Start built application in background
       shell: bash
       run: |
@@ -89,6 +100,7 @@ runs:
         ALLOW_DEMO_MODE: ${{ inputs.demo-mode }}
         ENABLE_DEMO_LOGIN: ${{ inputs.demo-login }}
         E2E_DISABLE_RATE_LIMIT: ${{ inputs.disable-rate-limit }}
+        PII_ENCRYPTION_KEY: ${{ env.PII_ENCRYPTION_KEY }}
         NODE_ENV: production
         PORT: "3000"
         HOSTNAME: 0.0.0.0
