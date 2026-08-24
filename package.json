@@ -9,6 +9,7 @@
   "packageManager": "npm@11.19.0",
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/check-version-sync.js --write",
     "build": "next build",
     "prestart": "node scripts/prestart.js",
     "start": "next start",
@@ -48,10 +49,12 @@
     "docs:check": "node scripts/check-docs.js",
     "currency:check": "node scripts/check-currency-literals.js",
     "actions:check": "python3 scripts/check-action-manifests.py",
-    "hygiene": "npm run docs:check && npm run i18n:check:strict && npm run lint:colors && npm run currency:check && npm run css:check && npm run actions:check",
+    "hygiene": "npm run docs:check && npm run i18n:check:strict && npm run lint:colors && npm run currency:check && npm run css:check && npm run actions:check && npm run version:check",
     "css:check": "node scripts/check-class-contract.mjs --strict",
     "audit:selftest": "node scripts/mobile-audit.selftest.mjs",
-    "audit:local": "node scripts/audit-server.mjs"
+    "audit:local": "node scripts/audit-server.mjs",
+    "version:sync": "node scripts/check-version-sync.js --write",
+    "version:check": "node scripts/check-version-sync.js"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [
