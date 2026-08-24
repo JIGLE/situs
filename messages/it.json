@@ -2195,7 +2195,11 @@
     "noPropertySelected": "Seleziona almeno un immobile",
     "loadingIncome": "Caricamento dati reddito...",
     "portugal": "Portogallo",
-    "spain": "Spagna"
+    "spain": "Spagna",
+    "positionHeading": "{year} finora",
+    "positionNote": "Redditi e spese registrati quest'anno. L'imposta dovuta deriva dalla creazione di una dichiarazione.",
+    "netPosition": "Netto",
+    "deleteFilingLabel": "Elimina la dichiarazione {year}"
   },
   "paymentMatrix": {
     "title": "Matrice di Monitoraggio Pagamenti",

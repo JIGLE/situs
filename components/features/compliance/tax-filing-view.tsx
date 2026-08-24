@@ -6,6 +6,8 @@ import { Plus, Trash2, FileCheck2, FileEdit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { RenderTable } from "@/components/ui/table";
+import { useCurrency } from "@/lib/contexts/currency-context";
 import {
   Dialog,
   DialogContent,
@@ -32,28 +34,55 @@ interface TaxFilingRecord {
   createdAt: string;
 }
 
-// ── helpers ────────────────────────────────────────────────────────────────
+// The two helpers that used to live here are gone.
+//
+// `formatCurrency` was `Intl.NumberFormat("pt-PT", … "EUR")` — hardcoded, so a Spanish owner read
+// Portuguese formatting on a fiscal screen while every other view in the app went through
+// `useCurrency()`. `countryFlag` returned 🇵🇹/🇪🇸, the only place in Situs that used emoji as
+// data; the jurisdiction is a code, and `.mono-label` is the documented system voice for codes.
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(amount);
+// ── shared bits ────────────────────────────────────────────────────────────
+
+/** One figure in the year-to-date band. Same shape as `portfolio-summary.tsx`'s stat row, so the
+ *  two summaries in the app read as one system rather than two takes on the same idea. */
+function PositionFigure({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 border-t border-[var(--color-inner-border)] px-4 py-3 first:border-t-0 sm:border-l sm:border-t-0 sm:first:border-l-0">
+      <div className="mono-label">{label}</div>
+      <div className="mt-1 text-xl font-medium tabular-nums tracking-tight text-[var(--color-foreground)]">
+        {value}
+      </div>
+    </div>
+  );
 }
 
-function countryFlag(country: string): string {
-  return country === "PT" ? "🇵🇹" : country === "ES" ? "🇪🇸" : country;
+/** Draft vs final, in one place — the table cell and the mobile card would otherwise drift. */
+function StatusBadge({ filing, t }: { filing: TaxFilingRecord; t: (key: string) => string }) {
+  return (
+    <Badge variant={filing.status === "final" ? "default" : "secondary"} className="text-xs">
+      {filing.status === "final" ? t("statusFinal") : t("statusDraft")}
+    </Badge>
+  );
 }
 
 // ── view ───────────────────────────────────────────────────────────────────
 
 export function TaxFilingView() {
   const t = useTranslations("taxFiling");
+  const tForms = useTranslations("forms");
   const toast = useToast();
   const { state } = useApp();
+  const { formatCurrency } = useCurrency();
 
   const [filings, setFilings] = useState<TaxFilingRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showWizard, setShowWizard] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<TaxFilingRecord | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [position, setPosition] = useState<{
+    grossIncome: number;
+    deductibleExpenses: number;
+  } | null>(null);
 
   const fetchFilings = useCallback(async () => {
     setLoading(true);
@@ -71,6 +100,30 @@ export function TaxFilingView() {
   useEffect(() => {
     void fetchFilings();
   }, [fetchFilings]);
+
+  /**
+   * Where this year stands, from the same endpoint the wizard uses to fill its income step.
+   *
+   * Deliberately income and expenses only. Tax due needs a regime, and the regime is a choice the
+   * owner makes in the wizard — guessing one to put a confident number on a compliance screen
+   * would be worse than the blank space this replaces.
+   */
+  const propertyIds = (state.properties ?? []).map((p) => p.id).join(",");
+  useEffect(() => {
+    // The endpoint 400s on an empty `propertyIds`, and a band of zeroes says less than no band.
+    if (!propertyIds) return;
+    let cancelled = false;
+    const year = new Date().getFullYear();
+    void fetch(`/api/tax-filings/income-summary?propertyIds=${propertyIds}&year=${year}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (!cancelled && json?.data) setPosition(json.data);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [propertyIds]);
 
   const handleSaved = () => {
     setShowWizard(false);
@@ -107,8 +160,9 @@ export function TaxFilingView() {
 
   return (
     <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header. `flex-wrap` and a gap because without them the action overlapped the subtitle
+          at 390px — the row had no way to break. */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-[var(--color-foreground)]">{t("title")}</h1>
           <p className="text-sm text-[var(--color-muted-foreground)] mt-1">{t("subtitle")}</p>
@@ -122,83 +176,182 @@ export function TaxFilingView() {
         </Button>
       </div>
 
-      {/* Filing list */}
+      {/* Where this year stands. Facts, not a projection — see the effect above. */}
+      {position && (
+        <section className="space-y-2">
+          <h2 className="mono-label">{t("positionHeading", { year: new Date().getFullYear() })}</h2>
+          {/* Grid, not `flex-1` in a row. Three equal cells across a 390px phone gave each about
+              110px and the figures overlapped — a defect the audit cannot see, because text
+              spilling inside its own container changes no scroll width. Doctrine rule 6: multi
+              column becomes single column below `md`. */}
+          <div className="grid grid-cols-1 border border-[var(--color-inner-border)] bg-[var(--color-surface-solid)] sm:grid-cols-3">
+            <PositionFigure label={t("grossIncome")} value={formatCurrency(position.grossIncome)} />
+            <PositionFigure
+              label={t("deductibleExpenses")}
+              value={formatCurrency(position.deductibleExpenses)}
+            />
+            <PositionFigure
+              label={t("netPosition")}
+              value={formatCurrency(position.grossIncome - position.deductibleExpenses)}
+            />
+          </div>
+          <p className="text-xs text-[var(--color-muted-foreground)]">{t("positionNote")}</p>
+        </section>
+      )}
+
+      {/* Filing list. `RenderTable` rather than a stack of cards, which is what every other
+          record list in the app uses (leases, tenants, rent roll, bank movements) and what
+          carries the doctrine's card fallback below `md`. As cards, each row put its identity
+          at the far left and its figures at the far right with a void between them at 1440px. */}
       {loading ? (
         <div className="text-sm text-[var(--color-muted-foreground)]">{t("loadingIncome")}</div>
-      ) : filings.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center space-y-2">
-            <FileCheck2 className="h-10 w-10 mx-auto text-[var(--color-muted-foreground)]" />
-            <p className="font-medium text-[var(--color-foreground)]">{t("noFilings")}</p>
-            <p className="text-sm text-[var(--color-muted-foreground)]">
-              {t("noFilingsDescription")}
-            </p>
-          </CardContent>
-        </Card>
       ) : (
-        <div className="space-y-2">
-          {filings.map((filing) => (
-            <Card key={filing.id}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    {filing.status === "final" ? (
-                      <FileCheck2 className="h-5 w-5 text-[var(--color-success)]" />
-                    ) : (
-                      <FileEdit className="h-5 w-5 text-[var(--color-muted-foreground)]" />
-                    )}
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-[var(--color-foreground)]">
-                          {countryFlag(filing.country)} {filing.year}
-                        </span>
-                        <Badge
-                          variant={filing.status === "final" ? "default" : "secondary"}
-                          className="text-xs"
-                        >
-                          {filing.status === "final" ? t("statusFinal") : t("statusDraft")}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-[var(--color-muted-foreground)]">
-                        {filing.regime} &middot; {new Date(filing.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-6">
-                    <div className="text-right hidden sm:block">
-                      <p className="text-xs text-[var(--color-muted-foreground)]">
-                        {t("taxDueLabel")}
-                      </p>
-                      <p className="font-semibold text-[var(--color-foreground)]">
-                        {formatCurrency(filing.taxDue)}
-                      </p>
-                    </div>
-                    <div className="text-right hidden sm:block">
-                      <p className="text-xs text-[var(--color-muted-foreground)]">
-                        {t("balanceDueLabel")}
-                      </p>
-                      <p
-                        className={`font-semibold ${filing.balanceDue > 0 ? "text-destructive" : "text-[var(--color-success)]"}`}
-                      >
-                        {formatCurrency(filing.balanceDue)}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setDeleteTarget(filing)}
-                      className="text-[var(--color-muted-foreground)] hover:text-destructive"
-                      aria-label="Delete filing"
-                    >
-                      <Trash2 className="h-4 w-4" aria-hidden="true" />
-                    </Button>
-                  </div>
+        <RenderTable
+          data={filings}
+          rowKey={(filing) => filing.id}
+          cardMode
+          renderCard={(filing) => (
+            <Card>
+              <CardContent className="space-y-2 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-[var(--color-foreground)]">
+                    <span className="mono-label mr-2">{filing.country}</span>
+                    {filing.year}
+                  </span>
+                  <StatusBadge filing={filing} t={t} />
                 </div>
+                <p className="text-xs text-[var(--color-muted-foreground)]">{filing.regime}</p>
+                <div className="flex items-center justify-between gap-4 text-sm">
+                  <span className="text-[var(--color-muted-foreground)]">{t("taxDueLabel")}</span>
+                  <span className="font-semibold tabular-nums text-[var(--color-foreground)]">
+                    {formatCurrency(filing.taxDue)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4 text-sm">
+                  <span className="text-[var(--color-muted-foreground)]">
+                    {t("balanceDueLabel")}
+                  </span>
+                  <span
+                    className={`font-semibold tabular-nums ${filing.balanceDue > 0 ? "text-destructive" : "text-[var(--color-success)]"}`}
+                  >
+                    {formatCurrency(filing.balanceDue)}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDeleteTarget(filing)}
+                  className="w-full"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
+                  {t("delete")}
+                </Button>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          )}
+          emptyState={
+            <Card>
+              <CardContent className="space-y-2 p-12 text-center">
+                <FileCheck2 className="mx-auto h-10 w-10 text-[var(--color-muted-foreground)]" />
+                <p className="font-medium text-[var(--color-foreground)]">{t("noFilings")}</p>
+                <p className="text-sm text-[var(--color-muted-foreground)]">
+                  {t("noFilingsDescription")}
+                </p>
+              </CardContent>
+            </Card>
+          }
+          columns={[
+            {
+              key: "year",
+              header: t("year"),
+              cell: (filing) => (
+                <span className="flex items-center gap-2 font-medium text-[var(--color-foreground)]">
+                  {filing.status === "final" ? (
+                    <FileCheck2 className="h-4 w-4 text-[var(--color-success)]" aria-hidden />
+                  ) : (
+                    <FileEdit
+                      className="h-4 w-4 text-[var(--color-muted-foreground)]"
+                      aria-hidden
+                    />
+                  )}
+                  {filing.year}
+                </span>
+              ),
+            },
+            {
+              key: "country",
+              header: t("country"),
+              // The jurisdiction is a code, and `.mono-label` is the design system's voice for
+              // codes. It replaces an emoji flag — the only place in the app that used one.
+              cell: (filing) => <span className="mono-label">{filing.country}</span>,
+            },
+            {
+              key: "regime",
+              header: t("regime"),
+              cell: (filing) => (
+                <span className="text-[var(--color-muted-foreground)]">{filing.regime}</span>
+              ),
+            },
+            {
+              key: "status",
+              // `forms.status`, not `taxFiling.statusDraft`. A column header names the field, and
+              // the first draft of this used one of the field's own VALUES — so the column of
+              // Draft/Final badges sat under a heading that said "Draft".
+              header: tForms("status"),
+              cell: (filing) => <StatusBadge filing={filing} t={t} />,
+            },
+            {
+              key: "taxDue",
+              header: t("taxDueLabel"),
+              headerClassName: "text-right",
+              cellClassName: "text-right",
+              cell: (filing) => (
+                <span className="font-semibold tabular-nums text-[var(--color-foreground)]">
+                  {formatCurrency(filing.taxDue)}
+                </span>
+              ),
+            },
+            {
+              key: "balanceDue",
+              header: t("balanceDueLabel"),
+              headerClassName: "text-right",
+              cellClassName: "text-right",
+              cell: (filing) => (
+                <span
+                  className={`font-semibold tabular-nums ${filing.balanceDue > 0 ? "text-destructive" : "text-[var(--color-success)]"}`}
+                >
+                  {formatCurrency(filing.balanceDue)}
+                </span>
+              ),
+            },
+            {
+              key: "created",
+              header: t("createdAt"),
+              cell: (filing) => (
+                <span className="text-xs text-[var(--color-muted-foreground)]">
+                  {new Date(filing.createdAt).toLocaleDateString()}
+                </span>
+              ),
+            },
+            {
+              key: "actions",
+              header: "",
+              cellClassName: "text-right",
+              cell: (filing) => (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setDeleteTarget(filing)}
+                  className="text-[var(--color-muted-foreground)] hover:text-destructive"
+                  // Was the hardcoded English string "Delete filing".
+                  aria-label={t("deleteFilingLabel", { year: filing.year })}
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              ),
+            },
+          ]}
+        />
       )}
 
       {/* Wizard dialog */}

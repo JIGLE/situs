@@ -2195,7 +2195,11 @@
     "noPropertySelected": "Por favor selecione pelo menos um imóvel",
     "loadingIncome": "A carregar dados de rendimento...",
     "portugal": "Portugal",
-    "spain": "Espanha"
+    "spain": "Espanha",
+    "positionHeading": "{year} até agora",
+    "positionNote": "Rendimentos e despesas registados este ano. O imposto devido resulta de criar uma declaração.",
+    "netPosition": "Líquido",
+    "deleteFilingLabel": "Eliminar a declaração de {year}"
   },
   "paymentMatrix": {
     "title": "Matriz de Acompanhamento de Pagamentos",

@@ -2195,7 +2195,11 @@
     "noPropertySelected": "Please select at least one property",
     "loadingIncome": "Loading income data...",
     "portugal": "Portugal",
-    "spain": "Spain"
+    "spain": "Spain",
+    "positionHeading": "{year} so far",
+    "positionNote": "Income and expenses recorded this year. Tax due comes from running a filing.",
+    "netPosition": "Net",
+    "deleteFilingLabel": "Delete the {year} filing"
   },
   "paymentMatrix": {
     "title": "Payment Tracking Matrix",

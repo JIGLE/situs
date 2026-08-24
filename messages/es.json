@@ -2195,7 +2195,11 @@
     "noPropertySelected": "Por favor seleccione al menos una propiedad",
     "loadingIncome": "Cargando datos de ingresos...",
     "portugal": "Portugal",
-    "spain": "España"
+    "spain": "España",
+    "positionHeading": "{year} hasta ahora",
+    "positionNote": "Ingresos y gastos registrados este año. El impuesto a pagar resulta de crear una declaración.",
+    "netPosition": "Neto",
+    "deleteFilingLabel": "Eliminar la declaración de {year}"
   },
   "paymentMatrix": {
     "title": "Matriz de Seguimiento de Pagos",
