@@ -65,6 +65,9 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
   const t = useTranslations("tenants");
   const tForms = useTranslations("forms");
   const tActions = useTranslations("actions");
+  // `status` already carries paid / pending / overdue in all four catalogues — the chip below was
+  // printing the raw enum instead, so an otherwise fully Portuguese modal said "Paid".
+  const tStatus = useTranslations("status");
   const confirmDialog = useConfirmDialog();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -269,13 +272,13 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
             {!isEditing && (
               <div className="flex items-center gap-2 shrink-0">
                 <span
-                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${PAYMENT_STATUS_STYLES[tenant.paymentStatus] ?? ""}`}
+                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${PAYMENT_STATUS_STYLES[tenant.paymentStatus] ?? ""}`}
                 >
-                  {tenant.paymentStatus}
+                  {tStatus(tenant.paymentStatus)}
                 </span>
                 {isLeaseExpiringSoon && leaseExpiryDays !== null && (
                   <span className="inline-flex items-center rounded-full border border-[var(--color-warning)]/30 bg-[var(--color-warning-muted)] px-2.5 py-0.5 text-xs font-semibold text-[var(--color-warning)]">
-                    {leaseExpiryDays}d left
+                    {t("leaseExpiresInDays", { days: leaseExpiryDays })}
                   </span>
                 )}
               </div>

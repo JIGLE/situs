@@ -2447,7 +2447,8 @@
       "bankMovements": "Bank movements",
       "receipts": "Receipts",
       "taxLog": "Tax log"
-    }
+    },
+    "leaseExpiresInDays": "{days}d left"
   },
   "contacts": {
     "addVendor": "Add Vendor",

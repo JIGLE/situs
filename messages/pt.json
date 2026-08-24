@@ -2447,7 +2447,8 @@
       "bankMovements": "Movimentos bancários",
       "receipts": "Recibos",
       "taxLog": "Registo fiscal"
-    }
+    },
+    "leaseExpiresInDays": "faltam {days}d"
   },
   "contacts": {
     "addVendor": "Adicionar fornecedor",
