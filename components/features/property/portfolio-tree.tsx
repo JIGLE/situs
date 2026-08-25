@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 import { COUNTRY_THEMES, isCountryCode } from "@/lib/design/country-themes";
@@ -55,7 +55,27 @@ interface CountryNode {
   assetCount: number;
 }
 
-function countryLabel(code: string): string {
+/**
+ * The country's name in the reader's language.
+ *
+ * This used to return `COUNTRY_THEMES[code].name`, which is an English string in a 28-country
+ * table — so the portfolio tree said "Spain" to a Portuguese reader, and would have said
+ * "Germany" and "France" to them too. Translating the table would mean 28 names times four
+ * catalogues, maintained by hand, growing with every country added.
+ *
+ * `Intl.DisplayNames` already knows them, in every locale the app has and every one it might
+ * add: ES renders as Espanha / España / Spagna / Spain with nothing to maintain. It even covers
+ * the table's one non-ISO entry — EU comes back as "União Europeia".
+ *
+ * The table's `name` stays as the fallback for a code the platform does not recognise.
+ */
+function countryLabel(code: string, locale: string): string {
+  try {
+    const display = new Intl.DisplayNames([locale], { type: "region" }).of(code);
+    if (display && display !== code) return display;
+  } catch {
+    // Unsupported locale or a code that is not a region — fall through to the table.
+  }
   return isCountryCode(code) ? COUNTRY_THEMES[code].name : code;
 }
 
@@ -69,6 +89,7 @@ export function PortfolioTree({
   highlightedPropertyId,
 }: PortfolioTreeProps): React.ReactElement {
   const t = useTranslations("portfolioTree");
+  const locale = useLocale();
 
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set());
   const toggleNode = useCallback((key: string) => {
@@ -144,13 +165,13 @@ export function PortfolioTree({
           .sort((a, b) => a.label.localeCompare(b.label));
         return {
           code,
-          label: countryLabel(code),
+          label: countryLabel(code, locale),
           clusters: clusterList,
           assetCount: clusterList.reduce((sum, c) => sum + c.assets.length, 0),
         };
       })
       .sort((a, b) => a.label.localeCompare(b.label));
-  }, [properties, buildings, tenants, maintenance, leases, t]);
+  }, [properties, buildings, tenants, maintenance, leases, t, locale]);
 
   if (properties.length === 0) {
     return (
