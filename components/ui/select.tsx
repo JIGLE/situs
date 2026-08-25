@@ -17,12 +17,25 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-10 w-full items-center justify-between rounded-md border border-[var(--color-border)] bg-[var(--color-input)] px-3 py-2 text-sm shadow-sm transition-all duration-200 ring-offset-background max-md:min-h-11",
+      "flex h-10 w-full items-center justify-between gap-2 overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-input)] px-3 py-2 text-sm shadow-sm transition-all duration-200 ring-offset-background max-md:min-h-11",
       "placeholder:text-[var(--color-muted-foreground)]",
       "focus:outline-none focus:ring-2 focus:ring-[var(--color-focus)] focus:ring-offset-2 focus:border-[var(--color-focus)]",
       "hover:border-[var(--color-border-hover)] hover:shadow-md",
       "disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[var(--color-surface-disabled)]",
-      "[&>span]:line-clamp-1",
+      // `truncate`, not `line-clamp-1`, and `overflow-hidden` on the trigger itself.
+      //
+      // A label too long for the box was wrapping and painting the overflow *outside* the
+      // border: on Finances at 1440 the state filter read "Todos os…" inside the control with
+      // "Estados" sitting loose underneath it. `h-10` fixes the height, so a second line has
+      // nowhere to go but out, and nothing was clipping it.
+      //
+      // The cause is not this file — it is `w-32` and friends at a dozen call sites, widths
+      // eyeballed against English ("All Status") and then handed Portuguese ("Todos os
+      // Estados"). That is the same trap `CLAUDE.md` records for tab bars: a number that fits
+      // in one locale is not a number that fits. Rather than re-measure twelve widths in four
+      // languages, the primitive now guarantees a too-long label truncates on one line inside
+      // its own border, which is the behaviour every one of those call sites assumed it had.
+      "[&>span]:min-w-0 [&>span]:truncate",
       className,
     )}
     {...props}

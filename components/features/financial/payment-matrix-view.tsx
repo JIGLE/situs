@@ -213,8 +213,12 @@ export function PaymentMatrixView(): React.ReactElement {
             value={statusFilter}
             onValueChange={(v: typeof statusFilter) => setStatusFilter(v)}
           >
-            <SelectTrigger className="w-32">
-              <Filter className="h-4 w-4 mr-2" />
+            {/* `min-w-32 w-auto`, not `w-32`. 128px was measured against English ("All Status")
+                and Portuguese ("Todos os Estados") does not fit — it truncated to "Todos o…",
+                which tells a reader nothing about what is filtered. A floor plus content sizing
+                keeps the control compact when the label is short and legible when it is not. */}
+            <SelectTrigger className="min-w-32 w-auto">
+              <Filter className="h-4 w-4 shrink-0" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -230,7 +234,7 @@ export function PaymentMatrixView(): React.ReactElement {
             value={selectedYear.toString()}
             onValueChange={(value) => setSelectedYear(parseInt(value))}
           >
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="min-w-24 w-auto">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

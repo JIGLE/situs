@@ -302,8 +302,11 @@ export function FinancialsView(): React.ReactElement {
         <div className="space-y-6">
           <PageHeader title="Accounts" description="Track income, expenses, and cash flow">
             <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-[150px]" aria-label={t("timeRange")}>
-                <CalendarIcon className="w-4 h-4 mr-2" />
+              {/* Content-sized with a floor. At a fixed 150px the value overflowed its own box
+                  by 3px — enough for the audit to count it as an unreachable clip, and a sign
+                  the width was guessed rather than measured. */}
+              <SelectTrigger className="min-w-[150px] w-auto" aria-label={t("timeRange")}>
+                <CalendarIcon className="w-4 h-4 shrink-0" />
                 <SelectValue placeholder={t("timeRange")} />
               </SelectTrigger>
               <SelectContent>
