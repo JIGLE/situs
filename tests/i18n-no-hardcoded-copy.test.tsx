@@ -27,9 +27,51 @@ import { describe, it, expect, vi } from "vitest";
 import { renderWithProviders, screen } from "@/tests/helpers/render-with-providers";
 import { ExportButton } from "@/components/ui/export-button";
 import { AuditTrail } from "@/components/shared/audit-trail";
+import { FinancialsView } from "@/components/features/financial/financials-view";
 
 vi.mock("@/lib/contexts/currency-context", () => ({
-  useCurrency: () => ({ formatCurrency: (n: number) => `€${n.toFixed(2)}` }),
+  useCurrency: () => ({
+    formatCurrency: (n: number) => `€${n.toFixed(2)}`,
+    currencySymbol: "€",
+  }),
+}));
+
+vi.mock("@/lib/contexts/toast-context", () => ({
+  useToast: () => ({ success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() }),
+}));
+
+const TODAY = new Date().toISOString().slice(0, 10);
+
+vi.mock("@/lib/contexts/app-context", () => ({
+  useApp: () => ({
+    addExpense: vi.fn(),
+    addReceipt: vi.fn(),
+    state: {
+      loading: false,
+      properties: [{ id: "p1", name: "Rua A, 1" }],
+      receipts: [
+        {
+          id: "r1",
+          number: "REC-1",
+          date: TODAY,
+          amount: 800,
+          status: "paid",
+          type: "rent",
+          tenantName: "Ana",
+          propertyName: "Rua A, 1",
+        },
+      ],
+      expenses: [
+        {
+          id: "e1",
+          date: TODAY,
+          amount: 120,
+          category: "condominium_fees",
+          propertyName: "Rua A, 1",
+        },
+      ],
+    },
+  }),
 }));
 
 describe("user-visible copy comes from the catalogue, not from literals", () => {
@@ -62,5 +104,31 @@ describe("user-visible copy comes from the catalogue, not from literals", () => 
     // parameter list, so any caller that did not pass its own copy printed "Audit trail" into a
     // Portuguese screen.
     expect(screen.getByText("Registo de auditoria")).toBeInTheDocument();
+  });
+
+  it("renders the Finances tax tab in Portuguese", () => {
+    // This whole view rendered in English inside the Portuguese app for as long as it has
+    // existed: a page title reading literally "Accounts", "Total Income", "This Month",
+    // "No income records found" — while `financial.*` held correct Portuguese for all of them
+    // and the component simply never called `t` for them. It was found by reading a screenshot,
+    // which is the failure mode this file exists to end.
+    renderWithProviders(<FinancialsView />, { initialLocale: "pt" });
+
+    // The section heading, and the inline stat line that replaced the three tiles.
+    expect(screen.getByRole("heading", { name: "Financeiro" })).toBeInTheDocument();
+    expect(screen.getByText(/Receita Total/)).toBeInTheDocument();
+
+    // The two card headings that used to read "Income & Receipts" and "Expenses".
+    expect(screen.getByText("Receitas e recibos")).toBeInTheDocument();
+    expect(screen.getByText("Despesas")).toBeInTheDocument();
+
+    // The primary action. (The range control's options live inside a closed Radix Select and
+    // are not in the tree until it opens, so they are not asserted here.)
+    expect(screen.getByRole("button", { name: /Adicionar Despesa/ })).toBeInTheDocument();
+
+    // Row-level copy, which is where the leaks hid longest: the status pill printed the raw
+    // enum ("paid") and the category printed a de-underscored enum ("Condominium Fees").
+    expect(screen.getByText("Pago")).toBeInTheDocument();
+    expect(screen.getByText("Quotas de Condomínio")).toBeInTheDocument();
   });
 });

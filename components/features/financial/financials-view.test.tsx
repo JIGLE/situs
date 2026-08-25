@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderWithProviders as render, screen } from "@/tests/helpers/render-with-providers";
+import enMessages from "@/messages/en.json";
 import { FinancialsView } from "./financials-view";
 
 // Mock the currency hook
@@ -7,6 +8,7 @@ vi.mock("@/lib/contexts/currency-context", () => ({
   useCurrency: () => ({
     formatCurrency: (amount: number | undefined) =>
       amount !== undefined ? `$${amount.toFixed(2)}` : "$0.00",
+    currencySymbol: "$",
   }),
 }));
 
@@ -61,9 +63,20 @@ vi.mock("@/lib/hooks/use-form-dialog", () => ({
 }));
 
 describe("FinancialsView", () => {
+  /**
+   * Assertions read the catalogue rather than repeating its English.
+   *
+   * This test used to expect the literal `/Accounts/` — and passed for as long as the view
+   * hardcoded the word "Accounts", because a literal assertion against a literal render agrees
+   * with itself. It was not neutral about the bug; it pinned it. Comparing against
+   * `enMessages.financial.*` fails the moment rendered copy and catalogue disagree, and
+   * `tests/i18n-no-hardcoded-copy.test.tsx` covers the case where they agree in English but the
+   * component never asked the catalogue at all.
+   */
   it("renders empty state when no data", () => {
     render(<FinancialsView />);
-    expect(screen.getByText(/Accounts/)).toBeDefined();
-    expect(screen.getByText(/No financial data yet/)).toBeDefined();
+    expect(screen.getByRole("heading", { name: enMessages.financial.title })).toBeInTheDocument();
+    expect(screen.getByText(enMessages.financial.noFinancialData)).toBeInTheDocument();
+    expect(screen.getByText(enMessages.financial.noFinancialDataDesc)).toBeInTheDocument();
   });
 });
