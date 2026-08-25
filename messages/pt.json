@@ -2624,6 +2624,8 @@
     "retrying": "A tentar novamente…",
     "auditTrailEmpty": "Os inícios de sessão, exportações e alterações às definições aparecerão aqui.",
     "themeLight": "Claro",
-    "themeDark": "Escuro"
+    "themeDark": "Escuro",
+    "taxConnectorsEmpty": "Ainda sem conectores fiscais — é criado automaticamente na primeira vez que emitir um recibo de renda através do fluxo fiscal de um país.",
+    "taxConnectorsLoadFailed": "Não foi possível carregar os conectores fiscais. Tente novamente."
   }
 }

@@ -28,6 +28,7 @@ import { renderWithProviders, screen } from "@/tests/helpers/render-with-provide
 import { ExportButton } from "@/components/ui/export-button";
 import { AuditTrail } from "@/components/shared/audit-trail";
 import { FinancialsView } from "@/components/features/financial/financials-view";
+import { TaxConnectorDashboard } from "@/components/features/financial/tax-connector-dashboard";
 
 vi.mock("@/lib/contexts/currency-context", () => ({
   useCurrency: () => ({
@@ -130,5 +131,24 @@ describe("user-visible copy comes from the catalogue, not from literals", () => 
     // enum ("paid") and the category printed a de-underscored enum ("Condominium Fees").
     expect(screen.getByText("Pago")).toBeInTheDocument();
     expect(screen.getByText("Quotas de Condomínio")).toBeInTheDocument();
+  });
+
+  it("renders the tax-connector empty state in Portuguese", async () => {
+    // Mounted directly above `FinancialsView` in the same tab panel, so it was the last English
+    // sentence left on an otherwise translated screen — visible in the capture that prompted
+    // this work.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ data: { connectors: [], logs: {} } }),
+        }),
+      ),
+    );
+
+    renderWithProviders(<TaxConnectorDashboard />, { initialLocale: "pt" });
+
+    expect(await screen.findByText(/Ainda sem conectores fiscais/)).toBeInTheDocument();
   });
 });

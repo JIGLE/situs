@@ -2624,6 +2624,8 @@
     "retrying": "Trying again…",
     "auditTrailEmpty": "Sign-ins, exports and settings changes will appear here.",
     "themeLight": "Light",
-    "themeDark": "Dark"
+    "themeDark": "Dark",
+    "taxConnectorsEmpty": "No tax connectors yet — one is created automatically the first time you emit a rent receipt through a country's fiscal workflow.",
+    "taxConnectorsLoadFailed": "Couldn't load the tax connectors. Try again."
   }
 }

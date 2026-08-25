@@ -2624,6 +2624,8 @@
     "retrying": "Reintentando…",
     "auditTrailEmpty": "Los inicios de sesión, exportaciones y cambios de configuración aparecerán aquí.",
     "themeLight": "Claro",
-    "themeDark": "Oscuro"
+    "themeDark": "Oscuro",
+    "taxConnectorsEmpty": "Aún no hay conectores fiscales: se crea automáticamente la primera vez que emitas un recibo de alquiler a través del flujo fiscal de un país.",
+    "taxConnectorsLoadFailed": "No se han podido cargar los conectores fiscales. Inténtalo de nuevo."
   }
 }
