@@ -1,8 +1,20 @@
 name: CI
 
 on:
+  # `types` is spelled out because of `labeled`. The default set is
+  # `opened, synchronize, reopened`, and the `e2e` job below is gated on a `run-e2e` label — so
+  # with the default set, applying that label does nothing at all. The only way to reach E2E was
+  # to label the PR *before* its final push and have `synchronize` notice, which nobody does and
+  # nothing documents. The label did not even exist in the repository until this commit created
+  # it, which is the tell: the job has reported `skipped` on every pull request it has ever run
+  # against.
+  #
+  # Same family as the six overlay primitives in this PR that shipped Tailwind classes matching
+  # no utility, and the seven `scripts/check-*` nothing invoked. A gate that cannot fire looks
+  # exactly like a gate that passes.
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, labeled]
   push:
     branches: [main]
   workflow_dispatch:
