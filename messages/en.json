@@ -2639,5 +2639,14 @@
     "themeDark": "Dark",
     "taxConnectorsEmpty": "No tax connectors yet — one is created automatically the first time you emit a rent receipt through a country's fiscal workflow.",
     "taxConnectorsLoadFailed": "Couldn't load the tax connectors. Try again."
+  },
+  "rentPeriodStatus": {
+    "upcoming": "Upcoming",
+    "due": "Due",
+    "overdue": "Overdue",
+    "partially_paid": "Partially paid",
+    "paid": "Paid",
+    "paid_late": "Paid late",
+    "waived": "Waived"
   }
 }

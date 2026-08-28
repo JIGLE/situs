@@ -2639,5 +2639,14 @@
     "themeDark": "Oscuro",
     "taxConnectorsEmpty": "Aún no hay conectores fiscales: se crea automáticamente la primera vez que emitas un recibo de alquiler a través del flujo fiscal de un país.",
     "taxConnectorsLoadFailed": "No se han podido cargar los conectores fiscales. Inténtalo de nuevo."
+  },
+  "rentPeriodStatus": {
+    "upcoming": "Próximo",
+    "due": "A pagar",
+    "overdue": "En mora",
+    "partially_paid": "Parcialmente pagado",
+    "paid": "Pagado",
+    "paid_late": "Pagado con retraso",
+    "waived": "Condonado"
   }
 }

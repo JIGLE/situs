@@ -2639,5 +2639,14 @@
     "themeDark": "Scuro",
     "taxConnectorsEmpty": "Ancora nessun connettore fiscale — viene creato automaticamente la prima volta che emetti una ricevuta di affitto tramite il flusso fiscale di un paese.",
     "taxConnectorsLoadFailed": "Impossibile caricare i connettori fiscali. Riprova."
+  },
+  "rentPeriodStatus": {
+    "upcoming": "In arrivo",
+    "due": "Da pagare",
+    "overdue": "In ritardo",
+    "partially_paid": "Parzialmente pagato",
+    "paid": "Pagato",
+    "paid_late": "Pagato in ritardo",
+    "waived": "Condonato"
   }
 }

@@ -2639,5 +2639,14 @@
     "themeDark": "Escuro",
     "taxConnectorsEmpty": "Ainda sem conectores fiscais — é criado automaticamente na primeira vez que emitir um recibo de renda através do fluxo fiscal de um país.",
     "taxConnectorsLoadFailed": "Não foi possível carregar os conectores fiscais. Tente novamente."
+  },
+  "rentPeriodStatus": {
+    "upcoming": "Por vencer",
+    "due": "A pagar",
+    "overdue": "Em atraso",
+    "partially_paid": "Parcialmente pago",
+    "paid": "Pago",
+    "paid_late": "Pago com atraso",
+    "waived": "Perdoado"
   }
 }

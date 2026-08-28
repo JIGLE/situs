@@ -58,14 +58,7 @@ import { ContactsView } from "@/components/features/contacts/contacts-view";
 import { Tabs, TabsContent, TabsList, TabsMobileSelect, TabsTrigger } from "@/components/ui/tabs";
 import { useTabPersistence } from "@/lib/hooks/use-tab-persistence";
 import { ListChecks, CalendarDays, Wrench as WrenchIcon, Camera } from "lucide-react";
-
-/** Ticket status is stored snake_case; the catalog keys it camelCase under `maintenance`. */
-const STATUS_LABEL_KEY = {
-  open: "statusOpen",
-  in_progress: "statusInProgress",
-  resolved: "statusResolved",
-  closed: "statusClosed",
-} as const;
+import { TICKET_STATUS_KEY as STATUS_LABEL_KEY } from "@/lib/utils/maintenance-labels";
 
 /**
  * Mobile fallback for a ticket row (doctrine rule 3, card strategy). The table's eight columns
