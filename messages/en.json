@@ -1330,7 +1330,8 @@
     "expiresInDays": "Expires in {days}d",
     "notFound": "Document not found",
     "loadFailed": "Couldn't open this document",
-    "downloadFailed": "Download failed"
+    "downloadFailed": "Download failed",
+    "downloadShort": "Download"
   },
   "notifications": {
     "title": "Notifications",

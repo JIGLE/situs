@@ -91,13 +91,18 @@ export function DocumentDetailPanel({ documentId }: { documentId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3 min-w-0">
+      {/* Stacked below `sm`. The document's name is how you know which document you opened, and
+          `truncate` on a phone hides it behind a tooltip no touch device can show — the same
+          reasoning that took `clippedContainers` to zero everywhere else. Measured at 390px it
+          had 158px for a 225px filename even after the button label was shortened, so the row
+          gives the name the full width and the action takes the line below it. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="flex flex-1 items-start gap-3 min-w-0">
           <div className="rounded-lg bg-[var(--color-muted)] p-2 shrink-0">
             <Icon className="h-6 w-6" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold leading-none tracking-tight text-[var(--color-foreground)] truncate">
+            <h2 className="text-lg font-semibold leading-tight tracking-tight text-[var(--color-foreground)] break-words sm:truncate sm:leading-none">
               {doc.name}
             </h2>
             <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -113,8 +118,18 @@ export function DocumentDetailPanel({ documentId }: { documentId: string }) {
             </div>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={handleDownload} className="shrink-0">
-          <Download className="h-4 w-4 mr-1" /> {t("download")}
+        {/* The verb alone, with the full phrase as the accessible name. `documents.download`
+            is "Transferir documento" in Portuguese — long enough that this button squeezed the
+            title beside it down to 79px of a 146px filename, measured. The visible word is
+            contained in the accessible name, which is what WCAG 2.5.3 asks for. */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleDownload}
+          aria-label={t("download")}
+          className="self-start shrink-0"
+        >
+          <Download className="h-4 w-4 mr-1" /> {t("downloadShort")}
         </Button>
       </div>
 

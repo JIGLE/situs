@@ -1330,7 +1330,8 @@
     "expiresInDays": "Caduca en {days} d",
     "notFound": "Documento no encontrado",
     "loadFailed": "No se pudo abrir este documento",
-    "downloadFailed": "La descarga ha fallado"
+    "downloadFailed": "La descarga ha fallado",
+    "downloadShort": "Descargar"
   },
   "notifications": {
     "title": "Notificaciones",
