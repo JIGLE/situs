@@ -830,7 +830,11 @@
     "modelo179Property": "Imóvel",
     "modelo179Period": "Período",
     "modelo179Actions": "Ações",
-    "modelo179MarkSubmitted": "Marcar como submetido"
+    "modelo179MarkSubmitted": "Marcar como submetido",
+    "modelo179DialogTitle": "Marcar como submetido à AT",
+    "modelo179DialogDescription": "Indique a referência da AT para a submissão do Modelo 179 de {tenant} — {property} ({year}).",
+    "modelo179ATRefPlaceholder": "ex.: AT2025-XXXXXXXX",
+    "modelo179Saving": "A guardar…"
   },
   "tax": {
     "title": "Cálculo de Impostos",
@@ -2689,5 +2693,22 @@
     "countExpired": "{count} expirados",
     "countCritical": "{count} críticos",
     "countWarning": "{count} em atenção"
+  },
+  "authError": {
+    "title": "Não foi possível iniciar sessão",
+    "tryAgain": "Tentar novamente",
+    "goHome": "Ir para a página inicial",
+    "details": "Detalhes",
+    "codeLabel": "Código",
+    "accessDeniedTitle": "Esta conta não tem permissão para iniciar sessão",
+    "accessDeniedBody": "O registo está fechado nesta instância, pelo que só podem entrar as contas autorizadas pelo proprietário. Tentar de novo não muda nada — peça a quem gere esta instância que adicione o seu endereço.",
+    "configurationTitle": "Esta instância ainda não está configurada para início de sessão",
+    "configurationBody": "O fornecedor de autenticação está em falta ou mal configurado no servidor. Tentar de novo não ajuda enquanto isso não for corrigido.",
+    "notLinkedTitle": "Esse email já iniciou sessão de outra forma",
+    "notLinkedBody": "Já existe uma conta com este endereço criada por outro método de início de sessão. Use o método com que se registou ou peça ao proprietário da instância para os associar.",
+    "verificationTitle": "Esse link de acesso expirou",
+    "verificationBody": "Os links de acesso só podem ser usados uma vez e expiram rapidamente. Peça um novo e abra-o de imediato.",
+    "genericTitle": "Algo correu mal ao iniciar sessão",
+    "genericBody": "Normalmente é temporário. Tente de novo e, se continuar a acontecer, indique o código abaixo a quem gere esta instância."
   }
 }

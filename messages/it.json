@@ -830,7 +830,11 @@
     "modelo179Property": "Immobile",
     "modelo179Period": "Periodo",
     "modelo179Actions": "Azioni",
-    "modelo179MarkSubmitted": "Segna come inviato"
+    "modelo179MarkSubmitted": "Segna come inviato",
+    "modelo179DialogTitle": "Segna come inviato all'AT",
+    "modelo179DialogDescription": "Inserisci il riferimento AT per l'invio del Modelo 179 di {tenant} — {property} ({year}).",
+    "modelo179ATRefPlaceholder": "es. AT2025-XXXXXXXX",
+    "modelo179Saving": "Salvataggio…"
   },
   "tax": {
     "title": "Calcolo imposte",
@@ -2689,5 +2693,22 @@
     "countExpired": "{count} scaduti",
     "countCritical": "{count} critici",
     "countWarning": "{count} in attenzione"
+  },
+  "authError": {
+    "title": "Non siamo riusciti ad autenticarti",
+    "tryAgain": "Riprova",
+    "goHome": "Vai alla pagina iniziale",
+    "details": "Dettagli",
+    "codeLabel": "Codice",
+    "accessDeniedTitle": "Questo account non può accedere",
+    "accessDeniedBody": "Le registrazioni sono chiuse su questa istanza, quindi possono accedere solo gli account autorizzati dal proprietario. Riprovare non cambierà nulla: chiedi a chi gestisce l'istanza di aggiungere il tuo indirizzo.",
+    "configurationTitle": "Questa istanza non è ancora configurata per l'accesso",
+    "configurationBody": "Il provider di autenticazione manca o è configurato male sul server. Riprovare non servirà finché non viene corretto.",
+    "notLinkedTitle": "Quell'email ha già effettuato l'accesso in altro modo",
+    "notLinkedBody": "Esiste già un account con questo indirizzo creato con un altro metodo di accesso. Usa il metodo con cui ti sei registrato o chiedi al proprietario di collegarli.",
+    "verificationTitle": "Quel link di accesso è scaduto",
+    "verificationBody": "I link di accesso sono monouso e scadono in fretta. Richiedine uno nuovo e aprilo subito.",
+    "genericTitle": "Qualcosa è andato storto durante l'accesso",
+    "genericBody": "Di solito è temporaneo. Riprova e, se continua, comunica il codice qui sotto a chi gestisce questa istanza."
   }
 }

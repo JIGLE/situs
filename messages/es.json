@@ -830,7 +830,11 @@
     "modelo179Property": "Inmueble",
     "modelo179Period": "Periodo",
     "modelo179Actions": "Acciones",
-    "modelo179MarkSubmitted": "Marcar como presentado"
+    "modelo179MarkSubmitted": "Marcar como presentado",
+    "modelo179DialogTitle": "Marcar como presentado a la AT",
+    "modelo179DialogDescription": "Introduzca la referencia de la AT para la presentación del Modelo 179 de {tenant} — {property} ({year}).",
+    "modelo179ATRefPlaceholder": "p. ej. AT2025-XXXXXXXX",
+    "modelo179Saving": "Guardando…"
   },
   "tax": {
     "title": "Cálculo de Impuestos",
@@ -2689,5 +2693,22 @@
     "countExpired": "{count} expirados",
     "countCritical": "{count} críticos",
     "countWarning": "{count} en atención"
+  },
+  "authError": {
+    "title": "No hemos podido iniciar tu sesión",
+    "tryAgain": "Intentar de nuevo",
+    "goHome": "Ir a la página de inicio",
+    "details": "Detalles",
+    "codeLabel": "Código",
+    "accessDeniedTitle": "Esta cuenta no tiene permiso para iniciar sesión",
+    "accessDeniedBody": "El registro está cerrado en esta instancia, así que solo pueden entrar las cuentas autorizadas por el propietario. Reintentar no cambiará nada: pide a quien gestiona esta instancia que añada tu dirección.",
+    "configurationTitle": "Esta instancia aún no está configurada para el inicio de sesión",
+    "configurationBody": "El proveedor de autenticación falta o está mal configurado en el servidor. Reintentar no ayudará hasta que se corrija.",
+    "notLinkedTitle": "Ese correo ya inició sesión de otra forma",
+    "notLinkedBody": "Ya existe una cuenta con esta dirección creada con otro método de inicio de sesión. Usa el método con el que te registraste o pide al propietario que los vincule.",
+    "verificationTitle": "Ese enlace de acceso ha caducado",
+    "verificationBody": "Los enlaces de acceso solo pueden usarse una vez y caducan pronto. Solicita uno nuevo y ábrelo enseguida.",
+    "genericTitle": "Algo ha ido mal al iniciar sesión",
+    "genericBody": "Suele ser temporal. Inténtalo de nuevo y, si sigue ocurriendo, indica el código de abajo a quien gestiona esta instancia."
   }
 }
