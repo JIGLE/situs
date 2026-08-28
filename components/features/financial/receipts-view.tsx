@@ -45,6 +45,7 @@ import { EmptyStateIllustration } from "@/components/ui/empty-state-illustration
 import { useApp } from "@/lib/contexts/app-context";
 import { Receipt } from "@/lib/types";
 import { receiptSchema, type ReceiptFormData } from "@/lib/schemas/receipt.schema";
+import { RECEIPT_TYPE_KEY } from "@/lib/utils/receipt-labels";
 import { useToast } from "@/lib/contexts/toast-context";
 import { useFormDialog } from "@/lib/hooks/use-form-dialog";
 import { usePortalAccess } from "@/lib/contexts/portal-context";
@@ -86,13 +87,7 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
     const tActions = useTranslations("actions");
     const locale = useLocale();
     /** The stored `type` is a database enum; its display name lives in the catalog. */
-    const receiptTypeLabel = (type: Receipt["type"]) =>
-      ({
-        rent: t("typeRent"),
-        deposit: t("typeDeposit"),
-        maintenance: t("typeMaintenance"),
-        other: t("typeOther"),
-      })[type] ?? type;
+    const receiptTypeLabel = (type: Receipt["type"]) => t(RECEIPT_TYPE_KEY[type]);
     const { formatCurrency, currencySymbol } = useCurrency();
     const confirmDialog = useConfirmDialog();
     const [generatingPdf, setGeneratingPdf] = useState<string | null>(null);
