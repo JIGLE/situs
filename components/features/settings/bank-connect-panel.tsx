@@ -125,14 +125,21 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
       setLoadingBanks(true);
       setError(null);
       try {
+        // Not `{ data: { … } }`, for the same reason as `connect` below: the route replies
+        // `createSuccessResponse({ providerKey, institutions, totalAvailable })` and `apiFetch`
+        // has already returned the envelope's `data` field. Reading `.data` again produced
+        // `undefined`, so the picker listed zero banks and reported "0 available" — meaning
+        // this failed one step BEFORE the connect button did, and nobody could reach the
+        // button to discover that it was broken too.
         const body = await apiFetch<{
-          data?: { institutions?: Institution[]; totalAvailable?: number };
+          institutions?: Institution[];
+          totalAvailable?: number;
         }>(
           `/api/bank/institutions?country=${encodeURIComponent(code)}` +
             `&provider=${encodeURIComponent(providersConfigured[0] ?? "")}`,
         );
-        setInstitutions(body?.data?.institutions ?? []);
-        setTotalAvailable(body?.data?.totalAvailable ?? 0);
+        setInstitutions(body?.institutions ?? []);
+        setTotalAvailable(body?.totalAvailable ?? 0);
       } catch {
         setInstitutions([]);
         // Back to "unknown", not zero. A failed request tells us nothing about what the provider
