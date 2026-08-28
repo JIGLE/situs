@@ -42,6 +42,13 @@ const opt = (name, fallback) => {
 const COUNTRY = (opt("country", "PT") ?? "PT").toUpperCase();
 const SESSION_ID = opt("session", null);
 
+/**
+ * Whether the last failed response carried a JSON body. Kept out of band rather than folded
+ * into `call()`'s return value so every consumer can keep its plain `if (!x) return;` — a
+ * sentinel object would have made three of them treat a failure as success.
+ */
+let lastFailureWasJson = true;
+
 function base64url(value) {
   return Buffer.from(value).toString("base64url");
 }
@@ -123,12 +130,28 @@ async function call(path) {
   if (!response.ok) {
     // The body may quote the request back, so it is redacted like everything else.
     let parsed;
+    let isJson = true;
     try {
       parsed = redact(JSON.parse(text));
     } catch {
+      isJson = false;
       parsed = `<non-json body, ${text.length} chars>`;
     }
     console.error(`✖ ${path} → HTTP ${response.status}`, JSON.stringify(parsed));
+    // Enable Banking's API answers JSON, including for its errors. A non-JSON body is therefore
+    // something between here and them — an egress proxy, a captive portal, a firewall's block
+    // page — and saying "check your credentials" then sends the operator to audit a key that was
+    // never the problem. Verified: from a sandbox whose allowlist rejects the CONNECT, this
+    // returns exactly a 403 with a 108-character non-JSON body.
+    if (!isJson) {
+      console.error(
+        `\n⚠ That body is not JSON, and this API answers JSON even when it refuses you — so the\n` +
+          `  ${response.status} came from something between this machine and Enable Banking rather than\n` +
+          `  from Enable Banking. Check for an egress proxy or firewall allowing ${new URL(API_BASE).host}\n` +
+          `  before touching the application id or the key.`,
+      );
+    }
+    lastFailureWasJson = isJson;
     return null;
   }
   return JSON.parse(text);
@@ -139,10 +162,14 @@ async function main() {
 
   const app = await call("/application");
   if (!app) {
-    console.error(
-      "\nThe /application call failed. That is an authentication problem rather than a data one:\n" +
-        "check the application id matches the key, and that the key is the one downloaded for it.",
-    );
+    // Only claim an auth problem when the provider actually answered. A non-JSON body means the
+    // request never reached them, and the note above has already said so.
+    if (lastFailureWasJson) {
+      console.error(
+        "\nThe /application call failed. That is an authentication problem rather than a data one:\n" +
+          "check the application id matches the key, and that the key is the one downloaded for it.",
+      );
+    }
     process.exit(1);
   }
   console.log("/application →", JSON.stringify(redact(app), null, 2));
@@ -167,9 +194,37 @@ async function main() {
         2,
       ),
     );
-    if (inCountry.length === 0) {
+    // Which countries the application actually reaches, always — not only when the asked-for
+    // one is empty. A sandbox application returns the Mock ASPSPs its operator configured, and
+    // those are frequently registered outside PT/ES; "0 in PT" on its own sends you looking at
+    // Portugal, which is never the cause. The breakdown answers "where are my banks" directly.
+    const byCountry = new Map();
+    for (const a of aspsps.aspsps ?? []) {
+      const c = (a.country ?? "??").toUpperCase();
+      byCountry.set(c, (byCountry.get(c) ?? 0) + 1);
+    }
+    if (byCountry.size > 0) {
       console.log(
-        `\n⚠ No ASPSP listed for ${COUNTRY}. Try --country ES, or check the sandbox set.`,
+        "Reachable by country:",
+        [...byCountry.entries()]
+          .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+          .map(([c, n]) => `${c}=${n}`)
+          .join(" "),
+      );
+    }
+
+    if (inCountry.length === 0) {
+      const elsewhere = [...byCountry.keys()].filter((c) => c !== COUNTRY);
+      console.log(
+        `\n⚠ No ASPSP listed for ${COUNTRY}.` +
+          (elsewhere.length
+            ? ` Your application does reach ${elsewhere.join(", ")} — re-run with --country ${elsewhere[0]}.\n` +
+              `  Note the app's own bank picker only offers PT and ES (COUNTRIES in\n` +
+              `  components/features/settings/bank-connect-panel.tsx), so a sandbox bank registered\n` +
+              `  elsewhere is reachable by the API but not selectable in the UI.`
+            : ` The application reaches no ASPSPs at all — a production application that has not\n` +
+              `  been activated returns an empty list, and a sandbox one returns only the Mock\n` +
+              `  ASPSPs configured for it in the Control Panel.`),
       );
     }
   }
