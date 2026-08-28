@@ -2506,7 +2506,14 @@
     "internal": "Interno",
     "emptyTitle": "Nenhum contacto encontrado",
     "emptyDescription": "Adicione contactos de manutenção para gerir a sua rede de prestadores",
-    "loadFailed": "Não foi possível carregar os contactos."
+    "loadFailed": "Não foi possível carregar os contactos.",
+    "summary": "{total} contactos · {contractors} empreiteiros · {vendors} fornecedores · {internal} internos",
+    "perHour": "/h",
+    "type": {
+      "contractor": "Empreiteiro",
+      "vendor": "Fornecedor",
+      "internalStaff": "Equipa interna"
+    }
   },
   "account": {
     "title": "Conta",

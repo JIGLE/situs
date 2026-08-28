@@ -2506,7 +2506,14 @@
     "internal": "Internal",
     "emptyTitle": "No contacts found",
     "emptyDescription": "Add maintenance contacts to manage your contractor network",
-    "loadFailed": "Couldn't load the contacts."
+    "loadFailed": "Couldn't load the contacts.",
+    "summary": "{total} contacts · {contractors} contractors · {vendors} vendors · {internal} internal",
+    "perHour": "/hr",
+    "type": {
+      "contractor": "Contractor",
+      "vendor": "Vendor",
+      "internalStaff": "Internal staff"
+    }
   },
   "account": {
     "title": "Account",
