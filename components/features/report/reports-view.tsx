@@ -60,6 +60,7 @@ export function ReportsView(): React.ReactElement {
   const { success, error } = useToast();
   const t = useTranslations("reports");
   const tStatus = useTranslations("status");
+  const tCategories = useTranslations("financial.categories");
   const { formatCurrency } = useCurrency();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -337,8 +338,11 @@ export function ReportsView(): React.ReactElement {
                       {report.expenses.byCategory.map((cat) => (
                         <div key={cat.category} className="flex justify-between items-center">
                           <div className="flex items-center gap-2">
+                            {/* The stored expense category, which is a snake_case enum —
+                                this listed "condominium_fees" where the Finances screen says
+                                "Quotas de Condomínio" for the same expenses. */}
                             <span className="text-[var(--color-muted-foreground)]">
-                              {cat.category}
+                              {tCategories(cat.category)}
                             </span>
                             <span className="text-xs text-[var(--color-muted-foreground)]">
                               ({cat.percentage}%)

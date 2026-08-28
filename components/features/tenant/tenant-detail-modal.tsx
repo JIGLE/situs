@@ -68,6 +68,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
   // `status` already carries paid / pending / overdue in all four catalogues — the chip below was
   // printing the raw enum instead, so an otherwise fully Portuguese modal said "Paid".
   const tStatus = useTranslations("status");
+  const tLeases = useTranslations("leases");
   const confirmDialog = useConfirmDialog();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -493,8 +494,8 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                           <p className="text-[12px] md:text-[10px] text-[var(--color-muted-foreground)] uppercase tracking-wide">
                             {tForms("status")}
                           </p>
-                          <p className="mt-0.5 capitalize font-medium text-[var(--color-foreground)]">
-                            {activeLease.status}
+                          <p className="mt-0.5 font-medium text-[var(--color-foreground)]">
+                            {tLeases(activeLease.status)}
                           </p>
                         </div>
                         <div>

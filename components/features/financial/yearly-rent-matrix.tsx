@@ -63,6 +63,9 @@ const CELL_CODES: Record<string, string> = {
 
 export function YearlyRentMatrix(): React.ReactElement {
   const t = useTranslations("common");
+  // The cell itself shows a four-letter code (PAID/LATE/PART) by design; the tooltip is the
+  // place the state gets said in words, and it was saying the stored enum.
+  const tPeriod = useTranslations("rentPeriodStatus");
   const [year, setYear] = useState(() => new Date().getUTCFullYear());
   const [rows, setRows] = useState<MatrixRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -159,7 +162,7 @@ export function YearlyRentMatrix(): React.ReactElement {
                         className="border-b border-[var(--color-border)] px-1 py-2.5 text-center"
                         title={
                           cell
-                            ? `${cell.status} · ${cell.allocatedAmount.toFixed(2)} / ${cell.dueAmount.toFixed(2)}`
+                            ? `${tPeriod(cell.status)} · ${cell.allocatedAmount.toFixed(2)} / ${cell.dueAmount.toFixed(2)}`
                             : undefined
                         }
                       >

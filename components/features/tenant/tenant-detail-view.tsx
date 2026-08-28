@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Users,
   Mail,
@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsMobileSelect, TabsTrigger } from "@/co
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RECEIPT_TYPE_KEY } from "@/lib/utils/receipt-labels";
 import { useApp } from "@/lib/contexts/app-context";
 import { useTabPersistence } from "@/lib/hooks/use-tab-persistence";
 import { EntityLink } from "@/components/shared/entity-link";
@@ -53,6 +54,8 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
   const t = useTranslations("tenantDetail");
   const tStatus = useTranslations("status");
   const tMaint = useTranslations("maintenance");
+  const tReceipts = useTranslations("financial.receipts");
+  const locale = useLocale();
   const { state } = useApp();
   const { formatCurrency } = useCurrency();
   const { token: csrfToken } = useCsrf();
@@ -385,9 +388,11 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                         className="flex items-center justify-between py-2 border-b border-[var(--color-border)] last:border-0"
                       >
                         <div>
-                          <p className="text-sm font-medium capitalize">{receipt.type}</p>
+                          <p className="text-sm font-medium">
+                            {tReceipts(RECEIPT_TYPE_KEY[receipt.type])}
+                          </p>
                           <p className="text-xs text-[var(--color-muted-foreground)]">
-                            {receipt.date}
+                            {new Date(receipt.date).toLocaleDateString(locale)}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
