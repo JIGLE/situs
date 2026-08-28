@@ -856,7 +856,7 @@ export function LeasesView(): React.ReactElement {
                 {/* Step 3: Lease Terms */}
                 {wizard.currentStep === 2 && (
                   <StepContent title={t("step.termsTitle")} description={t("termsStepDescription")}>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="startDate">{t("startDateRequired")}</Label>
                         <Input
@@ -890,7 +890,7 @@ export function LeasesView(): React.ReactElement {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="monthlyRent">
                           {t("monthlyRentRequired", { symbol: currencySymbol })}
@@ -938,7 +938,7 @@ export function LeasesView(): React.ReactElement {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="taxRegime">{t("field.taxRegime")}</Label>
                         <Select

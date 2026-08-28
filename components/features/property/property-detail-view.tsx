@@ -510,7 +510,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                   <DialogDescription>Log a cost for {property.name}</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={expenseDialog.handleSubmit} className="space-y-4 pt-1">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label htmlFor="exp-category">Category</Label>
                       <Select
@@ -657,7 +657,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                       </p>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label htmlFor="rec-amount">Amount</Label>
                       <Input
@@ -695,7 +695,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                       </Select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label htmlFor="rec-date">Date</Label>
                       <Input
@@ -793,7 +793,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                 </p>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="ten-phone">{t("phone")}</Label>
                 <Input

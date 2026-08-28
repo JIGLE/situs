@@ -430,7 +430,7 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
                 placeholder={String(lease?.monthlyRent ?? "")}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="startDate">{t("newStartDate")}</Label>
                 <Input

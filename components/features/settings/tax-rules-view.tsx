@@ -425,7 +425,7 @@ export function TaxRulesView() {
 
           <div className="space-y-4 py-2">
             {!editingRule && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label>{t("country")}</Label>
                   <Select
@@ -481,7 +481,7 @@ export function TaxRulesView() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5 col-span-2">
+                <div className="space-y-1.5 md:col-span-2">
                   <Label>{t("effectiveDate")}</Label>
                   <Input
                     type="date"

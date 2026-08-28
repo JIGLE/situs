@@ -455,7 +455,7 @@ export function MaintenanceView(): React.ReactElement {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="property">{t("fieldProperty")}</Label>
                       <Select
@@ -541,7 +541,7 @@ export function MaintenanceView(): React.ReactElement {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="vendorName">{t("vendorContractor")}</Label>
                       <Input
@@ -566,7 +566,7 @@ export function MaintenanceView(): React.ReactElement {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="estimatedCost">Estimated Cost ({currencySymbol})</Label>
                       <Input
@@ -595,7 +595,7 @@ export function MaintenanceView(): React.ReactElement {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="scheduledDate">{t("scheduledDate")}</Label>
                       <Input
