@@ -76,8 +76,10 @@ Dated, point-in-time, and still load-bearing where noted:
 - [Redis rate limiting](REDIS_RATE_LIMITING.md)
 - [Webhook templates](webhook-templates.md)
 
-Bank movements — no provider ships; CSV import is the path — are documented in [truenas.md](truenas.md#bank-movements)
-and `CLAUDE.md`, because setup is deployment-shaped rather than integration-shaped.
+Bank movements — CSV import, and a live PSD2 feed through Enable Banking when the instance is
+configured for one — are documented in [truenas.md](truenas.md#bank-movements) and `CLAUDE.md`,
+because setup is deployment-shaped rather than integration-shaped. This line used to say "no
+provider ships", which stopped being true when the Enable Banking adapter landed in PR #340.
 
 ## UX & accessibility
 

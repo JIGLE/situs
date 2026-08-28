@@ -13,8 +13,11 @@ Most routes require authentication via NextAuth.js. Protected routes will return
 ### Auth Routes
 
 - `POST /api/auth/[...nextauth]` - NextAuth.js authentication handlers
-- `GET /api/auth/error` - Authentication error pages
 - `GET /api/auth/signin` - Sign-in page
+
+The error page is `/auth/error`, which is what `pages.error` in `lib/services/auth/auth.ts`
+points at. A second copy used to sit at `/api/auth/error`, shadowing NextAuth's own built-in
+error endpoint; it was deleted in PR #352.
 
 ## Core Resources
 

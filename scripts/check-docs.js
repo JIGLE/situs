@@ -44,6 +44,13 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    pattern: /no provider ships/i,
+    retired: "2026-08-28 (PR #352)",
+    because:
+      "the Enable Banking adapter shipped in PR #340; docs/README.md kept telling readers that " +
+      "CSV import was the only path, which is the exact shape of claim rule 3 exists to catch",
+  },
+  {
     pattern: /No live bank connection exists/i,
     retired: "2026-08-17 (PR #334)",
     because:
