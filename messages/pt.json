@@ -1325,7 +1325,12 @@
       "size": "Tamanho",
       "uploaded": "Carregado",
       "linkedTo": "Associado a"
-    }
+    },
+    "expired": "Expirado",
+    "expiresInDays": "Expira em {days} d",
+    "notFound": "Documento não encontrado",
+    "loadFailed": "Não foi possível abrir este documento",
+    "downloadFailed": "A transferência falhou"
   },
   "notifications": {
     "title": "Notificações",

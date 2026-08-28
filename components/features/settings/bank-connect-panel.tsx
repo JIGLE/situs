@@ -159,7 +159,13 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
     setBusyId(institution.id);
     setError(null);
     try {
-      const body = await apiFetch<{ data?: { url?: string } }>(
+      // Not `{ data: { url } }`. `apiFetch` returns the envelope's `data` field when there is
+      // one, and this route replies `createSuccessResponse({ connectionId, url })` — so reading
+      // `.data` off the result unwrapped it twice, `url` came back undefined, and the connect
+      // button threw "no url" and showed the generic failure message every single time. Same
+      // defect as the document detail panel, and hidden the same way: the type argument
+      // asserted the pre-unwrap shape, so nothing disagreed.
+      const body = await apiFetch<{ connectionId?: string; url?: string }>(
         "/api/bank/connections/connect",
         csrfToken,
         "POST",
@@ -172,7 +178,7 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
           providerKey: providersConfigured[0],
         },
       );
-      const url = body?.data?.url;
+      const url = body?.url;
       if (!url) throw new Error("no url");
       // Leaves the app for the bank's own authentication.
       window.location.href = url;

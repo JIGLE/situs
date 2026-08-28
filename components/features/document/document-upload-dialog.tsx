@@ -138,7 +138,7 @@ export function DocumentUploadDialog({ csrfToken, properties, tenants, owners, o
               <SelectContent>
                 {Object.entries(documentTypeConfig).map(([key, config]) => (
                   <SelectItem key={key} value={key}>
-                    {config.label}
+                    {t(config.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Download, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,7 @@ import {
 
 export function DocumentDetailPanel({ documentId }: { documentId: string }) {
   const t = useTranslations("documents");
+  const locale = useLocale();
   const tForms = useTranslations("forms");
   const { token: csrfToken } = useCsrf();
   const [doc, setDoc] = useState<Document | null>(null);
@@ -28,12 +29,18 @@ export function DocumentDetailPanel({ documentId }: { documentId: string }) {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    apiFetch<{ data: Document }>(`/api/documents/${documentId}`, csrfToken)
-      .then((body) => {
-        if (!cancelled) setDoc(body.data);
+    // `apiFetch` already unwraps the `{ data }` envelope every route replies with — it returns
+    // `body.data` when present. Annotating the call as `{ data: Document }` and then reading
+    // `.data` off the result unwrapped it a second time, so `setDoc` always received
+    // `undefined` and this panel rendered "Document not found" for every document that
+    // exists. The annotation is what hid it: it asserted the shape instead of checking it, so
+    // the compiler agreed with a claim that the runtime had already made false.
+    apiFetch<Document>(`/api/documents/${documentId}`, csrfToken)
+      .then((document) => {
+        if (!cancelled) setDoc(document);
       })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load document");
+      .catch(() => {
+        if (!cancelled) setError(t("loadFailed"));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -41,7 +48,7 @@ export function DocumentDetailPanel({ documentId }: { documentId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [documentId, csrfToken]);
+  }, [documentId, csrfToken, t]);
 
   const handleDownload = async () => {
     if (!doc) return;
@@ -58,7 +65,7 @@ export function DocumentDetailPanel({ documentId }: { documentId: string }) {
       window.document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch {
-      setError("Download failed");
+      setError(t("downloadFailed"));
     }
   };
 
@@ -73,9 +80,7 @@ export function DocumentDetailPanel({ documentId }: { documentId: string }) {
   if (error || !doc) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-2">
-        <p className="text-sm text-[var(--color-muted-foreground)]">
-          {error ?? "Document not found"}
-        </p>
+        <p className="text-sm text-[var(--color-muted-foreground)]">{error ?? t("notFound")}</p>
       </div>
     );
   }
@@ -97,19 +102,19 @@ export function DocumentDetailPanel({ documentId }: { documentId: string }) {
             </h2>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <Badge variant="secondary" className={config.color}>
-                {config.label}
+                {t(config.labelKey)}
               </Badge>
               {expiry && (
                 <Badge variant={expiry.variant} className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  {expiry.label}
+                  {t(expiry.key, { days: expiry.days })}
                 </Badge>
               )}
             </div>
           </div>
         </div>
         <Button variant="outline" size="sm" onClick={handleDownload} className="shrink-0">
-          <Download className="h-4 w-4 mr-1" /> Download
+          <Download className="h-4 w-4 mr-1" /> {t("download")}
         </Button>
       </div>
 
@@ -125,7 +130,7 @@ export function DocumentDetailPanel({ documentId }: { documentId: string }) {
             {t("panel.uploaded")}
           </p>
           <p className="mt-0.5 text-[var(--color-foreground)]">
-            {formatDocumentDate(doc.uploadedAt)}
+            {formatDocumentDate(doc.uploadedAt, locale)}
           </p>
         </div>
       </div>

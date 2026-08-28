@@ -1325,7 +1325,12 @@
       "size": "Size",
       "uploaded": "Uploaded",
       "linkedTo": "Linked to"
-    }
+    },
+    "expired": "Expired",
+    "expiresInDays": "Expires in {days}d",
+    "notFound": "Document not found",
+    "loadFailed": "Couldn't open this document",
+    "downloadFailed": "Download failed"
   },
   "notifications": {
     "title": "Notifications",
