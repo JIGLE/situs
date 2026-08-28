@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
+import { TICKET_STATUS_KEY, type TicketStatus } from "@/lib/utils/maintenance-labels";
 import { getCurrencyLocale, type Currency } from "@/lib/utils/currency";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/ui/card";
 import { Button } from "@/ui/button";
@@ -100,10 +101,28 @@ interface TenantPortalPageProps {
   params: Promise<{ token: string }>;
 }
 
+/**
+ * Ticket priority, mapped to the portal's own labels. The portal has `priorityLow` … `priorityUrgent`
+ * of its own — this screen is written for a tenant rather than for the landlord, so it keeps its
+ * wording — but it was rendering the stored enum instead, so a tenant saw "urgent" in English on
+ * an otherwise translated page.
+ */
+const PORTAL_PRIORITY_KEY: Record<string, string> = {
+  low: "priorityLow",
+  medium: "priorityMedium",
+  high: "priorityHigh",
+  urgent: "priorityUrgent",
+};
+
 export default function TenantPortalPage({ params }: TenantPortalPageProps) {
   const router = useRouter();
   const t = useTranslations("tenantPortal.main");
   const tErrors = useTranslations("tenantPortal.errors");
+  const tStatus = useTranslations("status");
+  const tMaint = useTranslations("maintenance");
+  // The document type keys live under `documents`, next to the owner-facing archive that
+  // renders the same enum — one table of type names, not two that can disagree.
+  const tDoc = useTranslations("documents");
   const locale = useLocale();
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -465,7 +484,7 @@ export default function TenantPortalPage({ params }: TenantPortalPageProps) {
                       ) : (
                         <>
                           <Clock className="h-3 w-3 mr-1" />
-                          {tenant.paymentStatus}
+                          {tStatus(tenant.paymentStatus)}
                         </>
                       )}
                     </Badge>
@@ -702,7 +721,9 @@ export default function TenantPortalPage({ params }: TenantPortalPageProps) {
                             </p>
                           </div>
                         </div>
-                        <Badge className={getStatusColor(payment.status)}>{payment.status}</Badge>
+                        <Badge className={getStatusColor(payment.status)}>
+                          {tStatus(payment.status)}
+                        </Badge>
                       </div>
                     ))}
                   </div>
@@ -743,7 +764,9 @@ export default function TenantPortalPage({ params }: TenantPortalPageProps) {
                           <span className="font-medium text-[var(--color-foreground)]">
                             {formatCurrency(invoice.amount)}
                           </span>
-                          <Badge className={getStatusColor(invoice.status)}>{invoice.status}</Badge>
+                          <Badge className={getStatusColor(invoice.status)}>
+                            {tStatus(invoice.status)}
+                          </Badge>
                           {invoice.status !== "paid" && (
                             <Button
                               size="sm"
@@ -901,10 +924,12 @@ export default function TenantPortalPage({ params }: TenantPortalPageProps) {
                           </p>
                           <div className="flex gap-2 shrink-0">
                             <Badge variant="outline" className={getStatusColor(ticket.priority)}>
-                              {ticket.priority}
+                              {t(PORTAL_PRIORITY_KEY[ticket.priority] ?? "priorityMedium")}
                             </Badge>
                             <Badge className={getStatusColor(ticket.status)}>
-                              {ticket.status.replace("_", " ")}
+                              {tMaint(
+                                TICKET_STATUS_KEY[ticket.status as TicketStatus] ?? "statusOpen",
+                              )}
                             </Badge>
                           </div>
                         </div>
@@ -950,12 +975,12 @@ export default function TenantPortalPage({ params }: TenantPortalPageProps) {
                               {doc.name}
                             </p>
                             <p className="text-sm text-[var(--color-muted-foreground)]">
-                              {doc.type} • {formatFileSize(doc.fileSize)} •{" "}
+                              {tDoc(doc.type)} • {formatFileSize(doc.fileSize)} •{" "}
                               {formatDate(doc.createdAt)}
                             </p>
                             {doc.expiresAt && (
                               <p className="text-xs text-[var(--color-warning)]">
-                                Expires {formatDate(doc.expiresAt)}
+                                {t("docExpires", { date: formatDate(doc.expiresAt) })}
                               </p>
                             )}
                           </div>

@@ -1511,7 +1511,8 @@
       "priorityUrgent": "Urgente",
       "save": "Guardar",
       "cancel": "Cancelar",
-      "viewAll": "Ver tudo"
+      "viewAll": "Ver tudo",
+      "docExpires": "Expira a {date}"
     }
   },
   "calendar": {
