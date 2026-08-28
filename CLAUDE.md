@@ -119,6 +119,17 @@ Codified from the 2026-07 mobile audit (`scripts/mobile-audit.mjs`): a comprehen
 
 6. **Multi-column forms are single-column below `md`.** When a form has 2+ columns, stack them into one column at `<md`. Use CSS Grid with `grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))` or explicit `md:` breakpoint rewrites — a form field should be full-width on small screens.
 
+**Run it with `npm run audit:local`**, never by starting a server by hand. `scripts/audit-server.mjs`
+boots a disposable app and drives both viewport passes off one server and one seed. Doing it by hand
+means rediscovering five env variables one failed boot at a time — `NEXTAUTH_URL`, `ENABLE_DEMO_LOGIN`,
+`ALLOW_DEMO_MODE`, `PII_ENCRYPTION_KEY`, an absolute disposable `DATABASE_URL` — each of which fails at
+a different step and none of which names itself; the PII one boots and seeds fine and kills the server
+several requests later. The script also refuses to start when something already answers on the port,
+because a stale server answers every readiness check correctly and then the whole run measures the
+wrong build while looking entirely normal. It runs `.next/standalone/server.js`, the same entrypoint
+as `.github/actions/start-app` and the Dockerfile — `next start` does not drive a standalone build and
+does not reproduce its routing.
+
 All surfaces are measured in the mobile audit (`scripts/mobile-audit.mjs`) on every PR that touches UI; violations are reported in the job summary (advisory, not blocking, per the current ratchet policy). As violations are fixed, re-run the harness to confirm zero horizontal overflow, touch-target and clipping metrics strictly decreasing.
 
 ## CI Gates
@@ -165,6 +176,19 @@ inside `verify:ci`, so CI, the `situs-implementer` agent and any local run all p
    `check-hostport.js` (a prestart runtime check, skips unless `PRESTART_CHECK_HOSTPORT=true`) and
    `i18n-leak-scan.mjs` (a dev tool taking path arguments). Wiring either would produce a gate that
    passes because it skipped.
+
+**Tailwind drops an unknown utility silently**, which is how six overlay primitives (dialog,
+alert-dialog, dropdown-menu, select, sheet, notification-center) shipped `animate-in`,
+`fade-in-0`, `zoom-in-95` and `slide-in-from-*` while animating nothing: those classes live in
+`tailwindcss-animate`, a Tailwind **3** plugin that was never installed here. A class that does
+nothing looks exactly like a class that works, in review and in the diff — the first repair even
+added `slide-in-from-left-1` against markup that says `slide-in-from-left-1/2`, and nothing
+noticed for another whole commit. `npm run css:check` (`scripts/check-class-contract.mjs`) closes
+that in both directions: **used but not defined** is blocking at zero, **defined but not used** is
+a ratchet over `app/globals.css`. Tailwind itself is the oracle — candidates go through the real
+compiler via `@source inline(...)` and the generated selectors are read back — so the checker
+needs no hand-maintained list of valid utilities and survives Tailwind upgrades untouched. Add a
+v4 `@utility`, never a v3 plugin.
 
 **Regenerating `package-lock.json` takes npm 11**, which `packageManager` in `package.json` pins.
 npm 10 rewrites the lockfile without the `libc` fields, and the only packages that carry them are

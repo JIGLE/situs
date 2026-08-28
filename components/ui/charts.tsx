@@ -184,7 +184,11 @@ export function LineChart({
                 cy={point.y}
                 r="3"
                 fill="var(--color-accent-primary)"
-                className="drop-shadow-sm hover:r-4 transition-all cursor-pointer"
+                // No `hover:r-4`: Tailwind has no `r-*` utility, so that class compiled to
+                // nothing and the dot never grew. Nothing here is clickable either — no handler,
+                // no tooltip — so `cursor-pointer` and the transition were promising an
+                // interaction that does not exist. The chart with real hover state is below.
+                className="drop-shadow-sm"
               />
               {showValues && (
                 <text

@@ -57,17 +57,23 @@ export function TaxConnectorDashboard(): React.ReactElement | null {
     setError(null);
     try {
       const res = await fetch("/api/tax/connectors", { credentials: "include" });
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      if (!res.ok) throw new Error(String(res.status));
       const body = await res.json();
       setConnectors(body?.data?.connectors ?? []);
       setLogsByConnector(body?.data?.logs ?? {});
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load tax connectors");
+      // One translated sentence, not `err.message`. What reached the panel before was whichever
+      // English string the failure happened to carry — a status code from the line above, or
+      // whatever the fetch itself threw. None of it is actionable, and none of it was ever going
+      // to be in the reader's language.
+      console.error("Failed to load tax connectors:", err);
+      setError(t("taxConnectorsLoadFailed"));
       setConnectors([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+    // `t` is stable for a given locale; listed so the dependency is honest rather than silenced.
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -76,8 +82,7 @@ export function TaxConnectorDashboard(): React.ReactElement | null {
   if (!loading && connectors.length === 0 && !error) {
     return (
       <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-sm text-[var(--color-muted-foreground)]">
-        No tax connectors yet — one is created automatically the first time you emit a rent receipt
-        through a country&apos;s fiscal workflow.
+        {t("taxConnectorsEmpty")}
       </div>
     );
   }

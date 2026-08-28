@@ -289,9 +289,13 @@ export function ActionPanel(): ReactElement {
 
   return (
     <Card className="border-[var(--color-border)] bg-[var(--color-card)]">
+      {/* Title only. The subtitle read "O que precisa da sua atenção agora." under a heading that
+          already says "Tarefas de hoje" — it restated the title rather than adding to it, and it
+          did so above a list that is often one row, so the panel spent as much height explaining
+          itself as showing anything. The strings stay in the catalogues; nothing else uses this
+          one, and deleting four translations to save a line is a worse trade than leaving them. */}
       <CardHeader className="pb-3">
         <CardTitle>{t("actionPanelTitle")}</CardTitle>
-        <p className="text-sm text-[var(--color-muted-foreground)]">{t("actionPanelSubtitle")}</p>
       </CardHeader>
       <CardContent className="space-y-2">
         {alerts.length === 0 ? (

@@ -12,6 +12,15 @@
  *   - text rendering below a legibility floor
  *   - elements clipped outside the viewport
  *
+ * and, at desktop widths, the defects that only appear once everything fits:
+ *
+ *   - dead vertical runs and content stranded in a fraction of the window
+ *   - section-level left edges that do not line up
+ *   - how far down the page the first repeating data structure actually starts
+ *   - persistent animation classes (`animate-spin`, `-pulse`, `-shimmer`) with no running
+ *     animation — the runtime form of the bug that had six overlay primitives carrying
+ *     `animate-in` from an uninstalled Tailwind 3 plugin and animating nothing
+ *
  * Emits a ranked JSON report plus a readable Markdown summary and a screenshot per
  * surface/theme, so successive passes can be compared numerically rather than by eye.
  *
@@ -19,7 +28,7 @@
  *   node scripts/mobile-audit.mjs                  # audit at 390x844, both themes
  *   node scripts/mobile-audit.mjs --seed           # (re)seed demo data first
  *   node scripts/mobile-audit.mjs --seed --strict  # ratchet: non-zero exit past BASELINE
- *   node scripts/mobile-audit.mjs --width 1440     # desktop regression pass
+ *   node scripts/mobile-audit.mjs --width 1440 --height 900 --locale pt   # desktop pass
  *   node scripts/mobile-audit.mjs --locale pt      # longest-label locale
  *   node scripts/mobile-audit.mjs --only portfolio # filter surfaces by id substring
  */
@@ -53,6 +62,20 @@ const MIN_FONT_PX = 12;
 /** Sub-pixel layout rounding shouldn't count as overflow. */
 const OVERFLOW_TOLERANCE = 1;
 
+/**
+ * Desktop thresholds. These describe a layout that fits and still reads as unfinished, which is
+ * the whole class of defect a 390px-only harness cannot see.
+ *
+ * They are reporting thresholds, not gates. Unlike overflow — where "the page scrolls sideways"
+ * is a fact — the right content width for a settings form is not the right content width for a
+ * ledger, so a number here flags a surface for a human to look at rather than failing a build.
+ * BASELINE is deliberately not extended with them.
+ */
+const NARROW_CONTENT_RATIO = 0.7; // content spanning less than this fraction of the container
+const WASTED_RUN_PX = 160; // unbroken vertical band inside the fold that nothing paints
+const MAX_LEFT_EDGES = 3; // distinct section-level left edges before it reads as ragged
+const CHROME_DEPTH_PX = 320; // how far down the first repeating data structure begins
+
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(`--${name}`);
 const opt = (name, fallback) => {
@@ -75,6 +98,17 @@ const VIEWPORT_HEIGHT = Number(opt("height", 844));
 const ONLY = opt("only", null);
 const THEMES = opt("theme", "dark,light").split(",");
 const STRICT = flag("strict");
+
+/**
+ * Also write a full-page screenshot per surface-run, for visual review rather than measurement.
+ *
+ * Off by default, and it must stay that way: CI's two invocations in `ci.yml` compare against a
+ * ratchet, and a flag that changed what they capture would change what they cost for no gain to
+ * the gate. The measurement shot above is deliberately viewport-sized because that is the frame
+ * every metric describes — a full-page image is a different question ("what is on this screen at
+ * all") from the one the numbers answer.
+ */
+const FULLPAGE = flag("fullpage");
 
 /**
  * Ratchet ceilings for `--strict`, in the spirit of `scripts/check-color-tokens.js`: a number
@@ -135,7 +169,13 @@ const BASELINE = {
   viewportTallChildren: 0,
   touchTargetFails: 4,
   touchTargetWarns: 4,
-  clippedContainers: 6,
+  // Was 6, and documented as non-deterministic (three runs gave 4, 6, 6). It is 0 now, and the
+  // reason it can be pinned rather than ratcheted is that the cause was structural, not flaky:
+  // every instance was an email inside a container that could not grow — `truncate` with a
+  // `title` tooltip a phone cannot show, and a `grid-cols-2` that never collapsed. Both are
+  // fixed at the source, so this measures a property of the layout rather than of the run.
+  // Confirmed 0 on two consecutive full sweeps.
+  clippedContainers: 0,
   smallText: 310,
 };
 
@@ -370,6 +410,208 @@ function measure({ touchFail, touchWarn, minFontPx, tolerance }) {
     }
   }
 
+  // --- density and rhythm (the metrics that only bite at desktop width) ----------------
+  //
+  // The phone metrics above are all about things NOT FITTING. At 1440 everything fits, and the
+  // defects invert: a column of content stranded in a third of the window, four cards each
+  // starting at a different x, and six bands of chrome before the first row of data. None of
+  // that trips a single check above, which is why a harness that only ran at 390 kept reporting
+  // clean on screens that read as unfinished.
+  const ATOMIC = /^(svg|img|input|textarea|select|canvas|video)$/i;
+  const PAINTS = (el) => {
+    if (ATOMIC.test(el.tagName)) return true;
+    if ((el.textContent ?? "").trim()) return true;
+    const cs = getComputedStyle(el);
+    if (cs.backgroundColor !== "rgba(0, 0, 0, 0)" && cs.backgroundColor !== "transparent")
+      return true;
+    if (cs.backgroundImage !== "none") return true;
+    return parseFloat(cs.borderTopWidth) > 0 || parseFloat(cs.borderBottomWidth) > 0;
+  };
+  const density = { wastedRun: 0, contentWidthRatio: 1, leftEdges: [], contentStartY: 0 };
+  if (mainEl) {
+    const mainRect = mainEl.getBoundingClientRect();
+    const foldHeight = Math.min(mainRect.height, vh - Math.max(0, mainRect.top));
+
+    // Longest vertical run inside the fold that nothing paints into. Occupancy is marked from
+    // LEAF elements only — an ancestor's box spans its children's whitespace, so counting
+    // containers would mark the whole page occupied and always report zero.
+    //
+    // READ THIS ALONGSIDE `contentWidthRatio`, never on its own. It measures emptiness, not
+    // quality, and a page that answers its question in 300px scores worse than one that fills
+    // 900px with chrome. Replacing Portfolio's "select an asset" placeholder — a 440px dashed
+    // box containing one sentence — with a summary that actually says something took the width
+    // from 69% to 97% and pushed this number UP by 24px, because the answer is shorter than the
+    // placeholder was. That is an improvement the metric cannot see. Do not add filler to move
+    // it.
+    if (foldHeight > 0) {
+      const rows = new Uint8Array(Math.ceil(foldHeight));
+      for (const el of all) {
+        if (!mainEl.contains(el)) continue;
+        if (el.children.length > 0 && !ATOMIC.test(el.tagName)) continue;
+        if (isVisuallyHidden(el)) continue;
+        // A leaf still has to PAINT something. An empty spacer div is childless and 400px tall,
+        // so counting it as occupied marked the very gap it creates as filled — the self-test
+        // caught this reading 16 on both a page with a 400px hole and one without.
+        if (!PAINTS(el)) continue;
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) continue;
+        const top = Math.max(0, Math.floor(r.top - mainRect.top));
+        const bottom = Math.min(rows.length, Math.ceil(r.bottom - mainRect.top));
+        for (let y = top; y < bottom; y++) rows[y] = 1;
+      }
+      let run = 0;
+      for (const filled of rows) {
+        if (filled) run = 0;
+        else if (++run > density.wastedRun) density.wastedRun = run;
+      }
+    }
+
+    // How much of the available width the content actually occupies. A page whose widest row
+    // uses 40% of a 1440px window is not "responsive", it is a phone layout stretched.
+    //
+    // LEAVES only, for the same reason the dead-run scan uses them: a wrapper is as wide as its
+    // container by construction, so measuring every element makes this read 100% on every
+    // surface in the app — which is exactly what the first run reported, on all 26. A metric
+    // that cannot fail is not a metric.
+    let minLeft = Infinity;
+    let maxRight = -Infinity;
+    for (const el of all) {
+      if (!mainEl.contains(el)) continue;
+      if (el.children.length > 0 && !ATOMIC.test(el.tagName)) continue;
+      if (isVisuallyHidden(el)) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) continue;
+      if (r.top > mainRect.bottom || r.bottom < mainRect.top) continue;
+      minLeft = Math.min(minLeft, r.left);
+      maxRight = Math.max(maxRight, r.right);
+    }
+    if (minLeft < Infinity && mainRect.width > 0) {
+      density.contentWidthRatio = Math.min(1, (maxRight - minLeft) / mainRect.width);
+    }
+
+    // Distinct left edges among section-level blocks. One or two is a deliberate layout; five
+    // is the ragged-card look, and the numbers say which cards are the odd ones out.
+    const edges = new Map();
+    // Any bordered or filled block big enough to read as a card or panel, at whatever depth it
+    // sits. Walking two levels down from the shell found only the layout columns and reported
+    // "2 edges" on every surface — true, and useless.
+    for (const el of mainEl.querySelectorAll("*")) {
+      if (isVisuallyHidden(el)) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width < 160 || r.height < 48) continue;
+      if (r.top < mainRect.top || r.top > mainRect.bottom) continue;
+      const cs = getComputedStyle(el);
+      const bordered = parseFloat(cs.borderTopWidth) > 0 || parseFloat(cs.borderLeftWidth) > 0;
+      const filled =
+        cs.backgroundColor !== "rgba(0, 0, 0, 0)" && cs.backgroundColor !== "transparent";
+      if (!bordered && !filled) continue;
+      const key = Math.round(r.left);
+      edges.set(key, (edges.get(key) ?? 0) + 1);
+    }
+    density.leftEdges = [...edges.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([x, count]) => ({ x, count }));
+
+    // How far down the reader can first READ or DO the thing they came for — the CLAUDE.md
+    // declutter rule ("one heading, one stat row") expressed as a distance rather than an
+    // opinion.
+    //
+    // "First repeating data structure" alone was the rule, and it is only half the app. On a
+    // form-shaped page there is no repeating structure near the top, so the scan ran on until it
+    // hit some group of equal-height rows deep inside a panel: `settings-view.tsx` — a header, a
+    // grouped nav rail and one panel — reported 884px against a 900px fold, and I published
+    // "Settings opens on chrome alone" off the back of it. The page is nothing of the sort.
+    //
+    // So a form control counts too, and the metric is the earlier of the two. That is comparable
+    // across a ledger and a settings form, which is the only way a single number can rank them
+    // against each other.
+    const isData = (el) =>
+      /^(table)$/i.test(el.tagName) ||
+      el.getAttribute("role") === "grid" ||
+      el.getAttribute("role") === "table" ||
+      (el.children.length >= 3 &&
+        [...el.children].every(
+          (c) =>
+            Math.abs(
+              c.getBoundingClientRect().height - el.children[0].getBoundingClientRect().height,
+            ) < 8,
+        ) &&
+        el.getBoundingClientRect().height > 120);
+    // Buttons in the page header are chrome, not the thing you came for — a "New filing" or
+    // "Save" beside the title would otherwise put every page's content start at ~0 and flatten
+    // the metric to noise. Anything inside the first heading's own band is excluded.
+    const firstHeading = mainEl.querySelector("h1, h2");
+    const headerBottom = firstHeading
+      ? firstHeading.getBoundingClientRect().bottom - mainRect.top
+      : 0;
+    const isControl = (el) => {
+      if (/^(input|textarea|select)$/i.test(el.tagName)) return true;
+      if (!/^button$/i.test(el.tagName) && el.getAttribute("role") !== "button") return false;
+      return el.getBoundingClientRect().top - mainRect.top > headerBottom;
+    };
+
+    for (const el of mainEl.querySelectorAll("*")) {
+      if (isVisuallyHidden(el)) continue;
+      const r = el.getBoundingClientRect();
+      if (r.height === 0) continue;
+      if (!isData(el) && !isControl(el)) continue;
+      density.contentStartY = Math.round(r.top - mainRect.top);
+      break;
+    }
+  }
+
+  // --- did this surface actually render? -------------------------------------------------
+  //
+  // Every metric above is a count, and an error screen has very low counts. A run that hit the
+  // app's rate limiter therefore reported eight surfaces as flawless — 0 overflow, 0 small text,
+  // 0 clipped containers — when all eight were the same "Não foi possível carregar os seus
+  // dados" panel. That is a false green of exactly the kind this repo keeps producing, and it is
+  // worse than no measurement, because it looks like progress.
+  //
+  // So a surface must prove it rendered: an alert occupying the main region, or a main region
+  // with almost nothing in it, is reported as a failure to load rather than measured.
+  let renderFailure = null;
+  if (mainEl) {
+    const alertEl = mainEl.querySelector('[role="alert"]');
+    if (alertEl) {
+      const ar = alertEl.getBoundingClientRect();
+      const mr = mainEl.getBoundingClientRect();
+      if (ar.height > 0 && mr.height > 0 && ar.height / mr.height > 0.25) {
+        renderFailure = (alertEl.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 120);
+      }
+    }
+    if (!renderFailure) {
+      const painted = [...mainEl.querySelectorAll("*")].filter((el) => {
+        if (isVisuallyHidden(el)) return false;
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      }).length;
+      if (painted < 12) renderFailure = `main region rendered only ${painted} visible elements`;
+    }
+  }
+
+  // --- motion liveness ------------------------------------------------------------------
+  //
+  // The reason this harness now looks at animation at all: `animate-in` and friends sat in six
+  // overlay primitives for months producing no motion, because they came from a Tailwind 3
+  // plugin that was never installed and Tailwind drops an unknown utility in silence.
+  //
+  // Only the PERSISTENT animations can be judged from a snapshot. `animate-spin`, `-pulse`,
+  // `-ping`, `-bounce` and `-shimmer` run forever, so an element carrying one with no running
+  // animation is definitively broken. A one-shot enter animation has simply finished by the
+  // time this runs, and counting it would report every working dialog as dead.
+  const PERSISTENT = /\banimate-(spin|pulse|ping|bounce|shimmer|pulse-gentle)\b/;
+  const inertAnimations = [];
+  for (const el of all) {
+    const cls = typeof el.className === "string" ? el.className : "";
+    if (!PERSISTENT.test(cls)) continue;
+    if (isVisuallyHidden(el)) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) continue;
+    if (el.getAnimations().length === 0) inertAnimations.push(describe(el));
+  }
+
   return {
     viewportWidth: vw,
     pageOverflow,
@@ -388,6 +630,15 @@ function measure({ touchFail, touchWarn, minFontPx, tolerance }) {
     smallTextCount: smallText.length,
     clipped: clipped.slice(0, 10),
     verticalScroll: Math.max(0, scroller.scrollHeight - scroller.clientHeight),
+    wastedRun: density.wastedRun,
+    contentWidthRatio: Math.round(density.contentWidthRatio * 100) / 100,
+    leftEdges: density.leftEdges,
+    leftEdgeCount: density.leftEdges.length,
+    contentStartY: density.contentStartY,
+    runningAnimations: document.getAnimations().length,
+    inertAnimations: inertAnimations.slice(0, 8),
+    inertAnimationCount: inertAnimations.length,
+    renderFailure,
   };
 }
 
@@ -484,6 +735,16 @@ async function auditSurface(context, surface, theme, ids) {
   );
   await page.emulateMedia({ colorScheme: theme === "dark" ? "dark" : "light" });
 
+  // Count 429s. The app rate-limits at 100 requests per minute per IP, and a 26-surface sweep
+  // fans out well past that from a single address — so a run against a server without
+  // `E2E_DISABLE_RATE_LIMIT=true` measures error panels from about surface fourteen onward. The
+  // render guard below catches that the surface is broken; this says WHY, because "did not
+  // render" sent me looking for a layout bug twice before the cause turned out to be the limiter.
+  let rateLimited = 0;
+  page.on("response", (r) => {
+    if (r.status() === 429) rateLimited++;
+  });
+
   const path = surface.path.replace(/\{(\w+)\}/g, (_m, key) => ids[key] ?? "");
   const url = `${BASE}${path}`;
 
@@ -544,10 +805,66 @@ async function auditSurface(context, surface, theme, ids) {
       }),
     );
 
+    // A surface that did not render is not a surface that passed. Its counts are all low for
+    // the wrong reason, so it is demoted out of the measured set entirely rather than averaged
+    // in as a clean result.
+    if (result.renderFailure) {
+      result.status = "error";
+      result.error = `did not render: ${result.renderFailure}`;
+    }
+    result.rateLimited = rateLimited;
+
     const shot = join(OUT_DIR, "shots", `${surface.id}-${theme}-${VIEWPORT_WIDTH}.png`);
     mkdirSync(dirname(shot), { recursive: true });
     await page.screenshot({ path: shot, fullPage: false });
     result.screenshot = shot;
+
+    if (FULLPAGE) {
+      // An overlay surface is a viewport-sized thing by construction. `fullPage: true` expands
+      // to the height of the page *behind* the dialog, which on a long list leaves the dialog
+      // as a small band at the top of a very tall image — worse for review than the viewport
+      // shot, not better. So those four reuse it and the gallery says which is which.
+      if (surface.overlay) {
+        result.screenshotFull = shot;
+        result.screenshotFullIsViewport = true;
+      } else {
+        // `fullPage: true` on its own captures exactly the viewport here, and silently — the
+        // app shell is `h-screen overflow-hidden` with `overflow-y-auto` on <main>
+        // (app/[locale]/(main)/layout.tsx), so the document never scrolls and there is no
+        // "full page" beyond the fold for Playwright to extend into. The first run of this
+        // flag produced 44 images all exactly 1440x900, labelled full-page.
+        //
+        // So release the height first: find every element that is actually scrolling its own
+        // overflow and let it grow, along with its ancestors. Done generically rather than by
+        // class name so the landing page and the tenant portal — different shells — work too.
+        // This runs after `measure()`, so no metric can see it.
+        const released = await page.evaluate(() => {
+          const touched = [];
+          const release = (el) => {
+            touched.push([el, el.style.cssText]);
+            el.style.setProperty("height", "auto", "important");
+            el.style.setProperty("max-height", "none", "important");
+            el.style.setProperty("overflow", "visible", "important");
+          };
+          for (const el of document.querySelectorAll("*")) {
+            const s = getComputedStyle(el);
+            const scrolls = /auto|scroll|hidden/.test(s.overflowY);
+            if (!scrolls || el.scrollHeight <= el.clientHeight + 4) continue;
+            for (let n = el; n && n !== document.documentElement; n = n.parentElement) release(n);
+          }
+          release(document.documentElement);
+          release(document.body);
+          return touched.length;
+        });
+        // A page that genuinely fits releases nothing, which is fine and worth recording — it
+        // is the difference between "nothing below the fold" and "we failed to reach it".
+        result.releasedForFullPage = released;
+        await page.waitForTimeout(250);
+        const full = join(OUT_DIR, "shots", `${surface.id}-${theme}-${VIEWPORT_WIDTH}-full.png`);
+        await page.screenshot({ path: full, fullPage: true });
+        result.screenshotFull = full;
+      }
+    }
   } catch (err) {
     result.status = "error";
     result.error = err instanceof Error ? err.message : String(err);
@@ -606,6 +923,18 @@ function toMarkdown(results, meta) {
   lines.push(
     `| Containers overflowing but scrollable | ${ok.reduce((a, r) => a + ((r.containerOverflowCount ?? 0) - (r.clippedContainerCount ?? 0)), 0)} |`,
   );
+  lines.push(
+    `| **Inert persistent animation classes** | **${ok.reduce((a, r) => a + (r.inertAnimationCount ?? 0), 0)}** |`,
+  );
+  lines.push(
+    `| Surfaces using under ${Math.round(NARROW_CONTENT_RATIO * 100)}% of available width | ${ok.filter((r) => (r.contentWidthRatio ?? 1) < NARROW_CONTENT_RATIO).length} |`,
+  );
+  lines.push(
+    `| Surfaces with a dead vertical run over ${WASTED_RUN_PX}px | ${ok.filter((r) => (r.wastedRun ?? 0) > WASTED_RUN_PX).length} |`,
+  );
+  lines.push(
+    `| Surfaces with more than ${MAX_LEFT_EDGES} distinct section left edges | ${ok.filter((r) => (r.leftEdgeCount ?? 0) > MAX_LEFT_EDGES).length} |`,
+  );
   lines.push("");
 
   if (broken.length) {
@@ -627,6 +956,12 @@ function toMarkdown(results, meta) {
     if (r.smallTextCount) badges.push(`${r.smallTextCount} text <${MIN_FONT_PX}px`);
     if (r.clipped?.length) badges.push(`${r.clipped.length} offscreen`);
     if (r.clippedContainerCount) badges.push(`${r.clippedContainerCount} clipped containers`);
+    if (r.inertAnimationCount) badges.push(`${r.inertAnimationCount} inert animations`);
+    if ((r.contentWidthRatio ?? 1) < NARROW_CONTENT_RATIO)
+      badges.push(`uses ${Math.round(r.contentWidthRatio * 100)}% of width`);
+    if ((r.wastedRun ?? 0) > WASTED_RUN_PX) badges.push(`${r.wastedRun}px dead run`);
+    if ((r.leftEdgeCount ?? 0) > MAX_LEFT_EDGES) badges.push(`${r.leftEdgeCount} left edges`);
+    if (r.contentStartY > CHROME_DEPTH_PX) badges.push(`data starts +${r.contentStartY}px`);
     if (!badges.length) badges.push("clean");
 
     lines.push(`### \`${r.id}\` — ${r.theme}`);
@@ -838,9 +1173,30 @@ async function main() {
     );
   }
 
+  // Say plainly when the app throttled the run. Without this the failures read as layout defects
+  // — "did not render", on a dozen surfaces, all of them fine when opened by hand — and the run
+  // has to be repeated before anyone thinks to check the limiter. It cost two full sweeps here.
+  const throttled = results.filter((r) => (r.rateLimited ?? 0) > 0);
+  if (throttled.length > 0) {
+    const total = throttled.reduce((a, r) => a + r.rateLimited, 0);
+    console.log(
+      `\n[audit] RATE LIMITED: ${total} response(s) across ${throttled.length} surface-run(s) ` +
+        `came back 429.\n` +
+        `[audit] The app allows 100 requests per minute per IP and this sweep exceeds that from ` +
+        `one address, so\n` +
+        `[audit] the later surfaces measured error panels, not pages. Restart the server with ` +
+        `E2E_DISABLE_RATE_LIMIT=true\n` +
+        `[audit] and re-run — these numbers are not comparable to a clean sweep.`,
+    );
+  }
+
   writeFileSync(
     join(OUT_DIR, `report-${VIEWPORT_WIDTH}.json`),
-    JSON.stringify({ meta, summary, results, neverIdled }, null, 2),
+    JSON.stringify(
+      { meta, summary, results, neverIdled, rateLimitedRuns: throttled.length },
+      null,
+      2,
+    ),
   );
   writeFileSync(join(OUT_DIR, `report-${VIEWPORT_WIDTH}.md`), toMarkdown(results, meta));
   console.log(`\n[audit] wrote ${OUT_DIR}/report-${VIEWPORT_WIDTH}.{json,md}`);
@@ -893,7 +1249,19 @@ function sum(results, field) {
   return results.reduce((acc, r) => acc + (r[field] ?? 0), 0);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+/**
+ * `measure` is exported so its metrics can be proven against a page with known geometry
+ * (`scripts/mobile-audit.selftest.mjs`). A metric nobody has watched fail is a metric that
+ * reports zero forever and is mistaken for good news — which is the failure mode this whole
+ * harness exists to prevent, so it does not get an exemption for itself.
+ */
+export { measure };
+
+const INVOKED_DIRECTLY =
+  process.argv[1] && import.meta.url.endsWith(process.argv[1].split("/").pop());
+if (INVOKED_DIRECTLY) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

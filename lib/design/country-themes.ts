@@ -574,3 +574,30 @@ export function resolveThemeVars(country: CountryCode, mode: ThemeMode): Record<
 export function isCountryCode(value: string): value is CountryCode {
   return Object.prototype.hasOwnProperty.call(COUNTRY_THEMES, value);
 }
+
+/**
+ * The country's name in the reader's language.
+ *
+ * `COUNTRY_THEMES[code].name` is an English string in a 28-country table, so anything rendering
+ * it said "Spain" to a Portuguese reader, and would have said "Germany" and "France" to them too.
+ * Translating the table would mean 28 names times four catalogues, maintained by hand, growing
+ * with every country added.
+ *
+ * `Intl.DisplayNames` already knows them, in every locale the app has and every one it might add:
+ * ES renders as Espanha / España / Spagna / Spain with nothing to maintain. It even covers the
+ * table's one non-ISO entry — EU comes back as "União Europeia".
+ *
+ * The table's `name` stays as the fallback for a code the platform does not recognise.
+ *
+ * Lives here rather than beside its first caller because it has a second one: the portfolio tree
+ * names the country of a cluster, and the Finances tax estimate names the country of a regime.
+ */
+export function countryLabel(code: string, locale: string): string {
+  try {
+    const display = new Intl.DisplayNames([locale], { type: "region" }).of(code);
+    if (display && display !== code) return display;
+  } catch {
+    // Unsupported locale or a code that is not a region — fall through to the table.
+  }
+  return isCountryCode(code) ? COUNTRY_THEMES[code].name : code;
+}

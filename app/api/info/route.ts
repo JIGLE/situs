@@ -12,7 +12,12 @@ import { NextResponse } from "next/server";
  * a locally built image (`docker build` without `--build-arg`). The workflow passes all three; see
  * the runner stage of the Dockerfile for the ENV lines that carry them into the process.
  *
- * `public/version.json` carries the same three values as a static file, written at build time.
+ * `public/version.json` carries the version alone, as a static file. This line used to say it
+ * carried all three "written at build time" — and nothing wrote it, at build time or ever. It sat
+ * at 1.3.0 against a shipped 1.24.0 while three surfaces showed the number to the user, because a
+ * comment asserting a mechanism that does not exist tells the next reader not to check. `prebuild`
+ * writes it now and `npm run hygiene` fails when the committed copy disagrees
+ * (`scripts/check-version-sync.js`).
  */
 export async function GET(): Promise<NextResponse> {
   return NextResponse.json({

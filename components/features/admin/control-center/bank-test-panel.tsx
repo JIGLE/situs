@@ -84,6 +84,21 @@ export function BankTestPanel({ className }: { className?: string }) {
     void loadConnections();
   }, [loadConnections]);
 
+  // The consent callback lands back here with ?bank=connected|failed. Read it once and clear it,
+  // the same shape `bank-connect-panel.tsx` uses for the Settings tab, so the message does not
+  // reappear on every later visit — and refresh, because the connection it announces is new.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const outcome = params.get("bank");
+    if (!outcome) return;
+
+    setNotice(outcome === "connected" ? t("connected") : t("failed"));
+    params.delete("bank");
+    const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
+    window.history.replaceState({}, "", next);
+    if (outcome === "connected") void loadConnections();
+  }, [t, loadConnections]);
+
   const runCheck = useCallback(async () => {
     setChecking(true);
     setCheckError(false);

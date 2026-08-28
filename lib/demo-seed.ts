@@ -10,54 +10,86 @@ import {
   UnitStatus,
   DocumentType,
   LeaseStatus,
+  TemplateType,
+  CorrespondenceStatus,
+  MaintenanceContactType,
 } from "@prisma/client";
 
 export async function seedDemoData(userId: string): Promise<void> {
   const prisma = getPrismaClient();
 
   // 1. Clean existing records for the sandbox user
-  // Defensive: some developer DBs may be missing migrations/tables. Don't crash the API.
-  const safeDelete = async (action: () => Promise<unknown>, name: string) => {
+  //
+  // This used to swallow every cleanup failure with a `console.warn`, to avoid crashing the API on
+  // a developer DB missing a migration. It did not avoid the crash — it moved it. Against a
+  // database whose `tenants` table lacked `portalAccessRevokedAt`, the tenant cleanup failed, was
+  // swallowed, and the run died three steps later on `Unique constraint failed on Owner.email`,
+  // because the owners it was about to recreate had never been deleted. Half an hour went into
+  // "the seeder is not idempotent" before the actual message turned out to be in a log nobody was
+  // reading.
+  //
+  // Tolerating the delete never helped anyway: if a table or column is missing, the `create` for
+  // that same model further down fails too. The swallow only bought a worse error message.
+  //
+  // So nothing is skipped. Schema drift — P2021 (no such table), P2022 (no such column) — is
+  // reported as what it is, with the remedy attached; everything else is rethrown untouched.
+  const cleanup = async (action: () => Promise<unknown>, name: string) => {
     try {
       await action();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.warn(`[seeder] Skipping ${name} cleanup: ${msg}`);
+      const code = (err as { code?: string })?.code;
+      if (code === "P2021" || code === "P2022") {
+        const detail = err instanceof Error ? err.message.trim() : String(err);
+        throw new Error(
+          `Demo seed cannot clear ${name}: this database is behind prisma/schema.prisma ` +
+            `(${code}). Run \`npx prisma db push\` against the DATABASE_URL this process is ` +
+            `using, then seed again.\n\n${detail}`,
+          { cause: err },
+        );
+      }
+      throw err;
     }
   };
 
-  await safeDelete(() => prisma.receipt.deleteMany({ where: { userId } }), "receipts");
-  await safeDelete(() => prisma.expense.deleteMany({ where: { userId } }), "expenses");
-  await safeDelete(
+  await cleanup(() => prisma.receipt.deleteMany({ where: { userId } }), "receipts");
+  await cleanup(() => prisma.expense.deleteMany({ where: { userId } }), "expenses");
+  await cleanup(
     () => prisma.maintenanceTicket.deleteMany({ where: { userId } }),
     "maintenanceTickets",
   );
-  await safeDelete(() => prisma.correspondence.deleteMany({ where: { userId } }), "correspondence");
+  await cleanup(() => prisma.correspondence.deleteMany({ where: { userId } }), "correspondence");
+  // After the letters, because a template must outlive the record of what was sent from it.
+  // Scoped to `userId`, which also means the system-owned templates (userId NULL) are untouched.
+  await cleanup(
+    () => prisma.correspondenceTemplate.deleteMany({ where: { userId } }),
+    "correspondenceTemplates",
+  );
+  await cleanup(
+    () => prisma.maintenanceContact.deleteMany({ where: { userId } }),
+    "maintenanceContacts",
+  );
+  // TaxFiling is unique on (userId, year, country, regime), so without this a second seed
+  // collides rather than replacing.
+  await cleanup(() => prisma.taxFiling.deleteMany({ where: { userId } }), "taxFilings");
   // Documents and the bank graph are created below but were never cleared, so re-seeding stacked
   // a fresh copy on top of the last one: measured across a single seed call, documents went
   // 54 → 60 and bank transactions 90 → 100 while every other table held steady. That made the
   // seeder non-idempotent and any count-based baseline (see `scripts/mobile-audit.mjs`) drift
   // upward on every run. Bank rows go child-first — transactions reference accounts reference
   // connections. Units and rent periods are absent by design: they cascade from property/lease.
-  await safeDelete(() => prisma.document.deleteMany({ where: { userId } }), "documents");
-  await safeDelete(
-    () => prisma.bankTransaction.deleteMany({ where: { userId } }),
-    "bankTransactions",
-  );
-  await safeDelete(() => prisma.bankAccount.deleteMany({ where: { userId } }), "bankAccounts");
-  await safeDelete(
-    () => prisma.bankConnection.deleteMany({ where: { userId } }),
-    "bankConnections",
-  );
-  await safeDelete(
+  await cleanup(() => prisma.document.deleteMany({ where: { userId } }), "documents");
+  await cleanup(() => prisma.bankTransaction.deleteMany({ where: { userId } }), "bankTransactions");
+  await cleanup(() => prisma.bankAccount.deleteMany({ where: { userId } }), "bankAccounts");
+  await cleanup(() => prisma.bankConnection.deleteMany({ where: { userId } }), "bankConnections");
+  await cleanup(
     () => prisma.propertyOwner.deleteMany({ where: { property: { userId } } }),
     "propertyOwners",
   );
-  await safeDelete(() => prisma.tenant.deleteMany({ where: { userId } }), "tenants");
-  await safeDelete(() => prisma.property.deleteMany({ where: { userId } }), "properties");
-  await safeDelete(() => prisma.owner.deleteMany({ where: { userId } }), "owners");
+  await cleanup(() => prisma.tenant.deleteMany({ where: { userId } }), "tenants");
+  await cleanup(() => prisma.property.deleteMany({ where: { userId } }), "properties");
+  await cleanup(() => prisma.owner.deleteMany({ where: { userId } }), "owners");
 
-  console.log(`[seeder] Cleared available demo data for user: ${userId}`);
+  console.log(`[seeder] Cleared demo data for user: ${userId}`);
 
   // 2. Create Owners
   const owner = await prisma.owner.create({
@@ -725,6 +757,177 @@ export async function seedDemoData(userId: string): Promise<void> {
         fileSize: Math.floor(Math.random() * 5000000) + 100000, // 100KB - 5MB
         propertyId: prop.id,
         ...(tenant && { tenantId: tenant.id }),
+      },
+    });
+  }
+
+  // 13. Correspondence templates and letters
+  //
+  // The cleanup above has deleted `correspondence` since long before this existed, which is the
+  // giveaway: the fixture was always meant to have some and never did. Every audit run therefore
+  // measured the Correspondence page's empty state and reported 484px of "wasted space" that was
+  // really "no data" — a layout verdict on a screen that had nothing to lay out.
+  // Enum MEMBERS, not `"literal" as Enum`. The cast compiles whatever you write — `"contractor"`
+  // type-checked cleanly against `MaintenanceContactType` and then failed at the database, which
+  // is the wrong place to learn the enum is uppercase.
+  const dbTemplates = [];
+  for (const tpl of [
+    {
+      name: "Rent reminder",
+      type: TemplateType.rent_reminder,
+      subject: "Rent due — {{month}}",
+      content:
+        "Dear {{tenantName}},\n\nThis is a reminder that rent of {{amount}} for {{month}} " +
+        "is due on {{dueDate}}.\n\nThank you,\n{{ownerName}}",
+    },
+    {
+      name: "Welcome letter",
+      type: TemplateType.welcome,
+      subject: "Welcome to {{propertyName}}",
+      content:
+        "Dear {{tenantName}},\n\nWelcome to {{propertyName}}. Your lease begins on " +
+        "{{startDate}}.\n\n{{ownerName}}",
+    },
+    {
+      name: "Annual inspection notice",
+      type: TemplateType.maintenance_request,
+      subject: "Scheduled inspection — {{propertyName}}",
+      content:
+        "Dear {{tenantName}},\n\nA routine inspection is scheduled for {{date}}.\n\n" +
+        "{{ownerName}}",
+    },
+  ]) {
+    dbTemplates.push(
+      await prisma.correspondenceTemplate.create({
+        data: {
+          userId,
+          name: tpl.name,
+          type: tpl.type,
+          subject: tpl.subject,
+          content: tpl.content,
+          variables: JSON.stringify(["tenantName", "propertyName", "amount", "month", "dueDate"]),
+          country: "PT",
+          locale: "pt",
+        },
+      }),
+    );
+  }
+
+  // Statuses spread deliberately: the list renders one row per state, so a fixture that is all
+  // `sent` hides two thirds of the component.
+  const correspondenceData = [
+    { tenantIndex: 0, templateIndex: 0, status: CorrespondenceStatus.sent, daysAgo: 12 },
+    { tenantIndex: 1, templateIndex: 0, status: CorrespondenceStatus.delivered, daysAgo: 9 },
+    { tenantIndex: 2, templateIndex: 1, status: CorrespondenceStatus.delivered, daysAgo: 40 },
+    { tenantIndex: 0, templateIndex: 2, status: CorrespondenceStatus.draft, daysAgo: 2 },
+    { tenantIndex: 1, templateIndex: 1, status: CorrespondenceStatus.sent, daysAgo: 65 },
+  ] as const;
+
+  for (const item of correspondenceData) {
+    const tenant = dbTenants[item.tenantIndex % dbTenants.length];
+    const template = dbTemplates[item.templateIndex];
+    const created = new Date(now.getTime() - item.daysAgo * 24 * 60 * 60 * 1000);
+    await prisma.correspondence.create({
+      data: {
+        userId,
+        templateId: template.id,
+        tenantId: tenant.id,
+        propertyId: tenant.propertyId,
+        subject: template.subject.replace("{{month}}", "June 2026"),
+        content: template.content.replace("{{tenantName}}", tenant.name),
+        status: item.status,
+        sentAt: item.status === CorrespondenceStatus.draft ? null : created,
+        createdAt: created,
+        templateNameSnapshot: template.name,
+        templateVersionSnapshot: template.version,
+        templateOriginSnapshot: "user",
+      },
+    });
+  }
+
+  // 14. Maintenance contacts — what /api/contacts reads, and what Operations links out to.
+  for (const contact of [
+    {
+      type: MaintenanceContactType.CONTRACTOR,
+      company: "Silva Canalizações",
+      contactPerson: "Rui Silva",
+      email: "rui@silvacanalizacoes.pt",
+      phone: "+351 912 345 678",
+      specialties: ["Plumber"],
+      hourlyRate: 45,
+      rating: 4.5,
+    },
+    {
+      type: MaintenanceContactType.CONTRACTOR,
+      company: "ElectroPorto",
+      contactPerson: "Ana Marques",
+      email: "ana@electroporto.pt",
+      phone: "+351 913 222 111",
+      specialties: ["Electrician"],
+      hourlyRate: 52,
+      rating: 4.8,
+    },
+    {
+      type: MaintenanceContactType.CONTRACTOR,
+      company: "ClimaLisboa",
+      contactPerson: "Tiago Nunes",
+      email: "tiago@climalisboa.pt",
+      phone: "+351 914 555 900",
+      specialties: ["HVAC", "Appliance repair"],
+      hourlyRate: 60,
+      rating: 4.1,
+    },
+    {
+      type: MaintenanceContactType.VENDOR,
+      company: "Casa & Cia",
+      contactPerson: "Marta Lopes",
+      email: "marta@casaecia.pt",
+      phone: "+351 915 010 020",
+      specialties: ["Cleaning"],
+      hourlyRate: 28,
+      rating: 4.6,
+    },
+  ]) {
+    await prisma.maintenanceContact.create({
+      data: {
+        userId,
+        type: contact.type,
+        company: contact.company,
+        contactPerson: contact.contactPerson,
+        email: contact.email,
+        phone: contact.phone,
+        specialties: JSON.stringify(contact.specialties),
+        hourlyRate: contact.hourlyRate,
+        rating: contact.rating,
+        isActive: true,
+      },
+    });
+  }
+
+  // 15. Tax filings — one per year and status, so the list shows both `draft` and `final`.
+  const propertyIdsJson = JSON.stringify(dbProperties.map((p) => p.id));
+  for (const filing of [
+    { year: 2025, regime: "STANDARD", gross: 42000, expenses: 9800, status: "final" },
+    { year: 2026, regime: "STANDARD", gross: 18600, expenses: 4200, status: "draft" },
+  ]) {
+    const taxable = filing.gross - filing.expenses;
+    const taxDue = Math.round(taxable * 0.28 * 100) / 100;
+    await prisma.taxFiling.create({
+      data: {
+        userId,
+        year: filing.year,
+        country: "PT",
+        regime: filing.regime,
+        propertyIds: propertyIdsJson,
+        grossIncome: filing.gross,
+        allowableExpenses: filing.expenses,
+        taxableIncome: taxable,
+        taxDue,
+        effectiveRate: Math.round((taxDue / filing.gross) * 10000) / 100,
+        withholdingPaid: 0,
+        balanceDue: taxDue,
+        status: filing.status,
+        payload: JSON.stringify({ source: "demo-seed", year: filing.year }),
       },
     });
   }

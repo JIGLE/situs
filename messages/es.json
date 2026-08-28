@@ -57,7 +57,14 @@
     "newProperty": "Nueva propiedad",
     "newPropertyHint": "unidad independiente",
     "newBuilding": "Nuevo edificio",
-    "newBuildingHint": "conjunto de unidades"
+    "newBuildingHint": "conjunto de unidades",
+    "summary": {
+      "allClear": "Todos los inmuebles están en orden.",
+      "leaseEnding": "El contrato termina el {date}",
+      "noActiveLease": "Ocupado, sin contrato activo",
+      "noPriorMonth": "Sin recibos el mes anterior",
+      "vsLastMonth": "vs mes anterior"
+    }
   },
   "settings": {
     "title": "Configuración",
@@ -416,6 +423,8 @@
       "testHelp": "Una conexión de prueba recorre el mismo consentimiento y la misma importación que una real. Lo único que no hace es crear recibos: el dinero de prueba nunca se asigna a un contrato.",
       "startTest": "Conectar prueba",
       "connectFailed": "No se ha podido iniciar la conexión de prueba.",
+      "connected": "Conexión de prueba completada: los movimientos importados aparecen en Finanzas, pero no generan recibos.",
+      "failed": "La conexión de prueba no se completó. Consulta el registro del servidor.",
       "existing": "{count} conexiones de prueba",
       "connectionSummary": "{status} · {accounts} cuentas · {movements} movimientos",
       "removeLabel": "Eliminar {name}",
@@ -714,7 +723,9 @@
     "viewAll": "Ver Todo",
     "back": "Atrás",
     "continue": "Continuar",
-    "processing": "Procesando…"
+    "processing": "Procesando…",
+    "exportCsv": "Exportar como CSV",
+    "exportJson": "Exportar como JSON"
   },
   "landing": {
     "eyebrow": "Operaciones de alquiler para Portugal y España",
@@ -1648,9 +1659,6 @@
     "totalIncome": "Ingresos Totales",
     "totalExpenses": "Gastos Totales",
     "netIncome": "Ingreso Neto",
-    "fromRent": "De alquileres y depósitos",
-    "maintenanceEtc": "Mantenimiento, reparaciones, etc.",
-    "cashFlow": "Flujo de caja del período",
     "allTime": "Todo el Período",
     "thisMonth": "Este Mes",
     "thisYear": "Este Año",
@@ -1790,7 +1798,55 @@
     },
     "timeRange": "Intervalo de tiempo",
     "filterCountry": "Filtrar por país",
-    "filterReceiptStatus": "Filtrar recibos por estado"
+    "filterReceiptStatus": "Filtrar recibos por estado",
+    "generating": "Generando…",
+    "bulkGenerateFailed": "No se han podido generar los recibos. Inténtalo de nuevo.",
+    "unknownProperty": "Inmueble desconocido",
+    "noFinancialData": "Aún no hay datos financieros",
+    "noFinancialDataDesc": "Empieza añadiendo recibos o gastos para seguir tu flujo de caja",
+    "incomeAndReceipts": "Ingresos y recibos",
+    "incomeAndReceiptsDesc": "Rentas cobradas",
+    "noIncomeRecords": "Sin registros de ingresos",
+    "expensesHeading": "Gastos",
+    "expensesDesc": "Últimos costes registrados del inmueble",
+    "noExpenseRecords": "Sin registros de gastos",
+    "expenseForm": {
+      "property": "Inmueble",
+      "selectProperty": "Seleccionar inmueble",
+      "category": "Categoría",
+      "selectCategory": "Seleccionar categoría",
+      "amount": "Importe ({symbol})",
+      "date": "Fecha",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Detalles sobre el gasto…",
+      "selectFrequency": "Seleccionar periodicidad",
+      "submit": "Crear gasto",
+      "toastCreated": "Gasto registrado",
+      "toastUpdated": "Gasto actualizado",
+      "toastFailed": "No se ha podido guardar el gasto. Inténtalo de nuevo."
+    },
+    "tax": {
+      "heading": "Estimación fiscal — {country}",
+      "description": "Impuesto estimado sobre los rendimientos del alquiler",
+      "grossIncome": "Ingresos brutos",
+      "taxableIncome": "Base imponible",
+      "taxAmount": "Cuota a pagar",
+      "effectiveRate": "Tipo efectivo del {rate}%",
+      "quarterlyPayment": "Pago trimestral",
+      "annualSettlement": "Liquidación anual",
+      "deductionsApplied": "Deducciones aplicadas",
+      "totalDeductions": "Total de deducciones",
+      "noteLabel": "Nota",
+      "note": "Estimación basada en la normativa fiscal de {country}. Confírmalo con tu gestor antes de presentar la declaración.",
+      "deduction": {
+        "expenses": "Gastos",
+        "maxDeductible": "Deducción máxima",
+        "allowedDeduction": "Deducción permitida",
+        "mortgageInterest": "Intereses de hipoteca",
+        "communityFees": "Gastos de comunidad",
+        "stressedZoneReduction": "Reducción por zona tensionada"
+      }
+    }
   },
   "propertyDetail": {
     "tabs": {
@@ -2186,7 +2242,11 @@
     "noPropertySelected": "Por favor seleccione al menos una propiedad",
     "loadingIncome": "Cargando datos de ingresos...",
     "portugal": "Portugal",
-    "spain": "España"
+    "spain": "España",
+    "positionHeading": "{year} hasta ahora",
+    "positionNote": "Ingresos y gastos registrados este año. El impuesto a pagar resulta de crear una declaración.",
+    "netPosition": "Neto",
+    "deleteFilingLabel": "Eliminar la declaración de {year}"
   },
   "paymentMatrix": {
     "title": "Matriz de Seguimiento de Pagos",
@@ -2434,7 +2494,8 @@
       "bankMovements": "Movimientos bancarios",
       "receipts": "Recibos",
       "taxLog": "Registro fiscal"
-    }
+    },
+    "leaseExpiresInDays": "faltan {days}d"
   },
   "contacts": {
     "addVendor": "Añadir proveedor",
@@ -2560,6 +2621,11 @@
     "loading": "Cargando…",
     "loadFailedTitle": "No se han podido cargar tus datos",
     "retry": "Reintentar",
-    "retrying": "Reintentando…"
+    "retrying": "Reintentando…",
+    "auditTrailEmpty": "Los inicios de sesión, exportaciones y cambios de configuración aparecerán aquí.",
+    "themeLight": "Claro",
+    "themeDark": "Oscuro",
+    "taxConnectorsEmpty": "Aún no hay conectores fiscales: se crea automáticamente la primera vez que emitas un recibo de alquiler a través del flujo fiscal de un país.",
+    "taxConnectorsLoadFailed": "No se han podido cargar los conectores fiscales. Inténtalo de nuevo."
   }
 }

@@ -356,14 +356,8 @@ body {
    edits — implementations are now flat 1px-border panels, no blur)
    ============================================ */
 
-.panel,
-.glass {
+.panel {
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-}
-
-.glass-heavy {
-  background: var(--color-surface-overlay);
   border: 1px solid var(--color-border);
 }
 
@@ -376,33 +370,6 @@ body {
   background: var(--color-surface-overlay);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-modal);
-}
-
-.card-elevated {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  transition: border-color 0.2s ease;
-}
-
-.card-elevated:hover {
-  border-color: var(--color-border-hover);
-}
-
-/* Numbered surface utility classes */
-.surface-0 {
-  background-color: var(--color-surface-0);
-}
-.surface-1 {
-  background-color: var(--color-surface-1);
-  border: 1px solid var(--color-border);
-}
-.surface-2 {
-  background-color: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-}
-.surface-3 {
-  background-color: var(--color-surface-3);
-  border: 1px solid var(--color-border);
 }
 
 /* Mono micro-label — the system voice (labels, metadata, IDs, status codes) */
@@ -468,11 +435,6 @@ body {
   border-left: 3px solid var(--semantic-info);
   background: var(--semantic-info-soft);
 }
-.alert-card.alert-country {
-  border-left: 3px solid var(--country-highlight-readable);
-  background: var(--country-highlight-soft);
-}
-
 /* Status dots — 8px squares, semantic only */
 .status-dot {
   width: 8px;
@@ -497,14 +459,6 @@ body {
 /* Display alias — same family, boldness spent on weight/tracking */
 .font-display {
   font-family: var(--font-display);
-}
-
-.text-display-large {
-  font-family: var(--font-display);
-  font-size: 3.5rem;
-  font-weight: 400;
-  line-height: 0.94;
-  letter-spacing: -0.055em;
 }
 
 .text-display-medium {
@@ -542,18 +496,6 @@ body {
   line-height: 1.5;
 }
 
-.text-body-large {
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.6;
-}
-
-.text-body-medium {
-  font-size: 0.875rem;
-  font-weight: 400;
-  line-height: 1.5;
-}
-
 .text-body-small {
   font-size: 0.75rem;
   font-weight: 400;
@@ -569,9 +511,130 @@ body {
   text-transform: uppercase;
 }
 
-/* Gradients are banned in Situs — legacy class renders solid accent */
-.text-gradient {
-  color: var(--country-highlight-readable);
+/* ============================================
+   OVERLAY ENTER / EXIT
+   ============================================
+
+   `animate-in`, `fade-in-0`, `zoom-in-95`, `slide-in-from-top-2` and friends are the vocabulary
+   every shadcn/Radix overlay is written in. They are NOT part of Tailwind core — they come from
+   `tailwindcss-animate`, which was never installed here, and an undefined utility is silently
+   dropped rather than reported. So `dialog`, `alert-dialog`, `dropdown-menu`, `select`, `sheet`
+   and `notification-center` all carried the classes and none of them animated.
+
+   Authored here rather than pulled in as a dependency for three reasons: the surface actually
+   used is fourteen classes, the package ships bounce/elastic helpers this codebase bans a few
+   sections above, and the durations belong to us. `@utility` (not a plain class) is what lets
+   Tailwind generate the `data-[state=open]:` variants the markup depends on — a bare
+   `.animate-in {}` rule would leave every one of those prefixed classes undefined all over again.
+
+   The mechanism: one pair of keyframes reads a set of custom properties, and each modifier does
+   nothing but set one of them. That is what allows `fade-in-0 zoom-in-95 slide-in-from-top-2` to
+   compose into a single animation instead of three fighting ones.
+*/
+
+@keyframes enter {
+  from {
+    opacity: var(--tw-enter-opacity, 1);
+    transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0)
+      scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), 1);
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--tw-exit-opacity, 1);
+    transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0)
+      scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), 1);
+  }
+}
+
+@utility animate-in {
+  animation-name: enter;
+  animation-duration: 150ms;
+  /* Calm eases only, per the section above: decelerate in, accelerate out, no overshoot. */
+  animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  animation-fill-mode: both;
+}
+
+@utility animate-out {
+  animation-name: exit;
+  animation-duration: 120ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+  animation-fill-mode: both;
+}
+
+/*
+  Core `duration-*` sets only `transition-duration`, so `dialog`'s `duration-200` and `sheet`'s
+  `data-[state=open]:duration-300` were inert on an animation — the markup was written expecting
+  the plugin's behaviour, where duration drives both. Extending it keeps that intent working.
+  Verified safe: nothing in the tree combines `duration-*` with `animate-spin`/`-pulse`/`-bounce`,
+  so no existing animation has its timing hijacked.
+*/
+@utility duration-* {
+  animation-duration: --value(integer) ms;
+  transition-duration: --value(integer) ms;
+}
+
+@utility fade-in-0 {
+  --tw-enter-opacity: 0;
+}
+@utility fade-out-0 {
+  --tw-exit-opacity: 0;
+}
+
+@utility zoom-in-95 {
+  --tw-enter-scale: 0.95;
+}
+@utility zoom-out-95 {
+  --tw-exit-scale: 0.95;
+}
+
+/*
+  Functional, not one static rule per value — and that distinction was load-bearing. The static
+  set spelled two of these `slide-in-from-left-1` and `slide-out-to-left-1`, but the markup says
+  `slide-in-from-left-1/2` and `slide-out-to-left-1/2`. Four classes stayed undefined and every
+  dialog and alert-dialog went on sliding from nowhere, through the very commit that was meant to
+  fix the overlay animations. `npm run css:check` is what finally named them.
+
+  Each utility lists three declarations for the same property. Tailwind emits only the ones whose
+  `--value()` resolves, so one rule covers a spacing step (`-2`), a fraction (`-1/2`) and an
+  arbitrary value (`-[48%]`) without the three ever colliding.
+
+  The fractions are not a slide. `left-1/2` and `top-[48%]` reproduce the centring transform the
+  dialog already carries (`translate-x-[-50%] translate-y-[-50%]`), because the keyframe's
+  `transform` replaces the element's own for the duration of the animation. Holding x at -50% and
+  running y from -48% to -50% is what makes the dialog drift up two percent while it zooms, rather
+  than jumping to the corner first.
+*/
+@utility slide-in-from-top-* {
+  --tw-enter-translate-y: calc(var(--spacing) * --value(integer) * -1);
+  --tw-enter-translate-y: calc(--value(ratio) * -100%);
+  --tw-enter-translate-y: calc(--value([percentage], [length]) * -1);
+}
+@utility slide-in-from-bottom-* {
+  --tw-enter-translate-y: calc(var(--spacing) * --value(integer));
+  --tw-enter-translate-y: calc(--value(ratio) * 100%);
+  --tw-enter-translate-y: --value([percentage], [length]);
+}
+@utility slide-in-from-left-* {
+  --tw-enter-translate-x: calc(var(--spacing) * --value(integer) * -1);
+  --tw-enter-translate-x: calc(--value(ratio) * -100%);
+  --tw-enter-translate-x: calc(--value([percentage], [length]) * -1);
+}
+@utility slide-in-from-right-* {
+  --tw-enter-translate-x: calc(var(--spacing) * --value(integer));
+  --tw-enter-translate-x: calc(--value(ratio) * 100%);
+  --tw-enter-translate-x: --value([percentage], [length]);
+}
+@utility slide-out-to-top-* {
+  --tw-exit-translate-y: calc(var(--spacing) * --value(integer) * -1);
+  --tw-exit-translate-y: calc(--value(ratio) * -100%);
+  --tw-exit-translate-y: calc(--value([percentage], [length]) * -1);
+}
+@utility slide-out-to-left-* {
+  --tw-exit-translate-x: calc(var(--spacing) * --value(integer) * -1);
+  --tw-exit-translate-x: calc(--value(ratio) * -100%);
+  --tw-exit-translate-x: calc(--value([percentage], [length]) * -1);
 }
 
 /* ============================================
@@ -609,28 +672,6 @@ body {
   }
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 @keyframes slide-up {
   from {
     opacity: 0;
@@ -642,97 +683,20 @@ body {
   }
 }
 
-@keyframes pulse-gentle {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-@keyframes slide-in-right {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slide-in-left {
-  from {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
-}
-.animate-slide-in {
-  animation: slideIn 0.3s ease-out;
-}
-.animate-scale-in {
-  animation: scaleIn 0.2s ease-out;
 }
 .animate-slide-up {
   animation: slide-up 0.4s ease-out;
 }
-/* Glow is banned — legacy class kept as a no-op so old markup stays valid */
-.animate-glow-pulse {
-  animation: none;
-}
-.animate-pulse-gentle {
-  animation: pulse-gentle 2s infinite;
-}
-.animate-slide-in-right {
-  animation: slide-in-right 0.3s ease-out;
-}
-.animate-slide-in-left {
-  animation: slide-in-left 0.3s ease-out;
-}
-.component-enter {
-  animation: slideInUp 0.3s ease-out;
-}
-.loading-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-.loading-spin {
-  animation: spin 1s linear infinite;
-}
-
 .animate-shimmer {
   animation: shimmer 1.5s infinite linear;
-  background: linear-gradient(90deg, transparent, var(--color-hover), transparent);
+  /* `background-image`, not the `background` shorthand. The shorthand also resets
+     `background-color`, so any base colour set alongside it — a skeleton's surface, say — was
+     silently wiped and the element was left as a sweep over nothing. */
+  background-image: linear-gradient(90deg, transparent, var(--color-hover), transparent);
   background-size: 200px 100%;
+  background-repeat: no-repeat;
 }
 
 /* ============================================
@@ -750,27 +714,6 @@ body {
 .surface-elevated {
   background-color: var(--color-surface-elevated);
   border: 1px solid var(--color-border);
-}
-
-.surface-overlay {
-  background-color: var(--color-surface-overlay);
-  border: 1px solid var(--color-border);
-}
-
-.interactive {
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.2s ease;
-  cursor: pointer;
-}
-
-.interactive:hover {
-  transform: translateY(-1px);
-}
-
-.interactive:active {
-  transform: translateY(0);
 }
 
 /* ============================================
@@ -814,36 +757,8 @@ body {
 }
 
 /* ============================================
-   Z-INDEX UTILITY CLASSES
-   ============================================ */
-.z-base {
-  z-index: var(--z-base);
-}
-.z-dropdown {
-  z-index: var(--z-dropdown);
-}
-.z-sticky {
-  z-index: var(--z-sticky);
-}
-.z-modal {
-  z-index: var(--z-modal);
-}
-.z-popover {
-  z-index: var(--z-popover);
-}
-.z-toast {
-  z-index: var(--z-toast);
-}
-
-/* ============================================
    LAYOUT UTILITIES
    ============================================ */
-
-.container-max {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1rem;
-}
 
 .stack {
   display: flex;
@@ -854,13 +769,6 @@ body {
   margin-top: var(--space-4, 1rem);
 }
 
-.cluster {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3, 0.75rem);
-  align-items: center;
-}
-
 /* ============================================
    MOBILE UTILITIES
    ============================================ */
@@ -868,68 +776,12 @@ body {
 .touch-manipulation {
   touch-action: manipulation;
 }
-.safe-area-inset-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-.h-safe-area-inset-bottom {
-  height: env(safe-area-inset-bottom, 0px);
-}
-.tap-target {
-  min-height: 44px;
-  min-width: 44px;
-}
-.no-select {
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.snap-x {
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-}
-
-.snap-start {
-  scroll-snap-align: start;
-}
-
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
-}
-
-.mobile-card {
-  transition: transform 0.15s ease;
-}
-.mobile-card:active {
-  transform: scale(0.98);
-}
-
-@media (max-width: 640px) {
-  .mobile-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  .mobile-full {
-    width: 100%;
-  }
-  .mobile-p-4 {
-    padding: 1rem;
-  }
-}
-
-/* ============================================
-   ANIMATION PERFORMANCE
-   ============================================ */
-
-.will-change-transform {
-  will-change: transform;
-}
-.will-change-opacity {
-  will-change: opacity;
 }
 
 /* Reduced motion preferences */
@@ -941,18 +793,4 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}
-
-/* Bottom sheet animation */
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-.slide-up {
-  animation: slideUp 0.3s ease-out;
 }

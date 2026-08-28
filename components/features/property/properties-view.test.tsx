@@ -39,7 +39,9 @@ describe("PropertiesView", () => {
   it("renders the portfolio view when there are no properties", () => {
     render(<PropertiesView />);
     // Tree is the default view; its compact asset filter renders above the tree.
-    // The next-intl mock returns the key, so assert the key rather than the English copy.
-    expect(screen.getByPlaceholderText("portfolio.filterAssets")).toBeDefined();
+    // Asserts the copy a user reads. It used to assert the key — the comment here said so
+    // outright, "the next-intl mock returns the key" — which meant it could not tell a working
+    // translation from a missing one.
+    expect(screen.getByPlaceholderText("Filter assets…")).toBeDefined();
   });
 });

@@ -37,6 +37,13 @@ export type PropertiesViewProps = {
    * in rather than owned here because the caller holds the dialogs they open.
    */
   treeActions?: React.ReactNode;
+  /**
+   * What fills the workspace before an asset is chosen. Passed in for the same reason
+   * `treeActions` is — the caller knows which portal it is serving, and this split does not.
+   * An owner gets the portfolio summary; a tenant keeps the placeholder, because a summary of
+   * a portfolio is not their screen.
+   */
+  workspaceDefault?: React.ReactNode;
 };
 
 export type PropertiesViewRef = {
@@ -51,6 +58,7 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
       highlightedPropertyId,
       showPageHeader = true,
       treeActions,
+      workspaceDefault,
     }: PropertiesViewProps,
     ref,
   ): React.ReactElement {
@@ -363,11 +371,13 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
                         <PropertyDetailView propertyId={workspacePropertyId} />
                       </div>
                     ) : (
-                      <div className="flex min-h-[440px] items-center justify-center border border-dashed border-[var(--color-border)] p-12 text-center">
-                        <p className="mono-label max-w-[26ch] leading-relaxed">
-                          {t("portfolio.selectAsset")}
-                        </p>
-                      </div>
+                      (workspaceDefault ?? (
+                        <div className="flex min-h-[440px] items-center justify-center border border-dashed border-[var(--color-border)] p-12 text-center">
+                          <p className="mono-label max-w-[26ch] leading-relaxed">
+                            {t("portfolio.selectAsset")}
+                          </p>
+                        </div>
+                      ))
                     )}
                   </div>
                 </div>

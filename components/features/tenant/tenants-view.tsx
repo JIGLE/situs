@@ -653,7 +653,10 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
                           <span className="block truncate text-sm font-medium text-[var(--color-foreground)]">
                             {tenant.name}
                           </span>
-                          <span className="block truncate text-xs text-[var(--color-muted-foreground)]">
+                          <span
+                            className="block break-words text-xs text-[var(--color-muted-foreground)] md:truncate"
+                            title={tenant.email}
+                          >
                             {tenant.email}
                           </span>
                         </button>
@@ -822,8 +825,13 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
                                 >
                                   {tenant.name}
                                 </p>
+                                {/* Wraps below `md`, truncates above it. `truncate` alone clipped
+                                    `ana.martinez@gmail.com` by 37px at 390px with no way to read
+                                    the rest: `title` is a hover tooltip, and a phone has no
+                                    hover. Above `md` the row is column-aligned and a wrap would
+                                    break the alignment, so truncation is right there. */}
                                 <p
-                                  className="truncate text-xs text-[var(--color-muted-foreground)]"
+                                  className="break-words text-xs text-[var(--color-muted-foreground)] md:truncate"
                                   title={tenant.email}
                                 >
                                   {tenant.email}

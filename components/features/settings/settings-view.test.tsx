@@ -4,10 +4,9 @@ import { renderWithProviders as render } from "@/tests/helpers/render-with-provi
 import { SettingsView } from "./settings-view";
 
 // Mock next-intl - must include NextIntlClientProvider
-vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string) => key,
-  NextIntlClientProvider: ({ children }: { children: React.ReactNode }) => children,
-}));
+// `next-intl` is not mocked here. It used to be, returning the key (or a small hand-written
+// map of English strings) — which meant this file asserted placeholder text rather than what
+// a user reads. `renderWithProviders` supplies the real provider and catalogue.
 
 // Mock next/navigation
 vi.mock("next/navigation", () => ({
@@ -131,7 +130,7 @@ describe("SettingsView", () => {
     });
     await waitFor(() => {
       // The next-intl mock returns the key, so the section label renders as "billing".
-      expect(screen.getByRole("button", { name: "billing" })).toBeDefined();
+      expect(screen.getByRole("button", { name: "Billing" })).toBeDefined();
     });
   });
 

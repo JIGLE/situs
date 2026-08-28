@@ -145,8 +145,11 @@ eslint.config.cjs
 # Claude Code personal settings (auto-merge/watch authority, not team-shared)
 .claude/settings.local.json
 
-# Responsive audit harness output (regenerated per run)
+# Responsive audit harness output (regenerated per run).
+# Globbed, not just the default name: AUDIT_OUT_DIR takes any directory, and a desktop pass
+# written to `audit-desktop/` landed in `prettier --check` as four style violations.
 audit-report/
+audit-*/
 
 # Document storage root (DOCUMENT_STORAGE_PATH). Runtime landlord/tenant documents —
 # archived receipt PDFs land here the moment a receipt reaches "emitted". Never source,

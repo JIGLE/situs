@@ -65,6 +65,9 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
   const t = useTranslations("tenants");
   const tForms = useTranslations("forms");
   const tActions = useTranslations("actions");
+  // `status` already carries paid / pending / overdue in all four catalogues — the chip below was
+  // printing the raw enum instead, so an otherwise fully Portuguese modal said "Paid".
+  const tStatus = useTranslations("status");
   const confirmDialog = useConfirmDialog();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -269,13 +272,13 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
             {!isEditing && (
               <div className="flex items-center gap-2 shrink-0">
                 <span
-                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${PAYMENT_STATUS_STYLES[tenant.paymentStatus] ?? ""}`}
+                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${PAYMENT_STATUS_STYLES[tenant.paymentStatus] ?? ""}`}
                 >
-                  {tenant.paymentStatus}
+                  {tStatus(tenant.paymentStatus)}
                 </span>
                 {isLeaseExpiringSoon && leaseExpiryDays !== null && (
                   <span className="inline-flex items-center rounded-full border border-[var(--color-warning)]/30 bg-[var(--color-warning-muted)] px-2.5 py-0.5 text-xs font-semibold text-[var(--color-warning)]">
-                    {leaseExpiryDays}d left
+                    {t("leaseExpiresInDays", { days: leaseExpiryDays })}
                   </span>
                 )}
               </div>
@@ -295,7 +298,8 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Doctrine rule 6: a multi-column form is single-column below `md`. */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="email">{tForms("email")}</Label>
                 <Input
@@ -411,7 +415,10 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
 
               {/* Overview tab */}
               <TabsContent value="overview" className="space-y-3 mt-4">
-                <div className="grid grid-cols-2 gap-3">
+                {/* One column below `sm`. Two cards across a 390px phone left about 180px each,
+                    which clipped `joao.silva@outlook.pt` by 16px with only a `title` tooltip to
+                    recover it — and a phone has no hover. */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-card)] p-3">
                     <p className="text-[12px] md:text-[10px] text-[var(--color-muted-foreground)] uppercase tracking-wide mb-2">
                       {t("modal.contact")}
@@ -419,7 +426,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2 text-sm">
                         <Mail className="h-3.5 w-3.5 text-[var(--color-muted-foreground)]" />
-                        <span className="truncate" title={tenant.email || undefined}>
+                        <span className="break-words" title={tenant.email || undefined}>
                           {tenant.email || "—"}
                         </span>
                       </div>

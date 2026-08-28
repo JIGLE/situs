@@ -182,11 +182,21 @@ function referenceMatches(a: string, b: string): boolean {
  *    redirect cannot attach their bank to your account;
  *  - only a `pending_consent` row is accepted, so replaying the URL does nothing.
  */
+export interface CompletedConsent {
+  connectionId: string;
+  /**
+   * Whether this was a deliberate test run, so the caller can send the operator back where they
+   * started. Returned rather than looked up again: this function already holds the row, and a
+   * second query for a flag it just read would be the caller re-deriving what it was told.
+   */
+  isTest: boolean;
+}
+
 export async function completeConsent(
   userId: string,
   reference: string,
   callbackParams: Readonly<Record<string, string>> = {},
-): Promise<string> {
+): Promise<CompletedConsent> {
   if (!reference) {
     throw new ConsentFlowError("Missing consent reference");
   }
@@ -236,7 +246,7 @@ export async function completeConsent(
     details: { institutionName: connection.institutionName, accounts: accounts.length },
   });
 
-  return connection.id;
+  return { connectionId: connection.id, isTest: isTestConnection(connection.metadata) };
 }
 
 /**

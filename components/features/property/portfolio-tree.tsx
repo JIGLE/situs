@@ -2,10 +2,10 @@
 
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
-import { COUNTRY_THEMES, isCountryCode } from "@/lib/design/country-themes";
+import { countryLabel } from "@/lib/design/country-themes";
 import { cn } from "@/lib/utils/utils";
 import type { Building, Lease, MaintenanceTicket, Property, Tenant } from "@/lib/types";
 
@@ -55,10 +55,6 @@ interface CountryNode {
   assetCount: number;
 }
 
-function countryLabel(code: string): string {
-  return isCountryCode(code) ? COUNTRY_THEMES[code].name : code;
-}
-
 export function PortfolioTree({
   properties,
   buildings,
@@ -69,6 +65,7 @@ export function PortfolioTree({
   highlightedPropertyId,
 }: PortfolioTreeProps): React.ReactElement {
   const t = useTranslations("portfolioTree");
+  const locale = useLocale();
 
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set());
   const toggleNode = useCallback((key: string) => {
@@ -144,13 +141,13 @@ export function PortfolioTree({
           .sort((a, b) => a.label.localeCompare(b.label));
         return {
           code,
-          label: countryLabel(code),
+          label: countryLabel(code, locale),
           clusters: clusterList,
           assetCount: clusterList.reduce((sum, c) => sum + c.assets.length, 0),
         };
       })
       .sort((a, b) => a.label.localeCompare(b.label));
-  }, [properties, buildings, tenants, maintenance, leases, t]);
+  }, [properties, buildings, tenants, maintenance, leases, t, locale]);
 
   if (properties.length === 0) {
     return (

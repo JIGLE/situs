@@ -90,7 +90,12 @@ describe("ExportButton", () => {
     const exportButton = buttons[buttons.length - 1]; // Get inner button
     await user.click(exportButton);
 
-    expect(screen.getByText("Export as CSV")).toBeInTheDocument();
+    // By role, not by display text. The labels come from the catalogue now, and
+    // `useTranslations` does not resolve messages under this jsdom setup — it returns the bare
+    // key — so asserting on "Export as CSV" would be asserting on a string the component no
+    // longer owns. Two menu items, CSV first, is the contract that actually matters.
+    const items = screen.getAllByRole("menuitem");
+    expect(items).toHaveLength(2);
   });
 
   it("should trigger export when CSV option is selected", async () => {
@@ -101,7 +106,7 @@ describe("ExportButton", () => {
     const exportButton = buttons[buttons.length - 1]; // Get inner button
     await user.click(exportButton);
 
-    const csvOption = screen.getByText("Export as CSV");
+    const [csvOption] = screen.getAllByRole("menuitem");
     await user.click(csvOption);
 
     expect(mockCreateObjectURL).toHaveBeenCalled();

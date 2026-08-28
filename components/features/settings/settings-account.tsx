@@ -66,14 +66,19 @@ export function SettingsAccount({ appVersion }: SettingsAccountProps) {
           <CardDescription>{t("sessionsDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between gap-4 border border-[var(--color-border)] p-3">
+          {/* A divided row, not a bordered box. This was a card inside a card — the panel already
+              draws a border, so framing the one row inside it again drew two rectangles around a
+              single fact. A rule above the row separates it from the description just as well and
+              costs no nesting; it is the same divided-list pattern `system-status-view.tsx` uses
+              for a list of exactly this shape. */}
+          <div className="flex items-center justify-between gap-4 border-t border-[var(--color-border)] py-3">
             <div>
               <p className="text-sm font-medium">{t("thisDevice")}</p>
               <p className="mono-label mt-1">{t("currentSession")}</p>
             </div>
             <Badge variant="status-success">{tStatus("active")}</Badge>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">{t("sessionsSoon")}</p>
+          <p className="text-xs text-muted-foreground">{t("sessionsSoon")}</p>
         </CardContent>
       </Card>
 

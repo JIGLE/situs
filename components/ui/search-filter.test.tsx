@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { renderWithProviders as render, screen } from "@/tests/helpers/render-with-providers";
 import userEvent from "@testing-library/user-event";
 import { SearchFilter } from "./search-filter";
 vi.mock("./debounce", () => ({
@@ -153,8 +153,11 @@ describe("SearchFilter", () => {
   it("should apply custom className", () => {
     const { container } = render(<SearchFilter {...defaultProps} className="custom-class" />);
 
-    const searchFilterContainer = container.firstChild;
-    expect(searchFilterContainer).toHaveClass("custom-class");
+    // Query for the class rather than reaching for `container.firstChild`. The render helper
+    // wraps the subject in providers, one of which renders a `<div>` — so the first child is a
+    // wrapper, not the component root, and the old assertion only worked because the bare
+    // `render` put the component at the top.
+    expect(container.querySelector(".custom-class")).toBeInTheDocument();
   });
 
   it("should debounce search input correctly", async () => {

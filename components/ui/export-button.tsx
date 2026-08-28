@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { cn } from "@/lib/utils/utils";
 import { Button } from "./button";
@@ -111,6 +112,10 @@ export function ExportButton({
   };
 
   const isDisabled = disabled || data.length === 0;
+  // This button appears on Leases, Finances, Assets, Operations and People, and all three of its
+  // labels were English literals — so five surfaces showed "Export" next to a translated primary
+  // action. `actions.export` already existed; the two menu items are new in all four catalogues.
+  const t = useTranslations("actions");
 
   return (
     <DropdownMenu>
@@ -122,17 +127,17 @@ export function ExportButton({
           className={cn("flex items-center gap-2", className)}
         >
           <Download className="h-4 w-4" />
-          Export
+          {t("export")}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-40">
         <DropdownMenuItem onClick={handleExportCSV} className="cursor-pointer">
           <FileSpreadsheet className="h-4 w-4 mr-2" />
-          Export as CSV
+          {t("exportCsv")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleExportJSON} className="cursor-pointer">
           <FileText className="h-4 w-4 mr-2" />
-          Export as JSON
+          {t("exportJson")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

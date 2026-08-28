@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { renderWithProviders as render, screen } from "@/tests/helpers/render-with-providers";
 import userEvent from "@testing-library/user-event";
 
 /**
@@ -22,14 +22,9 @@ const { useAppMock, refreshDataMock } = vi.hoisted(() => ({
 
 vi.mock("@/lib/contexts/app-context", () => ({ useApp: useAppMock }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/en/portfolio" }));
-vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string) =>
-    ({
-      loadFailedTitle: "Couldn't load your data",
-      retry: "Try again",
-      retrying: "Trying again…",
-    })[key] ?? key,
-}));
+// `next-intl` is not mocked here. It used to be, returning the key (or a small hand-written
+// map of English strings) — which meant this file asserted placeholder text rather than what
+// a user reads. `renderWithProviders` supplies the real provider and catalogue.
 
 import { AppDataGate } from "./app-data-gate";
 

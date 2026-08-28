@@ -149,7 +149,9 @@ describe("completing a consent", () => {
   it("activates the connection when the reference matches", async () => {
     prismaMock.bankConnection.findMany.mockResolvedValue([pending()]);
 
-    await expect(completeConsent("user-1", REFERENCE)).resolves.toBe("conn-1");
+    await expect(completeConsent("user-1", REFERENCE)).resolves.toMatchObject({
+      connectionId: "conn-1",
+    });
     expect(prismaMock.bankConnection.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: { status: "active" } }),
     );
@@ -202,7 +204,30 @@ describe("completing a consent", () => {
     // uses. Whether the pieces are sufficient is the adapter's question, so it is asked there.
     prismaMock.bankConnection.findMany.mockResolvedValue([pending({ consentId: null })]);
 
-    await expect(completeConsent("user-1", REFERENCE)).resolves.toBe("conn-1");
+    await expect(completeConsent("user-1", REFERENCE)).resolves.toMatchObject({
+      connectionId: "conn-1",
+    });
+  });
+
+  /**
+   * The callback needs to know which page to send the operator back to, and it only knows because
+   * `completeConsent` tells it. A test connection is begun in the control center and managed
+   * there; finishing on the Settings tab would strand the operator away from the panel that lists
+   * it. Reading the marker off the row it already holds is what makes that possible without a
+   * second query — and a `false` that should be `true` is a silent wrong turn, not a crash.
+   */
+  it("reports a test connection as one", async () => {
+    prismaMock.bankConnection.findMany.mockResolvedValue([
+      pending({ metadata: JSON.stringify({ reference: REFERENCE, isTest: true }) }),
+    ]);
+
+    await expect(completeConsent("user-1", REFERENCE)).resolves.toMatchObject({ isTest: true });
+  });
+
+  it("reports an ordinary connection as not a test", async () => {
+    prismaMock.bankConnection.findMany.mockResolvedValue([pending()]);
+
+    await expect(completeConsent("user-1", REFERENCE)).resolves.toMatchObject({ isTest: false });
   });
 
   it("hands the adapter both the stored ref and the callback's query", async () => {

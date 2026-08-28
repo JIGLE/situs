@@ -82,6 +82,39 @@ test.describe("Authentication", () => {
  * the proxy reads on the next request.
  */
 /**
+ * The bank consent callback never sends the browser to an absolute URL.
+ *
+ * It used to build `new URL(path, request.nextUrl.origin)`, and in the standalone server that
+ * origin is reconstructed from HOSTNAME/PORT and forwarded headers — so behind a reverse proxy it
+ * resolved to `https://0.0.0.0:3000`, the container's BIND address. The consent completed and the
+ * operator then landed on ERR_ADDRESS_INVALID: the worst place to fail, because the work was done
+ * and only the last hop was unreachable.
+ *
+ * A relative reference is resolved by the browser against the URL it actually requested, so it
+ * cannot name a host the browser cannot reach. That is the property asserted here, and the
+ * assertion is about the SHAPE of the Location rather than its destination.
+ *
+ * This block needs a session: the route answers 401 without one, and the redirect — the thing
+ * under test — only exists past the auth check. The reference is deliberately junk, so the
+ * failure branch runs and no consent is completed. The rest of this file stays signed out on
+ * purpose, so the storage state is opted into here rather than set for the file.
+ */
+test.describe("Bank consent callback", () => {
+  test.use({ storageState: "playwright/.auth/user.json" });
+
+  test("redirects relatively, never to a reconstructed origin", async ({ page }) => {
+    const response = await page.request.get("/api/bank/connections/callback?state=nope", {
+      maxRedirects: 0,
+    });
+
+    const location = response.headers()["location"];
+    expect(location, "the callback should redirect somewhere").toBeTruthy();
+    expect(location, `Location must be relative, got ${location}`).not.toMatch(/^https?:\/\//);
+    expect(location.startsWith("/")).toBe(true);
+  });
+});
+
+/**
  * `/demo` is reachable in a bounded number of hops.
  *
  * It used to redirect to `/${defaultLocale}/demo`, which was correct while pages lived at

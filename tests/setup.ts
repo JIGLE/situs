@@ -30,13 +30,17 @@ vi.mock("next/navigation", () => ({
   notFound: vi.fn(),
 }));
 
-vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string) => key,
-  // Components that format dates or currency read the locale directly; without this they
-  // throw "No useLocale export is defined" the moment one is wired for i18n.
-  useLocale: () => "en",
-  NextIntlClientProvider: ({ children }: { children: React.ReactNode }) => children,
-}));
+// `next-intl` is deliberately NOT mocked. It used to be, with `useTranslations` stubbed to
+// `(key) => key` and `NextIntlClientProvider` reduced to a pass-through — which meant every
+// rendered string in every test was a key rather than copy, and the real catalogue that
+// `renderWithProviders` passes was inert. No test could assert what a user reads, and none could
+// notice a hardcoded English string; six of those shipped into a fully Portuguese UI and every
+// one had to be found by reading a screenshot.
+//
+// A smarter mock that looked up `messages/en.json` was the obvious alternative and is the wrong
+// one: nine catalogue entries are ICU plurals, so it would have to reimplement the formatter the
+// real library already carries. Components must be rendered through `renderWithProviders`, which
+// supplies a real provider and the catalogue for the requested locale.
 
 // Mock react-i18next used by some components (legacy/localized components).
 // Return real English strings from `public/locales/en/common.json` so tests

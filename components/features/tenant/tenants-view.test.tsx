@@ -25,6 +25,8 @@ vi.mock("@/lib/contexts/toast-context", () => ({
 describe("TenantsView", () => {
   it("renders empty state when no tenants", () => {
     render(<TenantsView />);
-    expect(screen.getByText(/tenants\.title/)).toBeDefined();
+    // `tenants.title` does not exist in any catalogue — this asserted a key the mock invented,
+    // so it passed while proving nothing. The search box is real and always present.
+    expect(screen.getByPlaceholderText("Search tenants…")).toBeDefined();
   });
 });

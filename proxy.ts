@@ -11,12 +11,16 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { locales, defaultLocale } from "./lib/i18n/config";
+
 import {
   verifyCsrfToken,
   requiresCsrfProtection,
   getOrGenerateCsrfToken,
   setCsrfCookie,
 } from "@/lib/middleware/csrf";
+
+/** Internal-only request header marking a path this proxy rewrote. See `alreadyRewritten`. */
+const REWRITE_MARKER = "x-situs-locale-rewrite";
 
 // next-auth/jwt typings reference next's GetServerSidePropsContext which may not resolve
 // under moduleResolution:bundler — import at the value level only to avoid the tsc error.
@@ -389,6 +393,27 @@ export async function proxy(request: NextRequest) {
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
   );
 
+  /**
+   * On the standalone server — the one the Dockerfile runs and the one CI boots — this proxy
+   * runs AGAIN on the path it rewrote to. That makes the two branches below, each correct on
+   * its own, mutually recursive: `/` is rewritten to `/pt`, the second pass sees a locale
+   * prefix and 308s it back to `/`, and the browser gives up with ERR_TOO_MANY_REDIRECTS on
+   * the home page. Under `next start` there is no second pass, which is why every local check
+   * missed it. It is invisible to the mobile-audit ratchet too: an unreachable surface lands
+   * in `failedToLoad`, and BASELINE does not include that key, so the gate stays green while
+   * the front door is shut.
+   *
+   * Suppressing only the 308 is not enough. The second pass then takes the rewrite branch
+   * instead and asks for `/pt/pt`, then `/pt/pt/pt`, until the request simply never answers —
+   * which is what the first attempt at this fix actually produced. The second pass has to do
+   * nothing at all.
+   *
+   * A client can set this header on its own request. That costs it the locale rewrite and
+   * earns it a 404, and nothing more: every auth, portal and rate-limit check above this
+   * point has already run by the time we get here.
+   */
+  const alreadyRewritten = request.headers.get(REWRITE_MARKER) !== null;
+
   // Routes that intentionally live outside the [locale] segment — prepending a
   // locale would 404 them: the auth pages (app/auth/**) and the token-based
   // tenant portal (app/tenant-portal/**).
@@ -400,7 +425,7 @@ export async function proxy(request: NextRequest) {
 
   let response: NextResponse;
 
-  if (isLocaleExemptPath) {
+  if (isLocaleExemptPath || alreadyRewritten) {
     response = NextResponse.next();
   } else if (pathnameHasLocale) {
     // The prefix is no longer part of the address. Old links, bookmarks, anything still building
@@ -429,7 +454,11 @@ export async function proxy(request: NextRequest) {
     // `lib/i18n/server-locale.ts` uses.
     const url = request.nextUrl.clone();
     url.pathname = `/${resolveLocale(request)}${pathname === "/" ? "" : pathname}`;
-    response = NextResponse.rewrite(url);
+    // Carried on the rewritten request so the second pass can tell "the visitor typed /pt"
+    // from "we just put the /pt there ourselves". Without it the two are indistinguishable.
+    const rewrittenHeaders = new Headers(request.headers);
+    rewrittenHeaders.set(REWRITE_MARKER, "1");
+    response = NextResponse.rewrite(url, { request: { headers: rewrittenHeaders } });
   }
 
   applySecurityHeaders(response, nonce);

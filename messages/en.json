@@ -57,7 +57,14 @@
     "newProperty": "New property",
     "newPropertyHint": "standalone unit",
     "newBuilding": "New building",
-    "newBuildingHint": "group of units"
+    "newBuildingHint": "group of units",
+    "summary": {
+      "allClear": "Every asset is in order.",
+      "leaseEnding": "Lease ends {date}",
+      "noActiveLease": "Occupied, no active lease",
+      "noPriorMonth": "No receipts last month",
+      "vsLastMonth": "vs last month"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -416,6 +423,8 @@
       "testHelp": "A test connection runs the same consent and the same import as a real one. The only thing it does not do is create receipts: test money is never allocated to a lease.",
       "startTest": "Connect test",
       "connectFailed": "The test connection could not be started.",
+      "connected": "Test connection completed — imported movements appear in Finance, but create no receipts.",
+      "failed": "The test connection did not complete. Check the server log.",
       "existing": "{count} test connections",
       "connectionSummary": "{status} · {accounts} accounts · {movements} movements",
       "removeLabel": "Remove {name}",
@@ -714,7 +723,9 @@
     "viewAll": "View All",
     "back": "Back",
     "continue": "Continue",
-    "processing": "Processing…"
+    "processing": "Processing…",
+    "exportCsv": "Export as CSV",
+    "exportJson": "Export as JSON"
   },
   "landing": {
     "eyebrow": "Portugal & Spain rental operations",
@@ -1648,9 +1659,6 @@
     "totalIncome": "Total Income",
     "totalExpenses": "Total Expenses",
     "netIncome": "Net Income",
-    "fromRent": "From rent and deposits",
-    "maintenanceEtc": "Maintenance, repairs, etc.",
-    "cashFlow": "Cash flow for period",
     "allTime": "All Time",
     "thisMonth": "This Month",
     "thisYear": "This Year",
@@ -1790,7 +1798,55 @@
     },
     "timeRange": "Time range",
     "filterCountry": "Filter by country",
-    "filterReceiptStatus": "Filter receipts by status"
+    "filterReceiptStatus": "Filter receipts by status",
+    "generating": "Generating…",
+    "bulkGenerateFailed": "Couldn't generate receipts. Try again.",
+    "unknownProperty": "Unknown property",
+    "noFinancialData": "No financial data yet",
+    "noFinancialDataDesc": "Start by adding receipts or expenses to track your cash flow",
+    "incomeAndReceipts": "Income & Receipts",
+    "incomeAndReceiptsDesc": "Rent payments received",
+    "noIncomeRecords": "No income records found",
+    "expensesHeading": "Expenses",
+    "expensesDesc": "Latest tracked property costs",
+    "noExpenseRecords": "No expense records found",
+    "expenseForm": {
+      "property": "Property",
+      "selectProperty": "Select property",
+      "category": "Category",
+      "selectCategory": "Select category",
+      "amount": "Amount ({symbol})",
+      "date": "Date",
+      "description": "Description",
+      "descriptionPlaceholder": "Details about the expense…",
+      "selectFrequency": "Select frequency",
+      "submit": "Create Expense",
+      "toastCreated": "Expense recorded",
+      "toastUpdated": "Expense updated",
+      "toastFailed": "Couldn't save the expense. Try again."
+    },
+    "tax": {
+      "heading": "Tax estimate — {country}",
+      "description": "Estimated tax liability for rental income",
+      "grossIncome": "Gross income",
+      "taxableIncome": "Taxable income",
+      "taxAmount": "Tax due",
+      "effectiveRate": "{rate}% effective rate",
+      "quarterlyPayment": "Quarterly payment",
+      "annualSettlement": "Annual settlement",
+      "deductionsApplied": "Deductions applied",
+      "totalDeductions": "Total deductions",
+      "noteLabel": "Note",
+      "note": "An estimate based on {country} tax rules. Confirm with your TOC or gestor before filing.",
+      "deduction": {
+        "expenses": "Expenses",
+        "maxDeductible": "Maximum deductible",
+        "allowedDeduction": "Allowed deduction",
+        "mortgageInterest": "Mortgage interest",
+        "communityFees": "Community fees",
+        "stressedZoneReduction": "Stressed-zone reduction"
+      }
+    }
   },
   "propertyDetail": {
     "tabs": {
@@ -2186,7 +2242,11 @@
     "noPropertySelected": "Please select at least one property",
     "loadingIncome": "Loading income data...",
     "portugal": "Portugal",
-    "spain": "Spain"
+    "spain": "Spain",
+    "positionHeading": "{year} so far",
+    "positionNote": "Income and expenses recorded this year. Tax due comes from running a filing.",
+    "netPosition": "Net",
+    "deleteFilingLabel": "Delete the {year} filing"
   },
   "paymentMatrix": {
     "title": "Payment Tracking Matrix",
@@ -2434,7 +2494,8 @@
       "bankMovements": "Bank movements",
       "receipts": "Receipts",
       "taxLog": "Tax log"
-    }
+    },
+    "leaseExpiresInDays": "{days}d left"
   },
   "contacts": {
     "addVendor": "Add Vendor",
@@ -2560,6 +2621,11 @@
     "loading": "Loading…",
     "loadFailedTitle": "Couldn't load your data",
     "retry": "Try again",
-    "retrying": "Trying again…"
+    "retrying": "Trying again…",
+    "auditTrailEmpty": "Sign-ins, exports and settings changes will appear here.",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "taxConnectorsEmpty": "No tax connectors yet — one is created automatically the first time you emit a rent receipt through a country's fiscal workflow.",
+    "taxConnectorsLoadFailed": "Couldn't load the tax connectors. Try again."
   }
 }

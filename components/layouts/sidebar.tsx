@@ -11,7 +11,6 @@ import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 import { SitusPortalMark } from "@/components/shared/situs-portal-logo";
 import { cn } from "@/lib/utils/utils";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useDemoMode } from "@/lib/contexts/demo-context";
 import { usePortalAccess } from "@/lib/contexts/portal-context";
@@ -42,6 +41,7 @@ function SidebarFooter({
   const { country, resolvedTheme } = useTheme();
   const tNav = useTranslations("navigation");
   const tSettings = useTranslations("settings.nav");
+  const tCommon = useTranslations("common");
   const initials =
     user?.name
       ?.split(" ")
@@ -51,12 +51,24 @@ function SidebarFooter({
 
   if (!collapsed) {
     return (
-      <div className="space-y-2">
+      // One row, not two. The footer used to stack three lines of text — name, email, then
+      // `country · mode` on a row of its own next to the sign-out button — which made the
+      // bottom of the sidebar as tall as a whole nav group for what is one identity.
+      //
+      // The email is the line that goes: it is the least glanceable of the three, and it is
+      // already on the account page this row opens. `country · mode` stays because it is live
+      // app state you want to see without clicking. In demo mode `subtitle` still wins, so the
+      // demo perspective keeps its place.
+      //
+      // The sign-out button is a sibling of the link rather than inside it — an anchor cannot
+      // contain a button, and the previous layout only avoided that by giving the button its
+      // own row.
+      <div className="flex items-center gap-1">
         {/* The name is the way into the account. It used to be an inert <div>, so the only
             route to account settings was a nav row of its own; that row is gone now. */}
         <Link
           href={"/settings?tab=account"}
-          className="flex min-h-11 items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-[var(--color-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--country-highlight-readable)]"
+          className="flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-[var(--color-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--country-highlight-readable)]"
           title={tNav("account")}
         >
           <Avatar className="w-8 h-8 ring-2 ring-[var(--color-inner-border)]">
@@ -69,31 +81,26 @@ function SidebarFooter({
             <p className="text-sm font-medium text-[var(--color-foreground)] truncate">
               {user?.name || "Portal User"}
             </p>
-            <p className="text-xs text-[var(--color-muted-foreground)] truncate">
-              {subtitle || user?.email}
+            <p className="mono-label truncate" title={tSettings("appearance")}>
+              {/* `resolvedTheme` is the internal mode name — "normal" or "dark" — and it was being
+                  printed straight out, so the light theme announced itself as "PT · NORMAL".
+                  Nobody calls a theme "normal", and it was the one word on the screen that had
+                  not been through i18n. */}
+              {subtitle ??
+                `${country} · ${resolvedTheme === "dark" ? tCommon("themeDark") : tCommon("themeLight")}`}
             </p>
           </div>
         </Link>
-        {/* Country · mode indicator (controls live in Settings › Appearance). */}
-        <div className="flex items-center justify-between gap-2 px-1">
-          <Link
-            href={"/settings?tab=appearance"}
-            className="mono-label truncate hover:text-[var(--color-foreground)]"
-            title={tSettings("appearance")}
-          >
-            {country} · {resolvedTheme}
-          </Link>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => signOut({ callbackUrl: "/" })}
-            className="h-8 w-8 shrink-0 p-0 hover:bg-[var(--color-error-muted)] hover:text-[var(--color-destructive)]"
-            title="Sign Out"
-            aria-label="Sign Out"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => signOut({ callbackUrl: "/" })}
+          className="h-8 w-8 shrink-0 p-0 hover:bg-[var(--color-error-muted)] hover:text-[var(--color-destructive)]"
+          title="Sign Out"
+          aria-label="Sign Out"
+        >
+          <LogOut className="h-4 w-4" />
+        </Button>
       </div>
     );
   }
@@ -210,9 +217,9 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
         className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-2 py-3"
       >
         {menuItems.map((group, groupIndex) => (
-          <div key={group.group} role="group" className={cn("space-y-1", groupIndex > 0 && "mt-4")}>
+          <div key={group.group} role="group" className={cn("space-y-1", groupIndex > 0 && "mt-2")}>
             {!collapsed && (
-              <div className="px-3 pb-1 pt-2">
+              <div className="px-3 pb-0.5 pt-2">
                 <h3 className="mono-label">
                   {t(group.groupLabelKey.replace("navigation.", "") as Parameters<typeof t>[0])}
                 </h3>
@@ -247,7 +254,7 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
                     >
                       <div
                         className={cn(
-                          "flex items-center gap-3 border-l-2 px-3 py-2 text-sm transition-colors",
+                          "flex items-center gap-3 border-l-2 px-3 py-1.5 text-sm transition-colors",
                           collapsed && "justify-center px-2",
                           isActive
                             ? "border-[var(--country-highlight-readable)] bg-[var(--color-sidebar-active)] font-medium text-[var(--country-highlight-readable)]"
@@ -268,13 +275,13 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
               })}
             </div>
 
-            {!collapsed && groupIndex < menuItems.length - 1 && (
-              // `w-auto` is load-bearing: Separator bakes in `w-full`, and 100% of the nav
-              // plus `mx-3`'s 24px of margin is wider than the nav by construction. The nav
-              // is `overflow-x-hidden`, so the excess was clipped rather than scrolled —
-              // unreachable, and measured on all 44 owner-facing surface-runs.
-              <Separator className="mt-3 mx-3 w-auto opacity-50" />
-            )}
+            {/* No separator between groups. The boundary was being marked three times over — a
+                gap, a `.mono-label` heading, and a rule — for two groups of a handful of links
+                each. The heading stays because it names the group, which a rule cannot; the rule
+                only added a line to look past. (It was also the one element here that had to
+                fight the nav's own width: `Separator` bakes in `w-full`, so it needed `w-auto`
+                to stop `mx-3` pushing it into the `overflow-x-hidden` clip. Deleting it retires
+                that problem rather than carrying the workaround.) */}
           </div>
         ))}
       </nav>
@@ -286,7 +293,11 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
             collapsed={collapsed}
             onToggleCollapsed={handleToggleCollapsed}
             user={user}
-            subtitle={isDemoMode ? `Demo ${demoPerspective}` : user?.email}
+            // Demo perspective only. This used to fall back to the email, which is why the
+            // secondary line under the name rendered as an address — the least glanceable thing
+            // that could go there, and already on the account page this row opens. Undefined
+            // lets the footer show `country · mode`, which is live state worth a glance.
+            subtitle={isDemoMode ? `Demo ${demoPerspective}` : undefined}
           />
         </div>
       )}

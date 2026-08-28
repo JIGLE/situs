@@ -2,6 +2,24 @@ import React, { createContext } from "react";
 import { render } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import enMessages from "../../messages/en.json";
+import ptMessages from "../../messages/pt.json";
+import esMessages from "../../messages/es.json";
+import itMessages from "../../messages/it.json";
+
+/**
+ * All four catalogues, so `initialLocale` actually selects one.
+ *
+ * It used to take `initialLocale` and then pass `enMessages` regardless — the argument was
+ * decorative, and `{ initialLocale: "pt" }` rendered English. That matters more than it sounds:
+ * asserting English copy cannot catch a component that hardcodes English, because the hardcoded
+ * string is the expected string. Rendering in Portuguese is what makes the difference visible.
+ */
+const CATALOGUES: Record<string, typeof enMessages> = {
+  en: enMessages,
+  pt: ptMessages as typeof enMessages,
+  es: esMessages as typeof enMessages,
+  it: itMessages as typeof enMessages,
+};
 
 // Mock Currency Context - provides formatCurrency for tests
 interface MockCurrencyContextType {
@@ -86,7 +104,10 @@ export function renderWithProviders(ui: React.ReactElement, options?: CustomRend
   const { initialLocale = "en", ...renderOptions } = options ?? {};
 
   const wrapped = (
-    <NextIntlClientProvider locale={initialLocale} messages={enMessages}>
+    <NextIntlClientProvider
+      locale={initialLocale}
+      messages={CATALOGUES[initialLocale] ?? enMessages}
+    >
       <MockThemeProvider>
         <MockCurrencyProvider>
           <MockToastProvider>{ui}</MockToastProvider>

@@ -30,7 +30,7 @@ describe("ErrorBoundary", () => {
     );
 
     // The next-intl mock returns the key, so assert the key rather than the English copy.
-    expect(screen.getByText("title")).toBeDefined();
+    expect(screen.getByText("Something went wrong")).toBeDefined();
     expect(consoleErrorSpy).toHaveBeenCalled();
   });
 

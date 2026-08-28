@@ -64,7 +64,11 @@ const ALLOWLIST = [
 // Tightened 571 → 560 on 2026-08-17, when this checker was first wired into `verify:ci`. It had
 // never run, so the baseline had drifted 11 above the real count and the ratchet had 11 units of
 // slack it was never meant to have. Lower this whenever the count drops; never raise it.
-const BASELINE = 560;
+// 560 → 556 on 2026-08-22. Two of those came from `skeleton.tsx`, which carried
+// `from-zinc-700 via-zinc-600 to-zinc-700` on an element whose background was already being set
+// twice over — so the stops never rendered, making it dead code and a theme violation at once.
+// The other two were slack: the tree measured 558 against a ceiling of 560.
+const BASELINE = 556;
 
 function walk(dir, acc) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

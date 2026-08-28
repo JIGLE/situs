@@ -57,7 +57,14 @@
     "newProperty": "Novo imóvel",
     "newPropertyHint": "unidade autónoma",
     "newBuilding": "Novo edifício",
-    "newBuildingHint": "conjunto de unidades"
+    "newBuildingHint": "conjunto de unidades",
+    "summary": {
+      "allClear": "Todos os imóveis estão em ordem.",
+      "leaseEnding": "Contrato termina a {date}",
+      "noActiveLease": "Ocupado, sem contrato ativo",
+      "noPriorMonth": "Sem recibos no mês anterior",
+      "vsLastMonth": "vs mês anterior"
+    }
   },
   "settings": {
     "title": "Configurações",
@@ -416,6 +423,8 @@
       "testHelp": "Uma ligação de teste percorre o mesmo consentimento e a mesma importação de uma ligação real. A única coisa que não faz é criar recibos: dinheiro de teste nunca é atribuído a um contrato.",
       "startTest": "Ligar teste",
       "connectFailed": "Não foi possível iniciar a ligação de teste.",
+      "connected": "Ligação de teste concluída — os movimentos importados aparecem em Finanças, mas não geram recibos.",
+      "failed": "A ligação de teste não foi concluída. Verifique o registo do servidor.",
       "existing": "{count} ligações de teste",
       "connectionSummary": "{status} · {accounts} contas · {movements} movimentos",
       "removeLabel": "Remover {name}",
@@ -714,7 +723,9 @@
     "viewAll": "Ver Tudo",
     "back": "Voltar",
     "continue": "Continuar",
-    "processing": "A processar…"
+    "processing": "A processar…",
+    "exportCsv": "Exportar como CSV",
+    "exportJson": "Exportar como JSON"
   },
   "landing": {
     "eyebrow": "Operações de arrendamento para Portugal e Espanha",
@@ -1648,9 +1659,6 @@
     "totalIncome": "Receita Total",
     "totalExpenses": "Despesas Totais",
     "netIncome": "Rendimento Líquido",
-    "fromRent": "De rendas e depósitos",
-    "maintenanceEtc": "Manutenção, reparações, etc.",
-    "cashFlow": "Fluxo de caixa do período",
     "allTime": "Todo o Período",
     "thisMonth": "Este Mês",
     "thisYear": "Este Ano",
@@ -1790,7 +1798,55 @@
     },
     "timeRange": "Intervalo de tempo",
     "filterCountry": "Filtrar por país",
-    "filterReceiptStatus": "Filtrar recibos por estado"
+    "filterReceiptStatus": "Filtrar recibos por estado",
+    "generating": "A gerar…",
+    "bulkGenerateFailed": "Não foi possível gerar os recibos. Tente novamente.",
+    "unknownProperty": "Imóvel desconhecido",
+    "noFinancialData": "Ainda sem dados financeiros",
+    "noFinancialDataDesc": "Comece por adicionar recibos ou despesas para acompanhar o fluxo de caixa",
+    "incomeAndReceipts": "Receitas e recibos",
+    "incomeAndReceiptsDesc": "Rendas recebidas",
+    "noIncomeRecords": "Sem registos de receita",
+    "expensesHeading": "Despesas",
+    "expensesDesc": "Últimos custos registados do imóvel",
+    "noExpenseRecords": "Sem registos de despesa",
+    "expenseForm": {
+      "property": "Imóvel",
+      "selectProperty": "Selecionar imóvel",
+      "category": "Categoria",
+      "selectCategory": "Selecionar categoria",
+      "amount": "Valor ({symbol})",
+      "date": "Data",
+      "description": "Descrição",
+      "descriptionPlaceholder": "Detalhes sobre a despesa…",
+      "selectFrequency": "Selecionar periodicidade",
+      "submit": "Criar despesa",
+      "toastCreated": "Despesa registada",
+      "toastUpdated": "Despesa atualizada",
+      "toastFailed": "Não foi possível guardar a despesa. Tente novamente."
+    },
+    "tax": {
+      "heading": "Estimativa fiscal — {country}",
+      "description": "Imposto estimado sobre rendimentos prediais",
+      "grossIncome": "Rendimento bruto",
+      "taxableIncome": "Rendimento coletável",
+      "taxAmount": "Imposto a pagar",
+      "effectiveRate": "Taxa efetiva de {rate}%",
+      "quarterlyPayment": "Pagamento trimestral",
+      "annualSettlement": "Acerto anual",
+      "deductionsApplied": "Deduções aplicadas",
+      "totalDeductions": "Total de deduções",
+      "noteLabel": "Nota",
+      "note": "Estimativa baseada nas regras fiscais de {country}. Confirme com o seu TOC antes de entregar a declaração.",
+      "deduction": {
+        "expenses": "Despesas",
+        "maxDeductible": "Dedução máxima",
+        "allowedDeduction": "Dedução permitida",
+        "mortgageInterest": "Juros de crédito habitação",
+        "communityFees": "Encargos de condomínio",
+        "stressedZoneReduction": "Redução por zona de pressão urbanística"
+      }
+    }
   },
   "propertyDetail": {
     "tabs": {
@@ -2186,7 +2242,11 @@
     "noPropertySelected": "Por favor selecione pelo menos um imóvel",
     "loadingIncome": "A carregar dados de rendimento...",
     "portugal": "Portugal",
-    "spain": "Espanha"
+    "spain": "Espanha",
+    "positionHeading": "{year} até agora",
+    "positionNote": "Rendimentos e despesas registados este ano. O imposto devido resulta de criar uma declaração.",
+    "netPosition": "Líquido",
+    "deleteFilingLabel": "Eliminar a declaração de {year}"
   },
   "paymentMatrix": {
     "title": "Matriz de Acompanhamento de Pagamentos",
@@ -2434,7 +2494,8 @@
       "bankMovements": "Movimentos bancários",
       "receipts": "Recibos",
       "taxLog": "Registo fiscal"
-    }
+    },
+    "leaseExpiresInDays": "faltam {days}d"
   },
   "contacts": {
     "addVendor": "Adicionar fornecedor",
@@ -2560,6 +2621,11 @@
     "loading": "A carregar…",
     "loadFailedTitle": "Não foi possível carregar os seus dados",
     "retry": "Tentar novamente",
-    "retrying": "A tentar novamente…"
+    "retrying": "A tentar novamente…",
+    "auditTrailEmpty": "Os inícios de sessão, exportações e alterações às definições aparecerão aqui.",
+    "themeLight": "Claro",
+    "themeDark": "Escuro",
+    "taxConnectorsEmpty": "Ainda sem conectores fiscais — é criado automaticamente na primeira vez que emitir um recibo de renda através do fluxo fiscal de um país.",
+    "taxConnectorsLoadFailed": "Não foi possível carregar os conectores fiscais. Tente novamente."
   }
 }

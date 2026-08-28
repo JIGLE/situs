@@ -39,8 +39,16 @@ const sheetVariants: Record<SheetSide, string> = {
   left: `inset-y-0 left-0 h-full w-full border-r sm:w-[520px] ${SAFE_TOP} ${SAFE_BOTTOM} data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left`,
   top: `inset-x-0 top-0 border-b ${SAFE_TOP} data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top`,
   bottom: `inset-x-0 bottom-0 border-t ${SAFE_BOTTOM} data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom`,
-  // Center variant: full-screen on mobile, centered floating modal on large screens
-  center: `inset-0 h-full w-full ${SAFE_TOP} ${SAFE_BOTTOM} md:pt-0 md:pb-0 md:inset-auto md:left-1/2 md:top-16 md:translate-x-[-50%] md:transform md:w-[75vw] md:max-w-5xl md:h-[calc(100vh-6.5rem)] md:rounded-xl md:border md:border-[var(--color-border)] md:shadow-2xl md:ring-1 md:ring-[var(--color-border)] data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95`,
+  // Center variant: full-screen on mobile, centered floating modal on large screens.
+  //
+  // `md:max-h-`, not `md:h-`. It was a fixed height, so every centered overlay was exactly
+  // `100vh - 6.5rem` tall whatever it contained — at a 900px viewport that is 796px, and the
+  // tenant detail's Resumo tab fills about 200 of them. The remaining ~600px of empty panel
+  // read as a loading state that never finished. A ceiling gives the same protection against a
+  // long overlay outgrowing the viewport while letting a short one be short.
+  //
+  // Mobile is untouched: `inset-0 h-full` still makes it full-screen below `md`.
+  center: `inset-0 h-full w-full ${SAFE_TOP} ${SAFE_BOTTOM} md:pt-0 md:pb-0 md:inset-auto md:left-1/2 md:top-16 md:translate-x-[-50%] md:transform md:w-[75vw] md:max-w-5xl md:h-auto md:max-h-[calc(100vh-6.5rem)] md:rounded-xl md:border md:border-[var(--color-border)] md:shadow-2xl md:ring-1 md:ring-[var(--color-border)] data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95`,
 };
 
 interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
