@@ -227,20 +227,31 @@ export function ContactsView(): React.ReactElement {
                   ))}
                 </div>
 
-                {/* Contact Info */}
+                {/* Contact Info. Calling or emailing the contractor is what this card is for,
+                    so these are the primary tap path, not links in prose — responsive rule 2's
+                    exemption does not cover them. They measured 20px tall, under the 24px WCAG
+                    2.2 floor, and were the only touch-target failures left anywhere in the app
+                    (8 of them: four contacts x two links). The floor applies below `md` only,
+                    so the desktop card keeps its current density. */}
                 <div className="space-y-1.5 text-sm text-muted-foreground">
                   {contact.email && (
                     <div className="flex items-center gap-2">
-                      <Mail className="h-3.5 w-3.5" />
-                      <a href={`mailto:${contact.email}`} className="hover:text-foreground">
+                      <Mail className="h-3.5 w-3.5 shrink-0" />
+                      <a
+                        href={`mailto:${contact.email}`}
+                        className="inline-flex items-center break-all hover:text-foreground max-md:min-h-11"
+                      >
                         {contact.email}
                       </a>
                     </div>
                   )}
                   {contact.phone && (
                     <div className="flex items-center gap-2">
-                      <Phone className="h-3.5 w-3.5" />
-                      <a href={`tel:${contact.phone}`} className="hover:text-foreground">
+                      <Phone className="h-3.5 w-3.5 shrink-0" />
+                      <a
+                        href={`tel:${contact.phone}`}
+                        className="inline-flex items-center hover:text-foreground max-md:min-h-11"
+                      >
                         {contact.phone}
                       </a>
                     </div>
