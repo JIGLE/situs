@@ -1066,9 +1066,7 @@
     "notesPlaceholder": "Add any special terms, conditions, or notes about this lease...",
     "filter": {
       "allStatuses": "All Statuses",
-      "allRegimes": "All Regimes",
-      "exempt": "Exempt (Article 9)",
-      "iva": "IVA (Article 53)"
+      "allRegimes": "All Regimes"
     },
     "taxRegimePlaceholder": "Select tax regime...",
     "taxRegimePt": "Portugal - Rendimentos",
@@ -1151,7 +1149,8 @@
         "description": "This lease will be marked as terminated. This action cannot be undone.",
         "confirmLabel": "Terminate"
       }
-    }
+    },
+    "unknown": "Unknown"
   },
   "maintenance": {
     "title": "Maintenance",

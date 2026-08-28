@@ -1066,9 +1066,7 @@
     "notesPlaceholder": "Añade condiciones especiales o notas sobre este contrato...",
     "filter": {
       "allStatuses": "Todos los estados",
-      "allRegimes": "Todos los regímenes",
-      "exempt": "Exento (artículo 9)",
-      "iva": "IVA (artículo 53)"
+      "allRegimes": "Todos los regímenes"
     },
     "taxRegimePlaceholder": "Selecciona el régimen fiscal...",
     "taxRegimePt": "Portugal — Rendimentos",
@@ -1151,7 +1149,8 @@
         "description": "Este contrato quedará marcado como rescindido. Esta acción no se puede deshacer.",
         "confirmLabel": "Rescindir"
       }
-    }
+    },
+    "unknown": "Desconocido"
   },
   "maintenance": {
     "title": "Mantenimiento",

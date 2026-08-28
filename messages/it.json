@@ -1066,9 +1066,7 @@
     "notesPlaceholder": "Aggiungi condizioni particolari o note su questo contratto...",
     "filter": {
       "allStatuses": "Tutti gli stati",
-      "allRegimes": "Tutti i regimi",
-      "exempt": "Esente (articolo 9)",
-      "iva": "IVA (articolo 53)"
+      "allRegimes": "Tutti i regimi"
     },
     "taxRegimePlaceholder": "Seleziona il regime fiscale...",
     "taxRegimePt": "Portogallo — Rendimentos",
@@ -1151,7 +1149,8 @@
         "description": "Questo contratto sarà contrassegnato come risolto. L'azione non può essere annullata.",
         "confirmLabel": "Risolvi"
       }
-    }
+    },
+    "unknown": "Sconosciuto"
   },
   "maintenance": {
     "title": "Manutenzione",

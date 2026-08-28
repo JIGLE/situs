@@ -1066,9 +1066,7 @@
     "notesPlaceholder": "Acrescente condições especiais ou notas sobre este contrato...",
     "filter": {
       "allStatuses": "Todos os estados",
-      "allRegimes": "Todos os regimes",
-      "exempt": "Isento (artigo 9.º)",
-      "iva": "IVA (artigo 53.º)"
+      "allRegimes": "Todos os regimes"
     },
     "taxRegimePlaceholder": "Selecione o regime fiscal...",
     "taxRegimePt": "Portugal — Rendimentos",
@@ -1151,7 +1149,8 @@
         "description": "Este contrato ficará marcado como cessado. Esta ação não pode ser anulada.",
         "confirmLabel": "Cessar"
       }
-    }
+    },
+    "unknown": "Desconhecido"
   },
   "maintenance": {
     "title": "Manutenção",

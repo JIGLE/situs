@@ -649,12 +649,12 @@ export function LeasesView(): React.ReactElement {
               {
                 key: "tenantId",
                 label: t("field.tenant"),
-                format: (value) => tenants.find((t) => t.id === value)?.name || "Unknown",
+                format: (value) => tenants.find((tn) => tn.id === value)?.name || t("unknown"),
               },
               {
                 key: "propertyId",
                 label: t("field.property"),
-                format: (value) => properties.find((p) => p.id === value)?.name || "Unknown",
+                format: (value) => properties.find((p) => p.id === value)?.name || t("unknown"),
               },
               {
                 key: "startDate",
@@ -1053,10 +1053,16 @@ export function LeasesView(): React.ReactElement {
             {
               key: "taxRegime",
               label: t("field.taxRegime"),
+              // The values a lease can actually hold, which is what the wizard's own regime
+              // Select writes (`portugal_rendimentos` / `spain_inmuebles`, and what the demo
+              // seed stores). This offered `article9` / `article53` — an IVA-exemption pair
+              // from an earlier shape of the field — so both options filtered to nothing, on
+              // every account, always. Same labels as the wizard, so the filter and the form
+              // name the regime identically.
               options: [
                 { label: t("filter.allRegimes"), value: "all" },
-                { label: t("filter.exempt"), value: "article9" },
-                { label: t("filter.iva"), value: "article53" },
+                { label: t("taxRegimePt"), value: "portugal_rendimentos" },
+                { label: t("taxRegimeEs"), value: "spain_inmuebles" },
               ],
               defaultValue: "all",
             },
@@ -1077,7 +1083,7 @@ export function LeasesView(): React.ReactElement {
               <p className="mt-1 text-[var(--color-muted-foreground)]">
                 {expiringSoon
                   .map((l) => {
-                    const tenant = tenants.find((t) => t.id === l.tenantId)?.name ?? "Unknown";
+                    const tenant = tenants.find((tn) => tn.id === l.tenantId)?.name ?? t("unknown");
                     const end = new Date(l.endDate).toLocaleDateString(locale);
                     return `${tenant} (${end})`;
                   })
