@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils/utils";
+import { useLocale, useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "./card";
 import { Badge } from "./badge";
 import { Button } from "./button";
@@ -39,6 +40,8 @@ export function LeaseCalendar({
   onEventClick,
   onMonthChange,
 }: LeaseCalendarProps) {
+  const t = useTranslations("analyticsWidgets");
+  const locale = useLocale();
   const [currentDate, setCurrentDate] = React.useState(new Date());
   const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
 
@@ -150,21 +153,21 @@ export function LeaseCalendar({
       })
     : [];
 
-  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
+  // `Intl` rather than a twelve-key catalogue: month and weekday names are exactly what it
+  // exists to supply, they were hardcoded English here, and adding 19 more strings to four
+  // catalogues would be maintaining by hand what the platform already knows. Same reasoning as
+  // `countryLabel` in `lib/design/country-themes.ts`. 2021-08-01 is a Sunday, which fixes the
+  // week's starting point without depending on the runtime's idea of it.
+  const weekDays = Array.from({ length: 7 }, (_, i) =>
+    new Date(Date.UTC(2021, 7, 1 + i)).toLocaleDateString(locale, {
+      weekday: "short",
+      timeZone: "UTC",
+    }),
+  );
+  const monthLabel = new Date(year, month, 1).toLocaleDateString(locale, {
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <Card className={cn("p-6", className)}>
@@ -172,17 +175,17 @@ export function LeaseCalendar({
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold text-[var(--color-foreground)] flex items-center gap-2">
             <Calendar className="h-5 w-5 text-purple-400" />
-            Lease Calendar
+            {t("calendarTitle")}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={goToToday}>
-              Today
+              {t("today")}
             </Button>
             <Button variant="ghost" size="icon" onClick={goToPrevMonth}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="text-sm font-medium text-[var(--color-foreground)] min-w-[120px] text-center">
-              {monthNames[month]} {year}
+              {monthLabel}
             </span>
             <Button variant="ghost" size="icon" onClick={goToNextMonth}>
               <ChevronRight className="h-4 w-4" />
@@ -253,19 +256,19 @@ export function LeaseCalendar({
         <div className="mt-4 pt-4 border-t border-[var(--color-border)] flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
             <div className="w-2 h-2 rounded-full bg-red-500" />
-            <span>Expired</span>
+            <span>{t("legendExpired")}</span>
           </div>
           <div className="flex items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
             <div className="w-2 h-2 rounded-full bg-orange-500" />
-            <span>Critical (&lt;30d)</span>
+            <span>{t("legendCritical")}</span>
           </div>
           <div className="flex items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
             <div className="w-2 h-2 rounded-full bg-yellow-500" />
-            <span>Warning (30-60d)</span>
+            <span>{t("legendWarning")}</span>
           </div>
           <div className="flex items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
             <div className="w-2 h-2 rounded-full bg-green-500" />
-            <span>Healthy (&gt;60d)</span>
+            <span>{t("legendHealthy")}</span>
           </div>
         </div>
 
@@ -279,7 +282,7 @@ export function LeaseCalendar({
               className="mt-4 pt-4 border-t border-[var(--color-border)]"
             >
               <h4 className="text-sm font-medium text-[var(--color-muted-foreground)] mb-3">
-                Events on {selectedDate.toLocaleDateString()}
+                {t("eventsOn", { date: selectedDate.toLocaleDateString(locale) })}
               </h4>
               <div className="space-y-2">
                 {selectedDateEvents.map((event, index) => {
@@ -335,10 +338,10 @@ export function LeaseCalendar({
                         }
                       >
                         {event.type === "expiration"
-                          ? "Expires"
+                          ? t("eventExpires")
                           : event.type === "renewal"
-                            ? "Renewal"
-                            : "Starts"}
+                            ? t("eventRenewal")
+                            : t("eventStarts")}
                       </Badge>
                     </motion.div>
                   );
@@ -359,6 +362,7 @@ interface MiniCalendarProps {
 }
 
 export function MiniLeaseCalendar({ events, className }: MiniCalendarProps) {
+  const t = useTranslations("analyticsWidgets");
   const today = new Date();
   const upcomingEvents = events
     .filter((e) => new Date(e.date) >= today)
@@ -374,7 +378,7 @@ export function MiniLeaseCalendar({ events, className }: MiniCalendarProps) {
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-sm font-semibold text-[var(--color-foreground)] flex items-center gap-2">
           <Calendar className="h-4 w-4 text-purple-400" />
-          Lease Status
+          {t("leaseStatus")}
         </h4>
       </div>
 
@@ -383,18 +387,18 @@ export function MiniLeaseCalendar({ events, className }: MiniCalendarProps) {
         {expiredCount > 0 && (
           <Badge variant="destructive" size="sm">
             <AlertTriangle className="h-3 w-3 mr-1" />
-            {expiredCount} Expired
+            {t("countExpired", { count: expiredCount })}
           </Badge>
         )}
         {criticalCount > 0 && (
           <Badge variant="warning" size="sm">
             <Clock className="h-3 w-3 mr-1" />
-            {criticalCount} Critical
+            {t("countCritical", { count: criticalCount })}
           </Badge>
         )}
         {warningCount > 0 && (
           <Badge variant="secondary" size="sm">
-            {warningCount} Warning
+            {t("countWarning", { count: warningCount })}
           </Badge>
         )}
       </div>
@@ -403,7 +407,7 @@ export function MiniLeaseCalendar({ events, className }: MiniCalendarProps) {
       <div className="space-y-2">
         {upcomingEvents.length === 0 ? (
           <p className="text-xs text-[var(--color-muted-foreground)]">
-            No upcoming lease expirations
+            {t("noUpcomingExpirations")}
           </p>
         ) : (
           upcomingEvents.map((event) => (
