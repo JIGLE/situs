@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+import { formatDateTime } from "@/lib/utils/format-date";
 import { History } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,6 +36,7 @@ export function AuditTrail({
   emptyDescription,
 }: AuditTrailProps): React.ReactElement {
   const t = useTranslations("common");
+  const locale = useLocale();
   // Defaults resolve here, not in the parameter list, because `t` does not exist yet up there.
   // They used to be English string literals, so any caller that did not pass its own copy — the
   // Account page among them — printed "Audit trail" into a fully translated screen.
@@ -136,7 +138,7 @@ export function AuditTrail({
                 {entry.action.replace(/_/g, " ")}
               </span>
               <span className="tabular-nums text-xs text-[var(--color-muted-foreground)]">
-                {new Date(entry.createdAt).toLocaleString()}
+                {formatDateTime(entry.createdAt, locale)}
               </span>
             </div>
           </div>

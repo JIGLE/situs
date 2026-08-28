@@ -53,7 +53,7 @@ const TEMPLATE_VARIABLES = [
 
 export function CorrespondenceView(): React.ReactElement {
   const { state, addTemplate, updateTemplate, deleteTemplate, addCorrespondence } = useApp();
-  const { templates, correspondence: _correspondence, tenants, loading } = state;
+  const { templates, correspondence: _correspondence, tenants, properties, loading } = state;
   const { success, error } = useToast();
   const confirmDialog = useConfirmDialog();
   const t = useTranslations("correspondence");
@@ -260,22 +260,40 @@ export function CorrespondenceView(): React.ReactElement {
 
   const replaceVariables = (content: string, tenant: Tenant): string => {
     if (!content) return "";
+    // These three used to substitute the literal words "Property address", "bedrooms" and
+    // "bathrooms", marked "Would need property data" — so a letter written from a template
+    // that used them reached the tenant reading "The flat has bedrooms bedrooms". The data
+    // was already in `AppState`: the tenant carries `propertyId` and the property carries all
+    // three fields. An unresolvable property leaves the placeholder standing rather than
+    // substituting a word, because an obviously unfilled `{{bedrooms}}` is caught in the
+    // preview, and a plausible wrong sentence is not.
+    const property = tenant?.propertyId ? properties.find((p) => p.id === tenant.propertyId) : null;
+    const orPlaceholder = (value: string | number | undefined, token: string) =>
+      value === undefined || value === null || value === "" ? token : String(value);
+    const formatDate = (value: string) => new Date(value).toLocaleDateString(locale);
+
     return content
-      .replace(/\{\{tenant_name\}\}/g, tenant?.name || "Tenant")
-      .replace(/\{\{property_name\}\}/g, tenant?.propertyName || "your property")
-      .replace(/\{\{rent_amount\}\}/g, tenant?.rent?.toString() || "0")
+      .replace(/\{\{tenant_name\}\}/g, orPlaceholder(tenant?.name, "{{tenant_name}}"))
+      .replace(
+        /\{\{property_name\}\}/g,
+        orPlaceholder(tenant?.propertyName ?? property?.name, "{{property_name}}"),
+      )
+      .replace(/\{\{rent_amount\}\}/g, orPlaceholder(tenant?.rent, "{{rent_amount}}"))
       .replace(
         /\{\{lease_start\}\}/g,
-        tenant?.leaseStart ? new Date(tenant.leaseStart).toLocaleDateString() : "N/A",
+        tenant?.leaseStart ? formatDate(tenant.leaseStart) : "{{lease_start}}",
       )
       .replace(
         /\{\{lease_end\}\}/g,
-        tenant?.leaseEnd ? new Date(tenant.leaseEnd).toLocaleDateString() : "N/A",
+        tenant?.leaseEnd ? formatDate(tenant.leaseEnd) : "{{lease_end}}",
       )
-      .replace(/\{\{property_address\}\}/g, "Property address") // Would need property data
-      .replace(/\{\{bedrooms\}\}/g, "bedrooms") // Would need property data
-      .replace(/\{\{bathrooms\}\}/g, "bathrooms") // Would need property data
-      .replace(/\{\{due_date\}\}/g, new Date().toLocaleDateString());
+      .replace(
+        /\{\{property_address\}\}/g,
+        orPlaceholder(property?.address, "{{property_address}}"),
+      )
+      .replace(/\{\{bedrooms\}\}/g, orPlaceholder(property?.bedrooms, "{{bedrooms}}"))
+      .replace(/\{\{bathrooms\}\}/g, orPlaceholder(property?.bathrooms, "{{bathrooms}}"))
+      .replace(/\{\{due_date\}\}/g, formatDate(new Date().toISOString()));
   };
 
   const getTypeBadge = (type: CorrespondenceTemplate["type"]) => {

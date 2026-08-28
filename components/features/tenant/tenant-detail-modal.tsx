@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   AlertTriangle,
   Calendar,
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCurrency } from "@/lib/contexts/currency-context";
+import { formatDate as formatDateWithLocale } from "@/lib/utils/format-date";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,12 +51,6 @@ const PAYMENT_STATUS_STYLES: Record<string, string> = {
     "bg-[var(--color-error-muted)] text-[var(--color-destructive)] border-[var(--color-destructive)]/30",
 };
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return "—";
-  const d = new Date(dateStr);
-  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString();
-}
-
 export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps) {
   const { formatCurrency } = useCurrency();
   const { updateTenant, deleteTenant, state } = useApp();
@@ -69,6 +64,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
   // printing the raw enum instead, so an otherwise fully Portuguese modal said "Paid".
   const tStatus = useTranslations("status");
   const tLeases = useTranslations("leases");
+  const locale = useLocale();
   const confirmDialog = useConfirmDialog();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -503,7 +499,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                             {tForms("leaseStart")}
                           </p>
                           <p className="mt-0.5 text-[var(--color-foreground)]">
-                            {formatDate(derivedLeaseStart)}
+                            {formatDateWithLocale(derivedLeaseStart, locale)}
                           </p>
                         </div>
                         <div>
@@ -511,7 +507,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                             {tForms("leaseEnd")}
                           </p>
                           <p className="mt-0.5 text-[var(--color-foreground)]">
-                            {formatDate(derivedLeaseEnd)}
+                            {formatDateWithLocale(derivedLeaseEnd, locale)}
                           </p>
                         </div>
                       </div>
@@ -548,7 +544,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                             {r.description || r.type}
                           </p>
                           <p className="text-xs text-[var(--color-muted-foreground)]">
-                            {formatDate(r.date)}
+                            {formatDateWithLocale(r.date, locale)}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">

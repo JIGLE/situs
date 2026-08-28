@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   AlertTriangle,
   Building2,
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { formatDate as formatDateWithLocale } from "@/lib/utils/format-date";
 import { Badge } from "@/components/ui/badge";
 import type { MaintenanceTicket } from "@/lib/types";
 import { useApp } from "@/lib/contexts/app-context";
@@ -65,12 +66,6 @@ const PRIORITY_COLORS: Record<string, string> = {
   urgent: "bg-[var(--color-error-muted)] text-[var(--color-destructive)]",
 };
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return "—";
-  const d = new Date(dateStr);
-  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString();
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function TicketDetailModal({
@@ -84,6 +79,7 @@ export function TicketDetailModal({
   const { success, error } = useToast();
   const t = useTranslations("maintenance.ticket");
   const tActions = useTranslations("actions");
+  const locale = useLocale();
   const { formatCurrency } = useCurrency();
   const confirmDialog = useConfirmDialog();
   const [activeTab, setActiveTab] = useState("overview");
@@ -232,7 +228,7 @@ export function TicketDetailModal({
       id: "overdue",
       icon: AlertTriangle,
       color: "text-[var(--color-destructive)]",
-      label: `Overdue — due ${formatDate(ticket.dueDate)}`,
+      label: `Overdue — due ${formatDateWithLocale(ticket.dueDate, locale)}`,
     });
   }
   if (!hasVendor && ticket.status !== "resolved" && ticket.status !== "closed") {
@@ -449,7 +445,9 @@ export function TicketDetailModal({
                       <p className="text-[12px] md:text-[10px] text-[var(--color-muted-foreground)] uppercase tracking-wide">
                         {t("scheduled")}
                       </p>
-                      <p className="font-medium">{formatDate(ticket.scheduledDate)}</p>
+                      <p className="font-medium">
+                        {formatDateWithLocale(ticket.scheduledDate, locale)}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -465,7 +463,7 @@ export function TicketDetailModal({
                       <p
                         className={`font-medium ${isOverdue ? "text-[var(--color-destructive)]" : ""}`}
                       >
-                        {formatDate(ticket.dueDate)}
+                        {formatDateWithLocale(ticket.dueDate, locale)}
                       </p>
                     </div>
                   </div>
@@ -623,7 +621,7 @@ export function TicketDetailModal({
                     <div>
                       <p className="font-medium text-[var(--color-foreground)]">{t("resolved")}</p>
                       <p className="text-xs text-[var(--color-muted-foreground)]">
-                        {formatDate(ticket.resolvedAt)}
+                        {formatDateWithLocale(ticket.resolvedAt, locale)}
                       </p>
                     </div>
                   </div>
@@ -636,7 +634,7 @@ export function TicketDetailModal({
                     <div>
                       <p className="font-medium text-[var(--color-foreground)]">{t("closed")}</p>
                       <p className="text-xs text-[var(--color-muted-foreground)]">
-                        {formatDate(ticket.updatedAt)}
+                        {formatDateWithLocale(ticket.updatedAt, locale)}
                       </p>
                     </div>
                   </div>
@@ -648,7 +646,7 @@ export function TicketDetailModal({
                   <div>
                     <p className="font-medium text-[var(--color-foreground)]">{t("created")}</p>
                     <p className="text-xs text-[var(--color-muted-foreground)]">
-                      {formatDate(ticket.createdAt)}
+                      {formatDateWithLocale(ticket.createdAt, locale)}
                     </p>
                   </div>
                 </div>

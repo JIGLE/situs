@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { formatDate } from "@/lib/utils/format-date";
 import { AlertTriangle, CalendarClock, CheckCircle2, Wrench } from "lucide-react";
 
 import { useApp } from "@/lib/contexts/app-context";
@@ -61,6 +62,7 @@ export function PortfolioSummary({
   const { state } = useApp();
   const { formatCurrency } = useCurrency();
   const t = useTranslations("portfolio");
+  const locale = useLocale();
   const { properties, leases, maintenance, receipts } = state;
 
   const occupied = properties.filter((p) => p.status === "occupied").length;
@@ -128,7 +130,7 @@ export function PortfolioSummary({
             severity: "warning" as Severity,
             Icon: CalendarClock,
             reason: t("summary.leaseEnding", {
-              date: new Date(expiring.endDate).toLocaleDateString(),
+              date: formatDate(expiring.endDate, locale),
             }),
           };
         }
@@ -144,7 +146,7 @@ export function PortfolioSummary({
         return null;
       })
       .filter((row): row is NonNullable<typeof row> => row !== null);
-  }, [leases, maintenance, properties, t]);
+  }, [leases, maintenance, properties, t, locale]);
 
   const delta = monthlyRunRate - lastMonthTotal;
 

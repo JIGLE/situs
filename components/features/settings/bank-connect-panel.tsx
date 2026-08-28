@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Landmark, Loader2, RefreshCw, TriangleAlert } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -91,6 +91,7 @@ interface Props {
  */
 export function BankConnectPanel({ connections, providersConfigured, loading, onRefresh }: Props) {
   const t = useTranslations("settings.panel");
+  const locale = useLocale();
   const { token: csrfToken } = useCsrf();
 
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -220,7 +221,7 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
   function formatDate(value: string | null): string {
     if (!value) return t("bankNeverSynced");
     const d = new Date(value);
-    return isNaN(d.getTime()) ? t("bankNeverSynced") : d.toLocaleDateString();
+    return isNaN(d.getTime()) ? t("bankNeverSynced") : d.toLocaleDateString(locale);
   }
 
   return (

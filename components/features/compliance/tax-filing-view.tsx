@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Plus, Trash2, FileCheck2, FileEdit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -70,6 +70,7 @@ function StatusBadge({ filing, t }: { filing: TaxFilingRecord; t: (key: string) 
 export function TaxFilingView() {
   const t = useTranslations("taxFiling");
   const tForms = useTranslations("forms");
+  const locale = useLocale();
   const toast = useToast();
   const { state } = useApp();
   const { formatCurrency } = useCurrency();
@@ -329,7 +330,7 @@ export function TaxFilingView() {
               header: t("createdAt"),
               cell: (filing) => (
                 <span className="text-xs text-[var(--color-muted-foreground)]">
-                  {new Date(filing.createdAt).toLocaleDateString()}
+                  {new Date(filing.createdAt).toLocaleDateString(locale)}
                 </span>
               ),
             },

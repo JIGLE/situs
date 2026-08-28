@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, forwardRef, useImperativeHandle } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { formatDate } from "@/lib/utils/format-date";
 import {
   FileText,
   Download,
@@ -456,7 +457,7 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
                             <div className="flex items-center gap-4 text-sm text-[var(--color-muted-foreground)] mt-1">
                               <div className="flex items-center gap-1">
                                 <Calendar className="w-4 h-4" />
-                                <span>{new Date(receipt.date).toLocaleDateString()}</span>
+                                <span>{formatDate(receipt.date, locale)}</span>
                               </div>
                               <div className="flex items-center gap-1">
                                 <DollarSign className="w-4 h-4" />

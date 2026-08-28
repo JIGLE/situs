@@ -1,17 +1,12 @@
 "use client";
 
 import { FileText, Calendar, Landmark, Receipt as ReceiptIcon, ShieldCheck } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useTenantRelationship } from "@/lib/hooks/use-tenant-relationship";
+import { formatDate as formatDateWithLocale } from "@/lib/utils/format-date";
 
 interface TenantRelationshipMapProps {
   tenantId: string;
-}
-
-function formatDate(value: string | null): string {
-  if (!value) return "—";
-  const d = new Date(value);
-  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString();
 }
 
 /**
@@ -22,6 +17,7 @@ function formatDate(value: string | null): string {
  */
 export function TenantRelationshipMap({ tenantId }: TenantRelationshipMapProps) {
   const t = useTranslations("tenants");
+  const locale = useLocale();
   const { data, loading, error } = useTenantRelationship(tenantId);
 
   if (loading) {
@@ -66,7 +62,7 @@ export function TenantRelationshipMap({ tenantId }: TenantRelationshipMapProps) 
       label: t("relationship.bankMovements"),
       value: String(data.bankMovements.matched),
       detail: data.bankMovements.lastMatchedAt
-        ? `last ${formatDate(data.bankMovements.lastMatchedAt)}`
+        ? `last ${formatDateWithLocale(data.bankMovements.lastMatchedAt, locale)}`
         : "none matched",
     },
     {

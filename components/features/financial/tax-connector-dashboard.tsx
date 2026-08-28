@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { formatDate } from "@/lib/utils/format-date";
 import { MODE_KIND_STYLES, authorityName, modeKind } from "@/lib/tax/connectors/presentation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -140,7 +141,7 @@ export function TaxConnectorDashboard(): React.ReactElement | null {
                     <span className="text-xs text-[var(--color-muted-foreground)]">
                       {connector.lastSubmissionAt
                         ? t("connectorLastSubmission", {
-                            date: new Date(connector.lastSubmissionAt).toLocaleDateString(),
+                            date: formatDate(connector.lastSubmissionAt, locale),
                           })
                         : t("connectorNoSubmissions")}
                     </span>

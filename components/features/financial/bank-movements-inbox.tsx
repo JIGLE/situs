@@ -478,7 +478,17 @@ export function BankMovementsInbox(): React.ReactElement {
               key: "amount",
               header: t("amount"),
               headerClassName: "text-right",
-              cell: (row) => row.amount.toFixed(2),
+              // The code, not a localised symbol: this column is deliberately the bank's own
+              // figures in mono, so it stays sortable and matches the statement being
+              // reconciled against. But it dropped the currency entirely, and `currency` is a
+              // per-movement field precisely because it varies — a movement on a non-EUR
+              // account rendered as a bare "850.00" under a header that only says "Amount".
+              cell: (row) => (
+                <>
+                  {row.amount.toFixed(2)}{" "}
+                  <span className="text-[var(--color-muted-foreground)]">{row.currency}</span>
+                </>
+              ),
               cellClassName: "text-right font-mono tabular-nums",
             },
             { key: "match", header: t("match"), cell: renderMatch },

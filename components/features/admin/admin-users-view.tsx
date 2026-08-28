@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { formatDate } from "@/lib/utils/format-date";
 import { Loader2, Trash2, TriangleAlert } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ interface AdminUserRow {
  */
 export function AdminUsersView() {
   const t = useTranslations("admin.users");
+  const locale = useLocale();
   const { token: csrfToken } = useCsrf();
 
   const [users, setUsers] = useState<AdminUserRow[]>([]);
@@ -130,8 +132,7 @@ export function AdminUsersView() {
                   ) : null}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {user.role} ·{" "}
-                  {t("joined", { date: new Date(user.createdAt).toLocaleDateString() })} ·{" "}
+                  {user.role} · {t("joined", { date: formatDate(user.createdAt, locale) })} ·{" "}
                   {t("owns", { count: total(user) })}
                 </p>
               </div>
