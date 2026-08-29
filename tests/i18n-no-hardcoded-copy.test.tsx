@@ -30,6 +30,8 @@ import { AuditTrail } from "@/components/shared/audit-trail";
 import { FinancialsView } from "@/components/features/financial/financials-view";
 import { TaxConnectorDashboard } from "@/components/features/financial/tax-connector-dashboard";
 import { DocumentDetailPanel } from "@/components/features/document/document-detail-panel";
+import { AuditTrail as AuditTrailForError } from "@/components/shared/audit-trail";
+import ptMessages from "@/messages/pt.json";
 
 vi.mock("@/lib/contexts/currency-context", () => ({
   useCurrency: () => ({
@@ -197,5 +199,30 @@ describe("user-visible copy comes from the catalogue, not from literals", () => 
     expect(screen.getByText(/Expira em/)).toBeInTheDocument();
     // The download action, which was a bare literal in the JSX next to the icon.
     expect(screen.getByRole("button", { name: /Transferir/ })).toBeInTheDocument();
+  });
+
+  it("renders a failed request in Portuguese, not in the server's English", async () => {
+    // The failure path was the last place English survived. Every route replies through
+    // `createErrorResponse`, which writes English into the envelope, and around thirty
+    // components rendered that string straight into a banner. Here the request 500s, so the
+    // user must get `errors.api.serverError` — never the sentence the server chose.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve({
+          ok: false,
+          status: 500,
+          json: () => Promise.resolve({ error: "Database operation failed" }),
+        }),
+      ),
+    );
+
+    // A non-empty scope, because `resourceIds={[]}` means "nothing to look up" and returns
+    // before it fetches — the first version of this test asserted against a component that
+    // never made a request.
+    renderWithProviders(<AuditTrailForError resourceIds={["p1"]} />, { initialLocale: "pt" });
+
+    expect(await screen.findByText(ptMessages.errors.api.serverError)).toBeInTheDocument();
+    expect(screen.queryByText(/Database operation failed/)).not.toBeInTheDocument();
   });
 });

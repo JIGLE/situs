@@ -771,6 +771,19 @@
       "tryAgain": "Reintentar",
       "refresh": "Actualizar página",
       "errorId": "ID del error: {id}"
+    },
+    "api": {
+      "generic": "Algo ha salido mal. Inténtelo de nuevo.",
+      "offline": "No se ha podido contactar con el servidor. Compruebe la conexión e inténtelo de nuevo.",
+      "invalidInput": "Hay datos no válidos en el formulario. Revíselo e inténtelo de nuevo.",
+      "invalidField": "{field} no es válido.",
+      "signedOut": "Su sesión ha finalizado. Inicie sesión de nuevo para continuar.",
+      "notAllowed": "No tiene permiso para realizar esta acción.",
+      "notFound": "Ese registro ya no existe. Es posible que se haya eliminado.",
+      "conflict": "Alguien ha modificado esto mientras editaba. Recargue e inténtelo de nuevo.",
+      "planLimit": "Su plan no incluye esta función. Mejore su plan para continuar.",
+      "tooMany": "Demasiadas solicitudes. Espere un momento e inténtelo de nuevo.",
+      "serverError": "El servidor ha tenido un problema. Inténtelo de nuevo en unos momentos."
     }
   },
   "compliance": {

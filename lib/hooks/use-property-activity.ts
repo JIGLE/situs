@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { httpError, useApiError } from "@/lib/utils/api-error";
 
 export interface PropertyCurrentPeriod {
   year: number;
@@ -44,6 +45,7 @@ export interface PropertyActivity {
  * nav); omit it for the API's own default (current year). The Audit tab reads
  * the shared AuditTrail component (GET /api/audit-trail) separately. */
 export function usePropertyActivity(propertyId: string | undefined, year?: number) {
+  const apiError = useApiError();
   const [data, setData] = useState<PropertyActivity | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +63,7 @@ export function usePropertyActivity(propertyId: string | undefined, year?: numbe
       : `/api/properties/${propertyId}/activity`;
     fetch(url, { credentials: "include" })
       .then((res) => {
-        if (!res.ok) throw new Error(`Request failed (${res.status})`);
+        if (!res.ok) throw httpError(res.status);
         return res.json();
       })
       .then((body) => {
@@ -69,7 +71,7 @@ export function usePropertyActivity(propertyId: string | undefined, year?: numbe
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load property activity");
+          setError(apiError(err));
         }
       })
       .finally(() => {
@@ -78,7 +80,7 @@ export function usePropertyActivity(propertyId: string | undefined, year?: numbe
     return () => {
       cancelled = true;
     };
-  }, [propertyId, year]);
+  }, [propertyId, year, apiError]);
 
   return { data, loading, error };
 }

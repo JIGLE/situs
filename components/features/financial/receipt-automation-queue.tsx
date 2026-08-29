@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
+import { httpError, useApiError } from "@/lib/utils/api-error";
 
 import { Button } from "@/components/ui/button";
 import { csrfHeaders } from "@/lib/utils/api-client";
@@ -40,6 +41,7 @@ const LIFECYCLE_STYLES: Record<string, string> = {
 };
 
 export function ReceiptAutomationQueue(): React.ReactElement | null {
+  const apiError = useApiError();
   const t = useTranslations("common");
   const [rows, setRows] = useState<QueueRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,17 +55,17 @@ export function ReceiptAutomationQueue(): React.ReactElement | null {
     setError(null);
     try {
       const res = await fetch("/api/finance/receipt-queue", { credentials: "include" });
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      if (!res.ok) throw httpError(res.status);
       const body = await res.json();
       setRows(body?.data ?? []);
       setSelected(new Set());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load the receipt queue");
+      setError(apiError(err));
       setRows([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiError]);
 
   useEffect(() => {
     void load();
@@ -86,12 +88,12 @@ export function ReceiptAutomationQueue(): React.ReactElement | null {
         }
         await load();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Emit failed");
+        setError(apiError(err));
       } finally {
         setBusyId(null);
       }
     },
-    [load],
+    [load, apiError],
   );
 
   const bulkEmit = useCallback(async () => {

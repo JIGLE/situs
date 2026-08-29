@@ -1,5 +1,18 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 
+/**
+ * No `vi.mock("@sendgrid/mail")` here, deliberately.
+ *
+ * Two of them used to sit inside `it()` bodies. Vitest hoists every `vi.mock` to the top of the
+ * module regardless of where it is written, so they ran before any test, the second shadowed the
+ * first, and each closed over a `mockSend` declared in a scope that did not exist yet. Vitest
+ * warns about exactly this and says it will become an error in a future version.
+ *
+ * Hoisting them would have silenced the warning while keeping calls that never did anything.
+ * Both tests reach the send path by assigning `sendGridClient` on the singleton directly — the
+ * comment below already says so — so the module mock was never what made them pass. Deleting is
+ * the fix; there is nothing to hoist.
+ */
 vi.resetModules();
 
 describe("EmailService", () => {
@@ -22,10 +35,6 @@ describe("EmailService", () => {
     // Ensure fresh modules and then mock sendgrid
     vi.resetModules();
     const mockSend = vi.fn().mockResolvedValue([{ headers: { "x-message-id": "message-123" } }]);
-    vi.mock("@sendgrid/mail", () => ({
-      setApiKey: vi.fn(),
-      send: mockSend,
-    }));
     process.env.SENDGRID_API_KEY = "fake-key";
     const mod = await import("@/lib/services/email/email-service");
     const { emailService } = mod as {
@@ -51,10 +60,6 @@ describe("EmailService", () => {
   it("handles single response object from send and extracts message id", async () => {
     vi.resetModules();
     const mockSend = vi.fn().mockResolvedValue({ headers: { "x-message-id": "single-456" } });
-    vi.mock("@sendgrid/mail", () => ({
-      setApiKey: vi.fn(),
-      send: mockSend,
-    }));
     process.env.SENDGRID_API_KEY = "fake-key";
     const mod = await import("@/lib/services/email/email-service");
     const { emailService } = mod as {

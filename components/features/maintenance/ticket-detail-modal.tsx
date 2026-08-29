@@ -26,6 +26,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useApiError } from "@/lib/utils/api-error";
 import { Button } from "@/components/ui/button";
 import { formatDate as formatDateWithLocale } from "@/lib/utils/format-date";
 import { Badge } from "@/components/ui/badge";
@@ -80,6 +81,7 @@ export function TicketDetailModal({
   const t = useTranslations("maintenance.ticket");
   const tActions = useTranslations("actions");
   const locale = useLocale();
+  const apiError = useApiError();
   const { formatCurrency } = useCurrency();
   const confirmDialog = useConfirmDialog();
   const [activeTab, setActiveTab] = useState("overview");
@@ -116,13 +118,13 @@ export function TicketDetailModal({
         await updateMaintenance(ticket.id, { images: data.images });
         success(t("toastPhotoUploaded"));
       } catch (err) {
-        error(err instanceof Error ? err.message : "Failed to upload photo");
+        error(apiError(err));
       } finally {
         setUploading(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
     },
-    [ticket, updateMaintenance, success, error, t],
+    [ticket, updateMaintenance, success, error, t, apiError],
   );
 
   const handleImageDelete = useCallback(

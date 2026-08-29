@@ -771,6 +771,19 @@
       "tryAgain": "Riprova",
       "refresh": "Aggiorna la pagina",
       "errorId": "ID errore: {id}"
+    },
+    "api": {
+      "generic": "Qualcosa è andato storto. Riprova.",
+      "offline": "Impossibile contattare il server. Controlla la connessione e riprova.",
+      "invalidInput": "Alcuni dati inseriti non sono validi. Controlla il modulo e riprova.",
+      "invalidField": "{field} non è valido.",
+      "signedOut": "La sessione è terminata. Accedi di nuovo per continuare.",
+      "notAllowed": "Non hai il permesso di eseguire questa azione.",
+      "notFound": "Questo record non esiste più. Potrebbe essere stato eliminato.",
+      "conflict": "Qualcun altro ha modificato questo elemento mentre lo stavi modificando. Ricarica e riprova.",
+      "planLimit": "Il tuo piano non include questa funzione. Esegui l'upgrade per continuare.",
+      "tooMany": "Troppe richieste. Attendi un momento e riprova.",
+      "serverError": "Il server ha riscontrato un problema. Riprova tra poco."
     }
   },
   "compliance": {

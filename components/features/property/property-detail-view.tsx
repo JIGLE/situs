@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { useApiError } from "@/lib/utils/api-error";
 import { TICKET_PRIORITY_KEY, TICKET_STATUS_KEY } from "@/lib/utils/maintenance-labels";
 import { cn } from "@/lib/utils/utils";
 import { apiFetch } from "@/lib/utils/api-client";
@@ -96,6 +97,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
   const tTypes = useTranslations("properties.types");
   const tTicket = useTranslations("maintenance");
   const tPeriod = useTranslations("rentPeriodStatus");
+  const apiError = useApiError();
 
   /**
    * DocumentType is snake_case in the schema (`floor_plan`) but camelCase in the catalog
@@ -362,9 +364,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
       setOwnerAssignPct("");
       await refreshData();
     } catch (err) {
-      setOwnerAssignError(
-        err instanceof Error ? err.message : "Failed to assign owner. Please try again.",
-      );
+      setOwnerAssignError(apiError(err));
     } finally {
       setOwnerAssignSaving(false);
     }
@@ -382,9 +382,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
     } catch (err) {
       // Previously swallowed every error ("silently fail in demo mode"), which is why a failed
       // removal looked like it had worked. Surface it in the same place as the assign error.
-      setOwnerAssignError(
-        err instanceof Error ? err.message : "Failed to remove owner. Please try again.",
-      );
+      setOwnerAssignError(apiError(err));
     }
   };
 

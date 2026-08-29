@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+import { httpError, useApiError } from "@/lib/utils/api-error";
 import { formatDateTime } from "@/lib/utils/format-date";
 import { History } from "lucide-react";
 
@@ -35,6 +36,7 @@ export function AuditTrail({
   emptyTitle,
   emptyDescription,
 }: AuditTrailProps): React.ReactElement {
+  const apiError = useApiError();
   const t = useTranslations("common");
   const locale = useLocale();
   // Defaults resolve here, not in the parameter list, because `t` does not exist yet up there.
@@ -58,7 +60,7 @@ export function AuditTrail({
     const query = resourceIds ? `?resourceIds=${resourceIds.join(",")}` : "";
     fetch(`/api/audit-trail${query}`, { credentials: "include" })
       .then((res) => {
-        if (!res.ok) throw new Error(`Request failed (${res.status})`);
+        if (!res.ok) throw httpError(res.status);
         return res.json();
       })
       .then((body) => {
@@ -66,7 +68,7 @@ export function AuditTrail({
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load the audit trail");
+          setError(apiError(err));
         }
       })
       .finally(() => {

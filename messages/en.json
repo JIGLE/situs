@@ -771,6 +771,19 @@
       "tryAgain": "Try again",
       "refresh": "Refresh page",
       "errorId": "Error ID: {id}"
+    },
+    "api": {
+      "generic": "Something went wrong. Please try again.",
+      "offline": "Couldn't reach the server. Check your connection and try again.",
+      "invalidInput": "Some of what you entered isn't valid. Check the form and try again.",
+      "invalidField": "{field} isn't valid.",
+      "signedOut": "Your session has ended. Sign in again to continue.",
+      "notAllowed": "You don't have permission to do that.",
+      "notFound": "That record no longer exists. It may have been deleted.",
+      "conflict": "Someone else changed this while you were editing. Reload and try again.",
+      "planLimit": "Your plan doesn't include this. Upgrade to continue.",
+      "tooMany": "Too many requests. Wait a moment and try again.",
+      "serverError": "The server had a problem. Try again in a moment."
     }
   },
   "compliance": {

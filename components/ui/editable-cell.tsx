@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Check, X, Pencil } from "lucide-react";
+import { useApiError } from "@/lib/utils/api-error";
 import { Input } from "./input";
 import { cn } from "@/lib/utils/utils";
 
@@ -48,6 +49,7 @@ export function EditableCell({
   const [editValue, setEditValue] = useState(String(value));
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const apiError = useApiError();
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Reset edit value when external value changes
@@ -144,11 +146,11 @@ export function EditableCell({
       setIsEditing(false);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save");
+      setError(apiError(err));
     } finally {
       setIsSaving(false);
     }
-  }, [editValue, value, type, onSave, validateValue]);
+  }, [editValue, value, type, onSave, validateValue, apiError]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {

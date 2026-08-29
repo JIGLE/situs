@@ -771,6 +771,19 @@
       "tryAgain": "Tentar novamente",
       "refresh": "Atualizar página",
       "errorId": "ID do erro: {id}"
+    },
+    "api": {
+      "generic": "Algo correu mal. Tente novamente.",
+      "offline": "Não foi possível contactar o servidor. Verifique a ligação e tente novamente.",
+      "invalidInput": "Há dados inválidos no formulário. Verifique e tente novamente.",
+      "invalidField": "{field} não é válido.",
+      "signedOut": "A sua sessão terminou. Inicie sessão novamente para continuar.",
+      "notAllowed": "Não tem permissão para efetuar esta ação.",
+      "notFound": "Esse registo já não existe. Pode ter sido eliminado.",
+      "conflict": "Alguém alterou isto enquanto estava a editar. Recarregue e tente novamente.",
+      "planLimit": "O seu plano não inclui esta funcionalidade. Faça upgrade para continuar.",
+      "tooMany": "Demasiados pedidos. Aguarde um momento e tente novamente.",
+      "serverError": "O servidor teve um problema. Tente novamente dentro de momentos."
     }
   },
   "compliance": {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "@/lib/utils/api-client";
 import { useDemoMode } from "@/lib/contexts/demo-context";
+import { useApiError } from "@/lib/utils/api-error";
 import { usePortalAccess } from "@/lib/contexts/portal-context";
 import type { Document, DocumentStats, DocumentRef, DocumentType } from "./document-types";
 
@@ -46,6 +47,8 @@ export function useDocuments({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const apiError = useApiError();
+
   const fetchDocuments = useCallback(async () => {
     try {
       const params = new URLSearchParams();
@@ -59,9 +62,9 @@ export function useDocuments({
       );
       setDocuments(Array.isArray(data) ? data : data.data || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load documents");
+      setError(apiError(err));
     }
-  }, [typeFilter, propertyFilter, searchTerm, csrfToken]);
+  }, [typeFilter, propertyFilter, searchTerm, csrfToken, apiError]);
 
   const fetchStats = useCallback(async () => {
     if (isDemoMode) return;
@@ -129,7 +132,7 @@ export function useDocuments({
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Download failed");
+      setError(apiError(err));
     }
   };
 
@@ -139,7 +142,7 @@ export function useDocuments({
       fetchDocuments();
       fetchStats();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed");
+      setError(apiError(err));
     }
   };
 

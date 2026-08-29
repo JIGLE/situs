@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { TICKET_STATUS_KEY, type TicketStatus } from "@/lib/utils/maintenance-labels";
+import { useApiError } from "@/lib/utils/api-error";
 import { getCurrencyLocale, type Currency } from "@/lib/utils/currency";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/ui/card";
 import { Button } from "@/ui/button";
@@ -118,6 +119,7 @@ export default function TenantPortalPage({ params }: TenantPortalPageProps) {
   const router = useRouter();
   const t = useTranslations("tenantPortal.main");
   const tErrors = useTranslations("tenantPortal.errors");
+  const apiError = useApiError();
   const tStatus = useTranslations("status");
   const tMaint = useTranslations("maintenance");
   // The document type keys live under `documents`, next to the owner-facing archive that
@@ -340,7 +342,10 @@ export default function TenantPortalPage({ params }: TenantPortalPageProps) {
     } catch (err) {
       setPaymentMsg({
         type: "error",
-        text: err instanceof Error ? err.message : t("paymentFailed"),
+        // `t("paymentFailed")` was already the fallback; the server's English sentence was
+        // preferred over it whenever there was one, which is the wrong way round on the one
+        // screen a tenant sees.
+        text: apiError(err),
       });
     } finally {
       setProcessingPayment(null);
