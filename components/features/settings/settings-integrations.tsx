@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Landmark, Layers, ScanLine } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatDate as formatDateWithLocale } from "@/lib/utils/format-date";
 import { MODE_KIND_STYLES, authorityName, modeKind } from "@/lib/tax/connectors/presentation";
 import { BankConnectPanel, type BankConnectionRow } from "./bank-connect-panel";
 
@@ -20,12 +21,6 @@ interface TaxConnector {
 // tax dashboard cannot drift apart. The old table styled `live` as SUCCESS — green — when it
 // is the one mode the connector refuses to act in.
 
-function formatDate(value: string | null): string {
-  if (!value) return "never";
-  const d = new Date(value);
-  return isNaN(d.getTime()) ? "never" : d.toLocaleDateString();
-}
-
 /**
  * Read-only status summary for the three Situs automation layers — a
  * quick "is this connected" glance, not a drill-down. Full explainability
@@ -37,6 +32,7 @@ export function SettingsIntegrations() {
   // Connector mode wording lives in `common` because the Finance tax dashboard shows the same
   // strings; duplicating them into settings.panel would let the two surfaces drift.
   const tc = useTranslations("common");
+  const locale = useLocale();
   const [connections, setConnections] = useState<BankConnectionRow[]>([]);
   const [providersConfigured, setProvidersConfigured] = useState<string[]>([]);
   const [connectors, setConnectors] = useState<TaxConnector[]>([]);
@@ -123,7 +119,9 @@ export function SettingsIntegrations() {
                         : tc("connectorModeUnsupportedHelp", { mode: c.mode })}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {t("lastSubmission", { date: formatDate(c.lastSubmissionAt) })}
+                      {t("lastSubmission", {
+                        date: formatDateWithLocale(c.lastSubmissionAt, locale),
+                      })}
                     </p>
                   </div>
                   <span

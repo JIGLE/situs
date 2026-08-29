@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
+import { httpError, useApiError } from "@/lib/utils/api-error";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -62,27 +63,34 @@ const CELL_CODES: Record<string, string> = {
 };
 
 export function YearlyRentMatrix(): React.ReactElement {
+  const apiError = useApiError();
   const t = useTranslations("common");
+  // The cell itself shows a four-letter code (PAID/LATE/PART) by design; the tooltip is the
+  // place the state gets said in words, and it was saying the stored enum.
+  const tPeriod = useTranslations("rentPeriodStatus");
   const [year, setYear] = useState(() => new Date().getUTCFullYear());
   const [rows, setRows] = useState<MatrixRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (y: number) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/finance/rent-matrix?year=${y}`, { credentials: "include" });
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
-      const body = await res.json();
-      setRows(body?.data?.rows ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load rent matrix");
-      setRows([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (y: number) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/finance/rent-matrix?year=${y}`, { credentials: "include" });
+        if (!res.ok) throw httpError(res.status);
+        const body = await res.json();
+        setRows(body?.data?.rows ?? []);
+      } catch (err) {
+        setError(apiError(err));
+        setRows([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiError],
+  );
 
   useEffect(() => {
     void load(year);
@@ -159,7 +167,7 @@ export function YearlyRentMatrix(): React.ReactElement {
                         className="border-b border-[var(--color-border)] px-1 py-2.5 text-center"
                         title={
                           cell
-                            ? `${cell.status} · ${cell.allocatedAmount.toFixed(2)} / ${cell.dueAmount.toFixed(2)}`
+                            ? `${tPeriod(cell.status)} · ${cell.allocatedAmount.toFixed(2)} / ${cell.dueAmount.toFixed(2)}`
                             : undefined
                         }
                       >

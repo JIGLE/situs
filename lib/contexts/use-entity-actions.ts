@@ -21,6 +21,7 @@ import {
   Lease,
 } from "@/lib/types";
 import { createEntityActions, type EntityActions } from "./create-entity-actions";
+import { useApiError } from "@/lib/utils/api-error";
 import type { AppAction, AppState } from "./app-reducer";
 
 interface EntityActionsContext {
@@ -50,6 +51,7 @@ export function useEntityActions(
   ctx: EntityActionsContext,
 ): EntityActionsBundle {
   const { csrfToken, userId, showError, showSuccess, isDemo } = ctx;
+  const resolveError = useApiError();
 
   const propertyActions = useMemo(
     () =>
@@ -58,13 +60,14 @@ export function useEntityActions(
         getItems: () => state.properties,
         setItems: (items) => dispatch({ type: "SET_PROPERTIES", payload: items }),
         showError,
+        resolveError,
         showSuccess,
         csrfToken,
         userId,
         entityName: "property",
         isDemo,
       }),
-    [csrfToken, userId, showError, showSuccess, isDemo, state.properties, dispatch],
+    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.properties, dispatch],
   );
 
   const buildingActions = useMemo(
@@ -74,13 +77,14 @@ export function useEntityActions(
         getItems: () => state.buildings,
         setItems: (items) => dispatch({ type: "SET_BUILDINGS", payload: items }),
         showError,
+        resolveError,
         showSuccess,
         csrfToken,
         userId,
         entityName: "building",
         isDemo,
       }),
-    [csrfToken, userId, showError, showSuccess, isDemo, state.buildings, dispatch],
+    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.buildings, dispatch],
   );
 
   const tenantActions = useMemo(
@@ -90,13 +94,14 @@ export function useEntityActions(
         getItems: () => state.tenants,
         setItems: (items) => dispatch({ type: "SET_TENANTS", payload: items }),
         showError,
+        resolveError,
         showSuccess,
         csrfToken,
         userId,
         entityName: "tenant",
         isDemo,
       }),
-    [csrfToken, userId, showError, showSuccess, isDemo, state.tenants, dispatch],
+    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.tenants, dispatch],
   );
 
   const receiptActions = useMemo(
@@ -106,13 +111,14 @@ export function useEntityActions(
         getItems: () => state.receipts,
         setItems: (items) => dispatch({ type: "SET_RECEIPTS", payload: items }),
         showError,
+        resolveError,
         showSuccess,
         csrfToken,
         userId,
         entityName: "receipt",
         isDemo,
       }),
-    [csrfToken, userId, showError, showSuccess, isDemo, state.receipts, dispatch],
+    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.receipts, dispatch],
   );
 
   const templateActions = useMemo(
@@ -122,6 +128,7 @@ export function useEntityActions(
         getItems: () => state.templates,
         setItems: (items) => dispatch({ type: "SET_TEMPLATES", payload: items }),
         showError,
+        resolveError,
         showSuccess,
         csrfToken,
         userId,
@@ -129,7 +136,7 @@ export function useEntityActions(
         requireAuth: false,
         isDemo,
       }),
-    [csrfToken, userId, showError, showSuccess, isDemo, state.templates, dispatch],
+    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.templates, dispatch],
   );
 
   const correspondenceActions = useMemo(
@@ -139,13 +146,23 @@ export function useEntityActions(
         getItems: () => state.correspondence,
         setItems: (items) => dispatch({ type: "SET_CORRESPONDENCE", payload: items }),
         showError,
+        resolveError,
         showSuccess,
         csrfToken,
         userId,
         entityName: "correspondence",
         isDemo,
       }),
-    [csrfToken, userId, showError, showSuccess, isDemo, state.correspondence, dispatch],
+    [
+      csrfToken,
+      userId,
+      showError,
+      resolveError,
+      showSuccess,
+      isDemo,
+      state.correspondence,
+      dispatch,
+    ],
   );
 
   const ownerActions = useMemo(
@@ -155,13 +172,14 @@ export function useEntityActions(
         getItems: () => state.owners,
         setItems: (items) => dispatch({ type: "SET_OWNERS", payload: items }),
         showError,
+        resolveError,
         showSuccess,
         csrfToken,
         userId,
         entityName: "owner",
         isDemo,
       }),
-    [csrfToken, userId, showError, showSuccess, isDemo, state.owners, dispatch],
+    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.owners, dispatch],
   );
 
   const expenseActions = useMemo(
@@ -171,6 +189,7 @@ export function useEntityActions(
         getItems: () => state.expenses,
         setItems: (items) => dispatch({ type: "SET_EXPENSES", payload: items }),
         showError,
+        resolveError,
         showSuccess,
         csrfToken,
         userId,
@@ -178,7 +197,7 @@ export function useEntityActions(
         prependNew: true,
         isDemo,
       }),
-    [csrfToken, userId, showError, showSuccess, isDemo, state.expenses, dispatch],
+    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.expenses, dispatch],
   );
 
   const maintenanceActions = useMemo(
@@ -188,6 +207,7 @@ export function useEntityActions(
         getItems: () => state.maintenance,
         setItems: (items) => dispatch({ type: "SET_MAINTENANCE", payload: items }),
         showError,
+        resolveError,
         showSuccess,
         csrfToken,
         userId,
@@ -195,7 +215,7 @@ export function useEntityActions(
         prependNew: true,
         isDemo,
       }),
-    [csrfToken, userId, showError, showSuccess, isDemo, state.maintenance, dispatch],
+    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.maintenance, dispatch],
   );
 
   const leaseActions = useMemo(
@@ -205,6 +225,7 @@ export function useEntityActions(
         getItems: () => state.leases,
         setItems: (items) => dispatch({ type: "SET_LEASES", payload: items }),
         showError,
+        resolveError,
         showSuccess,
         csrfToken,
         userId,
@@ -212,7 +233,7 @@ export function useEntityActions(
         prependNew: true,
         isDemo,
       }),
-    [csrfToken, userId, showError, showSuccess, isDemo, state.leases, dispatch],
+    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.leases, dispatch],
   );
 
   return {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { withEntityDetail } from "@/lib/utils/entity-detail-url";
 import { useSession } from "next-auth/react";
@@ -58,6 +58,7 @@ export interface DocumentsViewProps {
 
 export function DocumentsView({ propertyId, embedded = false }: DocumentsViewProps = {}) {
   const t = useTranslations("documents");
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const { token: csrfToken } = useCsrf();
@@ -254,7 +255,8 @@ export function DocumentsView({ propertyId, embedded = false }: DocumentsViewPro
                         <div>
                           <p className="text-sm font-medium">{doc.name}</p>
                           <p className="text-xs text-[var(--color-muted-foreground)]">
-                            {formatFileSize(doc.fileSize)} · {formatDocumentDate(doc.uploadedAt)}
+                            {formatFileSize(doc.fileSize)} ·{" "}
+                            {formatDocumentDate(doc.uploadedAt, locale)}
                           </p>
                         </div>
                       </div>
@@ -312,7 +314,7 @@ export function DocumentsView({ propertyId, embedded = false }: DocumentsViewPro
                 <SelectItem value="all">{t("allTypes")}</SelectItem>
                 {Object.entries(documentTypeConfig).map(([key, config]) => (
                   <SelectItem key={key} value={key}>
-                    {config.label}
+                    {t(config.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -375,7 +377,7 @@ export function DocumentsView({ propertyId, embedded = false }: DocumentsViewPro
                                     <div className="flex flex-wrap items-center gap-2">
                                       <h4 className="font-medium">{doc.name}</h4>
                                       <Badge variant="secondary" className={config.color}>
-                                        {config.label}
+                                        {t(config.labelKey)}
                                       </Badge>
                                       {expiry && (
                                         <Badge
@@ -383,14 +385,14 @@ export function DocumentsView({ propertyId, embedded = false }: DocumentsViewPro
                                           className="flex items-center gap-1"
                                         >
                                           <Clock className="h-3 w-3" />
-                                          {expiry.label}
+                                          {t(expiry.key, { days: expiry.days })}
                                         </Badge>
                                       )}
                                     </div>
                                     <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                                       <span>{formatFileSize(doc.fileSize)}</span>
                                       <span>•</span>
-                                      <span>{formatDocumentDate(doc.uploadedAt)}</span>
+                                      <span>{formatDocumentDate(doc.uploadedAt, locale)}</span>
                                       {doc.propertyName && (
                                         <>
                                           <span>•</span>

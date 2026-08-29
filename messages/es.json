@@ -771,6 +771,19 @@
       "tryAgain": "Reintentar",
       "refresh": "Actualizar página",
       "errorId": "ID del error: {id}"
+    },
+    "api": {
+      "generic": "Algo ha salido mal. Inténtelo de nuevo.",
+      "offline": "No se ha podido contactar con el servidor. Compruebe la conexión e inténtelo de nuevo.",
+      "invalidInput": "Hay datos no válidos en el formulario. Revíselo e inténtelo de nuevo.",
+      "invalidField": "{field} no es válido.",
+      "signedOut": "Su sesión ha finalizado. Inicie sesión de nuevo para continuar.",
+      "notAllowed": "No tiene permiso para realizar esta acción.",
+      "notFound": "Ese registro ya no existe. Es posible que se haya eliminado.",
+      "conflict": "Alguien ha modificado esto mientras editaba. Recargue e inténtelo de nuevo.",
+      "planLimit": "Su plan no incluye esta función. Mejore su plan para continuar.",
+      "tooMany": "Demasiadas solicitudes. Espere un momento e inténtelo de nuevo.",
+      "serverError": "El servidor ha tenido un problema. Inténtelo de nuevo en unos momentos."
     }
   },
   "compliance": {
@@ -830,7 +843,11 @@
     "modelo179Property": "Inmueble",
     "modelo179Period": "Periodo",
     "modelo179Actions": "Acciones",
-    "modelo179MarkSubmitted": "Marcar como presentado"
+    "modelo179MarkSubmitted": "Marcar como presentado",
+    "modelo179DialogTitle": "Marcar como presentado a la AT",
+    "modelo179DialogDescription": "Introduzca la referencia de la AT para la presentación del Modelo 179 de {tenant} — {property} ({year}).",
+    "modelo179ATRefPlaceholder": "p. ej. AT2025-XXXXXXXX",
+    "modelo179Saving": "Guardando…"
   },
   "tax": {
     "title": "Cálculo de Impuestos",
@@ -1066,9 +1083,7 @@
     "notesPlaceholder": "Añade condiciones especiales o notas sobre este contrato...",
     "filter": {
       "allStatuses": "Todos los estados",
-      "allRegimes": "Todos los regímenes",
-      "exempt": "Exento (artículo 9)",
-      "iva": "IVA (artículo 53)"
+      "allRegimes": "Todos los regímenes"
     },
     "taxRegimePlaceholder": "Selecciona el régimen fiscal...",
     "taxRegimePt": "Portugal — Rendimentos",
@@ -1151,7 +1166,8 @@
         "description": "Este contrato quedará marcado como rescindido. Esta acción no se puede deshacer.",
         "confirmLabel": "Rescindir"
       }
-    }
+    },
+    "unknown": "Desconocido"
   },
   "maintenance": {
     "title": "Mantenimiento",
@@ -1326,7 +1342,13 @@
       "size": "Tamaño",
       "uploaded": "Subido",
       "linkedTo": "Vinculado a"
-    }
+    },
+    "expired": "Caducado",
+    "expiresInDays": "Caduca en {days} d",
+    "notFound": "Documento no encontrado",
+    "loadFailed": "No se pudo abrir este documento",
+    "downloadFailed": "La descarga ha fallado",
+    "downloadShort": "Descargar"
   },
   "notifications": {
     "title": "Notificaciones",
@@ -1502,7 +1524,8 @@
       "priorityUrgent": "Urgente",
       "save": "Guardar",
       "cancel": "Cancelar",
-      "viewAll": "Ver todo"
+      "viewAll": "Ver todo",
+      "docExpires": "Caduca el {date}"
     }
   },
   "calendar": {
@@ -2506,7 +2529,14 @@
     "internal": "Interno",
     "emptyTitle": "No se han encontrado contactos",
     "emptyDescription": "Añade contactos de mantenimiento para gestionar tu red de proveedores",
-    "loadFailed": "No se han podido cargar los contactos."
+    "loadFailed": "No se han podido cargar los contactos.",
+    "summary": "{total} contactos · {contractors} contratistas · {vendors} proveedores · {internal} internos",
+    "perHour": "/h",
+    "type": {
+      "contractor": "Contratista",
+      "vendor": "Proveedor",
+      "internalStaff": "Personal interno"
+    }
   },
   "account": {
     "title": "Cuenta",
@@ -2627,5 +2657,72 @@
     "themeDark": "Oscuro",
     "taxConnectorsEmpty": "Aún no hay conectores fiscales: se crea automáticamente la primera vez que emitas un recibo de alquiler a través del flujo fiscal de un país.",
     "taxConnectorsLoadFailed": "No se han podido cargar los conectores fiscales. Inténtalo de nuevo."
+  },
+  "rentPeriodStatus": {
+    "upcoming": "Próximo",
+    "due": "A pagar",
+    "overdue": "En mora",
+    "partially_paid": "Parcialmente pagado",
+    "paid": "Pagado",
+    "paid_late": "Pagado con retraso",
+    "waived": "Condonado"
+  },
+  "analyticsWidgets": {
+    "occupancyRate": "Tasa de ocupación",
+    "totalUnits": "Total de unidades",
+    "upcomingExpirations": "Contratos por vencer",
+    "noUpcomingExpirations": "Sin contratos por vencer",
+    "viewAll": "Ver todo",
+    "expiryExpired": "Expirado",
+    "expiryCritical": "< 30 días",
+    "expiryWarning": "30-60 días",
+    "expiryHealthy": "> 60 días",
+    "maintenanceOverview": "Resumen de mantenimiento",
+    "totalRequests": "Total de solicitudes",
+    "avgDaysToResolve": "Días medios para resolver",
+    "completionRate": "Tasa de finalización",
+    "countPending": "{count} pendientes",
+    "countInProgress": "{count} en curso",
+    "countDone": "{count} completadas",
+    "propertyPerformance": "Rendimiento de inmuebles",
+    "noProperties": "No se han encontrado inmuebles",
+    "colProperty": "Inmueble",
+    "colOccupancy": "Ocupación",
+    "colRevenue": "Ingresos",
+    "colNetIncome": "Resultado neto",
+    "colRoi": "ROI",
+    "calendarTitle": "Calendario de contratos",
+    "today": "Hoy",
+    "leaseStatus": "Estado de los contratos",
+    "legendExpired": "Expirado",
+    "legendCritical": "Crítico (<30d)",
+    "legendWarning": "Atención (30–60d)",
+    "legendHealthy": "Saludable (>60d)",
+    "eventsOn": "Eventos el {date}",
+    "eventExpires": "Vence",
+    "eventRenewal": "Renovación",
+    "eventStarts": "Inicio",
+    "daysRemaining": "{count} días",
+    "daysSince": "hace {count} días",
+    "countExpired": "{count} expirados",
+    "countCritical": "{count} críticos",
+    "countWarning": "{count} en atención"
+  },
+  "authError": {
+    "title": "No hemos podido iniciar tu sesión",
+    "tryAgain": "Intentar de nuevo",
+    "goHome": "Ir a la página de inicio",
+    "details": "Detalles",
+    "codeLabel": "Código",
+    "accessDeniedTitle": "Esta cuenta no tiene permiso para iniciar sesión",
+    "accessDeniedBody": "El registro está cerrado en esta instancia, así que solo pueden entrar las cuentas autorizadas por el propietario. Reintentar no cambiará nada: pide a quien gestiona esta instancia que añada tu dirección.",
+    "configurationTitle": "Esta instancia aún no está configurada para el inicio de sesión",
+    "configurationBody": "El proveedor de autenticación falta o está mal configurado en el servidor. Reintentar no ayudará hasta que se corrija.",
+    "notLinkedTitle": "Ese correo ya inició sesión de otra forma",
+    "notLinkedBody": "Ya existe una cuenta con esta dirección creada con otro método de inicio de sesión. Usa el método con el que te registraste o pide al propietario que los vincule.",
+    "verificationTitle": "Ese enlace de acceso ha caducado",
+    "verificationBody": "Los enlaces de acceso solo pueden usarse una vez y caducan pronto. Solicita uno nuevo y ábrelo enseguida.",
+    "genericTitle": "Algo ha ido mal al iniciar sesión",
+    "genericBody": "Suele ser temporal. Inténtalo de nuevo y, si sigue ocurriendo, indica el código de abajo a quien gestiona esta instancia."
   }
 }

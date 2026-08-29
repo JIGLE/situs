@@ -14,6 +14,15 @@ export interface EntityActions<T extends { id: string }> {
 }
 
 interface EntityActionConfig<T extends { id: string }> {
+  /**
+   * Turns a caught error into a sentence in the user's language.
+   *
+   * Passed in rather than resolved here: this is a factory, not a component, so it cannot call
+   * `useApiError` itself. `use-entity-actions.ts` is a hook and resolves it there, the same way
+   * `csrfToken` and `showError` already arrive from above. Before this, all three verbs showed
+   * the server's English `err.message` in a toast.
+   */
+  resolveError: (err: unknown) => string;
   /** API base path, e.g. "/api/properties" */
   endpoint: string;
   /** Current items in state */
@@ -62,6 +71,7 @@ export function createEntityActions<T extends { id: string }>(
     userId,
     prependNew = false,
     isDemo = false,
+    resolveError,
   } = config;
 
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -76,7 +86,7 @@ export function createEntityActions<T extends { id: string }>(
       showSuccess?.(`${capitalize(entityName)} added successfully${demoSuffix}`);
       return created;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : `Failed to add ${entityName}`;
+      const msg = resolveError(err);
       showError(msg);
       throw err;
     }
@@ -91,7 +101,7 @@ export function createEntityActions<T extends { id: string }>(
       showSuccess?.(`${capitalize(entityName)} updated successfully${demoSuffix}`);
       return updated;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : `Failed to update ${entityName}`;
+      const msg = resolveError(err);
       showError(msg);
       throw err;
     }
@@ -108,7 +118,7 @@ export function createEntityActions<T extends { id: string }>(
     } catch (err) {
       // Rollback on failure
       setItems(previous);
-      const msg = err instanceof Error ? err.message : `Failed to delete ${entityName}`;
+      const msg = resolveError(err);
       showError(msg);
       throw err;
     }

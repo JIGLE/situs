@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   FileText,
   Edit,
@@ -19,6 +19,7 @@ import { useCurrency } from "@/lib/contexts/currency-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RECEIPT_TYPE_KEY } from "@/lib/utils/receipt-labels";
 import {
   Dialog,
   DialogContent,
@@ -55,6 +56,9 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
   const tLease = useTranslations("leases");
   const tForms = useTranslations("forms");
   const tActions = useTranslations("actions");
+  const tStatus = useTranslations("status");
+  const tReceipts = useTranslations("financial.receipts");
+  const locale = useLocale();
   const confirmDialog = useConfirmDialog();
   const router = useRouter();
 
@@ -185,8 +189,14 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
               </span>
             </div>
             <div className="flex items-center gap-3 mt-2 flex-wrap">
-              <Badge variant={STATUS_VARIANT[lease.status] || "secondary"}>{lease.status}</Badge>
-              <span className="text-sm font-medium">{formatCurrency(lease.monthlyRent)}/mo</span>
+              <Badge variant={STATUS_VARIANT[lease.status] || "secondary"}>
+                {/* The list view translates this; the detail view printed the stored enum, so
+                    the same lease read "Ativo" on one screen and "active" on the other. */}
+                {tLease(lease.status)}
+              </Badge>
+              <span className="text-sm font-medium">
+                {tLease("perMonth", { amount: formatCurrency(lease.monthlyRent) })}
+              </span>
               {lease.autoRenew && <Badge variant="outline">{t("autoRenewBadge")}</Badge>}
               {lease.status === "active" && daysUntilExpiry <= 60 && (
                 <Badge variant="secondary" className="text-amber-500">
@@ -367,15 +377,19 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
                         )}
                       />
                       <div>
-                        <p className="text-sm font-medium capitalize">{receipt.type}</p>
+                        {/* Was `capitalize` over the raw enum, which is a CSS rule standing in
+                            for a translation: "Rent" in a Portuguese payment history. */}
+                        <p className="text-sm font-medium">
+                          {tReceipts(RECEIPT_TYPE_KEY[receipt.type])}
+                        </p>
                         <p className="text-xs text-[var(--color-muted-foreground)]">
-                          {receipt.date}
+                          {new Date(receipt.date).toLocaleDateString(locale)}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={receipt.status === "paid" ? "default" : "secondary"}>
-                        {receipt.status}
+                        {tStatus(receipt.status)}
                       </Badge>
                       <span
                         className={cn(
@@ -430,7 +444,7 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
                 placeholder={String(lease?.monthlyRent ?? "")}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="startDate">{t("newStartDate")}</Label>
                 <Input

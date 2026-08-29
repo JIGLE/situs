@@ -288,7 +288,7 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                 {(showManualFields ||
                   (!dialog.formData.addressVerified && dialog.formData.address.length > 0)) && (
                   <div className="space-y-3 rounded-md border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-3">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label htmlFor="country">{tForms("country")}</Label>
                         <Select
@@ -326,7 +326,7 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label htmlFor="city">{tForms("city")}</Label>
                         <Input
@@ -385,7 +385,7 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="rent">Monthly Rent ({currencySymbol})</Label>
                   <Input
@@ -454,7 +454,7 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
 
                 {showDetails && (
                   <div className="mt-3 space-y-3 rounded-md border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-3">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label htmlFor="bedrooms">{t("fields.bedrooms")}</Label>
                         <Input

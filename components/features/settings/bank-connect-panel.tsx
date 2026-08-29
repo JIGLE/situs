@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Landmark, Loader2, RefreshCw, TriangleAlert } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -91,6 +91,7 @@ interface Props {
  */
 export function BankConnectPanel({ connections, providersConfigured, loading, onRefresh }: Props) {
   const t = useTranslations("settings.panel");
+  const locale = useLocale();
   const { token: csrfToken } = useCsrf();
 
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -124,14 +125,21 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
       setLoadingBanks(true);
       setError(null);
       try {
+        // Not `{ data: { … } }`, for the same reason as `connect` below: the route replies
+        // `createSuccessResponse({ providerKey, institutions, totalAvailable })` and `apiFetch`
+        // has already returned the envelope's `data` field. Reading `.data` again produced
+        // `undefined`, so the picker listed zero banks and reported "0 available" — meaning
+        // this failed one step BEFORE the connect button did, and nobody could reach the
+        // button to discover that it was broken too.
         const body = await apiFetch<{
-          data?: { institutions?: Institution[]; totalAvailable?: number };
+          institutions?: Institution[];
+          totalAvailable?: number;
         }>(
           `/api/bank/institutions?country=${encodeURIComponent(code)}` +
             `&provider=${encodeURIComponent(providersConfigured[0] ?? "")}`,
         );
-        setInstitutions(body?.data?.institutions ?? []);
-        setTotalAvailable(body?.data?.totalAvailable ?? 0);
+        setInstitutions(body?.institutions ?? []);
+        setTotalAvailable(body?.totalAvailable ?? 0);
       } catch {
         setInstitutions([]);
         // Back to "unknown", not zero. A failed request tells us nothing about what the provider
@@ -159,7 +167,13 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
     setBusyId(institution.id);
     setError(null);
     try {
-      const body = await apiFetch<{ data?: { url?: string } }>(
+      // Not `{ data: { url } }`. `apiFetch` returns the envelope's `data` field when there is
+      // one, and this route replies `createSuccessResponse({ connectionId, url })` — so reading
+      // `.data` off the result unwrapped it twice, `url` came back undefined, and the connect
+      // button threw "no url" and showed the generic failure message every single time. Same
+      // defect as the document detail panel, and hidden the same way: the type argument
+      // asserted the pre-unwrap shape, so nothing disagreed.
+      const body = await apiFetch<{ connectionId?: string; url?: string }>(
         "/api/bank/connections/connect",
         csrfToken,
         "POST",
@@ -172,7 +186,7 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
           providerKey: providersConfigured[0],
         },
       );
-      const url = body?.data?.url;
+      const url = body?.url;
       if (!url) throw new Error("no url");
       // Leaves the app for the bank's own authentication.
       window.location.href = url;
@@ -214,7 +228,7 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
   function formatDate(value: string | null): string {
     if (!value) return t("bankNeverSynced");
     const d = new Date(value);
-    return isNaN(d.getTime()) ? t("bankNeverSynced") : d.toLocaleDateString();
+    return isNaN(d.getTime()) ? t("bankNeverSynced") : d.toLocaleDateString(locale);
   }
 
   return (

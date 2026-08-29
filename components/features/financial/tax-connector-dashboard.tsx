@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { formatDate } from "@/lib/utils/format-date";
 import { MODE_KIND_STYLES, authorityName, modeKind } from "@/lib/tax/connectors/presentation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -46,6 +47,7 @@ const LOG_STATUS_STYLES: Record<string, string> = {
 
 export function TaxConnectorDashboard(): React.ReactElement | null {
   const t = useTranslations("common");
+  const locale = useLocale();
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [logsByConnector, setLogsByConnector] = useState<Record<string, SubmissionLog[]>>({});
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -139,7 +141,7 @@ export function TaxConnectorDashboard(): React.ReactElement | null {
                     <span className="text-xs text-[var(--color-muted-foreground)]">
                       {connector.lastSubmissionAt
                         ? t("connectorLastSubmission", {
-                            date: new Date(connector.lastSubmissionAt).toLocaleDateString(),
+                            date: formatDate(connector.lastSubmissionAt, locale),
                           })
                         : t("connectorNoSubmissions")}
                     </span>
@@ -166,7 +168,7 @@ export function TaxConnectorDashboard(): React.ReactElement | null {
                               {log.responseCode ? ` (${log.responseCode})` : ""}
                             </span>
                             <span className="tabular-nums text-[var(--color-muted-foreground)]">
-                              {new Date(log.createdAt).toLocaleString()}
+                              {new Date(log.createdAt).toLocaleString(locale)}
                             </span>
                           </div>
                         ))}

@@ -125,7 +125,10 @@ export function PeopleView(): React.ReactElement {
             className="min-w-0 flex-1 md:hidden"
             value={activeTab}
             onValueChange={setActiveTab}
-            aria-label={t("tenants")}
+            /* Names the switcher, not one of its options. Every other TabsMobileSelect
+               call site labels the screen; this one said "Tenants", so a screen reader
+               announced the People section switcher as the tenants control. */
+            aria-label={t("title")}
             items={[
               { value: "tenants", label: t("tenants"), badge: tenants.length },
               { value: "owners", label: t("owners"), badge: owners.length },

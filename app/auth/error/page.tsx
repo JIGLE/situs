@@ -1,68 +1,85 @@
 "use client";
 
 import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { AlertTriangle } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * NextAuth's configured error page (`pages.error` in `lib/services/auth/auth.ts`).
+ *
+ * It used to say the same thing whatever had happened: a hardcoded
+ * `Error: OAuthAccountNotLinked`, the sentence "This is usually temporary", and a Try Again
+ * button. On this app that is wrong in the most common case. Registration is closed by default
+ * — the `signIn` callback returns `false` for any address the owner has not allowed — and
+ * NextAuth turns that into `?error=AccessDenied`. So the person most likely to reach this page
+ * was told their permanent refusal was a temporary linking glitch, and invited to retry
+ * something that can never succeed.
+ *
+ * The page now reads the code NextAuth actually sent and says what it means, including whether
+ * retrying is worth anything. `RETRYABLE` is what drives the button rather than a guess at the
+ * copy: an error whose fix is "ask the instance owner" should not offer an action that loops.
+ */
+const KNOWN_ERRORS = {
+  AccessDenied: "accessDenied",
+  Configuration: "configuration",
+  OAuthAccountNotLinked: "notLinked",
+  Verification: "verification",
+} as const;
+
+/** Codes where trying again can plausibly succeed. The others need someone to change something. */
+const RETRYABLE = new Set(["Verification", "OAuthSignin", "OAuthCallback", "Callback", "Default"]);
+
 function AuthErrorContent() {
+  const t = useTranslations("authError");
+  const code = useSearchParams().get("error") ?? "Default";
+  const key = KNOWN_ERRORS[code as keyof typeof KNOWN_ERRORS];
+  const canRetry = !key || RETRYABLE.has(code);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-950">
-      <div className="max-w-md w-full mx-4">
-        <div className="bg-zinc-900 border border-red-500/20 rounded-lg p-6">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-6 h-6 text-red-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-                />
-              </svg>
-            </div>
-            <h1 className="text-xl font-semibold text-zinc-50 mb-2">Authentication Error</h1>
-            <p className="text-zinc-400 mb-6">
-              There was a problem signing you in. This is usually temporary.
-            </p>
-
-            <div className="space-y-3">
-              <button
-                onClick={() => (window.location.href = "/api/auth/signin/google")}
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
-              >
-                Try Again
-              </button>
-
-              <button
-                onClick={() => (window.location.href = "/")}
-                className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium py-2 px-4 rounded-md transition-colors"
-              >
-                Go Home
-              </button>
-            </div>
-
-            <details className="mt-6 text-left">
-              <summary className="text-sm text-zinc-500 cursor-pointer hover:text-zinc-400">
-                Troubleshooting Info
-              </summary>
-              <div className="mt-2 p-3 bg-zinc-800 rounded text-xs text-zinc-400 font-mono">
-                <div>Error: OAuthAccountNotLinked</div>
-                <div className="mt-1">This usually means:</div>
-                <ul className="mt-1 ml-4 list-disc space-y-1">
-                  <li>Account linking issue with existing user</li>
-                  <li>Try clearing browser data and retrying</li>
-                  <li>Contact admin if issue persists</li>
-                </ul>
-              </div>
-            </details>
-          </div>
+    <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)] p-4">
+      <div className="w-full max-w-md rounded-lg border border-[var(--color-destructive)]/20 bg-[var(--color-card)] p-6">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-error-muted)]">
+          <AlertTriangle className="h-6 w-6 text-[var(--color-destructive)]" />
         </div>
+
+        <h1 className="text-center text-xl font-semibold text-[var(--color-foreground)]">
+          {key ? t(`${key}Title`) : t("genericTitle")}
+        </h1>
+        <p className="mt-2 text-center text-sm text-[var(--color-muted-foreground)]">
+          {key ? t(`${key}Body`) : t("genericBody")}
+        </p>
+
+        <div className="mt-6 space-y-3">
+          {canRetry && (
+            <Button
+              className="w-full"
+              onClick={() => (window.location.href = "/api/auth/signin/google")}
+            >
+              {t("tryAgain")}
+            </Button>
+          )}
+          <Button variant="outline" className="w-full" onClick={() => (window.location.href = "/")}>
+            {t("goHome")}
+          </Button>
+        </div>
+
+        {/* The code, verbatim and unglossed — it is what an instance owner needs in order to
+            look the failure up, and inventing a friendlier name for it would only make the
+            support conversation longer. */}
+        <details className="mt-6">
+          <summary className="cursor-pointer text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]">
+            {t("details")}
+          </summary>
+          <p className="mt-2 rounded bg-[var(--color-muted)] p-3 font-mono text-xs text-[var(--color-muted-foreground)]">
+            {t("codeLabel")}: {code}
+          </p>
+        </details>
       </div>
     </div>
   );
@@ -72,11 +89,7 @@ export default function AuthError() {
   return (
     <ErrorBoundary>
       <Suspense
-        fallback={
-          <div className="min-h-screen flex items-center justify-center bg-zinc-950">
-            <div className="text-zinc-400">Loading...</div>
-          </div>
-        }
+        fallback={<div className="min-h-screen bg-[var(--color-background)]" aria-busy="true" />}
       >
         <AuthErrorContent />
       </Suspense>

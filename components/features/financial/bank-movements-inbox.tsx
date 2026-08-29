@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { httpError, useApiError } from "@/lib/utils/api-error";
 import { Check, Upload, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -103,6 +104,7 @@ function formatReasons(raw: string | null): string {
 }
 
 export function BankMovementsInbox(): React.ReactElement {
+  const apiError = useApiError();
   const t = useTranslations("financial.bank");
   const tForms = useTranslations("forms");
   const { state } = useApp();
@@ -132,22 +134,25 @@ export function BankMovementsInbox(): React.ReactElement {
     [state.leases, state.tenants, state.properties],
   );
 
-  const load = useCallback(async (statusFilter: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const query = statusFilter === "all" ? "" : `?status=${statusFilter}`;
-      const res = await fetch(`/api/bank/transactions${query}`, { credentials: "include" });
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
-      const body = await res.json();
-      setRows(body?.data ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load bank movements");
-      setRows([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (statusFilter: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const query = statusFilter === "all" ? "" : `?status=${statusFilter}`;
+        const res = await fetch(`/api/bank/transactions${query}`, { credentials: "include" });
+        if (!res.ok) throw httpError(res.status);
+        const body = await res.json();
+        setRows(body?.data ?? []);
+      } catch (err) {
+        setError(apiError(err));
+        setRows([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiError],
+  );
 
   useEffect(() => {
     void load(filter);
@@ -171,12 +176,12 @@ export function BankMovementsInbox(): React.ReactElement {
         setReassigningId(null);
         await load(filter);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Action failed");
+        setError(apiError(err));
       } finally {
         setBusyId(null);
       }
     },
-    [filter, load],
+    [filter, load, apiError],
   );
 
   const runImport = useCallback(async () => {
@@ -196,11 +201,11 @@ export function BankMovementsInbox(): React.ReactElement {
       setCsvText("");
       await load(filter);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Import failed");
+      setError(apiError(err));
     } finally {
       setImporting(false);
     }
-  }, [csvText, filter, load]);
+  }, [csvText, filter, load, apiError]);
 
   /**
    * Match suggestion and row actions, shared by the table cell and the mobile card so the two
@@ -478,7 +483,17 @@ export function BankMovementsInbox(): React.ReactElement {
               key: "amount",
               header: t("amount"),
               headerClassName: "text-right",
-              cell: (row) => row.amount.toFixed(2),
+              // The code, not a localised symbol: this column is deliberately the bank's own
+              // figures in mono, so it stays sortable and matches the statement being
+              // reconciled against. But it dropped the currency entirely, and `currency` is a
+              // per-movement field precisely because it varies — a movement on a non-EUR
+              // account rendered as a bare "850.00" under a header that only says "Amount".
+              cell: (row) => (
+                <>
+                  {row.amount.toFixed(2)}{" "}
+                  <span className="text-[var(--color-muted-foreground)]">{row.currency}</span>
+                </>
+              ),
               cellClassName: "text-right font-mono tabular-nums",
             },
             { key: "match", header: t("match"), cell: renderMatch },

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { Edit2, Trash2, Home, X, Loader2 } from "lucide-react";
+import { useApiError } from "@/lib/utils/api-error";
 import { useCsrf } from "@/lib/contexts/csrf-context";
 import { useToast } from "@/lib/contexts/toast-context";
 import { apiFetch } from "@/lib/utils/api-client";
@@ -61,6 +62,7 @@ const initialFormData: UnitFormData = {
 };
 
 export default function UnitsView({ propertyId }: UnitsViewProps) {
+  const apiError = useApiError();
   const t = useTranslations("Units");
   const tActions = useTranslations("actions");
   const [units, setUnits] = useState<Unit[]>([]);
@@ -145,8 +147,7 @@ export default function UnitsView({ propertyId }: UnitsViewProps) {
       closeModal();
       await fetchUnits();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to save unit";
-      toast.error(msg);
+      toast.error(apiError(err));
     } finally {
       setSaving(false);
     }
@@ -160,8 +161,7 @@ export default function UnitsView({ propertyId }: UnitsViewProps) {
       toast.success(t("deleteUnit"));
     } catch (err) {
       setUnits(previousUnits);
-      const msg = err instanceof Error ? err.message : "Failed to delete unit";
-      toast.error(msg);
+      toast.error(apiError(err));
     }
   };
 

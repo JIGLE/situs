@@ -771,6 +771,19 @@
       "tryAgain": "Tentar novamente",
       "refresh": "Atualizar página",
       "errorId": "ID do erro: {id}"
+    },
+    "api": {
+      "generic": "Algo correu mal. Tente novamente.",
+      "offline": "Não foi possível contactar o servidor. Verifique a ligação e tente novamente.",
+      "invalidInput": "Há dados inválidos no formulário. Verifique e tente novamente.",
+      "invalidField": "{field} não é válido.",
+      "signedOut": "A sua sessão terminou. Inicie sessão novamente para continuar.",
+      "notAllowed": "Não tem permissão para efetuar esta ação.",
+      "notFound": "Esse registo já não existe. Pode ter sido eliminado.",
+      "conflict": "Alguém alterou isto enquanto estava a editar. Recarregue e tente novamente.",
+      "planLimit": "O seu plano não inclui esta funcionalidade. Faça upgrade para continuar.",
+      "tooMany": "Demasiados pedidos. Aguarde um momento e tente novamente.",
+      "serverError": "O servidor teve um problema. Tente novamente dentro de momentos."
     }
   },
   "compliance": {
@@ -830,7 +843,11 @@
     "modelo179Property": "Imóvel",
     "modelo179Period": "Período",
     "modelo179Actions": "Ações",
-    "modelo179MarkSubmitted": "Marcar como submetido"
+    "modelo179MarkSubmitted": "Marcar como submetido",
+    "modelo179DialogTitle": "Marcar como submetido à AT",
+    "modelo179DialogDescription": "Indique a referência da AT para a submissão do Modelo 179 de {tenant} — {property} ({year}).",
+    "modelo179ATRefPlaceholder": "ex.: AT2025-XXXXXXXX",
+    "modelo179Saving": "A guardar…"
   },
   "tax": {
     "title": "Cálculo de Impostos",
@@ -1066,9 +1083,7 @@
     "notesPlaceholder": "Acrescente condições especiais ou notas sobre este contrato...",
     "filter": {
       "allStatuses": "Todos os estados",
-      "allRegimes": "Todos os regimes",
-      "exempt": "Isento (artigo 9.º)",
-      "iva": "IVA (artigo 53.º)"
+      "allRegimes": "Todos os regimes"
     },
     "taxRegimePlaceholder": "Selecione o regime fiscal...",
     "taxRegimePt": "Portugal — Rendimentos",
@@ -1151,7 +1166,8 @@
         "description": "Este contrato ficará marcado como cessado. Esta ação não pode ser anulada.",
         "confirmLabel": "Cessar"
       }
-    }
+    },
+    "unknown": "Desconhecido"
   },
   "maintenance": {
     "title": "Manutenção",
@@ -1326,7 +1342,13 @@
       "size": "Tamanho",
       "uploaded": "Carregado",
       "linkedTo": "Associado a"
-    }
+    },
+    "expired": "Expirado",
+    "expiresInDays": "Expira em {days} d",
+    "notFound": "Documento não encontrado",
+    "loadFailed": "Não foi possível abrir este documento",
+    "downloadFailed": "A transferência falhou",
+    "downloadShort": "Transferir"
   },
   "notifications": {
     "title": "Notificações",
@@ -1502,7 +1524,8 @@
       "priorityUrgent": "Urgente",
       "save": "Guardar",
       "cancel": "Cancelar",
-      "viewAll": "Ver tudo"
+      "viewAll": "Ver tudo",
+      "docExpires": "Expira a {date}"
     }
   },
   "calendar": {
@@ -2506,7 +2529,14 @@
     "internal": "Interno",
     "emptyTitle": "Nenhum contacto encontrado",
     "emptyDescription": "Adicione contactos de manutenção para gerir a sua rede de prestadores",
-    "loadFailed": "Não foi possível carregar os contactos."
+    "loadFailed": "Não foi possível carregar os contactos.",
+    "summary": "{total} contactos · {contractors} empreiteiros · {vendors} fornecedores · {internal} internos",
+    "perHour": "/h",
+    "type": {
+      "contractor": "Empreiteiro",
+      "vendor": "Fornecedor",
+      "internalStaff": "Equipa interna"
+    }
   },
   "account": {
     "title": "Conta",
@@ -2627,5 +2657,72 @@
     "themeDark": "Escuro",
     "taxConnectorsEmpty": "Ainda sem conectores fiscais — é criado automaticamente na primeira vez que emitir um recibo de renda através do fluxo fiscal de um país.",
     "taxConnectorsLoadFailed": "Não foi possível carregar os conectores fiscais. Tente novamente."
+  },
+  "rentPeriodStatus": {
+    "upcoming": "Por vencer",
+    "due": "A pagar",
+    "overdue": "Em atraso",
+    "partially_paid": "Parcialmente pago",
+    "paid": "Pago",
+    "paid_late": "Pago com atraso",
+    "waived": "Perdoado"
+  },
+  "analyticsWidgets": {
+    "occupancyRate": "Taxa de Ocupação",
+    "totalUnits": "Total de frações",
+    "upcomingExpirations": "Contratos a terminar",
+    "noUpcomingExpirations": "Sem contratos a terminar",
+    "viewAll": "Ver tudo",
+    "expiryExpired": "Expirado",
+    "expiryCritical": "< 30 dias",
+    "expiryWarning": "30-60 dias",
+    "expiryHealthy": "> 60 dias",
+    "maintenanceOverview": "Resumo da manutenção",
+    "totalRequests": "Total de pedidos",
+    "avgDaysToResolve": "Dias médios até resolver",
+    "completionRate": "Taxa de conclusão",
+    "countPending": "{count} pendentes",
+    "countInProgress": "{count} em curso",
+    "countDone": "{count} concluídos",
+    "propertyPerformance": "Desempenho dos imóveis",
+    "noProperties": "Nenhum imóvel encontrado",
+    "colProperty": "Imóvel",
+    "colOccupancy": "Ocupação",
+    "colRevenue": "Receita",
+    "colNetIncome": "Resultado líquido",
+    "colRoi": "ROI",
+    "calendarTitle": "Calendário de contratos",
+    "today": "Hoje",
+    "leaseStatus": "Estado dos contratos",
+    "legendExpired": "Expirado",
+    "legendCritical": "Crítico (<30d)",
+    "legendWarning": "Atenção (30–60d)",
+    "legendHealthy": "Saudável (>60d)",
+    "eventsOn": "Eventos em {date}",
+    "eventExpires": "Termina",
+    "eventRenewal": "Renovação",
+    "eventStarts": "Início",
+    "daysRemaining": "{count} dias",
+    "daysSince": "há {count} dias",
+    "countExpired": "{count} expirados",
+    "countCritical": "{count} críticos",
+    "countWarning": "{count} em atenção"
+  },
+  "authError": {
+    "title": "Não foi possível iniciar sessão",
+    "tryAgain": "Tentar novamente",
+    "goHome": "Ir para a página inicial",
+    "details": "Detalhes",
+    "codeLabel": "Código",
+    "accessDeniedTitle": "Esta conta não tem permissão para iniciar sessão",
+    "accessDeniedBody": "O registo está fechado nesta instância, pelo que só podem entrar as contas autorizadas pelo proprietário. Tentar de novo não muda nada — peça a quem gere esta instância que adicione o seu endereço.",
+    "configurationTitle": "Esta instância ainda não está configurada para início de sessão",
+    "configurationBody": "O fornecedor de autenticação está em falta ou mal configurado no servidor. Tentar de novo não ajuda enquanto isso não for corrigido.",
+    "notLinkedTitle": "Esse email já iniciou sessão de outra forma",
+    "notLinkedBody": "Já existe uma conta com este endereço criada por outro método de início de sessão. Use o método com que se registou ou peça ao proprietário da instância para os associar.",
+    "verificationTitle": "Esse link de acesso expirou",
+    "verificationBody": "Os links de acesso só podem ser usados uma vez e expiram rapidamente. Peça um novo e abra-o de imediato.",
+    "genericTitle": "Algo correu mal ao iniciar sessão",
+    "genericBody": "Normalmente é temporário. Tente de novo e, se continuar a acontecer, indique o código abaixo a quem gere esta instância."
   }
 }

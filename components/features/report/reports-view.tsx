@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { formatDate } from "@/lib/utils/format-date";
 import { Download, Building2, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,8 @@ export function ReportsView(): React.ReactElement {
   const { success, error } = useToast();
   const t = useTranslations("reports");
   const tStatus = useTranslations("status");
+  const locale = useLocale();
+  const tCategories = useTranslations("financial.categories");
   const { formatCurrency } = useCurrency();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -337,8 +340,11 @@ export function ReportsView(): React.ReactElement {
                       {report.expenses.byCategory.map((cat) => (
                         <div key={cat.category} className="flex justify-between items-center">
                           <div className="flex items-center gap-2">
+                            {/* The stored expense category, which is a snake_case enum —
+                                this listed "condominium_fees" where the Finances screen says
+                                "Quotas de Condomínio" for the same expenses. */}
                             <span className="text-[var(--color-muted-foreground)]">
-                              {cat.category}
+                              {tCategories(cat.category)}
                             </span>
                             <span className="text-xs text-[var(--color-muted-foreground)]">
                               ({cat.percentage}%)
@@ -668,7 +674,7 @@ export function ReportsView(): React.ReactElement {
                           </div>
                           {prop.leaseEnd && (
                             <div className="text-xs text-[var(--color-muted-foreground)]">
-                              Lease ends: {new Date(prop.leaseEnd).toLocaleDateString()}
+                              {t("leaseEnds", { date: formatDate(prop.leaseEnd, locale) })}
                             </div>
                           )}
                         </div>

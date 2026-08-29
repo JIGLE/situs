@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { useApiError } from "@/lib/utils/api-error";
+import { TICKET_PRIORITY_KEY, TICKET_STATUS_KEY } from "@/lib/utils/maintenance-labels";
 import { cn } from "@/lib/utils/utils";
 import { apiFetch } from "@/lib/utils/api-client";
 import { useCsrf } from "@/lib/contexts/csrf-context";
@@ -92,6 +94,10 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
   const t = useTranslations("propertyDetail");
   const tFin = useTranslations("financial");
   const tDoc = useTranslations("documents");
+  const tTypes = useTranslations("properties.types");
+  const tTicket = useTranslations("maintenance");
+  const tPeriod = useTranslations("rentPeriodStatus");
+  const apiError = useApiError();
 
   /**
    * DocumentType is snake_case in the schema (`floor_plan`) but camelCase in the catalog
@@ -358,9 +364,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
       setOwnerAssignPct("");
       await refreshData();
     } catch (err) {
-      setOwnerAssignError(
-        err instanceof Error ? err.message : "Failed to assign owner. Please try again.",
-      );
+      setOwnerAssignError(apiError(err));
     } finally {
       setOwnerAssignSaving(false);
     }
@@ -378,9 +382,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
     } catch (err) {
       // Previously swallowed every error ("silently fail in demo mode"), which is why a failed
       // removal looked like it had worked. Surface it in the same place as the assign error.
-      setOwnerAssignError(
-        err instanceof Error ? err.message : "Failed to remove owner. Please try again.",
-      );
+      setOwnerAssignError(apiError(err));
     }
   };
 
@@ -510,7 +512,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                   <DialogDescription>Log a cost for {property.name}</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={expenseDialog.handleSubmit} className="space-y-4 pt-1">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label htmlFor="exp-category">Category</Label>
                       <Select
@@ -657,7 +659,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                       </p>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label htmlFor="rec-amount">Amount</Label>
                       <Input
@@ -695,7 +697,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                       </Select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label htmlFor="rec-date">Date</Label>
                       <Input
@@ -793,7 +795,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                 </p>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="ten-phone">{t("phone")}</Label>
                 <Input
@@ -849,8 +851,12 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                 <div className="grid grid-cols-3 gap-3">
                   <div className="panel p-3">
                     <p className="mono-label">{t("month.status")}</p>
-                    <p className="mt-1 text-sm font-medium capitalize text-[var(--color-foreground)]">
-                      {selectedMonth.status ? selectedMonth.status.replace(/_/g, " ") : "—"}
+                    {/* `replace(/_/g, " ")` plus `capitalize` is not a translation: it turned
+                        `partially_paid` into "Partially paid" and showed that inside a
+                        Portuguese ledger. The seven `RentPeriod` states now come from
+                        `rentPeriodStatus`. */}
+                    <p className="mt-1 text-sm font-medium text-[var(--color-foreground)]">
+                      {selectedMonth.status ? tPeriod(selectedMonth.status) : "—"}
                     </p>
                   </div>
                   <div className="panel p-3">
@@ -984,7 +990,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
               <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
                 <div className="flex items-baseline gap-2">
                   <dt className="mono-label">{t("type")}</dt>
-                  <dd className="text-sm font-medium capitalize">{property.type}</dd>
+                  <dd className="text-sm font-medium">{tTypes(property.type)}</dd>
                 </div>
                 {property.city && (
                   <div className="flex items-baseline gap-2">
@@ -1263,7 +1269,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                               : "secondary"
                           }
                         >
-                          {ticket.priority}
+                          {tTicket(TICKET_PRIORITY_KEY[ticket.priority])}
                         </Badge>
                         <Badge
                           variant={
@@ -1272,7 +1278,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                               : "secondary"
                           }
                         >
-                          {ticket.status}
+                          {tTicket(TICKET_STATUS_KEY[ticket.status])}
                         </Badge>
                       </div>
                     </div>
@@ -1376,7 +1382,9 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                               {tx.description}
                             </p>
                           )}
-                          <p className="text-xs text-[var(--color-muted-foreground)]">{tx.date}</p>
+                          <p className="text-xs text-[var(--color-muted-foreground)]">
+                            {new Date(tx.date).toLocaleDateString(locale)}
+                          </p>
                         </div>
                         <span
                           className={cn(
@@ -1476,7 +1484,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                           {doc.name}
                         </span>
                         <span className="shrink-0 font-mono text-[12px] md:text-[10px] tabular-nums text-[var(--color-muted-foreground)]">
-                          {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : "—"}
+                          {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString(locale) : "—"}
                         </span>
                       </div>
                     ))}

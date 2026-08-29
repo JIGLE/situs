@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { httpError, useApiError } from "@/lib/utils/api-error";
 
 export interface TenantRelationshipData {
   leases: { total: number; active: number };
@@ -21,6 +22,7 @@ export interface TenantRelationshipData {
 
 /** Situs tenant relationship map — lease → periods → bank → receipts → tax, one fetch. */
 export function useTenantRelationship(tenantId: string | undefined) {
+  const apiError = useApiError();
   const [data, setData] = useState<TenantRelationshipData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export function useTenantRelationship(tenantId: string | undefined) {
     setError(null);
     fetch(`/api/tenants/${tenantId}/relationship`, { credentials: "include" })
       .then((res) => {
-        if (!res.ok) throw new Error(`Request failed (${res.status})`);
+        if (!res.ok) throw httpError(res.status);
         return res.json();
       })
       .then((body) => {
@@ -43,7 +45,7 @@ export function useTenantRelationship(tenantId: string | undefined) {
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load tenant relationship data");
+          setError(apiError(err));
         }
       })
       .finally(() => {
@@ -52,7 +54,7 @@ export function useTenantRelationship(tenantId: string | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [tenantId]);
+  }, [tenantId, apiError]);
 
   return { data, loading, error };
 }

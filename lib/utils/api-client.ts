@@ -14,6 +14,8 @@ interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   message?: string;
+  /** Set by `createErrorResponse` for a `ValidationError` — which input was rejected. */
+  field?: string;
 }
 
 /**
@@ -146,10 +148,17 @@ export async function apiFetch<T = unknown>(
 
       const errorMessage = errorData.error || errorData.message || "API request failed";
       const error = new Error(errorMessage);
-      const typedError = error as Error & { status: number; detail?: string };
+      const typedError = error as Error & { status: number; detail?: string; field?: string };
       typedError.status = response.status;
       if ((errorData as ApiResponse & { detail?: string }).detail) {
         typedError.detail = (errorData as ApiResponse & { detail?: string }).detail;
+      }
+      // `field` was in the envelope and dropped here. `createErrorResponse` puts it there for
+      // every `ValidationError`, and it is the one piece of a server error worth showing a
+      // user: it turns "check the form" into "the NIF is not valid". `message` stays English
+      // and is never displayed — see `lib/utils/api-error.ts`.
+      if (errorData.field) {
+        typedError.field = errorData.field;
       }
 
       // For 503 (service unavailable), retry once after a short delay

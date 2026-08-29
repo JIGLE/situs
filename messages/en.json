@@ -771,6 +771,19 @@
       "tryAgain": "Try again",
       "refresh": "Refresh page",
       "errorId": "Error ID: {id}"
+    },
+    "api": {
+      "generic": "Something went wrong. Please try again.",
+      "offline": "Couldn't reach the server. Check your connection and try again.",
+      "invalidInput": "Some of what you entered isn't valid. Check the form and try again.",
+      "invalidField": "{field} isn't valid.",
+      "signedOut": "Your session has ended. Sign in again to continue.",
+      "notAllowed": "You don't have permission to do that.",
+      "notFound": "That record no longer exists. It may have been deleted.",
+      "conflict": "Someone else changed this while you were editing. Reload and try again.",
+      "planLimit": "Your plan doesn't include this. Upgrade to continue.",
+      "tooMany": "Too many requests. Wait a moment and try again.",
+      "serverError": "The server had a problem. Try again in a moment."
     }
   },
   "compliance": {
@@ -830,7 +843,11 @@
     "modelo179Property": "Property",
     "modelo179Period": "Period",
     "modelo179Actions": "Actions",
-    "modelo179MarkSubmitted": "Mark as submitted"
+    "modelo179MarkSubmitted": "Mark as submitted",
+    "modelo179DialogTitle": "Mark as submitted to AT",
+    "modelo179DialogDescription": "Enter the AT reference for the Modelo 179 submission for {tenant} — {property} ({year}).",
+    "modelo179ATRefPlaceholder": "e.g. AT2025-XXXXXXXX",
+    "modelo179Saving": "Saving…"
   },
   "tax": {
     "title": "Tax Calculation",
@@ -1066,9 +1083,7 @@
     "notesPlaceholder": "Add any special terms, conditions, or notes about this lease...",
     "filter": {
       "allStatuses": "All Statuses",
-      "allRegimes": "All Regimes",
-      "exempt": "Exempt (Article 9)",
-      "iva": "IVA (Article 53)"
+      "allRegimes": "All Regimes"
     },
     "taxRegimePlaceholder": "Select tax regime...",
     "taxRegimePt": "Portugal - Rendimentos",
@@ -1151,7 +1166,8 @@
         "description": "This lease will be marked as terminated. This action cannot be undone.",
         "confirmLabel": "Terminate"
       }
-    }
+    },
+    "unknown": "Unknown"
   },
   "maintenance": {
     "title": "Maintenance",
@@ -1326,7 +1342,13 @@
       "size": "Size",
       "uploaded": "Uploaded",
       "linkedTo": "Linked to"
-    }
+    },
+    "expired": "Expired",
+    "expiresInDays": "Expires in {days}d",
+    "notFound": "Document not found",
+    "loadFailed": "Couldn't open this document",
+    "downloadFailed": "Download failed",
+    "downloadShort": "Download"
   },
   "notifications": {
     "title": "Notifications",
@@ -1502,7 +1524,8 @@
       "priorityUrgent": "Urgent",
       "save": "Save",
       "cancel": "Cancel",
-      "viewAll": "View all"
+      "viewAll": "View all",
+      "docExpires": "Expires {date}"
     }
   },
   "calendar": {
@@ -2506,7 +2529,14 @@
     "internal": "Internal",
     "emptyTitle": "No contacts found",
     "emptyDescription": "Add maintenance contacts to manage your contractor network",
-    "loadFailed": "Couldn't load the contacts."
+    "loadFailed": "Couldn't load the contacts.",
+    "summary": "{total} contacts · {contractors} contractors · {vendors} vendors · {internal} internal",
+    "perHour": "/hr",
+    "type": {
+      "contractor": "Contractor",
+      "vendor": "Vendor",
+      "internalStaff": "Internal staff"
+    }
   },
   "account": {
     "title": "Account",
@@ -2627,5 +2657,72 @@
     "themeDark": "Dark",
     "taxConnectorsEmpty": "No tax connectors yet — one is created automatically the first time you emit a rent receipt through a country's fiscal workflow.",
     "taxConnectorsLoadFailed": "Couldn't load the tax connectors. Try again."
+  },
+  "rentPeriodStatus": {
+    "upcoming": "Upcoming",
+    "due": "Due",
+    "overdue": "Overdue",
+    "partially_paid": "Partially paid",
+    "paid": "Paid",
+    "paid_late": "Paid late",
+    "waived": "Waived"
+  },
+  "analyticsWidgets": {
+    "occupancyRate": "Occupancy Rate",
+    "totalUnits": "Total Units",
+    "upcomingExpirations": "Upcoming Lease Expirations",
+    "noUpcomingExpirations": "No upcoming lease expirations",
+    "viewAll": "View All",
+    "expiryExpired": "Expired",
+    "expiryCritical": "< 30 days",
+    "expiryWarning": "30-60 days",
+    "expiryHealthy": "> 60 days",
+    "maintenanceOverview": "Maintenance Overview",
+    "totalRequests": "Total Requests",
+    "avgDaysToResolve": "Avg. days to resolve",
+    "completionRate": "Completion Rate",
+    "countPending": "{count} pending",
+    "countInProgress": "{count} in progress",
+    "countDone": "{count} done",
+    "propertyPerformance": "Property Performance",
+    "noProperties": "No properties found",
+    "colProperty": "Property",
+    "colOccupancy": "Occupancy",
+    "colRevenue": "Revenue",
+    "colNetIncome": "Net Income",
+    "colRoi": "ROI",
+    "calendarTitle": "Lease Calendar",
+    "today": "Today",
+    "leaseStatus": "Lease Status",
+    "legendExpired": "Expired",
+    "legendCritical": "Critical (<30d)",
+    "legendWarning": "Warning (30–60d)",
+    "legendHealthy": "Healthy (>60d)",
+    "eventsOn": "Events on {date}",
+    "eventExpires": "Expires",
+    "eventRenewal": "Renewal",
+    "eventStarts": "Starts",
+    "daysRemaining": "{count} days",
+    "daysSince": "{count} days ago",
+    "countExpired": "{count} expired",
+    "countCritical": "{count} critical",
+    "countWarning": "{count} warning"
+  },
+  "authError": {
+    "title": "We couldn't sign you in",
+    "tryAgain": "Try again",
+    "goHome": "Go to the home page",
+    "details": "Details",
+    "codeLabel": "Code",
+    "accessDeniedTitle": "This account isn't allowed to sign in",
+    "accessDeniedBody": "Registration is closed on this instance, so only accounts the owner has allowed can sign in. Retrying will not change this — ask whoever runs this instance to add your address.",
+    "configurationTitle": "This instance isn't configured for sign-in yet",
+    "configurationBody": "The sign-in provider is missing or misconfigured on the server. Retrying will not help until that is fixed.",
+    "notLinkedTitle": "That email already signed in another way",
+    "notLinkedBody": "An account with this address already exists from a different sign-in method. Use the method you signed up with, or ask the instance owner to link them.",
+    "verificationTitle": "That sign-in link has expired",
+    "verificationBody": "Sign-in links can only be used once and expire quickly. Request a new one and open it straight away.",
+    "genericTitle": "Something went wrong signing you in",
+    "genericBody": "This is usually temporary. Try again, and if it keeps happening tell whoever runs this instance the code below."
   }
 }

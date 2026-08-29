@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils/utils";
+import { useLocale, useTranslations } from "next-intl";
+import { formatDate } from "@/lib/utils/format-date";
 import { Card, CardContent, CardHeader, CardTitle } from "./card";
 import { Badge } from "./badge";
 import { ProgressBar } from "./progress";
@@ -125,6 +127,8 @@ interface OccupancyGaugeProps {
 }
 
 export function OccupancyGauge({ rate, total, occupied, vacant, className }: OccupancyGaugeProps) {
+  const t = useTranslations("analyticsWidgets");
+  const tStatus = useTranslations("status");
   const circumference = 2 * Math.PI * 45;
   const strokeDashoffset = circumference - (rate / 100) * circumference;
 
@@ -135,7 +139,7 @@ export function OccupancyGauge({ rate, total, occupied, vacant, className }: Occ
       <CardHeader className="p-0 pb-4">
         <CardTitle className="text-lg font-semibold text-[var(--color-foreground)] flex items-center gap-2">
           <Building2 className="h-5 w-5 text-[var(--color-info)]" />
-          Occupancy Rate
+          {t("occupancyRate")}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
@@ -179,15 +183,15 @@ export function OccupancyGauge({ rate, total, occupied, vacant, className }: Occ
         <div className="mt-4 grid grid-cols-3 gap-4 text-center">
           <div>
             <p className="text-2xl font-bold text-[var(--color-foreground)]">{total}</p>
-            <p className="text-xs text-[var(--color-muted-foreground)]">Total Units</p>
+            <p className="text-xs text-[var(--color-muted-foreground)]">{t("totalUnits")}</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-[var(--color-success)]">{occupied}</p>
-            <p className="text-xs text-[var(--color-muted-foreground)]">Occupied</p>
+            <p className="text-xs text-[var(--color-muted-foreground)]">{tStatus("occupied")}</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-[var(--color-destructive)]">{vacant}</p>
-            <p className="text-xs text-[var(--color-muted-foreground)]">Vacant</p>
+            <p className="text-xs text-[var(--color-muted-foreground)]">{tStatus("vacant")}</p>
           </div>
         </div>
       </CardContent>
@@ -218,34 +222,32 @@ export function LeaseExpirationTimeline({
   className,
   onViewAll,
 }: LeaseExpirationTimelineProps) {
+  const t = useTranslations("analyticsWidgets");
+  const locale = useLocale();
   const getStatusConfig = (status: LeaseExpirationItem["status"]) => {
     switch (status) {
       case "expired":
         return {
           color: "bg-[var(--color-destructive)]",
           textColor: "text-[var(--color-destructive)]",
-          label: "Expired",
           icon: AlertTriangle,
         };
       case "critical":
         return {
           color: "bg-[var(--color-warning)]",
           textColor: "text-[var(--color-warning)]",
-          label: "< 30 days",
           icon: Clock,
         };
       case "warning":
         return {
           color: "bg-[var(--color-warning)]",
           textColor: "text-[var(--color-warning)]",
-          label: "30-60 days",
           icon: Calendar,
         };
       default:
         return {
           color: "bg-[var(--color-success)]",
           textColor: "text-[var(--color-success)]",
-          label: "> 60 days",
           icon: CheckCircle2,
         };
     }
@@ -256,21 +258,21 @@ export function LeaseExpirationTimeline({
       <CardHeader className="p-0 pb-4 flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-semibold text-[var(--color-foreground)] flex items-center gap-2">
           <Calendar className="h-5 w-5 text-purple-400" />
-          Upcoming Lease Expirations
+          {t("upcomingExpirations")}
         </CardTitle>
         {onViewAll && (
           <button
             onClick={onViewAll}
             className="text-sm text-accent-primary hover:text-accent-primary/80 flex items-center gap-1"
           >
-            View All <ArrowRight className="h-4 w-4" />
+            {t("viewAll")} <ArrowRight className="h-4 w-4" />
           </button>
         )}
       </CardHeader>
       <CardContent className="p-0 space-y-3">
         {leases.length === 0 ? (
           <p className="text-sm text-[var(--color-muted-foreground)] text-center py-4">
-            No upcoming lease expirations
+            {t("noUpcomingExpirations")}
           </p>
         ) : (
           leases.slice(0, 5).map((lease, index) => {
@@ -299,12 +301,12 @@ export function LeaseExpirationTimeline({
                     <StatusIcon className={cn("h-4 w-4", config.textColor)} />
                     <span className={cn("text-sm font-medium", config.textColor)}>
                       {lease.daysUntilExpiration < 0
-                        ? `${Math.abs(lease.daysUntilExpiration)} days ago`
-                        : `${lease.daysUntilExpiration} days`}
+                        ? t("daysSince", { count: Math.abs(lease.daysUntilExpiration) })
+                        : t("daysRemaining", { count: lease.daysUntilExpiration })}
                     </span>
                   </div>
                   <p className="text-xs text-[var(--color-muted-foreground)]">
-                    {new Date(lease.endDate).toLocaleDateString()}
+                    {formatDate(lease.endDate, locale)}
                   </p>
                 </div>
               </motion.div>
@@ -330,6 +332,8 @@ interface MaintenanceStatsProps {
 }
 
 export function MaintenanceStatusCard({ stats, className }: MaintenanceStatsProps) {
+  const t = useTranslations("analyticsWidgets");
+  const tMaint = useTranslations("maintenance");
   const completionRate = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
 
   return (
@@ -337,19 +341,19 @@ export function MaintenanceStatusCard({ stats, className }: MaintenanceStatsProp
       <CardHeader className="p-0 pb-4">
         <CardTitle className="text-lg font-semibold text-[var(--color-foreground)] flex items-center gap-2">
           <Wrench className="h-5 w-5 text-[var(--color-warning)]" />
-          Maintenance Overview
+          {t("maintenanceOverview")}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0 space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="text-center p-3 rounded-lg bg-[var(--color-surface)]">
             <p className="text-2xl font-bold text-[var(--color-foreground)]">{stats.total}</p>
-            <p className="text-xs text-[var(--color-muted-foreground)]">Total Requests</p>
+            <p className="text-xs text-[var(--color-muted-foreground)]">{t("totalRequests")}</p>
           </div>
           {stats.urgent > 0 && (
             <div className="text-center p-3 rounded-lg bg-[var(--color-error-muted)] border border-[var(--color-destructive)]/30">
               <p className="text-2xl font-bold text-[var(--color-destructive)]">{stats.urgent}</p>
-              <p className="text-xs text-[var(--color-destructive)]">Urgent</p>
+              <p className="text-xs text-[var(--color-destructive)]">{tMaint("urgent")}</p>
             </div>
           )}
           {stats.urgent === 0 && (
@@ -357,14 +361,16 @@ export function MaintenanceStatusCard({ stats, className }: MaintenanceStatsProp
               <p className="text-2xl font-bold text-[var(--color-foreground)]">
                 {stats.averageResolutionDays.toFixed(1)}
               </p>
-              <p className="text-xs text-[var(--color-muted-foreground)]">Avg. Days to Resolve</p>
+              <p className="text-xs text-[var(--color-muted-foreground)]">
+                {t("avgDaysToResolve")}
+              </p>
             </div>
           )}
         </div>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-[var(--color-muted-foreground)]">Completion Rate</span>
+            <span className="text-[var(--color-muted-foreground)]">{t("completionRate")}</span>
             <span className="text-[var(--color-foreground)] font-medium">
               {completionRate.toFixed(0)}%
             </span>
@@ -378,7 +384,7 @@ export function MaintenanceStatusCard({ stats, className }: MaintenanceStatsProp
               variant="outline"
               className="text-[var(--color-warning)] border-[var(--color-warning)]/30"
             >
-              {stats.pending} Pending
+              {t("countPending", { count: stats.pending })}
             </Badge>
           </div>
           <div className="text-center">
@@ -386,7 +392,7 @@ export function MaintenanceStatusCard({ stats, className }: MaintenanceStatsProp
               variant="outline"
               className="text-[var(--color-info)] border-[var(--color-info)]/30"
             >
-              {stats.inProgress} In Progress
+              {t("countInProgress", { count: stats.inProgress })}
             </Badge>
           </div>
           <div className="text-center">
@@ -394,7 +400,7 @@ export function MaintenanceStatusCard({ stats, className }: MaintenanceStatsProp
               variant="outline"
               className="text-[var(--color-success)] border-[var(--color-success)]/30"
             >
-              {stats.completed} Done
+              {t("countDone", { count: stats.completed })}
             </Badge>
           </div>
         </div>
@@ -429,18 +435,19 @@ export function PropertyPerformanceTable({
   formatCurrency,
   className,
 }: PropertyPerformanceTableProps) {
+  const t = useTranslations("analyticsWidgets");
   return (
     <Card className={cn("p-6", className)}>
       <CardHeader className="p-0 pb-4">
         <CardTitle className="text-lg font-semibold text-[var(--color-foreground)] flex items-center gap-2">
           <Home className="h-5 w-5 text-cyan-400" />
-          Property Performance
+          {t("propertyPerformance")}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         {data.length === 0 ? (
           <p className="text-sm text-[var(--color-muted-foreground)] text-center py-4">
-            No properties found
+            {t("noProperties")}
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -451,31 +458,31 @@ export function PropertyPerformanceTable({
                     scope="col"
                     className="text-left py-3 px-2 text-xs font-medium text-[var(--color-muted-foreground)]"
                   >
-                    Property
+                    {t("colProperty")}
                   </th>
                   <th
                     scope="col"
                     className="text-center py-3 px-2 text-xs font-medium text-[var(--color-muted-foreground)]"
                   >
-                    Occupancy
+                    {t("colOccupancy")}
                   </th>
                   <th
                     scope="col"
                     className="text-right py-3 px-2 text-xs font-medium text-[var(--color-muted-foreground)]"
                   >
-                    Revenue
+                    {t("colRevenue")}
                   </th>
                   <th
                     scope="col"
                     className="text-right py-3 px-2 text-xs font-medium text-[var(--color-muted-foreground)]"
                   >
-                    Net Income
+                    {t("colNetIncome")}
                   </th>
                   <th
                     scope="col"
                     className="text-right py-3 px-2 text-xs font-medium text-[var(--color-muted-foreground)]"
                   >
-                    ROI
+                    {t("colRoi")}
                   </th>
                 </tr>
               </thead>

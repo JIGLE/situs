@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { formatDate } from "@/lib/utils/format-date";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -80,6 +81,7 @@ function transformToCalendarEvents(leases: LeaseExpiration[]) {
 
 export function AnalyticsDashboard(): React.ReactElement {
   const t = useTranslations("analytics");
+  const locale = useLocale();
   const tActions = useTranslations("actions");
   const tNav = useTranslations("navigation");
   const tDash = useTranslations("dashboard");
@@ -526,7 +528,7 @@ export function AnalyticsDashboard(): React.ReactElement {
                       </div>
                     </div>
                     <span className="text-xs text-[var(--color-muted-foreground)]">
-                      {new Date(activity.timestamp).toLocaleDateString()}
+                      {formatDate(activity.timestamp, locale)}
                     </span>
                   </div>
                 )}

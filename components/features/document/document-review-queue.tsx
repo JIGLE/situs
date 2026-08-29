@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
+import { httpError, useApiError } from "@/lib/utils/api-error";
 
 import { Button } from "@/components/ui/button";
 import { csrfHeaders } from "@/lib/utils/api-client";
@@ -46,6 +47,7 @@ const DOCUMENT_TYPE_OPTIONS = [
 ] as const;
 
 export function DocumentReviewQueue({ scope }: { scope: "queue" | "review" }): React.ReactElement {
+  const apiError = useApiError();
   const t = useTranslations("common");
   const tActions = useTranslations("actions");
   const [rows, setRows] = useState<QueueRow[]>([]);
@@ -60,16 +62,16 @@ export function DocumentReviewQueue({ scope }: { scope: "queue" | "review" }): R
     try {
       const query = scope === "review" ? "?status=review_required" : "";
       const res = await fetch(`/api/documents/ocr-queue${query}`, { credentials: "include" });
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      if (!res.ok) throw httpError(res.status);
       const body = await res.json();
       setRows(body?.data ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load the OCR queue");
+      setError(apiError(err));
       setRows([]);
     } finally {
       setLoading(false);
     }
-  }, [scope]);
+  }, [scope, apiError]);
 
   useEffect(() => {
     void load();
@@ -92,12 +94,12 @@ export function DocumentReviewQueue({ scope }: { scope: "queue" | "review" }): R
         }
         await load();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Accept failed");
+        setError(apiError(err));
       } finally {
         setBusyId(null);
       }
     },
-    [load],
+    [load, apiError],
   );
 
   const correct = useCallback(
@@ -119,12 +121,12 @@ export function DocumentReviewQueue({ scope }: { scope: "queue" | "review" }): R
         }
         await load();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Correction failed");
+        setError(apiError(err));
       } finally {
         setBusyId(null);
       }
     },
-    [corrections, load],
+    [corrections, load, apiError],
   );
 
   return (

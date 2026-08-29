@@ -402,7 +402,7 @@ export function FinancialsView(): React.ReactElement {
                     <DialogDescription>{t("addExpenseDesc")}</DialogDescription>
                   </DialogHeader>
                   <form onSubmit={dialog.handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="property">{t("expenseForm.property")}</Label>
                         <Select
@@ -461,7 +461,7 @@ export function FinancialsView(): React.ReactElement {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="amount">
                           {t("expenseForm.amount", { symbol: currencySymbol })}
@@ -538,7 +538,7 @@ export function FinancialsView(): React.ReactElement {
 
                       {dialog.formData.isRecurring && (
                         <div className="space-y-3 pl-1">
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <Label htmlFor="recurrenceRule">{t("recurrenceRule")}</Label>
                               <Select

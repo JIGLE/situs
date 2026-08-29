@@ -140,6 +140,7 @@ function generateCsv(leases: LeaseRow[], year: number): string {
 
 export function Modelo179View(): React.ReactElement {
   const t = useTranslations("compliance");
+  const tActions = useTranslations("actions");
   const { success, error: showError } = useToast();
   const currentYear = new Date().getFullYear();
 
@@ -390,10 +391,13 @@ export function Modelo179View(): React.ReactElement {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Mark as Submitted to AT</DialogTitle>
+            <DialogTitle>{t("modelo179DialogTitle")}</DialogTitle>
             <DialogDescription>
-              Enter the AT reference number for the Modelo 179 submission for{" "}
-              {selectedLease?.tenant.name} — {selectedLease?.property.name} ({year}).
+              {t("modelo179DialogDescription", {
+                tenant: selectedLease?.tenant.name ?? "—",
+                property: selectedLease?.property.name ?? "—",
+                year,
+              })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -401,7 +405,7 @@ export function Modelo179View(): React.ReactElement {
               <Label htmlFor="at-reference">{t("modelo179ATRef")}</Label>
               <Input
                 id="at-reference"
-                placeholder="e.g. AT2025-XXXXXXXX"
+                placeholder={t("modelo179ATRefPlaceholder")}
                 value={atRefInput}
                 onChange={(e) => setAtRefInput(e.target.value)}
               />
@@ -409,10 +413,10 @@ export function Modelo179View(): React.ReactElement {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancel
+              {tActions("cancel")}
             </Button>
             <Button onClick={handleMarkSubmitted} disabled={saving}>
-              {saving ? "Saving..." : "Mark as Submitted"}
+              {saving ? t("modelo179Saving") : t("modelo179MarkSubmitted")}
             </Button>
           </DialogFooter>
         </DialogContent>

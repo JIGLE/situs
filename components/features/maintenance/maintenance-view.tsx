@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Plus, AlertCircle, Clock, CheckCircle, XCircle, MoreVertical, User } from "lucide-react";
 import { SortableHeader } from "@/components/ui/sortable-header";
 import { RenderTable } from "@/components/ui/table";
@@ -58,14 +58,8 @@ import { ContactsView } from "@/components/features/contacts/contacts-view";
 import { Tabs, TabsContent, TabsList, TabsMobileSelect, TabsTrigger } from "@/components/ui/tabs";
 import { useTabPersistence } from "@/lib/hooks/use-tab-persistence";
 import { ListChecks, CalendarDays, Wrench as WrenchIcon, Camera } from "lucide-react";
-
-/** Ticket status is stored snake_case; the catalog keys it camelCase under `maintenance`. */
-const STATUS_LABEL_KEY = {
-  open: "statusOpen",
-  in_progress: "statusInProgress",
-  resolved: "statusResolved",
-  closed: "statusClosed",
-} as const;
+import { TICKET_STATUS_KEY as STATUS_LABEL_KEY } from "@/lib/utils/maintenance-labels";
+import { formatDate } from "@/lib/utils/format-date";
 
 /**
  * Mobile fallback for a ticket row (doctrine rule 3, card strategy). The table's eight columns
@@ -98,6 +92,9 @@ function TicketCard({
   vendorLabel: string;
   scheduledLabel: string;
 }): React.ReactElement {
+  // Labels arrive as props because they need the parent's namespaces; the locale is ambient
+  // context, so it is read here rather than threaded through a ninth prop.
+  const locale = useLocale();
   const vendor = ticket.vendorName || ticket.assignedTo;
   return (
     <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] p-4">
@@ -138,7 +135,7 @@ function TicketCard({
         <dd className="text-[var(--color-muted-foreground)]">
           <span className="inline-flex items-center gap-1">
             {ticket.isTenantReport && <User className="h-3.5 w-3.5 text-[var(--color-info)]" />}
-            {new Date(ticket.createdAt).toLocaleDateString()}
+            {formatDate(ticket.createdAt, locale)}
           </span>
         </dd>
         {vendor && (
@@ -151,7 +148,7 @@ function TicketCard({
           <>
             <dt className="mono-label self-center">{scheduledLabel}</dt>
             <dd className="text-[var(--color-muted-foreground)]">
-              {new Date(ticket.scheduledDate).toLocaleDateString()}
+              {formatDate(ticket.scheduledDate, locale)}
             </dd>
           </>
         )}
@@ -162,6 +159,7 @@ function TicketCard({
 
 export function MaintenanceView(): React.ReactElement {
   const t = useTranslations("maintenance");
+  const locale = useLocale();
   const { state, addMaintenance, updateMaintenance, deleteMaintenance } = useApp();
   const { properties, maintenance, loading } = state;
   const { success, error } = useToast();
@@ -455,7 +453,7 @@ export function MaintenanceView(): React.ReactElement {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="property">{t("fieldProperty")}</Label>
                       <Select
@@ -541,7 +539,7 @@ export function MaintenanceView(): React.ReactElement {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="vendorName">{t("vendorContractor")}</Label>
                       <Input
@@ -566,7 +564,7 @@ export function MaintenanceView(): React.ReactElement {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="estimatedCost">Estimated Cost ({currencySymbol})</Label>
                       <Input
@@ -595,7 +593,7 @@ export function MaintenanceView(): React.ReactElement {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="scheduledDate">{t("scheduledDate")}</Label>
                       <Input
@@ -858,7 +856,7 @@ export function MaintenanceView(): React.ReactElement {
                           {ticket.isTenantReport && (
                             <User className="h-3.5 w-3.5 text-[var(--color-info)]" />
                           )}
-                          {new Date(ticket.createdAt).toLocaleDateString()}
+                          {formatDate(ticket.createdAt, locale)}
                         </div>
                       ),
                       cellClassName: "text-sm text-[var(--color-muted-foreground)]",
@@ -873,9 +871,7 @@ export function MaintenanceView(): React.ReactElement {
                       key: "scheduled",
                       header: t("fieldScheduled"),
                       cell: (ticket) =>
-                        ticket.scheduledDate
-                          ? new Date(ticket.scheduledDate).toLocaleDateString()
-                          : "—",
+                        ticket.scheduledDate ? formatDate(ticket.scheduledDate, locale) : "—",
                       cellClassName: "text-sm text-[var(--color-muted-foreground)]",
                     },
                     {

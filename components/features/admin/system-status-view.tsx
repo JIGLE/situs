@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, FlaskConical, Info, RefreshCw } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { formatDateTime } from "@/lib/utils/format-date";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import type { StatusSeverity, SystemStatus } from "@/lib/services/admin/system-status";
@@ -76,6 +77,7 @@ export const SUMMARY_ORDER: StatusSeverity[] = ["error", "warning", "simulated",
 
 export function SystemStatusView() {
   const t = useTranslations("admin");
+  const locale = useLocale();
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -233,7 +235,7 @@ export function SystemStatusView() {
           })}
 
           <p className="text-xs text-[var(--color-muted-foreground)]">
-            {t("generatedAt", { time: new Date(status.generatedAt).toLocaleString() })}
+            {t("generatedAt", { time: formatDateTime(status.generatedAt, locale) })}
           </p>
         </>
       )}

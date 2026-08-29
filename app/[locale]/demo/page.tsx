@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useApiError } from "@/lib/utils/api-error";
 import { useTranslations } from "next-intl";
 import { Building2, Loader2 } from "lucide-react";
 import { csrfHeaders } from "@/lib/utils/api-client";
@@ -15,6 +16,7 @@ import {
 export default function DemoPage() {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<"initializing" | "redirecting" | "error">("initializing");
+  const apiError = useApiError();
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations();
@@ -49,7 +51,7 @@ export default function DemoPage() {
         router.replace("/dashboard");
       } catch (err) {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : "An error occurred");
+        setError(apiError(err));
         setStatus("error");
       }
     }
@@ -58,7 +60,7 @@ export default function DemoPage() {
     return () => {
       cancelled = true;
     };
-  }, [router, perspective, tenantId]);
+  }, [router, perspective, tenantId, apiError]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">

@@ -147,7 +147,7 @@ export function OwnerDetailModal({ ownerId, onClose }: OwnerDetailModalProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)]">
                 <CardHeader>
                   <CardTitle className="text-sm text-[var(--color-muted-foreground)]">

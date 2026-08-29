@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Bell,
   X,
@@ -111,7 +111,11 @@ const priorityColors: Record<NotificationPriority, string> = {
 };
 
 // Format relative time
-function formatRelativeTime(date: Date, t: ReturnType<typeof useTranslations>): string {
+function formatRelativeTime(
+  date: Date,
+  t: ReturnType<typeof useTranslations>,
+  locale: string,
+): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -122,7 +126,7 @@ function formatRelativeTime(date: Date, t: ReturnType<typeof useTranslations>): 
   if (diffMins < 60) return t("minutesAgo", { count: diffMins });
   if (diffHours < 24) return t("hoursAgo", { count: diffHours });
   if (diffDays < 7) return t("daysAgo", { count: diffDays });
-  return date.toLocaleDateString();
+  return date.toLocaleDateString(locale);
 }
 
 // Single notification item
@@ -138,6 +142,7 @@ function NotificationItem({
   onClick?: (notification: Notification) => void;
 }): React.ReactElement {
   const t = useTranslations("notificationCenter");
+  const locale = useLocale();
   const Icon = notificationIcons[notification.type];
   const colorClass = notificationColors[notification.type];
 
@@ -198,7 +203,7 @@ function NotificationItem({
           {notification.message}
         </p>
         <p className="text-[12px] md:text-[10px] text-[var(--color-muted-foreground)]">
-          {formatRelativeTime(notification.timestamp, t)}
+          {formatRelativeTime(notification.timestamp, t, locale)}
         </p>
       </div>
 

@@ -771,6 +771,19 @@
       "tryAgain": "Riprova",
       "refresh": "Aggiorna la pagina",
       "errorId": "ID errore: {id}"
+    },
+    "api": {
+      "generic": "Qualcosa è andato storto. Riprova.",
+      "offline": "Impossibile contattare il server. Controlla la connessione e riprova.",
+      "invalidInput": "Alcuni dati inseriti non sono validi. Controlla il modulo e riprova.",
+      "invalidField": "{field} non è valido.",
+      "signedOut": "La sessione è terminata. Accedi di nuovo per continuare.",
+      "notAllowed": "Non hai il permesso di eseguire questa azione.",
+      "notFound": "Questo record non esiste più. Potrebbe essere stato eliminato.",
+      "conflict": "Qualcun altro ha modificato questo elemento mentre lo stavi modificando. Ricarica e riprova.",
+      "planLimit": "Il tuo piano non include questa funzione. Esegui l'upgrade per continuare.",
+      "tooMany": "Troppe richieste. Attendi un momento e riprova.",
+      "serverError": "Il server ha riscontrato un problema. Riprova tra poco."
     }
   },
   "compliance": {
@@ -830,7 +843,11 @@
     "modelo179Property": "Immobile",
     "modelo179Period": "Periodo",
     "modelo179Actions": "Azioni",
-    "modelo179MarkSubmitted": "Segna come inviato"
+    "modelo179MarkSubmitted": "Segna come inviato",
+    "modelo179DialogTitle": "Segna come inviato all'AT",
+    "modelo179DialogDescription": "Inserisci il riferimento AT per l'invio del Modelo 179 di {tenant} — {property} ({year}).",
+    "modelo179ATRefPlaceholder": "es. AT2025-XXXXXXXX",
+    "modelo179Saving": "Salvataggio…"
   },
   "tax": {
     "title": "Calcolo imposte",
@@ -1066,9 +1083,7 @@
     "notesPlaceholder": "Aggiungi condizioni particolari o note su questo contratto...",
     "filter": {
       "allStatuses": "Tutti gli stati",
-      "allRegimes": "Tutti i regimi",
-      "exempt": "Esente (articolo 9)",
-      "iva": "IVA (articolo 53)"
+      "allRegimes": "Tutti i regimi"
     },
     "taxRegimePlaceholder": "Seleziona il regime fiscale...",
     "taxRegimePt": "Portogallo — Rendimentos",
@@ -1151,7 +1166,8 @@
         "description": "Questo contratto sarà contrassegnato come risolto. L'azione non può essere annullata.",
         "confirmLabel": "Risolvi"
       }
-    }
+    },
+    "unknown": "Sconosciuto"
   },
   "maintenance": {
     "title": "Manutenzione",
@@ -1326,7 +1342,13 @@
       "size": "Dimensione",
       "uploaded": "Caricato",
       "linkedTo": "Collegato a"
-    }
+    },
+    "expired": "Scaduto",
+    "expiresInDays": "Scade tra {days} g",
+    "notFound": "Documento non trovato",
+    "loadFailed": "Impossibile aprire questo documento",
+    "downloadFailed": "Download non riuscito",
+    "downloadShort": "Scarica"
   },
   "notifications": {
     "title": "Notifiche",
@@ -1502,7 +1524,8 @@
       "priorityUrgent": "Urgente",
       "save": "Salva",
       "cancel": "Annulla",
-      "viewAll": "Vedi tutto"
+      "viewAll": "Vedi tutto",
+      "docExpires": "Scade il {date}"
     }
   },
   "calendar": {
@@ -2506,7 +2529,14 @@
     "internal": "Interno",
     "emptyTitle": "Nessun contatto trovato",
     "emptyDescription": "Aggiungi contatti di manutenzione per gestire la tua rete di fornitori",
-    "loadFailed": "Impossibile caricare i contatti."
+    "loadFailed": "Impossibile caricare i contatti.",
+    "summary": "{total} contatti · {contractors} imprese · {vendors} fornitori · {internal} interni",
+    "perHour": "/h",
+    "type": {
+      "contractor": "Impresa",
+      "vendor": "Fornitore",
+      "internalStaff": "Personale interno"
+    }
   },
   "account": {
     "title": "Account",
@@ -2627,5 +2657,72 @@
     "themeDark": "Scuro",
     "taxConnectorsEmpty": "Ancora nessun connettore fiscale — viene creato automaticamente la prima volta che emetti una ricevuta di affitto tramite il flusso fiscale di un paese.",
     "taxConnectorsLoadFailed": "Impossibile caricare i connettori fiscali. Riprova."
+  },
+  "rentPeriodStatus": {
+    "upcoming": "In arrivo",
+    "due": "Da pagare",
+    "overdue": "In ritardo",
+    "partially_paid": "Parzialmente pagato",
+    "paid": "Pagato",
+    "paid_late": "Pagato in ritardo",
+    "waived": "Condonato"
+  },
+  "analyticsWidgets": {
+    "occupancyRate": "Tasso di occupazione",
+    "totalUnits": "Totale unità",
+    "upcomingExpirations": "Contratti in scadenza",
+    "noUpcomingExpirations": "Nessun contratto in scadenza",
+    "viewAll": "Vedi tutto",
+    "expiryExpired": "Scaduto",
+    "expiryCritical": "< 30 giorni",
+    "expiryWarning": "30-60 giorni",
+    "expiryHealthy": "> 60 giorni",
+    "maintenanceOverview": "Panoramica manutenzione",
+    "totalRequests": "Totale richieste",
+    "avgDaysToResolve": "Giorni medi per risolvere",
+    "completionRate": "Tasso di completamento",
+    "countPending": "{count} in attesa",
+    "countInProgress": "{count} in corso",
+    "countDone": "{count} completate",
+    "propertyPerformance": "Rendimento immobili",
+    "noProperties": "Nessun immobile trovato",
+    "colProperty": "Immobile",
+    "colOccupancy": "Occupazione",
+    "colRevenue": "Ricavi",
+    "colNetIncome": "Reddito netto",
+    "colRoi": "ROI",
+    "calendarTitle": "Calendario contratti",
+    "today": "Oggi",
+    "leaseStatus": "Stato dei contratti",
+    "legendExpired": "Scaduto",
+    "legendCritical": "Critico (<30g)",
+    "legendWarning": "Attenzione (30–60g)",
+    "legendHealthy": "Sano (>60g)",
+    "eventsOn": "Eventi il {date}",
+    "eventExpires": "Scade",
+    "eventRenewal": "Rinnovo",
+    "eventStarts": "Inizio",
+    "daysRemaining": "{count} giorni",
+    "daysSince": "{count} giorni fa",
+    "countExpired": "{count} scaduti",
+    "countCritical": "{count} critici",
+    "countWarning": "{count} in attenzione"
+  },
+  "authError": {
+    "title": "Non siamo riusciti ad autenticarti",
+    "tryAgain": "Riprova",
+    "goHome": "Vai alla pagina iniziale",
+    "details": "Dettagli",
+    "codeLabel": "Codice",
+    "accessDeniedTitle": "Questo account non può accedere",
+    "accessDeniedBody": "Le registrazioni sono chiuse su questa istanza, quindi possono accedere solo gli account autorizzati dal proprietario. Riprovare non cambierà nulla: chiedi a chi gestisce l'istanza di aggiungere il tuo indirizzo.",
+    "configurationTitle": "Questa istanza non è ancora configurata per l'accesso",
+    "configurationBody": "Il provider di autenticazione manca o è configurato male sul server. Riprovare non servirà finché non viene corretto.",
+    "notLinkedTitle": "Quell'email ha già effettuato l'accesso in altro modo",
+    "notLinkedBody": "Esiste già un account con questo indirizzo creato con un altro metodo di accesso. Usa il metodo con cui ti sei registrato o chiedi al proprietario di collegarli.",
+    "verificationTitle": "Quel link di accesso è scaduto",
+    "verificationBody": "I link di accesso sono monouso e scadono in fretta. Richiedine uno nuovo e aprilo subito.",
+    "genericTitle": "Qualcosa è andato storto durante l'accesso",
+    "genericBody": "Di solito è temporaneo. Riprova e, se continua, comunica il codice qui sotto a chi gestisce questa istanza."
   }
 }

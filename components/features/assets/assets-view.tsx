@@ -301,7 +301,7 @@ export function AssetsView(): React.ReactElement {
                 required
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="building-city">City</Label>
                 <Input

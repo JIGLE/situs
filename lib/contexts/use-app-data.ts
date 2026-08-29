@@ -21,6 +21,7 @@ import {
   Lease,
 } from "@/lib/types";
 import { apiFetch } from "@/lib/utils/api-client";
+import { useApiError } from "@/lib/utils/api-error";
 import { isDemoModeClient } from "@/lib/demo/demo-mode";
 import { getDemoData } from "@/lib/demo/demo-data";
 import type { AppAction } from "./app-reducer";
@@ -50,6 +51,8 @@ export function useAppData({
     inFlight: false,
     lastKey: null,
   });
+
+  const resolveError = useApiError();
 
   const loadData = useCallback(
     async (force = false) => {
@@ -178,7 +181,7 @@ export function useAppData({
           payload: (leasesRes.data ?? leasesRes) as Lease[],
         });
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Failed to load data";
+        const errorMessage = resolveError(err);
 
         // Check if this is a CSRF error
         const isCsrfError =
@@ -201,7 +204,7 @@ export function useAppData({
         loadControlRef.current.inFlight = false;
       }
     },
-    [userId, csrfToken, showError, isPublicPage, isDemo, dispatch],
+    [userId, csrfToken, showError, isPublicPage, isDemo, dispatch, resolveError],
   );
 
   useEffect(() => {
