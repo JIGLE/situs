@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCurrency } from "@/lib/contexts/currency-context";
+import { languageLabel } from "@/lib/design/country-themes";
 import { formatDate as formatDateWithLocale } from "@/lib/utils/format-date";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,17 @@ const PAYMENT_STATUS_STYLES: Record<string, string> = {
     "bg-[var(--color-error-muted)] text-[var(--color-destructive)] border-[var(--color-destructive)]/30",
 };
 
+/**
+ * Narrow a stored locale to what the form accepts. Anything unrecognised — including a value a
+ * future catalogue adds before this list does — becomes "", which means "derive from the
+ * property's country" and is a safe answer rather than a broken select.
+ */
+const FORM_LOCALES = ["pt", "es", "en", "it"] as const;
+type FormLocale = (typeof FORM_LOCALES)[number] | "";
+function asFormLocale(value: string | null | undefined): FormLocale {
+  return value && (FORM_LOCALES as readonly string[]).includes(value) ? (value as FormLocale) : "";
+}
+
 export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps) {
   const { formatCurrency } = useCurrency();
   const { updateTenant, deleteTenant, state } = useApp();
@@ -79,6 +91,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
     leaseEnd: "",
     paymentStatus: "pending",
     notes: "",
+    locale: "",
   });
 
   useEffect(() => {
@@ -93,6 +106,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
         leaseEnd: tenant.leaseEnd || "",
         paymentStatus: tenant.paymentStatus || "pending",
         notes: tenant.notes || "",
+        locale: asFormLocale(tenant.locale),
       });
     }
   }, [tenant]);
@@ -202,6 +216,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
         leaseEnd: tenant.leaseEnd || "",
         paymentStatus: tenant.paymentStatus || "pending",
         notes: tenant.notes || "",
+        locale: asFormLocale(tenant.locale),
       });
     }
     setIsEditing(false);
@@ -338,6 +353,30 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
             <div className="space-y-2">
               <Label>{t("paymentStatus")}</Label>
               <p className="text-sm text-muted-foreground">{t("modal.derivedFromMatrix")}</p>
+            </div>
+
+            {/* Empty is the normal answer, not a missing one: `resolveTenantLocale` falls back
+                to the property's country, which is right for almost every tenant. The field
+                exists for the one who reads a language the country cannot predict. */}
+            <div className="space-y-2">
+              <Label htmlFor="locale">{tForms("language")}</Label>
+              <Select
+                value={formData.locale || "auto"}
+                onValueChange={(value) => setFormData({ ...formData, locale: asFormLocale(value) })}
+              >
+                <SelectTrigger id="locale">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">{tForms("languageAuto")}</SelectItem>
+                  {FORM_LOCALES.map((code) => (
+                    <SelectItem key={code} value={code}>
+                      {languageLabel(code, locale)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">{tForms("languageHint")}</p>
             </div>
 
             <div className="space-y-2">

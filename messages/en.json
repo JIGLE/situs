@@ -1379,7 +1379,23 @@
         "body": "A rent receipt for {tenant} at {property} (payment of {amount}) must be issued by tomorrow to meet the 5-day legal deadline."
       },
       "footer": "You're receiving this because email notifications are enabled in your Lares settings.",
-      "viewInApp": "View in Lares"
+      "viewInApp": "View in Lares",
+      "portalInvite": {
+        "subject": "Your tenant portal access",
+        "heading": "Welcome to your tenant portal",
+        "greeting": "Dear {tenant},",
+        "intro": "{manager} has set up a self-service portal for you.",
+        "propertyLabel": "Property",
+        "listIntro": "Use the link below to open your portal, where you can:",
+        "itemInvoices": "View and pay invoices",
+        "itemHistory": "Check your payment history",
+        "itemMaintenance": "Track maintenance requests",
+        "cta": "Open your portal",
+        "expiry": "This link expires in 7 days.",
+        "closing": "If you have any questions, contact your property manager.",
+        "fallbackManager": "Your property manager",
+        "fallbackProperty": "Your property"
+      }
     }
   },
   "owners": {
@@ -1597,7 +1613,10 @@
     "allProperties": "All Properties",
     "saving": "Saving...",
     "selectProperty": "Select Property",
-    "selectTenant": "Select Tenant"
+    "selectTenant": "Select Tenant",
+    "language": "Language",
+    "languageAuto": "From the property's country",
+    "languageHint": "The language this tenant's emails are written in."
   },
   "status": {
     "active": "Active",

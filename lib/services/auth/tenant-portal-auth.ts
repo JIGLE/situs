@@ -8,6 +8,8 @@
 import crypto from "crypto";
 import { getPrismaClient } from "../database/database";
 import { timingSafeEqualString } from "@/lib/utils/security";
+import { t } from "@/lib/utils/format-message";
+import { MESSAGES, resolveTenantLocale } from "@/lib/services/email/email-locale";
 
 // Token expiration in seconds (default: 7 days)
 const TOKEN_EXPIRATION = 7 * 24 * 60 * 60;
@@ -173,7 +175,9 @@ export const tenantPortalService = {
       const tenant = await prisma.tenant.findUnique({
         where: { id: tenantId },
         include: {
-          property: { select: { name: true } },
+          // `propertyCountry` is what answers "which language" when the tenant has no explicit
+          // one — see `resolveTenantLocale`. It is the reason this select grew a field.
+          property: { select: { name: true, propertyCountry: true } },
           user: { select: { name: true } },
         },
       });
@@ -188,25 +192,34 @@ export const tenantPortalService = {
       const { emailService } = await import("../email/email-service");
 
       const fromEmail = process.env.FROM_EMAIL || "noreply@situs.app";
+      // This is usually the first thing the system ever sends a tenant, and it was English for
+      // everyone — including a tenant who reached it through the portal's own resend form, which
+      // is itself fully translated. `resolveTenantLocale` reads their explicit language, then the
+      // property's country, then falls back to English.
+      const locale = resolveTenantLocale(tenant);
+      const messages = MESSAGES[locale];
+      const tr = (key: string, values?: Record<string, string | number>) =>
+        t(messages, `notifications.email.portalInvite.${key}`, values);
+
       const result = await emailService.sendEmail(
         {
           to: tenant.email,
           from: fromEmail,
-          subject: "Your Tenant Portal Access",
+          subject: tr("subject"),
           html: `
-          <h1>Welcome to Your Tenant Portal</h1>
-          <p>Dear ${tenant.name},</p>
-          <p>Your property manager (${tenant.user.name || "Your Property Manager"}) has set up a self-service portal for you.</p>
-          <p><strong>Property:</strong> ${tenant.property?.name || "Your Property"}</p>
-          <p>Click the link below to access your portal where you can:</p>
+          <h1>${tr("heading")}</h1>
+          <p>${tr("greeting", { tenant: tenant.name })}</p>
+          <p>${tr("intro", { manager: tenant.user.name || tr("fallbackManager") })}</p>
+          <p><strong>${tr("propertyLabel")}:</strong> ${tenant.property?.name || tr("fallbackProperty")}</p>
+          <p>${tr("listIntro")}</p>
           <ul>
-            <li>View and pay invoices</li>
-            <li>Check your payment history</li>
-            <li>Track maintenance requests</li>
+            <li>${tr("itemInvoices")}</li>
+            <li>${tr("itemHistory")}</li>
+            <li>${tr("itemMaintenance")}</li>
           </ul>
-          <p><a href="${portalLink}" style="display:inline-block;background:#2563eb;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;">Access Your Portal</a></p>
-          <p>This link will expire in 7 days.</p>
-          <p>If you have any questions, please contact your property manager.</p>
+          <p><a href="${portalLink}" style="display:inline-block;background:#2563eb;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;">${tr("cta")}</a></p>
+          <p>${tr("expiry")}</p>
+          <p>${tr("closing")}</p>
         `,
         },
         userId,

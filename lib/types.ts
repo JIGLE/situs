@@ -81,6 +81,8 @@ export interface Tenant {
   paymentStatus: "paid" | "overdue" | "pending";
   lastPayment?: string;
   notes?: string;
+  /** BCP 47, one of the four catalogues. Null/absent = derive from the property's country. */
+  locale?: string | null;
   createdAt: string;
   updatedAt: string;
 }

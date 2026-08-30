@@ -340,8 +340,17 @@ model Tenant {
   paymentStatus PaymentStatus @default(pending)
   lastPayment   DateTime?
   notes         String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+
+  /// The language this tenant is written to in. Every email they receive was English before
+  /// this existed, including the portal invitation — which the portal's own resend form can
+  /// trigger, so a tenant reading a translated portal asked for their link and got English back.
+  /// NULL is the normal state and is not a gap: it resolves to the property's country
+  /// (PT -> pt, ES -> es) in `resolveTenantLocale`. The column exists for the case a country
+  /// cannot answer — an expat reading English in a Lisbon flat.
+  locale String? // BCP 47, one of the app's four catalogues
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Portal-link revocation epoch. Portal tokens are stateless signed JWTs, so before this there
   // was no way to invalidate one — a link forwarded to the wrong address, or a tenant who moved

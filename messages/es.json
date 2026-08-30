@@ -1379,7 +1379,23 @@
         "body": "Debe emitirse un recibo de alquiler para {tenant} en {property} (pago de {amount}) antes de mañana para cumplir con el plazo legal de 5 días."
       },
       "footer": "Recibe este correo porque las notificaciones por correo están activadas en su configuración de Lares.",
-      "viewInApp": "Ver en Lares"
+      "viewInApp": "Ver en Lares",
+      "portalInvite": {
+        "subject": "Acceso a su portal de inquilino",
+        "heading": "Bienvenido a su portal de inquilino",
+        "greeting": "Estimado/a {tenant}:",
+        "intro": "{manager} ha creado un portal de autogestión para usted.",
+        "propertyLabel": "Inmueble",
+        "listIntro": "Use el enlace de abajo para abrir su portal, donde podrá:",
+        "itemInvoices": "Consultar y pagar facturas",
+        "itemHistory": "Ver su historial de pagos",
+        "itemMaintenance": "Seguir las solicitudes de mantenimiento",
+        "cta": "Abrir mi portal",
+        "expiry": "Este enlace caduca en 7 días.",
+        "closing": "Si tiene alguna duda, contacte con su gestor de inmuebles.",
+        "fallbackManager": "Su gestor de inmuebles",
+        "fallbackProperty": "Su inmueble"
+      }
     }
   },
   "owners": {
@@ -1597,7 +1613,10 @@
     "allProperties": "Todas las Propiedades",
     "saving": "Guardando...",
     "selectProperty": "Seleccionar Propiedad",
-    "selectTenant": "Seleccionar Inquilino"
+    "selectTenant": "Seleccionar Inquilino",
+    "language": "Idioma",
+    "languageAuto": "Del país del inmueble",
+    "languageHint": "El idioma en que se escriben los correos de este inquilino."
   },
   "status": {
     "active": "Activo",

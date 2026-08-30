@@ -601,3 +601,24 @@ export function countryLabel(code: string, locale: string): string {
   }
   return isCountryCode(code) ? COUNTRY_THEMES[code].name : code;
 }
+
+/**
+ * A language's name, written in the reader's own language.
+ *
+ * Same argument as `countryLabel` above, one `Intl.DisplayNames` type over: the tenant modal
+ * offers the four catalogues as a choice, and hardcoding "Portuguese / Spanish / English /
+ * Italian" would be four names times four catalogues maintained by hand for something the
+ * platform already knows. A Portuguese reader gets "Português, Espanhol, Inglês, Italiano".
+ *
+ * Falls back to the code itself, which is honest — an unrecognised tag is better shown raw than
+ * guessed at.
+ */
+export function languageLabel(code: string, locale: string): string {
+  try {
+    const display = new Intl.DisplayNames([locale], { type: "language" }).of(code);
+    if (display && display !== code) return display;
+  } catch {
+    // Unsupported locale or a tag that is not a language — fall through to the code.
+  }
+  return code;
+}

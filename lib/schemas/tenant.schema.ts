@@ -19,6 +19,8 @@ export const tenantSchema = z.object({
   paymentStatus: z.enum(["paid", "overdue", "pending"]).default("pending"),
   lastPayment: z.string().optional(),
   notes: z.string().max(1000, "Notes too long").optional(),
+  /** "" is the form's Auto option: derive the language from the property's country. */
+  locale: z.enum(["pt", "es", "en", "it"]).or(z.literal("")).optional(),
 });
 
 export const createTenantSchema = tenantSchema.omit({

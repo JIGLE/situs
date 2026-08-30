@@ -22,6 +22,9 @@ const updateTenantSchema = z.object({
   // lib/services/allocation/service.ts) and is never accepted from a manual
   // edit; a value here would silently drift the next time an allocation runs.
   notes: z.string().max(1000).optional(),
+  // Empty string clears it back to "derive from the property's country" — the modal sends "" for
+  // its Auto option, and a nullable column is what that means.
+  locale: z.enum(["pt", "es", "en", "it"]).or(z.literal("")).optional(),
 });
 
 // GET /api/tenants/[id] - Get a specific tenant
@@ -89,6 +92,7 @@ async function handlePut(
       propertyId: body.propertyId ? sanitizeForDatabase(body.propertyId) : undefined,
       rent: body.rent !== undefined ? sanitizeNumber(body.rent, 0, 0) : undefined,
       notes: body.notes ? sanitizeForDatabase(body.notes) : undefined,
+      locale: body.locale === "" ? null : body.locale,
     };
 
     // Validate input

@@ -22,19 +22,12 @@ import { emailService } from "@/lib/services/email/email-service";
 import { incrementEmailSent, incrementEmailFailed } from "@/app/api/metrics/route";
 import { logger } from "@/lib/utils/logger";
 import { t } from "@/lib/utils/format-message";
-import enMessages from "@/messages/en.json";
-import ptMessages from "@/messages/pt.json";
-import esMessages from "@/messages/es.json";
-import itMessages from "@/messages/it.json";
+// Moved to `lib/services/email/email-locale.ts` when the portal invitation became a second
+// consumer. Behaviour here is unchanged: these emails go to the landlord, so they resolve from
+// `UserSettings.language`, which is what `resolveLocale` reads.
+import { MESSAGES, resolveLocale, type SupportedLocale } from "@/lib/services/email/email-locale";
 
 const log = logger.child("reminder-email");
-
-const MESSAGES = { en: enMessages, pt: ptMessages, es: esMessages, it: itMessages } as const;
-type SupportedLocale = keyof typeof MESSAGES;
-
-function resolveLocale(language: string | null | undefined): SupportedLocale {
-  return language && language in MESSAGES ? (language as SupportedLocale) : "en";
-}
 
 export type ReminderEmailKind =
   "rentReminder" | "overdueNotice" | "leaseRenewal" | "receiptDeadline";
