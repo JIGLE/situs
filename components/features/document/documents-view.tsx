@@ -302,11 +302,14 @@ export function DocumentsView({ propertyId, embedded = false }: DocumentsViewPro
                 className="pl-10"
               />
             </div>
+            {/* Full width until the row turns horizontal. This utility row is `flex-col` below
+                `sm`, so a fixed 180px left both filters as stubs under a full-width search box —
+                ragged, and smaller tap targets than the control beside them. */}
             <Select
               value={typeFilter}
               onValueChange={(v) => setTypeFilter(v as DocumentType | "all")}
             >
-              <SelectTrigger className="w-[180px]" aria-label={t("filterByType")}>
+              <SelectTrigger className="w-full sm:w-[180px]" aria-label={t("filterByType")}>
                 <Filter className="mr-2 h-4 w-4" />
                 <SelectValue placeholder={t("filterByType")} />
               </SelectTrigger>
@@ -321,7 +324,7 @@ export function DocumentsView({ propertyId, embedded = false }: DocumentsViewPro
             </Select>
             {!embedded && isOwnerPortal && (
               <Select value={propertyFilter} onValueChange={setPropertyFilter}>
-                <SelectTrigger className="w-[180px]" aria-label={t("filterByProperty")}>
+                <SelectTrigger className="w-full sm:w-[180px]" aria-label={t("filterByProperty")}>
                   <SelectValue placeholder={t("filterByProperty")} />
                 </SelectTrigger>
                 <SelectContent>

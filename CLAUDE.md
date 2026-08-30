@@ -202,6 +202,54 @@ is still whatever Node bundled. Check with `npm -v` before regenerating, or use 
 and skip the question. CI never regenerates — every workflow runs a bare `npm ci` — so this is a
 local concern only.
 
+## Three ways a screen lies, and the contracts that catch them
+
+The 2026-08 cross-surface audit found three defect classes that share one shape: **the code
+asserted something the runtime had already made false, and every gate agreed.** Type-check
+passed, lint passed, the mobile harness scored the surfaces `ok`. Each was found by looking at
+the running app, and each is now a contract test under `tests/` that `npm test` runs — so the
+reasoning is here and the enforcement is there.
+
+1. **`apiFetch` unwraps the envelope. Do not unwrap it again.** Routes reply
+   `createSuccessResponse(x)` — `{ data: x }` — and `apiFetch` returns `body.data` when it is
+   present. Three call sites annotated the call `apiFetch<{ data: T }>` and then read `.data`
+   off the result, so they received `undefined`: the document detail panel showed
+   "Document not found" for every document that exists, and the bank picker listed zero
+   institutions, which hid the connect button being broken one line below it. A type argument
+   asserts a shape rather than producing one, which is why nothing disagreed. Defensive forms
+   (`res.data ?? res`) stay legal. `tests/api-envelope-contract.test.ts`.
+
+2. **Nothing the server wrote in English reaches the screen.** `createErrorResponse` puts an
+   English sentence in the envelope; twenty-seven components rendered `err.message` into a
+   banner or toast, so the failure path was the last English left in a Portuguese app. Use
+   `useApiError()` (`lib/utils/api-error.ts`), which maps the HTTP status `apiFetch` already
+   attaches. A raw `fetch` must throw `httpError(res.status)` rather than baking the status into
+   a string, or the resolver cannot tell a 500 from a dropped connection. English under
+   `app/api/**` is correct and deliberately exempt — that is a log for whoever reads stderr.
+   `tests/error-copy-contract.test.ts`.
+
+3. **Dates take the app's locale, never the browser's.** `toLocaleDateString()` with no argument
+   follows the browser, which is not the language the user chose — twenty-two sites did this,
+   four through near-identical private helpers. Use `lib/utils/format-date.ts`, where `locale`
+   is required rather than defaulted, because a default is how the argument goes missing again.
+
+Two related habits worth keeping, both learned the same way. **A stored enum is not a label**:
+`capitalize` and `replace(/_/g, " ")` are formatting rules standing in for a translation, and
+they shipped `partially_paid` and "Rent" into Portuguese screens. When two components render one
+enum, extract the map (`lib/utils/receipt-labels.ts`, `lib/utils/maintenance-labels.ts`) rather
+than copying it — copying is what let them drift. And **`i18n:check:strict` cannot see this**: it
+compares the four catalogues to each other, never to what a component asks for, so a key can be
+complete in four languages and unreachable from the UI. `tests/i18n-no-hardcoded-copy.test.tsx`
+asserts Portuguese for exactly that reason — asserting English cannot catch a component that
+hardcodes English, because the hardcoded string is the expected string.
+
+**A guard that is too narrow is worse than none**, because it reports clean. The envelope
+contract first understood only `const x = await apiFetch(…)` and would have passed
+`document-detail-panel.tsx` while it rendered an apology for every document; the i18n tripwire's
+first version passed `resourceIds={[]}`, which returns before fetching, so it asserted against a
+component that never made a request. Prove a new guard by restoring the defect it describes and
+watching it name the file and line.
+
 ## Development Branch
 
 All Claude Code changes go to: **`claude/proman-design-polish-6zpz2f`**
