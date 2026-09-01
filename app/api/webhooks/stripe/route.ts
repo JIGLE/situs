@@ -22,7 +22,12 @@ function getStripe(): Stripe {
     throw new Error("STRIPE_SECRET_KEY not configured");
   }
   return new Stripe(key, {
-    apiVersion: "2026-07-29.dahlia",
+    // Not a date literal: stripe-node types this as `LatestApiVersion`, a union of exactly
+    // one member — whatever version that SDK release pins. A hardcoded date stops compiling
+    // the moment the SDK moves, which is what broke the production-minor Dependabot bump.
+    // It was never adding anything either: the SDK resolves `props.apiVersion ||
+    // DEFAULT_API_VERSION`, and DEFAULT_API_VERSION *is* this value.
+    apiVersion: Stripe.API_VERSION,
   });
 }
 
