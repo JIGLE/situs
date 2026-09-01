@@ -164,6 +164,7 @@
     "undici": "^7.29.0",
     "dompurify": ">=3.4.13",
     "deepmerge-ts": ">=8.0.1",
+    "mysql2": ">=3.22.0",
     "artillery": {
       "js-yaml": "3.15.1"
     }
