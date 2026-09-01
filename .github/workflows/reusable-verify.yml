@@ -51,6 +51,19 @@ jobs:
       - name: Type check
         run: npm run type-check
 
+      # `hygiene` runs seven checkers. Six of them ran nowhere until this step existed: docs
+      # reachability and retired claims, strict i18n parity, the colour and currency sweeps, the
+      # Tailwind class contract, and package.json↔public/version.json sync. (The seventh, action
+      # manifests, is the step above — hygiene re-runs it for milliseconds, which is cheaper than
+      # decomposing the gate and letting the two lists drift.)
+      #
+      # CLAUDE.md said this already ran in CI because it sits inside `verify:ci` — but no workflow
+      # invokes `verify:ci`, so those six passed or failed into the void. That is precisely the
+      # "a checker nothing runs is not a checker" failure the hygiene rules exist to prevent,
+      # reproduced on the checker that enforces them.
+      - name: Repo hygiene
+        run: npm run hygiene
+
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
