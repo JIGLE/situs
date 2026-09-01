@@ -12,6 +12,7 @@ import type {
   PaymentMethodType,
 } from "@prisma/client";
 import type { NormalizedProviderEvent } from "./providers/sibs-client";
+import { STRIPE_API_VERSION } from "./stripe-api-version";
 
 // Initialize Stripe client lazily to avoid build-time errors
 let stripeInstance: Stripe | null = null;
@@ -29,7 +30,7 @@ function getStripeInstance(): Stripe {
       throw new Error("STRIPE_SECRET_KEY is not set");
     }
     stripeInstance = new Stripe(stripeKey, {
-      apiVersion: "2026-07-29.dahlia",
+      apiVersion: STRIPE_API_VERSION,
     });
   }
   return stripeInstance;

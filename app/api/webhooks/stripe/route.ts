@@ -5,6 +5,7 @@ import { processSubscriptionWebhook } from "@/lib/billing/subscription-service";
 import { getSecret, isEnabled } from "@/lib/utils/env";
 import { rateLimit, RateLimits } from "@/lib/middleware/rate-limit";
 import Stripe from "stripe";
+import { STRIPE_API_VERSION } from "@/lib/payment/stripe-api-version";
 
 // Event types owned by the app's own subscription billing (lib/billing/), as
 // opposed to tenant-to-landlord rent collection (lib/payment/).
@@ -22,7 +23,7 @@ function getStripe(): Stripe {
     throw new Error("STRIPE_SECRET_KEY not configured");
   }
   return new Stripe(key, {
-    apiVersion: "2026-07-29.dahlia",
+    apiVersion: STRIPE_API_VERSION,
   });
 }
 
