@@ -169,6 +169,7 @@
     "artillery": {
       "js-yaml": "3.15.1"
     },
-    "@humanfs/node": ">=0.16.8"
+    "@humanfs/node": ">=0.16.8",
+    "nodemailer": "$nodemailer"
   }
 }
