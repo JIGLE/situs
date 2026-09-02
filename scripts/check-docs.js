@@ -112,6 +112,43 @@ const RETIRED_CLAIMS = [
     retired: "2026-08-20",
     because: "the adapter was removed; the registry ships empty and CSV import is the path",
   },
+  {
+    pattern: /rebranding in progress to \*\*Situs/i,
+    retired: "2026-09-02",
+    because:
+      "the rebrand is finished, and the sentence had renamed its own subject: PR #328's global " +
+      "ProMan->Situs sweep rewrote 'ProMan (rebranding in progress to Situs...)' into a line " +
+      "claiming Situs was being renamed to Situs. Same accident produced the ROADMAP and README " +
+      "variants retired below",
+  },
+  {
+    pattern: /Rebranded "Situs" . "Lares"/i,
+    retired: "2026-09-02",
+    because:
+      "same blanket-rename accident in the Decisions Log: the row records renaming ProMan to " +
+      "Lares, and the sweep turned it into a claim that the current name was renamed away",
+  },
+  {
+    pattern: /full infra rename \(PR 13\)/i,
+    retired: "2026-09-02",
+    because:
+      "PR 13 shipped as #328 — package.json, Docker and env identifiers all read situs — and " +
+      "PR 10b shipped alongside it; CLAUDE.md listed both as still deferred",
+  },
+  {
+    pattern: /SQLite, Helm chart/i,
+    retired: "2026-09-02",
+    because:
+      "Helm and the k8s manifests were dropped for a single Docker path in #328; ROADMAP's " +
+      "Completed Features went on advertising a chart that no longer exists",
+  },
+  {
+    pattern: /PT, EN, ES locale support/i,
+    retired: "2026-09-02",
+    because:
+      "there are four locales — messages/it.json exists and i18n:check:strict enforces it, so a " +
+      "contributor following the three-locale claim fails a hygiene gate",
+  },
 ];
 
 /** Lines allowed to mention a retired claim, because they are the record of its retirement. */

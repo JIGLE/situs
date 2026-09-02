@@ -37,8 +37,9 @@ the **oldest unpaid month first**; that writes a receipt, which drives a documen
 feeds the tax connector — and every step appends to an immutable audit log. Tenant payment status
 is _derived_ from this ledger, never hand-set.
 
-> **v1.23.1** — see [RELEASES.md](RELEASES.md) for the changelog. Formerly Situs; the Situs
-> rebrand is shipped in the app, while the repository and container images keep the `situs` name.
+> Formerly ProMan. The rebrand is complete: the app, the repository and the container images all
+> read `situs`. For what shipped when, read the git tags and the GitHub Releases page — those are
+> written by `release.yml` and cannot drift. This line previously carried a hardcoded version.
 
 ## Features
 

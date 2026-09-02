@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Situs (rebranding in progress to **Situs // Sovereign Capital System**) is a self-hosted
+Situs — full name **Situs // Sovereign Capital System** — is a self-hosted
 property management SaaS for landlords and property managers in **Portugal and Spain**. It
 handles properties, units, tenants, leases, receipts, expenses, maintenance, correspondence,
 and fiscal compliance, built around a reference-month rent ledger: bank movement → match →
@@ -10,10 +10,12 @@ allocate → receipt → tax filing → audit trail.
 
 **Current version**: see `package.json` — it was hardcoded here as 1.16.3 against a shipped
 1.24.0, because a number copied into prose has no reason to move when the release does. Don't
-reintroduce it. | **Stage**: Production-ready core; Situs rebrand PRs 1–12 shipped
+reintroduce it. | **Stage**: Production-ready core; the Situs rebrand is complete — all 13 PRs shipped
 (brand, nav, landing, portfolio tree, rent ledger, bank matching, receipt lifecycle + PT tax
 connector, OCR classification, audit trail/tax dashboard, schema consolidation, a11y/e2e pass).
-Deferred: People/Operations/Intelligence IA consolidation (PR 10b), full infra rename (PR 13).
+The IA consolidation (PR 10b) and the infra rename (PR 13) have since shipped too: `/people`,
+`/intelligence` and `/operations` are live with redirect shims from the old paths, and the
+package, Docker and env identifiers all read `situs` with Helm dropped for a single Docker path.
 
 ## Tech Stack
 
@@ -38,7 +40,7 @@ npm test               # Run Vitest unit/integration suite
 npm run lint           # ESLint with --max-warnings=0 (CI gate)
 npm run type-check     # tsc --noEmit
 npm run verify         # type-check + test
-npm run verify:ci      # type-check + lint + test
+npm run verify:ci      # type-check + lint + format:check + hygiene + test
 
 npx prisma db push     # Push schema changes to SQLite
 npx prisma generate    # Regenerate Prisma client after schema changes
@@ -67,7 +69,7 @@ lib/
     receipts/          # Receipt document-lifecycle state machine + orchestration
     ocr/                # Mock document classification engine + orchestration
     tax/               # Tax connector find-or-create + submission-log service
-  tax/connectors/      # Per-country TaxConnector implementations (pt-at.ts)
+  tax/connectors/      # Per-country TaxConnector implementations (pt-at.ts, es-nrua.ts)
   design/country-themes.ts  # 28-country theme table (Situs brand)
 prisma/
   schema.prisma     # Database schema — source of truth
@@ -82,7 +84,8 @@ e2e/                # Playwright E2E tests
 - **AppContext**: All entities (properties, tenants, leases, receipts, expenses, tickets, buildings…) live in `AppState` via `lib/contexts/app-context.tsx` (composed from `use-app-data.ts` + `use-entity-actions.ts` + `create-entity-actions.ts`). Mutations go through typed actions (`addProperty`, `updateTenant`, etc.). Bank/tax/OCR domains (added in the Situs rebrand) are read via dedicated fetches in their own components instead — they don't live in `AppState`.
 - **API routes**: Each domain has its own folder under `app/api/`. Use `GET`/`POST`/`PUT`/`DELETE` handlers with Zod validation and NextAuth session checks.
 - **Compliance**: PT (`/api/compliance/rent-receipts`) and ES (`/api/compliance/nrua`) endpoints generate fiscal payloads. Tax logic lives in `app/api/tax/`.
-- **PII encryption**: AES-256-GCM on IBAN, NIF, phone fields via `lib/utils/pii-encryption.ts` (`encryptPII`/`decryptPII`, keyed off `PII_ENCRYPTION_KEY`). `PII_FIELDS` declares the fields the Prisma extension encrypts on write and decrypts on read — **not** the complete list of encrypted PII. `BankAccount.iban` is encrypted at the call site in `lib/services/bank/consent.ts` and never decrypted (matching uses `ibanHash`, display uses `ibanLast4`); adding it to `PII_FIELDS` would make `/api/debug/db` start returning it in plaintext. See `docs/PRODUCT_AUDIT_2026.md` §5 for wiring status. **Fails closed in production**: `lib/utils/env.ts` exits if `PII_ENCRYPTION_KEY` is absent, because `encryptPII` silently returns plaintext without it. `ALLOW_UNENCRYPTED_PII=true` waives the check and warns loudly on every start.
+- **PII encryption**: AES-256-GCM on IBAN, NIF, phone fields via `lib/utils/pii-encryption.ts` (`encryptPII`/`decryptPII`, keyed off `PII_ENCRYPTION_KEY`). `PII_FIELDS` declares the fields the Prisma extension encrypts on write and decrypts on read — **not** the complete list of encrypted PII. `BankAccount.iban` is encrypted at the call site in `lib/services/bank/consent.ts` and never decrypted (matching uses `ibanHash`, display uses `ibanLast4`); adding it to `PII_FIELDS` would make `/api/debug/db` start returning it in plaintext. The extension is applied where the client is built (`lib/services/database/database.ts`), so the
+  encryption is transparent rather than per-call-site. **Fails closed in production**: `lib/utils/env.ts` exits if `PII_ENCRYPTION_KEY` is absent, because `encryptPII` silently returns plaintext without it. `ALLOW_UNENCRYPTED_PII=true` waives the check and warns loudly on every start.
 - **Reference-month rent ledger** (Situs): `RentPeriod` is the persisted-derived spine — one row per lease per reference month, `status` recomputed in the same transaction as every allocation write (never hand-set). The waterfall invariant: always fill the oldest not-fully-allocated period first (`lib/services/allocation/engine.ts`, pure). `Tenant.paymentStatus` is fully derived from this ledger — the API layer refuses manual overrides.
 - **Bank matching**: CSV/manual import **or a live provider sync** → fingerprint dedupe (idempotent) → fuzzy-duplicate check → reconciliation rules → weighted confidence scoring (`lib/services/matching/engine.ts`, pure). ≥0.85 auto-allocates via a draft `Receipt` (`source: "automation"`); below that, the row waits in the Bank Movements inbox (Finance tab) for a human to confirm/reassign/ignore.
 - **Live bank connection**: PSD2 account information (`lib/services/bank/providers/`, Enable Banking today). Enable Banking is the licensed AISP, so an instance needs no PSD2 licence or eIDAS certificate; their free _restricted production_ mode is limited to accounts you whitelist as your own. Auth is **not** a token exchange — every request carries a JWT the app signs itself with the application's RSA key. A previous adapter spoke to GoCardless Bank Account Data, which closed to new signups in July 2025 and was removed rather than left as a button that can only fail. A provider's only job is to return `BankCsvRow[]`; `importBankRows`' optional `target` points those rows at the right connection/account, so a synced movement inherits the entire pipeline above and behaves identically to an uploaded one. Consent lives in `consent.ts` — unguessable reference, scoped to the caller, single-use. `sync.ts` enforces the provider's daily read budget **before** spending a call (429 costs the rest of the day) and marks a connection `expired` on `ConsentExpiredError` rather than reporting a quiet zero. `BankConnection.provider` is `psd2_<key>` for a real bank and `manual`/`csv` otherwise; never offer a sync to the latter.
