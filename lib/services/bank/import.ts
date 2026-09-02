@@ -20,6 +20,7 @@ import { logAudit } from "@/lib/services/audit-log";
 import { encryptPII } from "@/lib/utils/pii-encryption";
 import { allocateReceipt } from "@/lib/services/allocation/service";
 import { isTestConnection } from "@/lib/services/bank/consent";
+import { redactRowForStorage } from "@/lib/services/bank/csv";
 import {
   classifyMatch,
   findPossibleDuplicate,
@@ -472,7 +473,7 @@ export async function importBankRows(
           counterpartyIban: row.counterpartyIban ? encryptPII(row.counterpartyIban) : null,
           counterpartyIbanHash,
           reference: row.reference ?? null,
-          rawData: JSON.stringify(row),
+          rawData: JSON.stringify(redactRowForStorage(row)),
           status,
           suggestedLeaseId,
           matchConfidence,
