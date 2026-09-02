@@ -75,6 +75,32 @@ jobs:
           node-version: "22"
           cache: "npm"
 
+      # This is the only job in the repo that WRITES package-lock.json, so it is the only one
+      # where the npm version matters. `packageManager` pins npm@11.19.0 precisely because npm 10
+      # rewrites the lockfile without the `libc` fields that only the four @next/swc-linux-*
+      # packages carry — but corepack honours that pin only once enabled, and no workflow enabled
+      # it. Node 22 ships npm 10, so every release so far silently stripped all 16 of them and
+      # flipped `devOptional` to `dev`; v1.25.0's bump commit did exactly that.
+      #
+      # Note the `npm` argument: bare `corepack enable` shims pnpm and yarn but NOT npm, because
+      # npm ships with Node. Verified — bare `enable` leaves `npm -v` at 10.x; `enable npm` moves
+      # it to the pinned 11.19.0.
+      #
+      # The version is then asserted rather than assumed. Every failure this step exists to
+      # prevent was silent: the lockfile still parsed, CI still passed, and the loss only showed
+      # up as unexplained churn the next time someone installed. A wrong npm here fails the
+      # release instead.
+      - name: Enable corepack (honour the npm version pin)
+        run: |
+          corepack enable npm
+          EXPECTED="$(node -p "require('./package.json').packageManager.split('@')[1]")"
+          ACTUAL="$(npm -v)"
+          echo "npm ${ACTUAL} (package.json pins ${EXPECTED})"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::npm ${ACTUAL} is active but package.json pins ${EXPECTED}; refusing to write package-lock.json with the wrong npm"
+            exit 1
+          fi
+
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
