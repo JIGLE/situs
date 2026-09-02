@@ -78,7 +78,12 @@ This document details the performance optimizations implemented in Week 1 of the
 
 ### 2. ✅ N+1 Query Fix (Revenue Trends)
 
-**File**: [lib/services/insights.real.ts](../lib/services/insights.real.ts)
+**File**: `lib/services/insights.real.ts` — **deleted.** The whole four-file insights service
+(`insights.ts`, `.real.ts`, `.mock.ts`, `.types.ts`) was removed as unreferenced: nothing ever
+imported it, because `components/features/insights/insights-view.tsx` reads its data from
+`AppContext` instead. So this optimisation was real, and it was applied to a code path that
+never ran — which is the more useful lesson of the two. The pattern below is kept because it
+still applies wherever a loop issues one query per period.
 
 **Issue**: Revenue trend calculation executed 6 separate database queries (one per month)
 

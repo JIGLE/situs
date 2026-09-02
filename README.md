@@ -228,17 +228,17 @@ guidance.
 
 ## Documentation
 
-| Guide                                                  | Description                             |
-| ------------------------------------------------------ | --------------------------------------- |
-| [Documentation index](docs/README.md)                  | All available guides                    |
-| [Deployment](docs/deployment.md)                       | Production setup                        |
-| [TrueNAS SCALE](docs/truenas.md)                       | Step-by-step NAS deployment             |
-| [Security](docs/SECURITY.md)                           | Security architecture                   |
-| [Database strategy](docs/DATABASE_STRATEGY.md)         | Migrations, backups                     |
-| [Metrics & monitoring](docs/METRICS_AND_MONITORING.md) | Observability                           |
-| [Troubleshooting](docs/troubleshooting.md)             | Common issues                           |
-| [Releases](RELEASES.md)                                | Version history                         |
-| [CLAUDE.md](CLAUDE.md)                                 | Architecture patterns + design doctrine |
+| Guide                                          | Description                             |
+| ---------------------------------------------- | --------------------------------------- |
+| [Documentation index](docs/README.md)          | All available guides                    |
+| [Deployment](docs/deployment.md)               | Production setup                        |
+| [TrueNAS SCALE](docs/truenas.md)               | Step-by-step NAS deployment             |
+| [Security](docs/SECURITY.md)                   | Security architecture                   |
+| [Database strategy](docs/DATABASE_STRATEGY.md) | Migrations, backups                     |
+| [Monitoring](docs/MONITORING.md)               | Observability                           |
+| [Troubleshooting](docs/troubleshooting.md)     | Common issues                           |
+| [Releases](RELEASES.md)                        | Version history                         |
+| [CLAUDE.md](CLAUDE.md)                         | Architecture patterns + design doctrine |
 
 ## Contributing
 

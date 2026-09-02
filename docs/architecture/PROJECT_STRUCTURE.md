@@ -119,8 +119,6 @@ situs/
 │   ├── integrations/            # External service docs
 │   ├── releases/                # Release notes
 │   │   └── ... (version notes)
-│   └── ux/                      # UX guidelines
-│       └── STORYBOOK_GUIDE.md   # Storybook setup
 ├── lib/                          # Core utilities
 │   ├── hooks/                   # Custom React hooks (with barrel exports)
 │   │   ├── use-auto-save.tsx
@@ -255,7 +253,6 @@ Granular path aliases for cleaner imports:
 - **API Reference**: Complete API documentation in [docs/architecture/API_ROUTES.md](docs/architecture/API_ROUTES.md)
 - **Directory layout**: also summarised in `CLAUDE.md`, which is the version kept current
 - **Deployment**: TrueNAS guide in `docs/truenas.md`
-- **Storybook**: Component documentation guide in [docs/ux/STORYBOOK_GUIDE.md](docs/ux/STORYBOOK_GUIDE.md)
 
 ### 🎨 Next.js 16 Route Conventions
 

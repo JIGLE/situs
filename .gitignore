@@ -127,10 +127,11 @@ final-test.txt
 *-output.txt
 *_output.txt
 *-results.txt
-/release-charts-local/
-/release-charts-temp/
-/tmp-release-charts/
 .vercel
+
+# Runtime exchange-rate cache — lib/exchange.ts writes this with a 24h TTL and
+# refetches when it is absent. A committed copy is stale by definition.
+/.cache/
 
 # ===========================================
 # 13. Legacy/Deprecated

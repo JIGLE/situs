@@ -1,10 +1,82 @@
-# API Routes Documentation
+# API Routes
 
-This document provides a comprehensive overview of all API routes in the Situs application.
+Situs exposes **50 API domains** across **154 `route.ts` files** under `app/api/`, organised by
+domain per Next.js App Router convention.
+
+This document describes **26 of those domains in detail** — the ones whose contracts are not
+obvious from the handler. It is not, and does not try to be, an endpoint-by-endpoint reference
+for all 154: a hand-maintained one goes stale on the first PR that adds a route, and this file
+spent a while claiming to cover "all" routes while omitting 24 domains.
+
+**The filesystem is the source of truth.** To see what exists right now:
+
+```bash
+find app/api -name route.ts | sort
+```
+
+## Every domain
+
+Generated from the route files. Methods are the HTTP verbs exported anywhere in the domain, so
+a domain listing `GET POST` may still have some paths that only answer `GET`.
+
+| Domain                         | Route files | Methods                   |
+| ------------------------------ | ----------- | ------------------------- |
+| `/api/activation`              | 1           | GET                       |
+| `/api/admin`                   | 10          | GET DELETE                |
+| `/api/analytics`               | 1           | GET                       |
+| `/api/audit-trail`             | 1           | GET                       |
+| `/api/auth`                    | 6           | GET POST DELETE           |
+| `/api/bank`                    | 8           | GET POST PUT              |
+| `/api/billing`                 | 3           | GET                       |
+| `/api/buildings`               | 2           | GET POST PUT DELETE       |
+| `/api/compliance`              | 4           | GET POST                  |
+| `/api/contacts`                | 2           | GET POST PUT DELETE       |
+| `/api/contracts`               | 1           | GET POST                  |
+| `/api/correspondence`          | 6           | GET POST PUT DELETE       |
+| `/api/cron`                    | 3           | GET POST                  |
+| `/api/csrf-token`              | 1           | GET                       |
+| `/api/debug`                   | 6           | GET POST                  |
+| `/api/demo`                    | 2           | GET POST                  |
+| `/api/distributions`           | 2           | GET POST                  |
+| `/api/documents`               | 8           | GET POST PUT DELETE       |
+| `/api/email`                   | 3           | GET POST PUT              |
+| `/api/events`                  | 1           | POST                      |
+| `/api/exchange`                | 1           | GET                       |
+| `/api/expenses`                | 3           | GET POST PUT DELETE       |
+| `/api/finance`                 | 2           | GET                       |
+| `/api/fiscal`                  | 1           | GET POST                  |
+| `/api/health`                  | 3           | GET                       |
+| `/api/info`                    | 1           | GET                       |
+| `/api/invoices`                | 6           | GET POST PUT DELETE       |
+| `/api/leases`                  | 5           | GET POST PUT PATCH DELETE |
+| `/api/maintenance`             | 4           | GET POST PUT DELETE       |
+| `/api/metrics`                 | 1           | GET                       |
+| `/api/monitoring`              | 5           | GET                       |
+| `/api/notifications`           | 3           | GET POST PUT DELETE       |
+| `/api/owners`                  | 1           | GET POST                  |
+| `/api/ownership-verifications` | 1           | GET POST                  |
+| `/api/payments`                | 4           | GET POST DELETE           |
+| `/api/portal`                  | 1           | GET                       |
+| `/api/properties`              | 3           | GET POST PUT DELETE       |
+| `/api/property-owners`         | 1           | POST DELETE               |
+| `/api/ready`                   | 1           | GET                       |
+| `/api/receipts`                | 4           | GET POST PUT DELETE       |
+| `/api/reports`                 | 1           | GET POST                  |
+| `/api/settings`                | 1           | GET POST                  |
+| `/api/tax`                     | 3           | GET POST                  |
+| `/api/tax-filings`             | 3           | GET POST DELETE           |
+| `/api/tax-rules`               | 2           | GET POST PUT DELETE       |
+| `/api/tenant-portal`           | 7           | GET POST PATCH            |
+| `/api/tenants`                 | 5           | GET POST PUT DELETE       |
+| `/api/units`                   | 2           | GET POST PUT DELETE       |
+| `/api/user`                    | 4           | GET POST                  |
+| `/api/webhooks`                | 4           | POST                      |
 
 ## Route Organization
 
-API routes are organized by domain following Next.js App Router conventions. All routes are located in `app/api/`.
+Routes are organised by domain following Next.js App Router conventions, all under `app/api/`.
+The three `*.test.ts` files at the top level of `app/api/` are cross-cutting contract tests
+(tenant scoping, error-status consistency, error-message leakage), not routes.
 
 ## Authentication
 
