@@ -147,6 +147,35 @@ export async function syncConnection(
     );
   }
 
+  // `consentExpiresAt` was written at consent time and then read by nothing that enforced it:
+  // expiry was discovered only when the provider rejected a call, which spends a read from the
+  // daily budget to learn something the row already knew. Worse, the budget is counted from the
+  // job rows a successful import writes, so a failed call is not counted — an expired
+  // connection could burn the provider's rate limit on repeated attempts that could never work.
+  //
+  // Checked here, before the budget check, because an expired consent is not a budget problem
+  // and should not report itself as one.
+  if (connection.consentExpiresAt && connection.consentExpiresAt.getTime() <= now.getTime()) {
+    await prisma.bankConnection.update({
+      where: { id: connection.id },
+      data: { status: "expired" },
+    });
+    await logAudit({
+      userId,
+      action: "BANK_CONSENT_EXPIRED",
+      resourceType: "bank_connection",
+      resourceId: connection.id,
+      details: {
+        institutionName: connection.institutionName,
+        expiredAt: connection.consentExpiresAt.toISOString(),
+        detectedBy: "expiry_check",
+      },
+    });
+    throw new ConsentExpiredError(
+      "Bank consent has expired. Reconnect the account to resume syncing.",
+    );
+  }
+
   const budget = budgetFor(connection.provider);
   const spent = await spentToday(connectionId, now);
   if (spent >= budget) {

@@ -212,3 +212,67 @@ describe("scheduled run", () => {
     ]);
   });
 });
+
+/**
+ * `consentExpiresAt` was written at consent time and enforced by nothing. Expiry was learned
+ * only when the provider rejected a call — which spends a read to discover something the row
+ * already knew, and (because the budget is counted from the job rows a SUCCESSFUL import
+ * writes) is not counted against the budget at all.
+ */
+describe("consent expiry", () => {
+  it("refuses before spending a provider read once the consent has lapsed", async () => {
+    prismaMock.bankConnection.findFirst.mockResolvedValue(
+      connection({ consentExpiresAt: new Date("2026-08-13T10:00:00.000Z") }),
+    );
+
+    await expect(syncConnection("user-1", "conn-1", NOW)).rejects.toBeInstanceOf(
+      ConsentExpiredError,
+    );
+
+    // The point of the whole change: the provider is never called.
+    expect(providerMock.fetchTransactions).not.toHaveBeenCalled();
+  });
+
+  it("marks the connection expired so the next attempt is refused by status alone", async () => {
+    prismaMock.bankConnection.findFirst.mockResolvedValue(
+      connection({ consentExpiresAt: new Date("2026-08-13T10:00:00.000Z") }),
+    );
+
+    await expect(syncConnection("user-1", "conn-1", NOW)).rejects.toThrow();
+
+    expect(prismaMock.bankConnection.update).toHaveBeenCalledWith({
+      where: { id: "conn-1" },
+      data: { status: "expired" },
+    });
+  });
+
+  it("syncs normally while the consent is still valid", async () => {
+    prismaMock.bankConnection.findFirst.mockResolvedValue(
+      connection({ consentExpiresAt: new Date("2026-09-13T10:00:00.000Z") }),
+    );
+
+    await expect(syncConnection("user-1", "conn-1", NOW)).resolves.toMatchObject({
+      connectionId: "conn-1",
+    });
+    expect(providerMock.fetchTransactions).toHaveBeenCalled();
+  });
+
+  it("syncs when no expiry was ever recorded, rather than treating null as expired", async () => {
+    // Connections created before the provider returned an expiry have null here. Reading that
+    // as "expired" would switch the feature off for every one of them.
+    prismaMock.bankConnection.findFirst.mockResolvedValue(connection({ consentExpiresAt: null }));
+
+    await expect(syncConnection("user-1", "conn-1", NOW)).resolves.toMatchObject({
+      connectionId: "conn-1",
+    });
+    expect(providerMock.fetchTransactions).toHaveBeenCalled();
+  });
+
+  it("treats an expiry exactly at now as expired", async () => {
+    prismaMock.bankConnection.findFirst.mockResolvedValue(connection({ consentExpiresAt: NOW }));
+
+    await expect(syncConnection("user-1", "conn-1", NOW)).rejects.toBeInstanceOf(
+      ConsentExpiredError,
+    );
+  });
+});
