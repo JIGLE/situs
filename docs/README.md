@@ -51,6 +51,8 @@ under `tests/`.
 
 ## Security
 
+- [Data protection](DATA_PROTECTION.md) — the Article 30 record: what personal data is held,
+  which fields are encrypted, who else receives it, how long it is kept, and the known gaps
 - [Security guide](SECURITY.md) — HMAC enforcement, init endpoint hardening, secrets
 - [Security testing](SECURITY_TESTING.md)
 - [CSP nonce implementation](CSP_NONCE_IMPLEMENTATION.md)
