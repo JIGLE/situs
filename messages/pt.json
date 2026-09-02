@@ -1378,8 +1378,8 @@
         "subject": "Prazo do recibo de renda termina amanhã — {property}",
         "body": "É necessário emitir um recibo de renda para {tenant} em {property} (pagamento de {amount}) até amanhã, para cumprir o prazo legal de 5 dias."
       },
-      "footer": "Está a receber este email porque as notificações por email estão ativadas nas suas definições da Lares.",
-      "viewInApp": "Ver na Lares"
+      "footer": "Está a receber este email porque as notificações por email estão ativadas nas suas definições do Situs.",
+      "viewInApp": "Ver no Situs"
     }
   },
   "owners": {
@@ -2152,7 +2152,7 @@
     "banner": "Modo Demo – As alterações não são guardadas",
     "exitButton": "Sair do Demo",
     "preparing": "A preparar o ambiente de demonstração...",
-    "title": "Lares Demo",
+    "title": "Situs Demo",
     "readOnly": "Esta funcionalidade é apenas de leitura no modo demo",
     "changesNotSaved": "Modo demo: as alterações não são guardadas",
     "perspectiveOwner": "Proprietário",

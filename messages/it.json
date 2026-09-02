@@ -1378,8 +1378,8 @@
         "subject": "Scadenza ricevuta affitto domani — {property}",
         "body": "È necessario emettere una ricevuta d'affitto per {tenant} presso {property} (pagamento di {amount}) entro domani per rispettare il termine legale di 5 giorni."
       },
-      "footer": "Ricevi questa email perché le notifiche via email sono attivate nelle tue impostazioni Lares.",
-      "viewInApp": "Vedi in Lares"
+      "footer": "Ricevi questa email perché le notifiche via email sono attivate nelle tue impostazioni Situs.",
+      "viewInApp": "Vedi su Situs"
     }
   },
   "owners": {
@@ -2152,7 +2152,7 @@
     "banner": "Modalità demo – Le modifiche non vengono salvate",
     "exitButton": "Esci dalla demo",
     "preparing": "Preparazione ambiente demo...",
-    "title": "Demo Lares",
+    "title": "Demo Situs",
     "readOnly": "Questa funzionalità è in sola lettura in modalità demo",
     "changesNotSaved": "Modalità demo: le modifiche non vengono salvate",
     "perspectiveOwner": "Proprietario",

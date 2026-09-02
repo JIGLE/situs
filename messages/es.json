@@ -1378,8 +1378,8 @@
         "subject": "Plazo del recibo de alquiler vence mañana — {property}",
         "body": "Debe emitirse un recibo de alquiler para {tenant} en {property} (pago de {amount}) antes de mañana para cumplir con el plazo legal de 5 días."
       },
-      "footer": "Recibe este correo porque las notificaciones por correo están activadas en su configuración de Lares.",
-      "viewInApp": "Ver en Lares"
+      "footer": "Recibe este correo porque las notificaciones por correo están activadas en su configuración de Situs.",
+      "viewInApp": "Ver en Situs"
     }
   },
   "owners": {
@@ -2152,7 +2152,7 @@
     "banner": "Modo Demo – Los cambios no se guardan",
     "exitButton": "Salir del Demo",
     "preparing": "Preparando el entorno de demostración...",
-    "title": "Lares Demo",
+    "title": "Situs Demo",
     "readOnly": "Esta funcionalidad es solo de lectura en modo demo",
     "changesNotSaved": "Modo demo: los cambios no se guardan",
     "perspectiveOwner": "Propietario",

@@ -1378,8 +1378,8 @@
         "subject": "Recibo de renda deadline tomorrow — {property}",
         "body": "A rent receipt for {tenant} at {property} (payment of {amount}) must be issued by tomorrow to meet the 5-day legal deadline."
       },
-      "footer": "You're receiving this because email notifications are enabled in your Lares settings.",
-      "viewInApp": "View in Lares"
+      "footer": "You're receiving this because email notifications are enabled in your Situs settings.",
+      "viewInApp": "View in Situs"
     }
   },
   "owners": {
@@ -2152,7 +2152,7 @@
     "banner": "Demo Mode – Changes are not saved",
     "exitButton": "Exit Demo",
     "preparing": "Preparing demo environment...",
-    "title": "Lares Demo",
+    "title": "Situs Demo",
     "readOnly": "This feature is read-only in demo mode",
     "changesNotSaved": "Demo mode: changes are not saved",
     "perspectiveOwner": "Owner",
