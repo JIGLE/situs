@@ -17,24 +17,20 @@ Add a doc → add its link here, in the same commit.
 
 ## Pilot readiness
 
-- [V1 checklist](V1_CHECKLIST.md) — living tracker; what is open and what closed it
-- [V1 readiness assessment](V1_READINESS.md) — the dated review that produced the checklist
+- [V1 readiness assessment](V1_READINESS.md) — the state of the product against the V1 brief
 
-Both carry an **integration status block**. Those lines are claims with an expiry: the commit that
-makes one false is the commit that rewrites it.
+It carries an **integration status block**. Those lines are claims with an expiry: the commit that
+makes one false is the commit that rewrites it. `V1_CHECKLIST.md` previously read alongside it as a
+separate tracker; every item it still listed as open had closed, so it went rather than being
+half-corrected.
 
 ## Strategy & audits
 
-Dated, point-in-time, and still load-bearing where noted:
-
-- [Product audit 2026](PRODUCT_AUDIT_2026.md) — product strategy, habit model, North Star.
-  §5 is cited by `CLAUDE.md` for PII wiring status
-- [UX audit 2026](UX_AUDIT_2026.md) — canonical IA and the reconciled backlog table
-- [Architecture & governance audit 2026](ARCHITECTURE_GOVERNANCE_AUDIT_2026.md) — per-screen
-  density plus docs-vs-code drift
-- [Mobile UX audit](MOBILE_UX_AUDIT.md) — mobile-first behavioural findings
-- [UX improvement plan](UX_IMPROVEMENT_PLAN.md)
-- [Design award](DESIGN_AWARD.md) — visual/token craft loop and scorecard
+Deleted, not archived — hygiene rule 1. The 2026 product, UX, architecture/governance, mobile and
+design audits were point-in-time records, and several had drifted into asserting that shipped work
+was still outstanding, which is worse than having no document. `git log --diff-filter=D --name-only`
+recovers any of them. What outlived them lives in `ROADMAP.md`'s Decisions Log and in the contracts
+under `tests/`.
 
 ## Deployment
 
