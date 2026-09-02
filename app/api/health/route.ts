@@ -55,7 +55,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const dbLatency = Date.now() - dbStart;
 
     // Check email service configuration
-    const emailConfigured = !!(process.env.SENDGRID_API_KEY && process.env.FROM_EMAIL);
+    const emailConfigured = !!(process.env.SMTP_HOST && process.env.FROM_EMAIL);
 
     return NextResponse.json(
       {
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           },
           email: {
             status: emailConfigured ? "configured" : "not_configured",
-            provider: "sendgrid",
+            provider: "smtp",
           },
         },
         response_time_ms: Date.now() - startTime,

@@ -26,7 +26,7 @@ package, Docker and env identifiers all read `situs` with Helm dropped for a sin
 | Auth       | NextAuth.js v4 (Google OAuth + credentials)     |
 | UI         | shadcn/ui + Tailwind CSS v4 + Radix UI + Framer |
 | Validation | Zod v4                                          |
-| Email      | SendGrid                                        |
+| Email      | SMTP (Brevo by default; any provider)           |
 | Testing    | Vitest (unit/integration) + Playwright (E2E)    |
 | i18n       | next-intl (PT / EN / ES / IT)                   |
 | Payments   | Stripe (card + SEPA Direct Debit)               |
@@ -323,7 +323,7 @@ signed in to a publicly reachable instance became an administrator, and a live b
 _requires_ public reachability for the consent callback. The gate fails closed: a database it
 cannot read refuses the sign-in rather than admitting it.
 
-Optional: `SENDGRID_API_KEY`, `STRIPE_SECRET_KEY`, `REDIS_URL`
+Optional: `SMTP_HOST` (plus `SMTP_PORT`/`SMTP_USER`/`SMTP_PASS`), `STRIPE_SECRET_KEY`, `REDIS_URL`
 
 Optional (live bank connection — PSD2 account information via Enable Banking):
 `ENABLE_BANKING_APPLICATION_ID`, plus the RSA key — `ENABLE_BANKING_PRIVATE_KEY_FILE` pointing at a

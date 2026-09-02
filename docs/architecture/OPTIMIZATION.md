@@ -147,7 +147,7 @@ node_modules directory:           ~450 MB (after optimizations)
   ├─ @radix-ui components:        ~5 MB
   ├─ better-sqlite3:              ~5 MB
   ├─ next-auth:                   ~2 MB
-  ├─ @sendgrid/mail:              ~1 MB
+  ├─ nodemailer:                  ~1 MB
   └─ other utilities/deps:        ~300 MB
 .next/standalone + static:       ~18 MB
 public + assets:                  <1 MB
@@ -322,7 +322,7 @@ Previous version remains available in GHCR registry.
 - ✅ Health check passes: `curl http://localhost:3000/api/health`
 - ✅ Database connectivity works
 - ✅ Authentication flow functions (Google OAuth)
-- ✅ Email sending works (SendGrid)
+- ✅ Email sending works (SMTP)
 - ✅ Webhooks receive correctly
 - ✅ Bundle analyzer runs: `ANALYZE=true npm run build`
 

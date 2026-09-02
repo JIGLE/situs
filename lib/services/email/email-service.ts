@@ -2,7 +2,12 @@
 import { getPrismaClient } from "@/lib/services/database/database";
 import type { PrismaClient } from "@prisma/client";
 import { logger } from "@/lib/utils/logger";
-import { getSecret, isEnabled } from "@/lib/utils/env";
+import {
+  createMailTransport,
+  isMailConfigured,
+  type MailSendResult,
+  type MailTransport,
+} from "./transport";
 import { randomInt } from "crypto";
 
 const log = logger.child("email-service");
@@ -176,85 +181,30 @@ export class EmailService {
     return EmailService.instance;
   }
 
-  // Lazily loaded SendGrid client instance (optional)
-  private sendGridClient?: {
-    setApiKey?: (key: string) => void;
-    send: (msg: unknown) => Promise<unknown>;
-  };
+  /**
+   * The mail transport, built on first use. Null while this instance has no SMTP configured,
+   * which is a valid state: the app starts and simply does not send.
+   */
+  private transport?: MailTransport;
 
   private initialize() {
-    const key = getSecret("SENDGRID_API_KEY");
-    const enabled = isEnabled("ENABLE_SENDGRID") || !!key;
-    if (key) {
-      // Presence of a key does not mean the client is loaded — client will be created on first use
-      // Keep isInitialized=false here; it will be set when the client is actually loaded in `ensureClient()`.
-      this.isInitialized = false;
-    } else if (enabled) {
-      log.warn(
-        "ENABLE_SENDGRID is true but SENDGRID_API_KEY is not set; email service will remain disabled",
-      );
-      this.isInitialized = false;
-    } else {
-      this.isInitialized = false;
+    // Configuration is only read here; the transport itself is built on first send, so an
+    // instance that never sends mail never constructs an SMTP client.
+    if (!isMailConfigured()) {
+      log.debug("No SMTP_HOST configured; email service is disabled");
     }
+    this.isInitialized = false;
   }
 
   public isReady(): boolean {
-    return this.isInitialized && !!getSecret("SENDGRID_API_KEY");
+    return this.isInitialized && isMailConfigured();
   }
 
-  // Ensure the SendGrid client is loaded and configured
+  /** Build the transport on first use. A missing configuration leaves it undefined. */
   private async ensureClient(): Promise<void> {
-    if (this.sendGridClient) return;
-    const key = getSecret("SENDGRID_API_KEY");
-    if (!key) {
-      // Not configured
-      return;
-    }
-    try {
-      // Dynamic import first so test-runner mocks (vi.doMock) are applied for ESM imports.
-      let mod: { default?: unknown } | undefined;
-      try {
-        mod = await import("@sendgrid/mail");
-      } catch (impErr) {
-        // Fallback to require() for environments that need CJS resolution
-        try {
-          mod = require("@sendgrid/mail");
-        } catch {
-          throw impErr;
-        }
-      }
-      const maybeClient = mod && (mod.default || mod);
-      if (
-        maybeClient &&
-        typeof maybeClient === "object" &&
-        "send" in maybeClient &&
-        typeof (maybeClient as { send?: unknown }).send === "function"
-      ) {
-        this.sendGridClient = maybeClient as {
-          setApiKey?: (key: string) => void;
-          send: (msg: unknown) => Promise<unknown>;
-        };
-      }
-      if (this.sendGridClient) {
-        // Try to set API key, but don't let provider validation break our initialization
-        try {
-          if (typeof this.sendGridClient.setApiKey === "function") {
-            this.sendGridClient.setApiKey(key);
-          }
-        } catch (e) {
-          // swallow provider validation errors (tests often use fake keys)
-          log.debug("SendGrid setApiKey threw, ignoring in test/dev", {
-            error: (e as Error).message,
-          });
-        }
-        this.isInitialized = true;
-      }
-    } catch (err) {
-      log.error("Failed to load SendGrid client dynamically:", err && (err as Error).message);
-      this.sendGridClient = undefined;
-      this.isInitialized = false;
-    }
+    if (this.transport) return;
+    this.transport = createMailTransport() ?? undefined;
+    this.isInitialized = !!this.transport;
   }
 
   /**
@@ -311,50 +261,36 @@ export class EmailService {
       dynamicTemplateData: emailData.dynamicTemplateData,
     } as const;
 
-    // Ensure SendGrid client is ready
     await this.ensureClient();
-    if (!this.sendGridClient) {
-      throw new Error("SendGrid client not configured");
+    if (!this.transport) {
+      throw new Error("Mail transport not configured (set SMTP_HOST)");
     }
-    // Debug: report client presence for tests
+
+    let result: MailSendResult;
     try {
-      console.debug(
-        "EmailService.sendEmailInternal: sendGridClient present=",
-        !!this.sendGridClient,
-        "sendType=",
-        typeof this.sendGridClient?.send,
-      );
-    } catch {}
-    let result: unknown;
-    try {
-      result = await this.sendGridClient.send(msg);
-      try {
-        console.debug("EmailService.sendEmailInternal: send result=", result);
-      } catch {}
+      result = await this.transport.send({
+        to: msg.to,
+        from: msg.from,
+        subject: msg.subject,
+        html: msg.html,
+        text: msg.text,
+      });
     } catch (err) {
-      // Log error for diagnostics and rethrow so retry logic handles it
-      log.error("SendGrid send threw error", {
+      // Logged for diagnostics and rethrown, so the retry loop above decides what happens next.
+      log.error("SMTP send threw", {
         error: err instanceof Error ? err.message : String(err),
       });
       throw err;
     }
-    let messageId: string | undefined;
 
-    // Helper to safely extract headers from possible send result shapes
-    const getHeaders = (r: unknown): Record<string, string> | undefined => {
-      if (!r || typeof r !== "object") return undefined;
-      return (r as { headers?: Record<string, string> }).headers;
-    };
-
-    if (Array.isArray(result) && result.length > 0) {
-      const headers = getHeaders(result[0]);
-      const maybeMsgId = headers?.["x-message-id"];
-      if (typeof maybeMsgId === "string") messageId = maybeMsgId;
-    } else {
-      const headers = getHeaders(result);
-      const maybeMsgId = headers?.["x-message-id"];
-      if (typeof maybeMsgId === "string") messageId = maybeMsgId;
+    // A provider that accepts the envelope but rejects every recipient has not sent anything.
+    // Treated as a failure rather than a silent success, which is how a bounced reminder used
+    // to look identical to a delivered one.
+    if (result.accepted.length === 0 && result.rejected.length > 0) {
+      throw new Error(`All recipients rejected: ${result.rejected.join(", ")}`);
     }
+
+    const messageId: string | undefined = result.messageId;
 
     return { success: true, messageId };
   }
@@ -372,15 +308,9 @@ export class EmailService {
     error?: string;
     attempts?: number;
   }> {
-    // Ensure the client is loaded if a key is present but client not yet created.
-    if (!this.sendGridClient) {
-      const key = getSecret("SENDGRID_API_KEY");
-      if (key) {
-        await this.ensureClient();
-      }
-    }
+    await this.ensureClient();
 
-    if (!this.isInitialized || !this.sendGridClient) {
+    if (!this.isInitialized || !this.transport) {
       return {
         success: false,
         error: "Email service not configured",

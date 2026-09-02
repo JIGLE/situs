@@ -103,22 +103,26 @@ clear here.
 
 A self-hosted instance shares data with a service only when that service is configured.
 
-| Recipient      | Receives                                                 | When                           | Location                  |
-| -------------- | -------------------------------------------------------- | ------------------------------ | ------------------------- |
-| Enable Banking | Bank authorisation; returns account and transaction data | Only where a bank is connected | EEA                       |
-| Stripe         | Subscription billing details                             | Only where billing is enabled  | EEA                       |
-| SendGrid       | Recipient address and message body                       | Only where email is configured | Check your account region |
-| Portuguese AT  | Rent receipt filings                                     | Only on submission             | Portugal                  |
-| Spanish AEAT   | NRUA / Modelo 179 filings                                | Only on submission             | Spain                     |
+| Recipient      | Receives                                                 | When                           | Location     |
+| -------------- | -------------------------------------------------------- | ------------------------------ | ------------ |
+| Enable Banking | Bank authorisation; returns account and transaction data | Only where a bank is connected | EEA          |
+| Stripe         | Subscription billing details                             | Only where billing is enabled  | EEA          |
+| Brevo          | Recipient address and message body                       | Only where email is configured | France (EEA) |
+| Portuguese AT  | Rent receipt filings                                     | Only on submission             | Portugal     |
+| Spanish AEAT   | NRUA / Modelo 179 filings                                | Only on submission             | Spain        |
 
 **Enable Banking is the licensed AISP**, which is why the instance needs no PSD2 licence and no
 eIDAS certificate. Access is read-only account information: account details and transactions.
 There is no payment-initiation scope anywhere in the adapter, and adding one would be a
 different regulatory undertaking.
 
-**Third-country transfers.** None are intended. All named processors operate in the EEA; SendGrid's
-region depends on the account, and an operator sending mail through a US region should satisfy
-themselves about the transfer basis.
+**Third-country transfers.** None are intended, and none are made under the default
+configuration: Enable Banking, Brevo and Stripe all operate in the EEA. Mail moved from
+SendGrid to Brevo partly for this reason — SendGrid's region depended on the account, so the
+transfer basis was the operator's to establish. It no longer is.
+
+That holds only for the default. The transport is plain SMTP, so an operator who points
+`SMTP_HOST` at a non-EEA provider reintroduces the question, and it becomes theirs to answer.
 
 ## 5. Retention
 
@@ -209,5 +213,5 @@ Listed rather than left for a reader to discover.
 - **`BankTransaction.reference` is free text held in plaintext** for two years. It is read by
   the matching engine, so encrypting it would cost the reference-month parsing that makes
   matching work. The mitigation is the retention period, not the storage.
-- **SendGrid region is not asserted** by the app; an operator using a US region should check
-  their transfer basis.
+- **The SMTP host is not constrained** to the EEA. The default (Brevo) is French, but nothing
+  stops `SMTP_HOST` pointing elsewhere, and the app does not check.

@@ -135,13 +135,22 @@ const result = await emailService.sendEmail(
 
 ## Production Recommendations
 
-### SendGrid Rate Limits
+### Provider send limits
 
-SendGrid free tier: **100 emails/day**
+The app sends over SMTP, so the ceiling is whatever your provider allows rather than anything
+Situs enforces. For the ones worth considering:
 
-- Consider implementing application-level rate limiting
-- Queue emails during peak usage
-- Monitor daily send volume
+| Provider                       | Free tier                                       |
+| ------------------------------ | ----------------------------------------------- |
+| Brevo (default suggestion, EU) | 300/day                                         |
+| Resend                         | 3,000/month, 100/day                            |
+| MailerSend                     | 3,000/month                                     |
+| Amazon SES                     | none — ~€0.10 per 1,000                         |
+| SendGrid                       | **none.** Retired July 2025; $19.95/month floor |
+
+For context on whether this matters: a landlord with ten units sends on the order of tens of
+emails a month. Every free tier above is one to two orders of magnitude clear of that. If you
+are close to a cap, the retry logic below is not your problem — your send volume is.
 
 ### Monitoring Setup
 
@@ -151,48 +160,42 @@ SendGrid free tier: **100 emails/day**
 
 ### Environment Variables
 
-Required:
-
 ```bash
-SENDGRID_API_KEY=SG.xxx...
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=your-login
+SMTP_PASS=your-smtp-key
 FROM_EMAIL=noreply@yourdomain.com
 ```
 
 ## Troubleshooting
 
-### High Retry Rates
+### High retry rates
 
-**Symptoms**: Most emails require 2+ attempts
+**Symptoms**: most emails need two or more attempts.
 
-**Causes**:
+**Causes**: network instability; provider degradation; hitting a send limit.
 
-- Network instability
-- SendGrid API degradation
-- Rate limiting (too many concurrent sends)
+**Solutions**: increase `baseDelayMs` to space retries out; queue sends; check your provider's
+dashboard for a daily cap you are bumping against.
 
-**Solutions**:
+### Retry exhaustion
 
-- Increase `baseDelayMs` to space out retries
-- Implement request queuing
-- Upgrade SendGrid plan for higher rate limits
+**Symptoms**: emails consistently fail after three retries.
 
-### Retry Exhaustion
+**Causes**: wrong credentials (`SMTP_USER` / `SMTP_PASS`); an unverified sending domain; the
+wrong port or TLS mode; invalid recipient addresses.
 
-**Symptoms**: Emails consistently fail after 3 retries
+Two that bite specifically on SMTP and produce confusing symptoms:
 
-**Causes**:
+- **`FROM_EMAIL` on an unverified domain.** Providers reject the envelope rather than the
+  connection, so the credentials look fine and every send fails.
+- **Port and TLS mismatch.** 465 is implicit TLS; 587 and 25 start plaintext and upgrade via
+  STARTTLS. The transport derives this from the port for exactly this reason — a mismatch
+  hangs until timeout rather than reporting an error.
 
-- Invalid API key (check `SENDGRID_API_KEY`)
-- Invalid email addresses
-- Template not found
-- Permanent SendGrid account issue
-
-**Solutions**:
-
-- Verify SendGrid account status
-- Check API key validity
-- Validate email addresses before sending
-- Review SendGrid dashboard for account alerts
+**Solutions**: verify the sending domain with your provider, including SPF and DKIM records;
+confirm host, port and credentials; validate recipient addresses before sending.
 
 ## Testing
 
@@ -201,7 +204,7 @@ FROM_EMAIL=noreply@yourdomain.com
 ```typescript
 describe("Email Retry Logic", () => {
   it("should retry on rate limit errors", async () => {
-    // Mock SendGrid to fail twice, then succeed
+    // Mock the transport to fail twice, then succeed
     const sendStub = jest
       .fn()
       .mockRejectedValueOnce(new Error("Rate limit exceeded"))

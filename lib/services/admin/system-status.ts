@@ -398,7 +398,7 @@ async function bankProviderCheck(): Promise<StatusCheck> {
 }
 
 function emailCheck(): StatusCheck {
-  return envSet("SENDGRID_API_KEY")
+  return envSet("SMTP_HOST")
     ? { id: "email", group: "integration", severity: "ok", state: "configured" }
     : {
         id: "email",
@@ -406,7 +406,7 @@ function emailCheck(): StatusCheck {
         severity: "warning",
         state: "not_configured",
         detail: "Portal invitations and reminders will not be delivered.",
-        remedy: "Set SENDGRID_API_KEY.",
+        remedy: "Set SMTP_HOST (plus SMTP_USER and SMTP_PASS for an authenticated relay).",
       };
 }
 

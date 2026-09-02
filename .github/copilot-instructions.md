@@ -15,7 +15,7 @@
 | State      | React Context + custom hooks (no Redux/Zustand)  |
 | Animations | framer-motion                                    |
 | Icons      | lucide-react                                     |
-| Email      | SendGrid (`@sendgrid/mail`)                      |
+| Email      | SMTP (`nodemailer`); Brevo by default            |
 | Payments   | Stripe                                           |
 | Unit tests | Vitest v4 + jsdom + Testing Library              |
 | E2E tests  | Playwright (Chromium + mobile Chrome)            |
@@ -163,7 +163,7 @@ lib/
   services/
     database/<entity>/  # Prisma-based services — one directory per entity
     auth/               # NextAuth config, middleware, portal auth
-    email/              # SendGrid integration
+    email/              # SMTP transport + email service
     notifications/      # Notification automation
   hooks/              # Custom React hooks (use-*.ts)
   contexts/           # React context providers

@@ -41,7 +41,7 @@ Combined check. Returns database and email status plus uptime and a response tim
   "environment": "production",
   "checks": {
     "database": { "status": "healthy", "latency_ms": 12 },
-    "email": { "status": "configured", "provider": "sendgrid" }
+    "email": { "status": "configured", "provider": "smtp" }
   },
   "response_time_ms": 15
 }

@@ -25,8 +25,9 @@ test.describe("Email Endpoints", () => {
 
 test.describe("Email Configuration", () => {
   test("webhook endpoints should be accessible", async ({ request }) => {
-    // SendGrid webhook - should accept POST even without signature (returns error)
-    const response = await request.post("/api/webhooks/sendgrid", {
+    // Brevo webhook — unauthenticated POST must be refused, since Brevo does not sign
+    // requests and the shared secret is the only thing standing in front of this route.
+    const response = await request.post("/api/webhooks/brevo", {
       data: [
         {
           event: "delivered",

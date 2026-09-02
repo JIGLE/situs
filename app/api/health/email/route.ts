@@ -1,28 +1,31 @@
 import { NextResponse } from "next/server";
 
+import { readSmtpConfig } from "@/lib/services/email/transport";
+
 export const runtime = "nodejs";
 
 export async function GET(): Promise<NextResponse> {
   const startTime = Date.now();
 
   try {
-    // Check SendGrid configuration
-    const apiKey = process.env.SENDGRID_API_KEY;
+    // Provider-agnostic: the app sends over SMTP, so what matters is a reachable host and a
+    // sender address, not which vendor is behind it.
+    const smtp = readSmtpConfig();
     const fromEmail = process.env.FROM_EMAIL;
 
-    const hasApiKey = !!apiKey && apiKey.length > 0;
+    const hasSmtp = smtp !== null;
     const hasFromEmail = !!fromEmail && fromEmail.includes("@");
-    const isConfigured = hasApiKey && hasFromEmail;
+    const isConfigured = hasSmtp && hasFromEmail;
 
     if (!isConfigured) {
       return NextResponse.json(
         {
           status: "degraded",
           timestamp: new Date().toISOString(),
-          provider: "sendgrid",
+          provider: "smtp",
           configured: false,
           issues: [
-            !hasApiKey && "Missing SENDGRID_API_KEY",
+            !hasSmtp && "Missing SMTP_HOST",
             !hasFromEmail && "Missing or invalid FROM_EMAIL",
           ].filter(Boolean),
           response_time_ms: Date.now() - startTime,
@@ -36,7 +39,10 @@ export async function GET(): Promise<NextResponse> {
       {
         status: "healthy",
         timestamp: new Date().toISOString(),
-        provider: "sendgrid",
+        provider: "smtp",
+        // The host, never the credentials: this endpoint is unauthenticated so an uptime
+        // checker can reach it.
+        host: smtp?.host,
         configured: true,
         from_email: fromEmail,
         response_time_ms: Date.now() - startTime,
