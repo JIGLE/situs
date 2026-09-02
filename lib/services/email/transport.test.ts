@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { isMailConfigured, readSmtpConfig } from "./transport";
+import { createMailTransport, isMailConfigured, readSmtpConfig, SmtpTransport } from "./transport";
 
 /**
  * The config reader is where a provider swap actually happens, so its edge cases are the ones
@@ -68,5 +68,37 @@ describe("readSmtpConfig", () => {
     ]) {
       expect(readSmtpConfig({ SMTP_HOST: host })).toMatchObject({ host, port: 587 });
     }
+  });
+});
+
+/**
+ * Everything above tests our own config reading, and the email-service tests inject a fake
+ * transport — so nothing yet touches the real nodemailer. That gap matters here specifically:
+ * this dependency was moved across two majors (7 -> 9) to escape six high-severity advisories
+ * that had no fix inside the `^7` range next-auth's optional peer pinned us to.
+ *
+ * `createTransport` does not open a socket — nodemailer connects lazily on the first send — so
+ * this exercises the real module's API surface without needing a mail server.
+ */
+describe("the real nodemailer transport", () => {
+  it("constructs against the installed major without throwing", async () => {
+    const transport = createMailTransport({ SMTP_HOST: "smtp.example.test", SMTP_PORT: "587" });
+    expect(transport).toBeInstanceOf(SmtpTransport);
+
+    // Reaches nodemailer.createTransport through the private lazy getter.
+    const internals = transport as unknown as {
+      ensureTransporter: () => Promise<{ sendMail: unknown }>;
+    };
+    const transporter = await internals.ensureTransporter();
+    expect(typeof transporter.sendMail).toBe("function");
+  });
+
+  it("is running a version outside the advisory range", async () => {
+    // The advisories cover <=9.0.0. Asserting the floor here means a future careless downgrade
+    // fails a test rather than only tripping the audit gate.
+    const { version } = await import("nodemailer/package.json");
+    const [major, minor, patch] = version.split(".").map(Number);
+    expect(major).toBeGreaterThanOrEqual(9);
+    if (major === 9 && minor === 0) expect(patch).toBeGreaterThan(0);
   });
 });

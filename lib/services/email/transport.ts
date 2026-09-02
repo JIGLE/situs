@@ -2,8 +2,8 @@
  * The mail transport: one SMTP client, any provider.
  *
  * This replaces a direct `@sendgrid/mail` dependency. Twilio retired SendGrid's free tier in
- * July 2025 — accounts that were not upgraded were paused, and the floor is now $19.95/month —
- * so a self-hosted instance had no working email path at all unless its operator paid for one.
+ * July 2025 — accounts that were not upgraded were paused, and the floor is now about 20 USD a
+ * month — so a self-hosted instance had no working email path unless its operator paid for one.
  *
  * SMTP rather than another vendor SDK, because every candidate speaks it: Brevo, Resend,
  * MailerSend, SMTP2GO, Amazon SES, and SendGrid itself at `smtp.sendgrid.net`. Swapping

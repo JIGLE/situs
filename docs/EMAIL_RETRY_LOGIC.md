@@ -140,13 +140,13 @@ const result = await emailService.sendEmail(
 The app sends over SMTP, so the ceiling is whatever your provider allows rather than anything
 Situs enforces. For the ones worth considering:
 
-| Provider                       | Free tier                                       |
-| ------------------------------ | ----------------------------------------------- |
-| Brevo (default suggestion, EU) | 300/day                                         |
-| Resend                         | 3,000/month, 100/day                            |
-| MailerSend                     | 3,000/month                                     |
-| Amazon SES                     | none — ~€0.10 per 1,000                         |
-| SendGrid                       | **none.** Retired July 2025; $19.95/month floor |
+| Provider                       | Free tier                                        |
+| ------------------------------ | ------------------------------------------------ |
+| Brevo (default suggestion, EU) | 300/day                                          |
+| Resend                         | 3,000/month, 100/day                             |
+| MailerSend                     | 3,000/month                                      |
+| Amazon SES                     | none — ~€0.10 per 1,000                          |
+| SendGrid                       | **none.** Retired July 2025; ~20 USD/month floor |
 
 For context on whether this matters: a landlord with ten units sends on the order of tens of
 emails a month. Every free tier above is one to two orders of magnitude clear of that. If you
