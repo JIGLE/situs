@@ -140,6 +140,15 @@ export async function allocateReceipt(receiptId: string): Promise<AllocationPlan
   const now = new Date();
 
   await prisma.$transaction(async (tx) => {
+    // The row id the receipt is back-linked to, captured as the first entry resolves. It cannot be
+    // read off `plan.entries[0].period` afterwards: an engine-created future period carries no `id`
+    // until the loop below inserts it, so a receipt whose first entry is one of those — a tenant
+    // paying a month ahead, where no existing period is short — would take `undefined` and leave
+    // `Receipt.rentPeriodId` null while `referenceMonth` was set. Nothing downstream complains,
+    // which is why it survived: the ledger rows are all correct, only the receipt's own pointer
+    // back into them is missing.
+    let primaryPeriodId: string | undefined;
+
     for (const entry of plan.entries) {
       // Engine-created future periods materialize here.
       let periodId = entry.period.id;
@@ -164,6 +173,7 @@ export async function allocateReceipt(receiptId: string): Promise<AllocationPlan
       } else {
         periodRow = await tx.rentPeriod.findUniqueOrThrow({ where: { id: periodId } });
       }
+      primaryPeriodId ??= periodId;
 
       await tx.paymentAllocation.create({
         data: {
@@ -203,7 +213,7 @@ export async function allocateReceipt(receiptId: string): Promise<AllocationPlan
       where: { id: receipt.id },
       data: {
         leaseId,
-        rentPeriodId: plan.entries[0].period.id ?? undefined,
+        rentPeriodId: primaryPeriodId,
         referenceMonth: `${primary.year}-${String(primary.month).padStart(2, "0")}`,
       },
     });

@@ -189,3 +189,44 @@ describe("allocateReceipt — an unlinked receipt is resolved, never guessed", (
     expect(transactionSpy).not.toHaveBeenCalled();
   });
 });
+
+describe("allocateReceipt — the receipt points at the period it was actually allocated to", () => {
+  it("back-links to the row it created when the first entry is a future period", async () => {
+    // Every existing period is settled, so the waterfall has nothing to fill and pass 2 of the
+    // engine invents a future one: the tenant is paying a month ahead. That entry carries no
+    // `id` — the row does not exist until the loop inserts it — so reading the id back off the
+    // PLAN yields undefined, and the receipt keeps a referenceMonth with a null rentPeriodId.
+    prismaMock.rentPeriod.findMany.mockResolvedValue([
+      { id: "period-6", year: 2026, month: 6, dueAmount: 1250, allocatedAmount: 1250 },
+    ]);
+    txClient.rentPeriod.create.mockResolvedValue({
+      id: "period-7",
+      dueDate: new Date("2026-07-01T00:00:00.000Z"),
+      dueAmount: 1250,
+      allocatedAmount: 0,
+    });
+
+    await allocateReceipt(RECEIPT_ID);
+
+    // The row was materialized...
+    expect(txClient.rentPeriod.create).toHaveBeenCalled();
+    // ...and the receipt points at THAT row, not at undefined.
+    expect(txClient.receipt.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ rentPeriodId: "period-7", referenceMonth: "2026-07" }),
+      }),
+    );
+  });
+
+  it("back-links to the existing row when the first entry is an open period", async () => {
+    // The unchanged case, pinned so the fix cannot regress it in the other direction.
+    await allocateReceipt(RECEIPT_ID);
+
+    expect(txClient.rentPeriod.create).not.toHaveBeenCalled();
+    expect(txClient.receipt.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ rentPeriodId: "period-6", referenceMonth: "2026-06" }),
+      }),
+    );
+  });
+});
