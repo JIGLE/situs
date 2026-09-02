@@ -62,7 +62,7 @@ services:
 
       # Application Settings
       NODE_ENV: development
-      NEXT_PUBLIC_APP_VERSION: 1.24.0
+      NEXT_PUBLIC_APP_VERSION: 1.25.0
 
     volumes:
       # Hot reload for development
