@@ -113,31 +113,42 @@ Use semantic status tokens instead of Tailwind atomic colours:
 
 ### JS-Accessible Design Tokens
 
-For values required in JavaScript (chart colours, inline styles, animation spring configs), import from `lib/design-tokens.ts`:
+For values required in JavaScript — chart fills, SVG and canvas colours, anywhere a raw hex
+string is needed rather than a class — import from `lib/design-tokens.ts`. It exports one
+`tokens` object plus three lookup helpers:
 
 ```ts
-import { statusColors, surfaces, borderRadius } from "@/lib/design-tokens";
+import { tokens, getPropertyTypeColor, getExpenseCategoryColor } from "@/lib/design-tokens";
 
-const color = statusColors.success; // "#22c55e"
-const bg = surfaces[1]; // "rgba(15, 23, 42, 0.8)"
-const radius = borderRadius.card; // "0.75rem"
+const positive = tokens.success; // "#10B981"
+const slice = getPropertyTypeColor("apartment"); // "#6366F1"
+const bar = getExpenseCategoryColor("utilities"); // "#F59E0B"
 ```
 
-Extend `lib/design-tokens.ts` when new JS-accessible tokens are needed — do not hardcode values in component files.
+The helpers (`getOccupancyColor`, `getPropertyTypeColor`, `getExpenseCategoryColor`) fall back
+to a neutral rather than returning `undefined`, so an unrecognised category still renders.
+
+Extend `lib/design-tokens.ts` when new JS-accessible tokens are needed — do not hardcode values
+in component files. For Tailwind classes prefer the CSS custom-property variants
+(`text-[var(--color-primary)]`) over importing a hex.
 
 ## i18n Conventions
 
-All user-visible strings must be internationalised. The three locale files must stay in sync:
+All user-visible strings must be internationalised. The four locale files must stay in sync:
 
 ```
 messages/en.json   ← source of truth (English)
 messages/pt.json   ← Portuguese
 messages/es.json   ← Spanish
+messages/it.json   ← Italian
 ```
+
+`npm run i18n:check:strict` compares all four and is a blocking hygiene gate, so a key added to
+three of them fails CI.
 
 **Adding a new key:**
 
-1. Add the key to **all three** files simultaneously
+1. Add the key to **all four** files simultaneously
 2. Use nested namespaces matching the component domain: `dashboard.portfolioOverview`, `forms.addTenant`
 3. Use named parameters for dynamic content: `"leaseExpiresSoon": "Lease expires in {days} days"`
 4. Run `npx tsc --noEmit` to verify all `useTranslations()` calls resolve

@@ -20,13 +20,6 @@ pnpm-lock.yaml
 # Static assets
 public/
 
-# Helm charts
-helm/
-release-charts/
-
-# Archived workflows (non-standard YAML)
-docs/archived-workflows/
-
 # Database
 *.db
 *.db-journal

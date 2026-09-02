@@ -602,7 +602,7 @@ Deployment is successful when:
 ## 📚 Key Documentation Links
 
 - **Security**: [SECURITY_TESTING.md](./SECURITY_TESTING.md)
-- **Monitoring**: [MONITORING_SETUP.md](./MONITORING_SETUP.md)
+- **Monitoring**: [MONITORING.md](./MONITORING.md)
 - **Load Testing**: [LOAD_TESTING.md](./LOAD_TESTING.md)
 - **CSRF Integration**: [CSRF_INTEGRATION.md](./CSRF_INTEGRATION.md)
 - **CSP Implementation**: [CSP_NONCE_IMPLEMENTATION.md](./CSP_NONCE_IMPLEMENTATION.md)

@@ -149,6 +149,57 @@ const RETIRED_CLAIMS = [
       "there are four locales — messages/it.json exists and i18n:check:strict enforces it, so a " +
       "contributor following the three-locale claim fails a hygiene gate",
   },
+  {
+    pattern: /three locale files must stay in sync/i,
+    retired: "2026-09-02",
+    because:
+      "the same three-vs-four error one paragraph lower in CONTRIBUTING.md — it listed en/pt/es " +
+      "and told contributors to add each key to 'all three', which fails i18n:check:strict",
+  },
+  {
+    pattern: /statusColors|borderRadius\.card/,
+    retired: "2026-09-02",
+    because:
+      "lib/design-tokens.ts exports `tokens` plus three getters; CONTRIBUTING.md's example " +
+      "imported statusColors, surfaces and borderRadius — 3 of 3 import lines named symbols " +
+      "that do not exist, so the snippet could not compile",
+  },
+  {
+    pattern: /kubectl create secret|as a Kubernetes Secret/i,
+    retired: "2026-09-02",
+    because:
+      "there are no Kubernetes manifests and no Helm chart — both were dropped for a single " +
+      "Docker path, so secrets come from the env file docker-compose reads via env_file",
+  },
+  {
+    pattern: /UPDATE_WEBHOOK_RATE_LIMIT|UPDATE_WEBHOOK_HMAC_ONLY/,
+    retired: "2026-09-02",
+    because:
+      "the /api/updates webhook was removed; docs/SECURITY.md documented rate-limit variables " +
+      "for it seven lines below its own statement that the endpoint is gone, and .env.example " +
+      "declared five more variables no code reads",
+  },
+  {
+    pattern: /graceful-shutdown/,
+    retired: "2026-09-02",
+    because:
+      "lib/utils/graceful-shutdown.ts does not exist and never did in this tree; the monitoring " +
+      "doc documented it with a usage example, imports and all",
+  },
+  {
+    pattern: /comprehensive overview of all API routes/i,
+    retired: "2026-09-02",
+    because:
+      "it documented 26 of 50 domains. The count is now stated explicitly and checked below, " +
+      "because the honest version of this claim is one nothing has to remember to update",
+  },
+  {
+    pattern: /Ensure your reverse proxy or ingress adds these headers/i,
+    retired: "2026-09-02",
+    because:
+      "proxy.ts sets every one of them on every response, including a per-request CSP nonce — " +
+      "an operator following this would have concluded the app shipped with no headers at all",
+  },
 ];
 
 /** Lines allowed to mention a retired claim, because they are the record of its retirement. */

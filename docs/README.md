@@ -58,9 +58,8 @@ under `tests/`.
 
 ## Monitoring
 
-- [Metrics & monitoring](METRICS_AND_MONITORING.md) — structured logging, Prometheus, Grafana
-- [Monitoring setup](MONITORING_SETUP.md)
-- [Monitoring quick reference](MONITORING_QUICK_REFERENCE.md)
+- [Monitoring](MONITORING.md) — health endpoints, the Prometheus-format `/api/metrics`, the
+  structured logger, and what is deliberately not wired (no alerting, no Sentry, no Grafana)
 
 ## Integrations
 
@@ -80,10 +79,8 @@ provider ships", which stopped being true when the Enable Banking adapter landed
 ## UX & accessibility
 
 - [UI consistency guide](UI_CONSISTENCY_GUIDE.md)
-- [Accessibility improvements](ACCESSIBILITY_IMPROVEMENTS.md)
-- [Accessibility quick reference](ACCESSIBILITY_QUICK_REFERENCE.md)
-- [Accessibility testing](ACCESSIBILITY_TESTING.md) — adding axe checks to Playwright
-- [Storybook guide](ux/STORYBOOK_GUIDE.md)
+- [Accessibility](ACCESSIBILITY.md) — WCAG 2.1 AA patterns, and the axe check that already runs
+  in `e2e/situs-a11y.spec.ts`
 
 ## Testing
 
