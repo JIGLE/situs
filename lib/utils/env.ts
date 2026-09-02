@@ -23,7 +23,6 @@ const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   // Feature flags (use 'true' to enable)
   ENABLE_STRIPE: z.string().optional(),
-  ENABLE_SENDGRID: z.string().optional(),
   ENABLE_OAUTH: z.string().optional(),
   ENABLE_DEMO_LOGIN: z.string().optional(),
   // Enforce subscription plan limits (e.g. property count). Off by default so

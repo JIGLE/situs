@@ -109,10 +109,19 @@ function isProductionGated(src: string, index: number): boolean {
  * re-running the revert proof after adding the exemptions.
  *
  * So: the logger call must still be open when the read happens — no `;` between them.
+ *
+ * `log.` is here because `const log = logger.child({ component })` is this repo's idiom, used
+ * in four lib services. No route had used it before, and `app/api/` is the only tree this scans,
+ * so the alias had simply never been met — the first route to use it was reported as a leak
+ * while returning a static body. Note the direction: an unrecognised logger over-reports, it
+ * cannot hide a leak, which is why this was safe to widen. `\b` keeps it from matching
+ * `catalog.error(...)` and friends.
  */
 function isLogCall(src: string, index: number): boolean {
   const window = src.slice(Math.max(0, index - 200), index);
-  const call = window.search(/console\.(error|warn|log)\s*\(|logger\.\w+\s*\(|Logger\.\w+\s*\(/);
+  const call = window.search(
+    /console\.(error|warn|log)\s*\(|\blogger\.\w+\s*\(|\bLogger\.\w+\s*\(|\blog\.\w+\s*\(/,
+  );
   if (call === -1) return false;
   return !window.slice(call).includes(";");
 }

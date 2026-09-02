@@ -95,7 +95,7 @@ the header is ignored entirely. Getting it wrong lets a caller pick their own ra
 | ------------------------------------------- | -------------------------------------------------------------------------------- |
 | `ENABLE_DEMO_LOGIN`                         | `true` enables demo credentials that grant **ADMIN**. Leave unset in production. |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Enables Google sign-in — see below                                               |
-| `SENDGRID_API_KEY`                          | Email delivery                                                                   |
+| `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`       | Email delivery over SMTP (Brevo, Resend, SES — any provider)                     |
 | `STRIPE_SECRET_KEY`, `ENABLE_STRIPE`        | Card / SEPA payments                                                             |
 | `AUTO_DB_INIT`, `AUTO_DB_SCHEMA_SYNC`       | Both default `true`; set `false` to manage schema yourself                       |
 
@@ -339,7 +339,7 @@ self-hosted instance collecting rent by bank transfer needs none of them.
 | -------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | Enable Banking | optional  | live bank movements. Unset, CSV import covers it                                                                                             |
 | Stripe         | optional  | collecting rent by card/SEPA, and subscription billing. Unset, the payment routes answer "not configured" and plan limits are never enforced |
-| SendGrid       | optional  | outbound email. Unset, email is simply not sent                                                                                              |
+| SMTP           | optional  | outbound email, any provider. Unset, email is simply not sent                                                                                |
 | Redis          | optional  | caching                                                                                                                                      |
 | Google OAuth   | optional  | sign-in. Credentials sign-in works without it                                                                                                |
 

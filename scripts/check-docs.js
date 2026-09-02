@@ -200,6 +200,30 @@ const RETIRED_CLAIMS = [
       "proxy.ts sets every one of them on every response, including a per-request CSP nonce — " +
       "an operator following this would have concluded the app shipped with no headers at all",
   },
+  {
+    pattern: /SendGrid free tier: \*\*100 emails\/day\*\*|SendGrid free tier is/i,
+    retired: "2026-09-02",
+    because:
+      "Twilio retired SendGrid's free tier on 2025-05-27 and paused unupgraded accounts on " +
+      "2025-07-26; the floor is now $19.95/month. A self-hosted instance following this doc " +
+      "would have configured a plan that cannot send",
+  },
+  {
+    pattern: /SENDGRID_API_KEY|ENABLE_SENDGRID|@sendgrid\/mail/,
+    retired: "2026-09-02",
+    because:
+      "email goes over SMTP now — one transport, any provider — so the configuration is " +
+      "SMTP_HOST/PORT/USER/PASS. Naming the old variable sends an operator looking for a " +
+      "setting that no code reads",
+  },
+  {
+    pattern: /api\/webhooks\/sendgrid/,
+    retired: "2026-09-02",
+    because:
+      "replaced by /api/webhooks/brevo. Worth knowing why the security note changed with it: " +
+      "SendGrid signed events with ECDSA, Brevo signs nothing, so the new route requires a " +
+      "shared secret instead of verifying a signature",
+  },
 ];
 
 /** Lines allowed to mention a retired claim, because they are the record of its retirement. */

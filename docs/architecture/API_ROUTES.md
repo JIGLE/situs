@@ -248,7 +248,8 @@ error endpoint; it was deleted in PR #352.
 
 ### Webhooks
 
-- `POST /api/webhooks/sendgrid` - SendGrid webhook handler
+- `POST /api/webhooks/brevo` - Brevo delivery-event webhook. Requires `BREVO_WEBHOOK_SECRET`:
+  Brevo does not sign its requests, so a shared secret is the only authentication.
 - `POST /api/webhooks/stripe` - Stripe webhook handler
 
 ### Tenant Portal
@@ -340,6 +341,5 @@ API routes have co-located test files:
 ## Further Documentation
 
 - [Security guide](../SECURITY.md) — auth, HMAC enforcement, secrets
-- [SendGrid webhooks](../integrations/SENDGRID_WEBHOOKS.md)
 - [Deployment Guide](../deployment.md) — Docker
 - [TrueNAS SCALE Guide](../truenas.md)

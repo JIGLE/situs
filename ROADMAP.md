@@ -31,7 +31,7 @@ owner-contact callout, and portfolio building grouping remain in place underneat
 - **Buildings**: Building entity in AppState+context; CRUD API; BuildingsView at `/buildings`; nav entry
 - **Tenant Owner Contact**: `/api/portal/owner-contact` endpoint; tenant "Need help?" callout shows managing owner name, email, and phone (demo + real mode)
 - **Portfolio Building Grouping**: Property list uses canonical Building entity for group headers (grid + table); table view inserts section header rows for multi-unit groups
-- **Email Integration**: SendGrid with templates, bulk sending, delivery tracking, exponential-backoff retry
+- **Email Integration**: SMTP with templates, bulk sending, delivery tracking, exponential-backoff retry
 - **Insights Nav**: Analytics, Reports, Correspondence — accessible from sidebar (owner-only)
 - **Monitoring**: Health endpoints (owner-gated), Prometheus-compatible `/api/metrics`
 - **Compliance**: GDPR audit logging, Iberian tax compliance (PT/ES), admin data-access audit trail

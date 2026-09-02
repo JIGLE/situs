@@ -358,8 +358,10 @@ GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 
 # Email (Optional)
-SENDGRID_API_KEY=your-sendgrid-key
-SENDGRID_FROM_EMAIL=noreply@example.com
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_USER=your-login
+SMTP_PASS=your-smtp-key
+FROM_EMAIL=noreply@example.com
 
 # Payment (Optional)
 STRIPE_SECRET_KEY=your-stripe-secret

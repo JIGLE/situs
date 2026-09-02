@@ -1,76 +1,85 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 
 /**
- * No `vi.mock("@sendgrid/mail")` here, deliberately.
+ * These inject a transport onto the singleton rather than mocking a mail module.
  *
- * Two of them used to sit inside `it()` bodies. Vitest hoists every `vi.mock` to the top of the
- * module regardless of where it is written, so they ran before any test, the second shadowed the
- * first, and each closed over a `mockSend` declared in a scope that did not exist yet. Vitest
- * warns about exactly this and says it will become an error in a future version.
- *
- * Hoisting them would have silenced the warning while keeping calls that never did anything.
- * Both tests reach the send path by assigning `sendGridClient` on the singleton directly — the
- * comment below already says so — so the module mock was never what made them pass. Deleting is
- * the fix; there is nothing to hoist.
+ * The previous version did the same thing with a `sendGridClient` field, having learned the
+ * hard way that a `vi.mock("@sendgrid/mail")` written inside an `it()` body is hoisted to the
+ * top of the module and closes over a variable declared in a scope that does not exist yet.
+ * The transport seam makes that moot: `MailTransport` is one method, so a fake is three lines
+ * and nothing needs the real SMTP module resolved at all.
  */
 vi.resetModules();
 
+import type { MailMessage, MailSendResult, MailTransport } from "./transport";
+
+/** A transport that records what it was asked to send. */
+function fakeTransport(result: Partial<MailSendResult> = {}) {
+  const sent: MailMessage[] = [];
+  const transport: MailTransport = {
+    send: vi.fn(async (message: MailMessage) => {
+      sent.push(message);
+      return {
+        messageId: "message-123",
+        accepted: [message.to].flat(),
+        rejected: [],
+        ...result,
+      };
+    }),
+  };
+  return { transport, sent };
+}
+
+async function loadService() {
+  vi.resetModules();
+  const mod = await import("@/lib/services/email/email-service");
+  return mod.emailService as import("@/lib/services/email/email-service").EmailService;
+}
+
+function inject(service: unknown, transport: MailTransport) {
+  const internals = service as unknown as Record<string, unknown>;
+  internals["transport"] = transport;
+  internals["isInitialized"] = true;
+}
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  delete process.env.SMTP_HOST;
+});
+
 describe("EmailService", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
+  it("is not ready when no SMTP host is configured", async () => {
+    delete process.env.SMTP_HOST;
+    const service = await loadService();
+    expect(service.isReady()).toBe(false);
   });
 
-  it("isReady returns false when SENDGRID_API_KEY not set", async () => {
-    delete process.env.SENDGRID_API_KEY;
-    const mod = await import("@/lib/services/email/email-service");
-    const { EmailService } = mod as {
-      EmailService: typeof import("@/lib/services/email/email-service").EmailService;
-    };
-    // create a new instance directly to avoid singleton reuse
-    const inst = EmailService.getInstance();
-    expect(inst.isReady()).toBe(false);
-  });
+  it("sends a templated email and returns the provider message id", async () => {
+    process.env.SMTP_HOST = "smtp-relay.brevo.test";
+    const service = await loadService();
+    const { transport, sent } = fakeTransport();
+    inject(service, transport);
 
-  it("sendTemplatedEmail succeeds when sendgrid send is mocked and logs are attempted", async () => {
-    // Ensure fresh modules and then mock sendgrid
-    vi.resetModules();
-    const mockSend = vi.fn().mockResolvedValue([{ headers: { "x-message-id": "message-123" } }]);
-    process.env.SENDGRID_API_KEY = "fake-key";
-    const mod = await import("@/lib/services/email/email-service");
-    const { emailService } = mod as {
-      emailService: import("@/lib/services/email/email-service").EmailService;
-    };
-    const testEmailService = emailService as unknown as Record<string, unknown>;
-
-    // Inject mock client directly to avoid external module resolution issues in the test runner
-    testEmailService["sendGridClient"] = { setApiKey: vi.fn(), send: mockSend };
-    testEmailService["isInitialized"] = true;
-
-    const res = await emailService.sendTemplatedEmail(
+    const res = await service.sendTemplatedEmail(
       "rent_reminder",
       "test@example.com",
       { tenantName: "John", propertyAddress: "1 Main St", rentAmount: "100" },
       "user-1",
     );
+
     expect(res.success).toBe(true);
     expect(res.messageId).toBe("message-123");
-    expect(mockSend).toHaveBeenCalled();
+    expect(sent).toHaveLength(1);
+    expect(sent[0].to).toBe("test@example.com");
   });
 
-  it("handles single response object from send and extracts message id", async () => {
-    vi.resetModules();
-    const mockSend = vi.fn().mockResolvedValue({ headers: { "x-message-id": "single-456" } });
-    process.env.SENDGRID_API_KEY = "fake-key";
-    const mod = await import("@/lib/services/email/email-service");
-    const { emailService } = mod as {
-      emailService: import("@/lib/services/email/email-service").EmailService;
-    };
-    const testEmailService = emailService as unknown as Record<string, unknown>;
+  it("carries the rendered subject and body through to the transport", async () => {
+    process.env.SMTP_HOST = "smtp-relay.brevo.test";
+    const service = await loadService();
+    const { transport, sent } = fakeTransport();
+    inject(service, transport);
 
-    testEmailService["sendGridClient"] = { setApiKey: vi.fn(), send: mockSend };
-    testEmailService["isInitialized"] = true;
-
-    const res = await emailService.sendTemplatedEmail(
+    await service.sendTemplatedEmail(
       "maintenance_complete",
       "test2@example.com",
       {
@@ -81,8 +90,47 @@ describe("EmailService", () => {
       },
       "user-2",
     );
-    expect(res.success).toBe(true);
-    expect(res.messageId).toBe("single-456");
-    expect(mockSend).toHaveBeenCalled();
+
+    expect(sent[0].subject).toBeTruthy();
+    // The template interpolates the tenant's name; an un-rendered template would still have
+    // the placeholder here, which is the failure this catches.
+    expect(sent[0].html ?? sent[0].text ?? "").toContain("Sam");
+  });
+
+  /**
+   * The case that used to look like success. An SMTP server can accept the envelope and reject
+   * every recipient — an unknown mailbox, a blocklisted domain — and nodemailer reports that as
+   * a resolved promise with an empty `accepted`. Reading only "did send() throw?" recorded a
+   * rent reminder as delivered when nobody received it.
+   */
+  it("treats a send where every recipient was rejected as a failure", async () => {
+    process.env.SMTP_HOST = "smtp-relay.brevo.test";
+    const service = await loadService();
+    const { transport } = fakeTransport({ accepted: [], rejected: ["test@example.com"] });
+    inject(service, transport);
+
+    const res = await service.sendTemplatedEmail(
+      "rent_reminder",
+      "test@example.com",
+      { tenantName: "John", propertyAddress: "1 Main St", rentAmount: "100" },
+      "user-1",
+    );
+
+    expect(res.success).toBe(false);
+  });
+
+  it("reports failure rather than throwing when the transport is unconfigured", async () => {
+    delete process.env.SMTP_HOST;
+    const service = await loadService();
+
+    const res = await service.sendTemplatedEmail(
+      "rent_reminder",
+      "test@example.com",
+      { tenantName: "John", propertyAddress: "1 Main St", rentAmount: "100" },
+      "user-1",
+    );
+
+    expect(res.success).toBe(false);
+    expect(res.error).toMatch(/not configured/i);
   });
 });

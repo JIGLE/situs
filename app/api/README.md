@@ -245,7 +245,7 @@ Required environment variables for API routes:
 - `DATABASE_URL` - PostgreSQL connection string
 - `NEXTAUTH_SECRET` - NextAuth.js secret
 - `NEXTAUTH_URL` - Application URL
-- `SENDGRID_API_KEY` - Email service
+- `SMTP_HOST` - Email service (SMTP relay)
 - `STRIPE_SECRET_KEY` - Payment processing (optional)
 
 See `.env.example` for complete list.

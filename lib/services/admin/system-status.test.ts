@@ -45,7 +45,7 @@ beforeEach(() => {
   });
   process.env.PII_ENCRYPTION_KEY = "x".repeat(64);
   delete process.env.ALLOW_UNENCRYPTED_PII;
-  delete process.env.SENDGRID_API_KEY;
+  delete process.env.SMTP_HOST;
   delete process.env.STRIPE_SECRET_KEY;
 });
 

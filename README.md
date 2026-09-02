@@ -60,7 +60,7 @@ is _derived_ from this ledger, never hand-set.
 - **Leases** — lifecycle, renewals, expiry alerts, bilingual PDF templates
 - **Operations** — maintenance tickets with SLA due dates, evidence requirements, contractors, calendar
 - **Documents + OCR** — upload and classification; ambiguous or unlinked results land in a review queue
-- **Correspondence** — templates, bulk generation, SendGrid delivery
+- **Correspondence** — templates, bulk generation, SMTP delivery
 - **Intelligence** — occupancy, revenue and ROI analytics
 - **Tenant portal** — token-gated self-service access, no account required
 - **i18n** — Portuguese, English, Spanish, Italian (1,035 keys, full parity, enforced by test)
@@ -113,7 +113,7 @@ docker compose --profile dev up -d     # build from source
 | UI         | shadcn/ui + Tailwind CSS v4 + Radix UI + Framer Motion |
 | Validation | Zod                                                    |
 | i18n       | next-intl (pt / en / es / it)                          |
-| Email      | SendGrid                                               |
+| Email      | SMTP (Brevo by default; any provider)                  |
 | Payments   | Stripe (card + SEPA DD)                                |
 | Testing    | Vitest (unit/integration) + Playwright (E2E)           |
 | Deployment | Docker / TrueNAS SCALE                                 |
@@ -169,7 +169,7 @@ Recommended in production:
 | `INIT_SECRET`        | Protects DB init and debug endpoints                                                                                                                            |
 | `ENABLE_DEMO_LOGIN`  | Set `false` to disable demo login                                                                                                                               |
 
-Integrations are opt-in and off by default — `ENABLE_STRIPE`, `ENABLE_SENDGRID`, `ENABLE_OAUTH`,
+Integrations are opt-in and off by default — `ENABLE_STRIPE`, `ENABLE_OAUTH`,
 and `ENABLE_BILLING` (plan limits; self-hosted stays unlimited unless you turn it on). Portugal
 SAF-T signing adds `SAFT_SIGNING_KEY_PATH` and `SAFT_CERTIFICATE_NUMBER`.
 
