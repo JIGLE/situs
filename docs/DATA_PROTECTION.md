@@ -85,14 +85,16 @@ make the debug endpoint start returning it in plaintext.
 
 Recorded here deliberately rather than left implicit:
 
-| Model                  | Field              | Why                                                                                                        |
-| ---------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `Tenant`, `Owner`      | `name`, `email`    | Needed for search, sorting and sending mail; encrypting would break every list view                        |
-| `BankTransaction`      | `counterpartyName` | The matching engine reads it to score a movement against a lease                                           |
-| `BankTransaction`      | `reference`        | The remittance line. Read for reference-month parsing. **Free text: may contain anything the payer typed** |
-| `BankAccount`          | `ibanLast4`        | Four digits, displayed so a human can tell two accounts apart                                              |
-| `Property`, `Building` | address fields     | Personal data where a tenant lives there; core to the product                                              |
-| `Document`             | uploaded files     | Whatever the operator uploaded — leases, receipts, correspondence                                          |
+| Model                  | Field                                | Why                                                                                                                                                                                       |
+| ---------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Tenant`, `Owner`      | `name`, `email`                      | Needed for search, sorting and sending mail; encrypting would break every list view                                                                                                       |
+| `BankTransaction`      | `counterpartyName`                   | The matching engine reads it to score a movement against a lease                                                                                                                          |
+| `BankTransaction`      | `reference`                          | The remittance line. Read for reference-month parsing. **Free text: may contain anything the payer typed**                                                                                |
+| `BankAccount`          | `ibanLast4`                          | Four digits, displayed so a human can tell two accounts apart                                                                                                                             |
+| `Property`, `Building` | address fields                       | Personal data where a tenant lives there; core to the product                                                                                                                             |
+| `Document`             | uploaded files                       | Whatever the operator uploaded — leases, receipts, correspondence                                                                                                                         |
+| `InboundMessage`       | `subject`, `textBody`, `fromAddress` | Mail sent to us by third parties. **Unbounded free text: a sender may put any category of data in it, including Article 9 special categories, and we neither solicit nor can prevent it** |
+| `InboundAttachment`    | stored files                         | Whatever a sender attached. Restricted to PDF and images by magic-byte check, but the contents are theirs                                                                                 |
 
 `BankTransaction.rawData` preserves the imported row for re-matching, with the IBAN stripped
 before it is written (`redactRowForStorage`, `lib/services/bank/csv.ts`). It previously stored
@@ -103,13 +105,13 @@ clear here.
 
 A self-hosted instance shares data with a service only when that service is configured.
 
-| Recipient      | Receives                                                 | When                           | Location     |
-| -------------- | -------------------------------------------------------- | ------------------------------ | ------------ |
-| Enable Banking | Bank authorisation; returns account and transaction data | Only where a bank is connected | EEA          |
-| Stripe         | Subscription billing details                             | Only where billing is enabled  | EEA          |
-| Brevo          | Recipient address and message body                       | Only where email is configured | France (EEA) |
-| Portuguese AT  | Rent receipt filings                                     | Only on submission             | Portugal     |
-| Spanish AEAT   | NRUA / Modelo 179 filings                                | Only on submission             | Spain        |
+| Recipient      | Receives                                                                                                                              | When                                                                           | Location     |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------ |
+| Enable Banking | Bank authorisation; returns account and transaction data                                                                              | Only where a bank is connected                                                 | EEA          |
+| Stripe         | Subscription billing details                                                                                                          | Only where billing is enabled                                                  | EEA          |
+| Brevo          | Outbound: recipient address and message body. Inbound: receives mail addressed to us and forwards it, sender and attachments included | Only where email is configured; inbound only where an MX record points at them | France (EEA) |
+| Portuguese AT  | Rent receipt filings                                                                                                                  | Only on submission                                                             | Portugal     |
+| Spanish AEAT   | NRUA / Modelo 179 filings                                                                                                             | Only on submission                                                             | Spain        |
 
 **Enable Banking is the licensed AISP**, which is why the instance needs no PSD2 licence and no
 eIDAS certificate. Access is read-only account information: account details and transactions.
@@ -138,13 +140,18 @@ schedule cannot drift from the code that applies it.
 | Bank sync jobs              | 2 years  | Operational log of an import run                   |
 | Abandoned consent attempts  | 24 hours | Each holds a live consent reference until reaped   |
 
-Two rules that are not simply "delete old things":
+Three rules that are not simply "delete old things":
 
 - **Reconciled bank movements are not deleted on this schedule.** A matched movement is the
   provenance of a `Receipt`, and PT/ES fiscal records outlive two years. It follows the
   retention of the receipt it evidences.
 - **Consent reaping only touches connections holding no accounts.** Deleting a `BankConnection`
   cascades to `BankAccount` and `BankTransaction`, so the guard is on both status and emptiness.
+- **Inbound mail is only deleted once archived AND linked to nothing.** A message attached to a
+  tenant is correspondence evidence and follows that tenancy's records; unarchived mail is
+  untouched at any age, because nobody has read it yet and a retention job is not an inbox
+  cleaner. Deleting a message also removes its attachment files from disk, which the database
+  cascade alone would not do.
 
 **Nothing runs on a schedule until `CRON_SECRET` is set** and something calls
 `/api/cron/data-retention`; the endpoint returns 503 until then. An instance that has never set

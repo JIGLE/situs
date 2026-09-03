@@ -8,6 +8,7 @@ const { prismaMock } = vi.hoisted(() => ({
     bankTransaction: { deleteMany: vi.fn() },
     bankSyncJob: { deleteMany: vi.fn() },
     bankConnection: { deleteMany: vi.fn() },
+    inboundMessage: { deleteMany: vi.fn(), findMany: vi.fn() },
   },
 }));
 
@@ -30,9 +31,12 @@ beforeEach(() => {
     prismaMock.bankTransaction,
     prismaMock.bankSyncJob,
     prismaMock.bankConnection,
+    prismaMock.inboundMessage,
   ]) {
     model.deleteMany.mockResolvedValue({ count: 0 });
   }
+  // Nothing expired by default, so the inbound reaper is a no-op unless a test says otherwise.
+  prismaMock.inboundMessage.findMany.mockResolvedValue([]);
 });
 
 describe("bank movement retention", () => {
@@ -93,6 +97,42 @@ describe("abandoned consent reaping", () => {
   });
 });
 
+describe("inbound mail retention", () => {
+  /**
+   * The same shape of safety property as the receipt-link rule above: mail a landlord attached
+   * to a tenant is correspondence evidence, and unarchived mail is something nobody has read
+   * yet. Neither is this job's to delete, at any age.
+   */
+  it("only reaps mail that is archived AND linked to nothing", async () => {
+    await runDataRetention();
+
+    expect(prismaMock.inboundMessage.findMany).toHaveBeenCalledTimes(1);
+    expect(prismaMock.inboundMessage.findMany.mock.calls[0][0].where).toMatchObject({
+      archived: true,
+      tenantId: null,
+      propertyId: null,
+    });
+  });
+
+  it("does not issue a delete when nothing has expired", async () => {
+    await runDataRetention();
+    expect(prismaMock.inboundMessage.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("reads the ids before deleting, since the files are named after them", async () => {
+    // The row cascade does not reach the filesystem. Delete the rows first and there is nothing
+    // left to say which directories of attachments to remove.
+    prismaMock.inboundMessage.findMany.mockResolvedValue([{ id: "m1" }, { id: "m2" }]);
+    prismaMock.inboundMessage.deleteMany.mockResolvedValue({ count: 2 });
+
+    await runDataRetention();
+
+    expect(prismaMock.inboundMessage.deleteMany.mock.calls[0][0].where).toEqual({
+      id: { in: ["m1", "m2"] },
+    });
+  });
+});
+
 describe("result reporting", () => {
   it("reports every category it deleted", async () => {
     prismaMock.auditLog.deleteMany.mockResolvedValue({ count: 1 });
@@ -101,6 +141,8 @@ describe("result reporting", () => {
     prismaMock.bankTransaction.deleteMany.mockResolvedValue({ count: 4 });
     prismaMock.bankSyncJob.deleteMany.mockResolvedValue({ count: 5 });
     prismaMock.bankConnection.deleteMany.mockResolvedValue({ count: 6 });
+    prismaMock.inboundMessage.findMany.mockResolvedValue([{ id: "m1" }]);
+    prismaMock.inboundMessage.deleteMany.mockResolvedValue({ count: 7 });
 
     await expect(runDataRetention()).resolves.toMatchObject({
       auditLogsDeleted: 1,
@@ -109,6 +151,7 @@ describe("result reporting", () => {
       bankTransactionsDeleted: 4,
       bankSyncJobsDeleted: 5,
       abandonedConsentsDeleted: 6,
+      inboundMessagesDeleted: 7,
     });
   });
 
