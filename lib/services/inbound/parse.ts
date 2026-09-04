@@ -117,6 +117,29 @@ export function isValidDownloadToken(token: unknown): token is string {
 const TAG_PATTERN = /<\/?[a-zA-Z][^>]*>?/g;
 
 /**
+ * Remove tags until none are left.
+ *
+ * One pass is not enough, and not merely in theory: removing a tag brings the characters on
+ * either side of it together, which can form a new one.
+ *
+ *     "<<<div>div>script>x"  ->  "<<div>script>x"  ->  "<script>x"  ->  "x"
+ *
+ * Each pass peels one layer, so a nested construction needs as many passes as it has layers.
+ * Running to a fixed point is the robust form and is what CodeQL's
+ * incomplete-multi-character-sanitization rule asks for. Every pass strictly shortens the
+ * string, so this always terminates; the counter is belt and braces, not load-bearing.
+ */
+function stripTags(input: string): string {
+  let current = input;
+  for (let pass = 0; pass < 10; pass++) {
+    const next = current.replace(TAG_PATTERN, "");
+    if (next === current) break;
+    current = next;
+  }
+  return current;
+}
+
+/**
  * Strip HTML to readable text.
  *
  * Used only when a message has no plain-text part. The HTML itself is never stored and never
@@ -128,7 +151,7 @@ const TAG_PATTERN = /<\/?[a-zA-Z][^>]*>?/g;
  * day someone reaches for `dangerouslySetInnerHTML`, not permission to.
  */
 export function htmlToText(html: string): string {
-  return (
+  const withoutMarkup = stripTags(
     html
       // `(?:<\/\1\s*>|$)` rather than a required closing tag: a truncated or unclosed <script>
       // otherwise falls through to the generic strip below, which drops the opening tag and
@@ -136,23 +159,25 @@ export function htmlToText(html: string): string {
       .replace(/<(script|style)\b[\s\S]*?(?:<\/\1\s*>|$)/gi, " ")
       .replace(/<!--[\s\S]*?(?:-->|$)/g, " ")
       .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<\/(p|div|tr|li|h[1-6])\s*>/gi, "\n")
-      .replace(TAG_PATTERN, "")
-      .replace(/&nbsp;/gi, " ")
-      .replace(/&lt;/gi, "<")
-      .replace(/&gt;/gi, ">")
-      .replace(/&quot;/gi, '"')
-      .replace(/&#0*39;|&apos;/gi, "'")
-      // Ampersand last, so `&amp;lt;` becomes `&lt;` and not `<`.
-      .replace(/&amp;/gi, "&")
-      // Again, because decoding is what turns `&lt;script&gt;` into a real tag the first pass
-      // never saw. Costs a sender who encoded tags to write *about* HTML; worth it against a
-      // field that could otherwise carry a tag out of this function.
-      .replace(TAG_PATTERN, "")
-      .replace(/[ \t ]+/g, " ")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim()
+      .replace(/<\/(p|div|tr|li|h[1-6])\s*>/gi, "\n"),
   );
+
+  const decoded = withoutMarkup
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0*39;|&apos;/gi, "'")
+    // Ampersand last, so `&amp;lt;` becomes `&lt;` and not `<`.
+    .replace(/&amp;/gi, "&");
+
+  // Stripped again, because decoding is what turns `&lt;script&gt;` into a real tag that the
+  // first pass never saw. Costs a sender who encoded tags to write *about* HTML; worth it
+  // against a field that could otherwise carry a tag out of this function.
+  return stripTags(decoded)
+    .replace(/[ \t ]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 /**

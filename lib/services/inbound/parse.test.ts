@@ -87,6 +87,21 @@ describe("htmlToText", () => {
     expect(htmlToText("<p>hi</p><script>alert(1)")).toBe("hi");
   });
 
+  /**
+   * Removing a tag welds together what surrounded it, which can form a new one. Each pass peels
+   * one layer, so this three-layer nest needs three:
+   *
+   *     "<<<div>div>script>x" -> "<<div>script>x" -> "<script>x" -> "x"
+   *
+   * Three layers on purpose. `htmlToText` calls the stripper twice (once before entity decoding
+   * and once after), so a two-layer input passes even with the loop removed — the first version
+   * of this test used one and proved nothing. CodeQL's incomplete-multi-character-sanitization
+   * rule is about exactly this, and it was right both times it fired.
+   */
+  it("removes tags that only appear once an earlier removal joins the text", () => {
+    expect(htmlToText("<<<div>div>script>alert(1)")).toBe("alert(1)");
+  });
+
   it("strips tags again after entity decoding, since decoding can create one", () => {
     // The first pass never sees this: it is `&lt;script&gt;` until the entities are decoded.
     expect(htmlToText("&lt;script&gt;alert(1)&lt;/script&gt;")).toBe("alert(1)");
