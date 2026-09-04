@@ -21,9 +21,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { timingSafeEqual } from "crypto";
 
 import { getPrismaClient } from "@/lib/services/database/database";
+import { isWebhookAuthorised } from "@/lib/utils/webhook-auth";
 import { logger } from "@/lib/utils/logger";
 
 export const runtime = "nodejs";
@@ -70,21 +70,6 @@ const EVENT_STATUS: Record<string, string> = {
   click: "clicked",
   unsubscribed: "unsubscribed",
 };
-
-/** Reject anything that is not the configured secret, without leaking timing. */
-function isAuthorised(request: NextRequest): boolean {
-  const expected = process.env.BREVO_WEBHOOK_SECRET;
-  if (!expected) return false;
-
-  const header = request.headers.get("authorization") ?? "";
-  const presented = header.startsWith("Bearer ") ? header.slice(7) : header;
-
-  const a = Buffer.from(presented);
-  const b = Buffer.from(expected);
-  // timingSafeEqual throws on a length mismatch, which would itself be an oracle.
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
-}
 
 function eventTimestamp(event: BrevoEvent): Date {
   if (typeof event.ts === "number" && Number.isFinite(event.ts)) {
@@ -152,7 +137,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Webhook not configured" }, { status: 503 });
   }
 
-  if (!isAuthorised(request)) {
+  if (!isWebhookAuthorised(request, process.env.BREVO_WEBHOOK_SECRET)) {
     log.warn("Rejected an unauthorised webhook delivery");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

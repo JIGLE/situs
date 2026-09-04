@@ -70,7 +70,7 @@ a domain listing `GET POST` may still have some paths that only answer `GET`.
 | `/api/tenants`                 | 5           | GET POST PUT DELETE       |
 | `/api/units`                   | 2           | GET POST PUT DELETE       |
 | `/api/user`                    | 4           | GET POST                  |
-| `/api/webhooks`                | 4           | POST                      |
+| `/api/webhooks`                | 5           | POST                      |
 
 ## Route Organization
 
@@ -250,6 +250,11 @@ error endpoint; it was deleted in PR #352.
 
 - `POST /api/webhooks/brevo` - Brevo delivery-event webhook. Requires `BREVO_WEBHOOK_SECRET`:
   Brevo does not sign its requests, so a shared secret is the only authentication.
+- `POST /api/webhooks/brevo/inbound` - Brevo Inbound Parsing: mail sent to the instance becomes
+  `InboundMessage` rows. Requires its own `BREVO_INBOUND_SECRET`, never the delivery-event one —
+  this route writes message bodies and fetches attachments to disk, so the two credentials are
+  deliberately not interchangeable. Also rate-limited, since a secret bounds who may call it and
+  not how often.
 - `POST /api/webhooks/stripe` - Stripe webhook handler
 
 ### Tenant Portal
