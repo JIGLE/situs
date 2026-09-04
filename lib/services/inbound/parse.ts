@@ -101,20 +101,43 @@ export function isValidDownloadToken(token: unknown): token is string {
 }
 
 /**
+ * Anything a browser would start parsing as a tag: `<` or `</` followed by a letter, running to
+ * an **optional** `>`.
+ *
+ * The optional `>` is the whole point. The obvious pattern, `/<[^>]+>/`, requires a closing
+ * bracket and so leaves an unterminated tag untouched — `<img src=x onerror=alert(1)` with no
+ * `>` passed through this function verbatim before CodeQL caught it. This code makes that input
+ * *likelier*, not rarer: `normaliseItem` truncates the HTML at `LIMITS.body` before calling
+ * here, which turns well-formed markup into a dangling tag at exactly the cut.
+ *
+ * Requiring a letter after the bracket is what stops it eating prose. `x < 5` and
+ * `I <3 this flat` are things a tenant writes, and a looser `/<[^>]*>?/` would swallow the rest
+ * of the line in both.
+ */
+const TAG_PATTERN = /<\/?[a-zA-Z][^>]*>?/g;
+
+/**
  * Strip HTML to readable text.
  *
  * Used only when a message has no plain-text part. The HTML itself is never stored and never
  * rendered — see the note on `InboundMessage.textBody`. Script and style elements are removed
  * *with their contents*, because dropping only the tags would leave the code as body text.
+ *
+ * None of this makes the output safe to render as HTML, and nothing here should be read as
+ * saying it does: `textBody` is text, shown as text. The stripping is defence in depth for the
+ * day someone reaches for `dangerouslySetInnerHTML`, not permission to.
  */
 export function htmlToText(html: string): string {
   return (
     html
-      .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, " ")
-      .replace(/<!--[\s\S]*?-->/g, " ")
+      // `(?:<\/\1\s*>|$)` rather than a required closing tag: a truncated or unclosed <script>
+      // otherwise falls through to the generic strip below, which drops the opening tag and
+      // leaves the script body sitting in the message as text.
+      .replace(/<(script|style)\b[\s\S]*?(?:<\/\1\s*>|$)/gi, " ")
+      .replace(/<!--[\s\S]*?(?:-->|$)/g, " ")
       .replace(/<br\s*\/?>/gi, "\n")
       .replace(/<\/(p|div|tr|li|h[1-6])\s*>/gi, "\n")
-      .replace(/<[^>]+>/g, "")
+      .replace(TAG_PATTERN, "")
       .replace(/&nbsp;/gi, " ")
       .replace(/&lt;/gi, "<")
       .replace(/&gt;/gi, ">")
@@ -122,6 +145,10 @@ export function htmlToText(html: string): string {
       .replace(/&#0*39;|&apos;/gi, "'")
       // Ampersand last, so `&amp;lt;` becomes `&lt;` and not `<`.
       .replace(/&amp;/gi, "&")
+      // Again, because decoding is what turns `&lt;script&gt;` into a real tag the first pass
+      // never saw. Costs a sender who encoded tags to write *about* HTML; worth it against a
+      // field that could otherwise carry a tag out of this function.
+      .replace(TAG_PATTERN, "")
       .replace(/[ \t ]+/g, " ")
       .replace(/\n{3,}/g, "\n\n")
       .trim()

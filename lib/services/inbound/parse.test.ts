@@ -71,6 +71,36 @@ describe("htmlToText", () => {
     expect(htmlToText("<p>a &amp; b</p>")).toBe("a & b");
   });
 
+  /**
+   * CodeQL found this on PR #371 and was right. `/<[^>]+>/` needs a closing bracket, so an
+   * unterminated tag survived verbatim — and `normaliseItem` truncates at `LIMITS.body` before
+   * calling here, which manufactures exactly that input from well-formed markup.
+   */
+  it("removes a tag with no closing bracket", () => {
+    expect(htmlToText("<script")).toBe("");
+    expect(htmlToText("<img src=x onerror=alert(1)")).toBe("");
+    expect(htmlToText("hello <div class=")).toBe("hello");
+  });
+
+  it("removes an unclosed script block with its body, not just its opening tag", () => {
+    // Dropping only the tag would leave `alert(1)` sitting in the message as readable text.
+    expect(htmlToText("<p>hi</p><script>alert(1)")).toBe("hi");
+  });
+
+  it("strips tags again after entity decoding, since decoding can create one", () => {
+    // The first pass never sees this: it is `&lt;script&gt;` until the entities are decoded.
+    expect(htmlToText("&lt;script&gt;alert(1)&lt;/script&gt;")).toBe("alert(1)");
+  });
+
+  /**
+   * The other half of the same rule. A pattern loose enough to catch unterminated tags must
+   * still require a letter after the bracket, or it eats the rest of the line in ordinary prose.
+   */
+  it("leaves angle brackets that are not tags alone", () => {
+    expect(htmlToText("if x < 5 and y > 3")).toBe("if x < 5 and y > 3");
+    expect(htmlToText("I <3 this flat")).toBe("I <3 this flat");
+  });
+
   it("strips comments, leaving a separator rather than joining what surrounded them", () => {
     // A browser would render "ab" here. We produce "a b" on purpose, consistently with how
     // script and style blocks are replaced: removing an element must never silently weld two
