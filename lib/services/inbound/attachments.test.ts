@@ -81,6 +81,17 @@ describe("storeAttachment", () => {
     expect(await fs.readFile(stored!.storagePath)).toEqual(PNG);
   });
 
+  it("writes the file readable only by the app's own user", async () => {
+    // A stranger's file — a photo of a leak, a signed document. The default 0644 would leave it
+    // readable by every other account on the host or in the container.
+    const stored = await storeAttachment("msg-1", "user-1", attachment(), {
+      apiKey: "k",
+      fetchImpl: respondWith(PNG),
+    });
+    const { mode } = await fs.stat(stored!.storagePath);
+    expect(mode & 0o777).toBe(0o600);
+  });
+
   /**
    * The rule the whole module exists for: the sender says what the file is, and the sender is
    * not to be believed. A .png Content-Type over HTML bytes is the classic stored-XSS delivery.

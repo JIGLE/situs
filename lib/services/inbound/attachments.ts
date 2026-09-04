@@ -158,7 +158,10 @@ export async function storeAttachment(
   // Random name plus the detected extension. The sender's filename is kept only as a label on
   // the row, so a name like `../../server.js` has nowhere to go.
   const storagePath = path.join(dir, `${randomUUID()}.${detected.ext}`);
-  await fs.writeFile(storagePath, buffer);
+  // 0600: readable by the app's own user and nobody else. These are strangers' files containing
+  // whatever a tenant chose to send — a photo of a leak, a signed document — and the default
+  // 0644 would leave them readable by every other account on the host or in the container.
+  await fs.writeFile(storagePath, buffer, { mode: 0o600 });
 
   return {
     filename: attachment.filename,
