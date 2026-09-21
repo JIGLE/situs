@@ -746,11 +746,7 @@
     },
     "countries": {
       "pt": "Portogallo",
-      "es": "Spagna",
-      "de": "Germania",
-      "fr": "Francia",
-      "it": "Italia",
-      "se": "Svezia"
+      "es": "Spagna"
     }
   },
   "errors": {
@@ -2633,18 +2629,6 @@
     "totalUnits": "Unità totali",
     "occupied": "Occupate",
     "vacant": "Libere"
-  },
-  "palette": {
-    "addProperty": "Aggiungi immobile",
-    "addPropertyHelp": "Crea una nuova scheda immobile",
-    "addPerson": "Aggiungi persona",
-    "addPersonHelp": "Apri Persone per aggiungere un inquilino, proprietario o contatto",
-    "recordPayment": "Registra pagamento",
-    "recordPaymentHelp": "Apri la coda dei pagamenti e il flusso ricevute",
-    "reviewDocuments": "Rivedi documenti",
-    "reviewDocumentsHelp": "Apri contratti, ricevute e notifiche",
-    "placeholder": "Cerca o digita un comando…",
-    "noResults": "Nessun risultato"
   },
   "pwa": {
     "install": "Installa Situs",

@@ -170,7 +170,7 @@ the session's plan checkpoint for the full per-PR breakdown.
 
 | #    | Task                                                                                                                                                                               | Status         |
 | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| 8.1  | Brand foundation: fonts, radius-0 rectilinear tokens, 28-country theme system, Situs Portal logo                                                                                   | Done           |
+| 8.1  | Brand foundation: fonts, radius-0 rectilinear tokens, country theme system, Situs Portal logo                                                                                      | Done           |
 | 8.2  | Nav IA: Core/System groups, sidebar rail restyle                                                                                                                                   | Done           |
 | 8.3  | Situs landing page + auth pages restyle                                                                                                                                            | Done           |
 | 8.4  | Settings Appearance country/mode picker + dedicated Account page                                                                                                                   | Done           |
@@ -187,7 +187,7 @@ the session's plan checkpoint for the full per-PR breakdown.
 > **PR 10b** and **PR 4b** were deferred here and have since shipped. Operations carries its
 > Task Queue/Calendar/Contractors/Evidence subtabs, `/people` consolidates Tenants/Owners/Contacts/
 > Communications, `/analytics`+`/insights`+`/reports` 301 to `/intelligence` (`lib/portal/access.ts`),
-> and settings is thirteen tab components with an Integrations hub and a dev-only `/brand` page.
+> and settings is thirteen tab components with an Integrations hub.
 > This note previously read as though all of it were still outstanding.
 
 ---

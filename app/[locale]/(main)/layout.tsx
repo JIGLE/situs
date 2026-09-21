@@ -4,7 +4,6 @@ import { MobileBottomNav, MobileTopBar } from "@/components/ui/mobile-nav";
 import { SkipLink } from "@/components/ui/accessibility";
 import { DemoBanner } from "@/components/shared/demo-banner";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
-import { CommandPalette } from "@/components/shared/command-palette";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { ScenarioRunner } from "@/components/shared/scenario-runner";
 import { PortalAccessGuard } from "@/components/shared/portal-access-guard";
@@ -65,9 +64,6 @@ export default function MainLayout({
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav />
-
-      {/* Command Palette (⌘K) */}
-      <CommandPalette />
 
       {/* Entity detail overlay — mounted once so `?detail=<type>:<id>` works from any page */}
       <Suspense fallback={null}>

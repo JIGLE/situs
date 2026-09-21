@@ -746,11 +746,7 @@
     },
     "countries": {
       "pt": "Portugal",
-      "es": "España",
-      "de": "Alemania",
-      "fr": "Francia",
-      "it": "Italia",
-      "se": "Suecia"
+      "es": "España"
     }
   },
   "errors": {
@@ -2633,18 +2629,6 @@
     "totalUnits": "Total de unidades",
     "occupied": "Ocupadas",
     "vacant": "Vacías"
-  },
-  "palette": {
-    "addProperty": "Añadir inmueble",
-    "addPropertyHelp": "Crear un nuevo registro de inmueble",
-    "addPerson": "Añadir persona",
-    "addPersonHelp": "Abrir Personas para añadir un inquilino, propietario o contacto",
-    "recordPayment": "Registrar pago",
-    "recordPaymentHelp": "Abrir la cola de pagos y el flujo de recibos",
-    "reviewDocuments": "Revisar documentos",
-    "reviewDocumentsHelp": "Abrir contratos, recibos y notificaciones",
-    "placeholder": "Buscar o escribir un comando…",
-    "noResults": "Sin resultados"
   },
   "pwa": {
     "install": "Instalar Situs",

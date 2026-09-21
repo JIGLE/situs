@@ -746,11 +746,7 @@
     },
     "countries": {
       "pt": "Portugal",
-      "es": "Spain",
-      "de": "Germany",
-      "fr": "France",
-      "it": "Italy",
-      "se": "Sweden"
+      "es": "Spain"
     }
   },
   "errors": {
@@ -2633,18 +2629,6 @@
     "totalUnits": "Total units",
     "occupied": "Occupied",
     "vacant": "Vacant"
-  },
-  "palette": {
-    "addProperty": "Add property",
-    "addPropertyHelp": "Create a new property listing",
-    "addPerson": "Add person",
-    "addPersonHelp": "Open People to add a tenant, owner or contact",
-    "recordPayment": "Record payment",
-    "recordPaymentHelp": "Open the payment queue and receipt flow",
-    "reviewDocuments": "Review documents",
-    "reviewDocumentsHelp": "Open contracts, receipts and notices",
-    "placeholder": "Search or type a command…",
-    "noResults": "No results found"
   },
   "pwa": {
     "install": "Install Situs",

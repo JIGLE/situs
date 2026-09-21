@@ -9,7 +9,6 @@ import {
   HardHat,
   Home,
   Mail,
-  Palette,
   Settings,
   ShieldCheck,
   UserCircle,
@@ -216,18 +215,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         labelKey: "navigation.account",
         icon: UserCircle,
         roles: ["owner", "tenant"],
-        hidden: true,
-      },
-      {
-        // Internal dev/admin reference only — the page itself 404s in
-        // production (NODE_ENV check). Never shown in the nav rail; this
-        // entry exists only so canAccessPortalPath permits the direct URL.
-        key: "brand",
-        href: "/brand",
-        label: "Brand",
-        labelKey: "navigation.brand",
-        icon: Palette,
-        roles: ["owner"],
         hidden: true,
       },
     ],

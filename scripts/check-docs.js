@@ -44,6 +44,20 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    pattern: /28[- ]countr(y|ies)/i,
+    retired: "2026-09-21 (scope cutdown, phase 1)",
+    because:
+      "the theme table was trimmed to EU/PT/ES — the two markets the product serves. " +
+      "countryLabel() reads Intl.DisplayNames first, so an unlisted country still renders " +
+      "its name; only the theme falls back to EU",
+  },
+  {
+    pattern: /dev-only `?\/brand`? page/i,
+    retired: "2026-09-21 (scope cutdown, phase 1)",
+    because:
+      "the /brand style-guide page and the ⌘K command palette were deleted as dev/cosmetic surface",
+  },
+  {
     pattern: /no provider ships/i,
     retired: "2026-08-28 (PR #352)",
     because:

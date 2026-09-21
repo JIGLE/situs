@@ -70,7 +70,7 @@ lib/
     ocr/                # Mock document classification engine + orchestration
     tax/               # Tax connector find-or-create + submission-log service
   tax/connectors/      # Per-country TaxConnector implementations (pt-at.ts, es-nrua.ts)
-  design/country-themes.ts  # 28-country theme table (Situs brand)
+  design/country-themes.ts  # PT/ES/EU theme table (Situs brand)
 prisma/
   schema.prisma     # Database schema — source of truth
 messages/           # i18n translation files (en.json, pt.json, es.json, it.json)
