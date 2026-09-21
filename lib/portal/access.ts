@@ -4,7 +4,6 @@ import {
   Calculator,
   FileBox,
   FileText,
-  HardHat,
   Home,
   Mail,
   Settings,
@@ -170,15 +169,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         hidden: true,
       },
       {
-        key: "vendors",
-        href: "/contacts",
-        label: "Vendors",
-        labelKey: "navigation.vendors",
-        icon: HardHat,
-        roles: ["owner"],
-        hidden: true,
-      },
-      {
         // Folded into Settings as its Account section; `/account` redirects there. Kept here
         // so `canAccessPortalPath` still permits the old URL for both roles.
         key: "account",
@@ -242,7 +232,6 @@ export function normalizePortalPath(pathname: string): string {
   if (normalized === "/account") return "/settings";
   if (normalized === "/properties") return "/portfolio";
   if (normalized === "/tenants") return "/people";
-  if (normalized === "/vendors") return "/contacts";
   // Redirect-only stubs. A page absent from this table is unreachable no matter what it renders,
   // because `PortalAccessGuard` replaces the route with /dashboard before the stub's own
   // `redirect()` can run — the same trap /admin fell into (see the note on its nav entry). Both

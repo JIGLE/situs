@@ -6,9 +6,8 @@ rot in prose.
 
 **Scope.** This describes a single self-hosted Situs instance. There is one account; the
 operator is the controller and, in the ordinary case, also the only data subject with an
-account. The people whose data is processed are mostly _other_ people — tenants, owners,
-maintenance contacts, and the counterparties on bank movements — which is why this document
-exists at all.
+account. The people whose data is processed are mostly _other_ people — tenants, owners, and
+the counterparties on bank movements — which is why this document exists at all.
 
 **Status.** Kept current with the code. If something here disagrees with the code, the code is
 right and this is a bug. `docs:check` enforces that this file stays reachable, and
@@ -38,7 +37,6 @@ ever offered to other people.
 | Rent ledger, receipts, allocations  | Recording rent due and paid                 | Contract; legal obligation for the fiscal parts      |
 | Bank movement ingestion (PSD2)      | Reconciling rent against bank credits       | Consent, given at the bank under PSD2 (Art. 6(1)(a)) |
 | Fiscal filing (PT AT, ES NRUA)      | Statutory rent-income reporting             | Legal obligation (Art. 6(1)(c))                      |
-| Maintenance contacts                | Reaching a contractor or vendor             | Legitimate interest (Art. 6(1)(f))                   |
 | Transactional email                 | Rent reminders, lease-expiry alerts         | Contract; legitimate interest                        |
 | Tenant portal                       | Giving a tenant access to their own records | Contract                                             |
 | Audit log                           | Accountability (Art. 5(2)), fraud detection | Legal obligation; legitimate interest                |

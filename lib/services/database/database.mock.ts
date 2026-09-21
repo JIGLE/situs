@@ -14,25 +14,6 @@ import type {
   Expense,
 } from "@/lib/types";
 
-// Minimal MaintenanceContact type used by mock data (not exported from '@/lib/types')
-type MaintenanceContact = {
-  id: string;
-  userId: string;
-  name: string;
-  company?: string;
-  type: string;
-  specialties?: string[];
-  email?: string;
-  phone?: string;
-  address?: string;
-  hourlyRate?: number;
-  currency?: string;
-  rating?: number;
-  notes?: string;
-  createdAt?: string;
-  updatedAt?: string;
-};
-
 // Mock data stores - read-only
 const MOCK_PROPERTIES = [
   {
@@ -374,94 +355,6 @@ const MOCK_EXPENSES = [
   },
 ];
 
-const MOCK_CONTACTS = [
-  {
-    id: "contact-1",
-    userId: "mock-user",
-    name: "John's Plumbing Services",
-    company: "John's Plumbing",
-    type: "plumber",
-    specialties: ["Emergency repairs", "Pipe installation", "Water heaters"],
-    email: "john@johnsplumbing.com",
-    phone: "+1 (555) 123-4567",
-    address: "789 Trade St, Los Angeles, CA 90001",
-    hourlyRate: 85,
-    currency: "USD",
-    rating: 4.8,
-    notes: "Reliable and quick response time. Available for emergencies.",
-    createdAt: "2025-06-15T10:00:00Z",
-    updatedAt: "2026-01-10T14:00:00Z",
-  },
-  {
-    id: "contact-2",
-    userId: "mock-user",
-    name: "ABC Electric",
-    company: "ABC Electric Solutions",
-    type: "electrician",
-    specialties: ["Wiring", "Circuit breakers", "Lighting installation"],
-    email: "contact@abcelectric.com",
-    phone: "+1 (555) 234-5678",
-    address: "456 Electric Ave, New York, NY 10001",
-    hourlyRate: 95,
-    currency: "USD",
-    rating: 4.9,
-    notes: "Licensed and insured. Excellent work quality.",
-    createdAt: "2025-07-20T09:00:00Z",
-    updatedAt: "2025-12-05T16:30:00Z",
-  },
-  {
-    id: "contact-3",
-    userId: "mock-user",
-    name: "CoolAir HVAC",
-    company: "CoolAir Systems Inc.",
-    type: "hvac",
-    specialties: ["AC repair", "Heating systems", "Maintenance"],
-    email: "service@coolair.com",
-    phone: "+1 (555) 345-6789",
-    address: "123 Climate Dr, Miami, FL 33101",
-    hourlyRate: 110,
-    currency: "USD",
-    rating: 4.7,
-    notes: "Specialized in commercial HVAC systems.",
-    createdAt: "2025-08-10T11:00:00Z",
-    updatedAt: "2026-01-15T10:00:00Z",
-  },
-  {
-    id: "contact-4",
-    userId: "mock-user",
-    name: "HandyFix Services",
-    company: "HandyFix LLC",
-    type: "handyman",
-    specialties: ["General repairs", "Carpentry", "Painting", "Door/window repair"],
-    email: "info@handyfix.com",
-    phone: "+1 (555) 456-7890",
-    address: "321 Fix-It Lane, Chicago, IL 60601",
-    hourlyRate: 65,
-    currency: "USD",
-    rating: 4.5,
-    notes: "Good for small to medium repairs. Flexible scheduling.",
-    createdAt: "2025-09-01T08:00:00Z",
-    updatedAt: "2025-11-20T13:00:00Z",
-  },
-  {
-    id: "contact-5",
-    userId: "mock-user",
-    name: "GreenScape Landscaping",
-    company: "GreenScape Pro",
-    type: "landscaper",
-    specialties: ["Lawn maintenance", "Tree trimming", "Irrigation"],
-    email: "contact@greenscape.com",
-    phone: "+1 (555) 567-8901",
-    address: "555 Garden Rd, Portland, OR 97201",
-    hourlyRate: 55,
-    currency: "USD",
-    rating: 4.6,
-    notes: "Monthly maintenance contracts available.",
-    createdAt: "2025-05-15T07:00:00Z",
-    updatedAt: "2025-12-30T09:00:00Z",
-  },
-];
-
 // Property service
 export const propertyService = {
   async getAll(_userId: string): Promise<Property[]> {
@@ -630,37 +523,5 @@ export const leaseService = {
 export const expenseService = {
   async getAll(_userId: string): Promise<Expense[]> {
     return [...MOCK_EXPENSES] as unknown as Expense[];
-  },
-};
-
-// Contact service
-export const contactService = {
-  async getAll(_userId: string, _type?: string): Promise<MaintenanceContact[]> {
-    let contacts = [...MOCK_CONTACTS];
-    if (_type) {
-      contacts = contacts.filter((c) => c.type === _type);
-    }
-    return contacts;
-  },
-
-  async getById(_userId: string, _id: string): Promise<MaintenanceContact | null> {
-    const contact = MOCK_CONTACTS.find((c) => c.id === _id);
-    return contact || null;
-  },
-
-  async create(_userId: string, _data: Partial<MaintenanceContact>): Promise<MaintenanceContact> {
-    throw new Error("Cannot create contacts in mock mode. Set DATABASE_URL to enable writes.");
-  },
-
-  async update(
-    _userId: string,
-    _id: string,
-    _data: Partial<MaintenanceContact>,
-  ): Promise<MaintenanceContact> {
-    throw new Error("Cannot update contacts in mock mode. Set DATABASE_URL to enable writes.");
-  },
-
-  async delete(_userId: string, _id: string): Promise<void> {
-    throw new Error("Cannot delete contacts in mock mode. Set DATABASE_URL to enable writes.");
   },
 };

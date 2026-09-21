@@ -3,13 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Users, Briefcase, Plus, Wrench, MessageSquare } from "lucide-react";
+import { Users, Briefcase, Plus, MessageSquare } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsMobileSelect, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useTabPersistence } from "@/lib/hooks/use-tab-persistence";
 import { TenantsView, TenantsViewRef } from "@/components/features/tenant/tenants-view";
 import { OwnersView, OwnersViewRef } from "@/components/features/owner/owners-view";
-import { ContactsView } from "@/components/features/contacts/contacts-view";
 import { CorrespondenceView } from "@/components/features/correspondence/correspondence-view";
 import { ExportButton } from "@/components/ui/export-button";
 import { useApp } from "@/lib/contexts/app-context";
@@ -19,11 +18,11 @@ import { useApp } from "@/lib/contexts/app-context";
  *
  * Information Architecture:
  * - Purpose: Manage tenant and owner relationships
- * - Belongs here: Tenant directory, Owner directory, service providers, communication history
+ * - Belongs here: Tenant directory, Owner directory, communication history
  * - Communications tab embeds CorrespondenceView (templates + message log); the standalone
  *   /correspondence route stays live for deep links but is not a nav rail item
- * - Forbidden: Property CRUD, maintenance details, expense tracking
- * - Links to: Assets (tenant's/owner's property), Maintenance (tickets)
+ * - Forbidden: Property CRUD, expense tracking
+ * - Links to: Assets (the tenant's or owner's property)
  */
 export function PeopleView(): React.ReactElement {
   const [activeTab, setActiveTab] = useTabPersistence("people", "tenants");
@@ -39,10 +38,7 @@ export function PeopleView(): React.ReactElement {
   useEffect(() => {
     const view = searchParams.get("view");
     if (
-      (view === "owners" ||
-        view === "contacts" ||
-        view === "tenants" ||
-        view === "communications") &&
+      (view === "owners" || view === "tenants" || view === "communications") &&
       view !== activeTab
     ) {
       setActiveTab(view);
@@ -116,7 +112,7 @@ export function PeopleView(): React.ReactElement {
         )}
       </div>
 
-      {/* Tab Navigation - Tenants and Owners */}
+      {/* Tab Navigation - Tenants, Owners and Communications */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="flex items-center gap-2">
           {/* The select takes the bar's place below `md`, in the same row, so the adjacent
@@ -132,11 +128,10 @@ export function PeopleView(): React.ReactElement {
             items={[
               { value: "tenants", label: t("tenants"), badge: tenants.length },
               { value: "owners", label: t("owners"), badge: owners.length },
-              { value: "contacts", label: t("serviceProviders") },
               { value: "communications", label: t("communications") },
             ]}
           />
-          <TabsList className="flex w-full max-w-2xl justify-start overflow-x-auto max-md:hidden sm:grid sm:grid-cols-4">
+          <TabsList className="flex w-full max-w-2xl justify-start overflow-x-auto max-md:hidden sm:grid sm:grid-cols-3">
             <TabsTrigger value="tenants" className="flex shrink-0 items-center gap-2">
               <Users className="h-4 w-4 shrink-0" />
               <span>{t("tenants")}</span>
@@ -150,13 +145,6 @@ export function PeopleView(): React.ReactElement {
               <span className="ml-1 rounded-full bg-[var(--color-muted)] px-2 py-0.5 text-xs tabular-nums">
                 {owners.length}
               </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="contacts"
-              className="flex shrink-0 items-center gap-2 whitespace-nowrap"
-            >
-              <Wrench className="h-4 w-4 shrink-0" />
-              <span>{t("serviceProviders")}</span>
             </TabsTrigger>
             <TabsTrigger
               value="communications"
@@ -194,10 +182,6 @@ export function PeopleView(): React.ReactElement {
 
         <TabsContent value="owners" className="mt-0">
           <OwnersView ref={ownersViewRef} density="compact" />
-        </TabsContent>
-
-        <TabsContent value="contacts" className="mt-0">
-          <ContactsView />
         </TabsContent>
 
         <TabsContent value="communications" className="mt-0">

@@ -7,7 +7,6 @@
     "totalOwners": "Totale proprietari",
     "tenants": "Inquilini",
     "owners": "Proprietari",
-    "serviceProviders": "Fornitori",
     "communications": "Comunicazioni",
     "addTenant": "Aggiungi inquilino",
     "addOwner": "Aggiungi proprietario"
@@ -404,8 +403,6 @@
     "intelligenceGroup": "Report",
     "systemGroup": "Sistema",
     "finance": "Finanza",
-    "contacts": "Fornitori",
-    "vendors": "Fornitori",
     "contracts": "Contratti",
     "compliance": "Conformità",
     "taxFiling": "Dichiarazione fiscale",
@@ -629,11 +626,6 @@
       "title": "Nessun documento ancora",
       "description": "Carica documenti per tenere organizzati i registri di immobili, contratti e corrispondenza.",
       "action": "Carica Documento"
-    },
-    "contacts": {
-      "title": "Nessun contatto trovato",
-      "description": "I contatti vengono popolati a partire dai tuoi inquilini, proprietari e fornitori di servizi.",
-      "action": "Aggiungi Contatto"
     },
     "units": {
       "title": "Nessuna unità ancora",
@@ -2258,24 +2250,6 @@
       "taxLog": "Registro fiscale"
     },
     "leaseExpiresInDays": "{days}g rimasti"
-  },
-  "contacts": {
-    "addVendor": "Aggiungi fornitore",
-    "searchPlaceholder": "Cerca per nome, azienda o specializzazione…",
-    "all": "Tutti",
-    "contractors": "Imprese",
-    "vendors": "Fornitori",
-    "internal": "Interno",
-    "emptyTitle": "Nessun contatto trovato",
-    "emptyDescription": "Aggiungi contatti di manutenzione per gestire la tua rete di fornitori",
-    "loadFailed": "Impossibile caricare i contatti.",
-    "summary": "{total} contatti · {contractors} imprese · {vendors} fornitori · {internal} interni",
-    "perHour": "/h",
-    "type": {
-      "contractor": "Impresa",
-      "vendor": "Fornitore",
-      "internalStaff": "Personale interno"
-    }
   },
   "account": {
     "title": "Account",

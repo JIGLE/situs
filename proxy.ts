@@ -241,7 +241,6 @@ export async function proxy(request: NextRequest) {
     rest.startsWith("leases") ||
     rest.startsWith("buildings") ||
     rest.startsWith("units") ||
-    rest.startsWith("contacts") ||
     rest.startsWith("contracts") ||
     rest.startsWith("correspondence") ||
     rest.startsWith("financials") ||

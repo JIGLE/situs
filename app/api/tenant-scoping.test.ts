@@ -6,10 +6,12 @@ import { join } from "node:path";
  * A standing guard, not a unit test.
  *
  * `proxy.ts` gates every /api/** route behind a session, but it only checks that a session
- * exists — never whose. Per-record ownership is each handler's own responsibility, and
- * `app/api/contacts/[id]/route.ts` simply never did it: three handlers looking `MaintenanceContact`
- * up by id alone, so any signed-in user could read, edit or delete another landlord's contractor
- * records. The file contained the string `userId` zero times.
+ * exists — never whose. Per-record ownership is each handler's own responsibility, and the
+ * vendor-registry route simply never did it: three handlers looking a contact up by id alone, so
+ * any signed-in user could read, edit or delete another landlord's contractor records. The file
+ * contained the string `userId` zero times. (That route and its model have since been removed by
+ * the scope cutdown, which is why this comment no longer names a file you can open — the shape of
+ * the bug is the point, and it is still reachable by any new route that skips the scoping.)
  *
  * ## What this checks, and what it deliberately does not
  *
@@ -97,7 +99,7 @@ function unscopedRoutes(): string[] {
 describe("app/api tenant scoping", () => {
   it("recognises the user-owned models in the schema", () => {
     const owned = userOwnedModels();
-    expect(owned.has("maintenanceContact")).toBe(true);
+    expect(owned.has("receipt")).toBe(true);
     expect(owned.has("property")).toBe(true);
     // CorrespondenceTemplate gained a nullable userId when templates stopped being global.
     expect(owned.has("correspondenceTemplate")).toBe(true);

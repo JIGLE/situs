@@ -72,7 +72,7 @@ describe("access derived from the normalised path", () => {
     //
     // These are owner-only. `/portfolio`, `/financials`, `/documents` and `/leases` are NOT —
     // a tenant reaches their own view of each — which is why they are asserted below instead.
-    for (const path of ["/admin", "/admin/system-status", "/people", "/contacts"]) {
+    for (const path of ["/admin", "/admin/system-status", "/people", "/correspondence"]) {
       expect(canAccessPortalPath("tenant", path)).toBe(false);
       expect(canAccessPortalPath("tenant", `/en${path}`)).toBe(false);
     }
@@ -124,8 +124,8 @@ describe("redirect-only routes survive the portal access guard", () => {
 
   it.each(stubs)("$route is reachable and forwards to $target", ({ route, target }) => {
     // Reachable: the guard must not bounce the route before the redirect runs. This is the whole
-    // bug. Note it is NOT required that the alias equal the target — `/contacts` is a nav
-    // destination in its own right whose page happens to forward to a view of People, and that is
+    // bug. Note it is NOT required that the alias equal the target — a stub may be a nav
+    // destination in its own right whose page happens to forward somewhere else, and that is
     // fine. What matters is only that the guard lets the route render at all.
     expect(canAccessPortalPath("owner", route)).toBe(true);
 

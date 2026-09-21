@@ -139,13 +139,8 @@ describe("seed cleanup covers everything the seed creates", () => {
     },
   );
 
-  it("seeds the three domains whose absence was read as a layout defect", () => {
-    for (const model of [
-      "correspondence",
-      "correspondenceTemplate",
-      "maintenanceContact",
-      "taxFiling",
-    ]) {
+  it("seeds the domains whose absence was read as a layout defect", () => {
+    for (const model of ["correspondence", "correspondenceTemplate", "taxFiling"]) {
       expect(created.has(model)).toBe(true);
     }
   });

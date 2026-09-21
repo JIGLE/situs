@@ -54,7 +54,6 @@ model User {
   documents               Document[]
   notifications           Notification[]
   invoices                Invoice[]
-  maintenanceContacts     MaintenanceContact[]
   rentReceipts            RentReceipt[]
   settings                UserSettings?
   governmentVerifications GovernmentVerification[]
@@ -1313,30 +1312,6 @@ enum TransactionStatus {
 // New Models for Navigation Restructuring
 // ========================================
 
-// Maintenance Contacts (Contractors, Vendors, Staff)
-model MaintenanceContact {
-  id            String                 @id @default(cuid())
-  userId        String
-  type          MaintenanceContactType
-  company       String?
-  contactPerson String
-  email         String?
-  phone         String?
-  specialties   String // JSON array: ["Plumber", "Electrician", "HVAC", etc.]
-  hourlyRate    Float?
-  currency      Currency               @default(EUR)
-  rating        Float? // 1-5 rating
-  notes         String?
-  isActive      Boolean                @default(true)
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("maintenance_contacts")
-}
-
 // Income Distribution (with audit trail)
 model IncomeDistribution {
   id                   String          @id @default(cuid())
@@ -1493,12 +1468,6 @@ enum DistributionFrequency {
   MONTHLY
   QUARTERLY
   ANNUAL
-}
-
-enum MaintenanceContactType {
-  CONTRACTOR // External contractor
-  VENDOR // Supplier/vendor
-  INTERNAL_STAFF // In-house staff
 }
 
 // ========================================

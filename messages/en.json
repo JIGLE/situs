@@ -7,7 +7,6 @@
     "totalOwners": "Total owners",
     "tenants": "Tenants",
     "owners": "Owners",
-    "serviceProviders": "Service providers",
     "communications": "Communications",
     "addTenant": "Add tenant",
     "addOwner": "Add owner"
@@ -404,8 +403,6 @@
     "intelligenceGroup": "Reports",
     "systemGroup": "System",
     "finance": "Finance",
-    "contacts": "Vendors",
-    "vendors": "Vendors",
     "contracts": "Contracts",
     "compliance": "Compliance",
     "taxFiling": "Tax Filing",
@@ -629,11 +626,6 @@
       "title": "No documents yet",
       "description": "Upload documents to keep property records, contracts, and correspondence organized.",
       "action": "Upload Document"
-    },
-    "contacts": {
-      "title": "No contacts found",
-      "description": "Contacts are populated from your tenants, owners, and service providers.",
-      "action": "Add Contact"
     },
     "units": {
       "title": "No units yet",
@@ -2258,24 +2250,6 @@
       "taxLog": "Tax log"
     },
     "leaseExpiresInDays": "{days}d left"
-  },
-  "contacts": {
-    "addVendor": "Add Vendor",
-    "searchPlaceholder": "Search by name, company, or specialty…",
-    "all": "All",
-    "contractors": "Contractors",
-    "vendors": "Vendors",
-    "internal": "Internal",
-    "emptyTitle": "No contacts found",
-    "emptyDescription": "Add maintenance contacts to manage your contractor network",
-    "loadFailed": "Couldn't load the contacts.",
-    "summary": "{total} contacts · {contractors} contractors · {vendors} vendors · {internal} internal",
-    "perHour": "/hr",
-    "type": {
-      "contractor": "Contractor",
-      "vendor": "Vendor",
-      "internalStaff": "Internal staff"
-    }
   },
   "account": {
     "title": "Account",
