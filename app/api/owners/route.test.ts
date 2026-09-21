@@ -7,14 +7,10 @@ import { NextRequest } from "next/server";
  * withErrorHandler — which has no ZodError branch and reports everything as 500.
  */
 
-const { requireAuthMock, prismaMock, handleDemoMutationMock, handleDemoGetMock } = vi.hoisted(
-  () => ({
-    requireAuthMock: vi.fn(),
-    prismaMock: { owner: { create: vi.fn(), findMany: vi.fn() } },
-    handleDemoMutationMock: vi.fn(),
-    handleDemoGetMock: vi.fn(),
-  }),
-);
+const { requireAuthMock, prismaMock } = vi.hoisted(() => ({
+  requireAuthMock: vi.fn(),
+  prismaMock: { owner: { create: vi.fn(), findMany: vi.fn() } },
+}));
 
 vi.mock("@/lib/services/auth/auth-middleware", () => ({
   requireAuth: requireAuthMock,
@@ -22,11 +18,6 @@ vi.mock("@/lib/services/auth/auth-middleware", () => ({
 }));
 vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prismaMock }));
 vi.mock("@/lib/config/data-mode", () => ({ isMockMode: false }));
-vi.mock("@/lib/demo/demo-api-handler", () => ({
-  handleDemoGet: handleDemoGetMock,
-  handleDemoMutation: handleDemoMutationMock,
-}));
-
 import { POST } from "./route";
 
 const postRequest = (body: unknown) =>
@@ -39,8 +30,6 @@ const postRequest = (body: unknown) =>
 describe("POST /api/owners", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    handleDemoGetMock.mockReturnValue({ response: null });
-    handleDemoMutationMock.mockResolvedValue({ response: null });
     requireAuthMock.mockResolvedValue({ userId: "user-123" });
     prismaMock.owner.create.mockResolvedValue({ id: "owner-1", name: "Ana Costa" });
   });

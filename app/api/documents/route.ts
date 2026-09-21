@@ -16,7 +16,6 @@ import {
 } from "@/lib/services/document-service";
 import { sanitizeForDatabase } from "@/lib/utils/sanitize";
 import { z } from "zod";
-import { handleDemoGet, handleDemoMutation } from "@/lib/demo/demo-api-handler";
 
 // Validation schemas
 const documentTypeSchema = z.enum([
@@ -44,9 +43,6 @@ const createDocumentSchema = z.object({
 
 // GET /api/documents - Get all documents with optional filters
 async function handleGet(request: NextRequest): Promise<Response> {
-  const demo = handleDemoGet(request, "documents");
-  if (demo.response) return demo.response;
-
   const authResult = await getAccessContext(request);
   if (authResult instanceof Response) return authResult;
 
@@ -98,9 +94,6 @@ async function handleGet(request: NextRequest): Promise<Response> {
 
 // POST /api/documents - Upload a new document
 async function handlePost(request: NextRequest): Promise<Response> {
-  const demo = await handleDemoMutation(request, "documents");
-  if (demo.response) return demo.response;
-
   const authResult = await requireOwnerAccess(request);
   if (authResult instanceof Response) return authResult;
 

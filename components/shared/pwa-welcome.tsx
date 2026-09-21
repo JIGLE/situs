@@ -298,22 +298,11 @@ export function PwaWelcome() {
         >
           <motion.div variants={riseIn} whileTap={{ scale: 0.97 }}>
             <TrackedLandingLink
-              href={"/demo?perspective=owner"}
-              eventName="landing.demo_start"
-              eventData={{ location: "pwa_welcome_primary", perspective: "owner" }}
-            >
-              <Button size="lg" className="w-full rounded-none font-semibold">
-                {t("heroCta.tryIt")}
-              </Button>
-            </TrackedLandingLink>
-          </motion.div>
-          <motion.div variants={riseIn} whileTap={{ scale: 0.97 }}>
-            <TrackedLandingLink
               href="/auth/signup"
               eventName="landing.signup_start"
               eventData={{ location: "pwa_welcome" }}
             >
-              <Button size="lg" variant="outline" className="w-full rounded-none font-semibold">
+              <Button size="lg" className="w-full rounded-none font-semibold">
                 {t("heroCta.join")}
               </Button>
             </TrackedLandingLink>

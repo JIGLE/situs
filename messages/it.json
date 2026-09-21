@@ -2182,25 +2182,6 @@
       "terminated": "Risolto"
     }
   },
-  "demo": {
-    "banner": "Modalità demo – Le modifiche non vengono salvate",
-    "exitButton": "Esci dalla demo",
-    "preparing": "Preparazione ambiente demo...",
-    "title": "Demo Situs",
-    "readOnly": "Questa funzionalità è in sola lettura in modalità demo",
-    "changesNotSaved": "Modalità demo: le modifiche non vengono salvate",
-    "perspectiveOwner": "Proprietario",
-    "perspectiveTenant": "Inquilino",
-    "perspectiveLabel": "Prospettiva della demo",
-    "reset": "Reimposta",
-    "resetTitle": "Ripristina i dati della demo",
-    "extend": "+15 min",
-    "extendTitle": "Estendi la demo di 15 minuti",
-    "timeRemaining": "Tempo rimanente in questa demo",
-    "expiringSoon": "La demo termina tra meno di 5 minuti",
-    "collapse": "Comprimi barra",
-    "expand": "Espandi barra"
-  },
   "loading": {
     "default": "Caricamento...",
     "application": "Caricamento applicazione...",
@@ -2420,7 +2401,6 @@
     "password": "Password",
     "signIn": "Accedi",
     "createAccount": "Crea account",
-    "exploreDemo": "Esplora la demo dal vivo",
     "demoModeHint": "Modalità demo attiva — inserisci credenziali qualsiasi",
     "signin": {
       "eyebrow": "Bentornato",
@@ -2658,7 +2638,6 @@
     "noSubmissionLog": "Ancora nessun record di invio.",
     "noScheduledWork": "Nessun intervento di manutenzione programmato o in scadenza.",
     "noTickets": "Ancora nessun ticket di manutenzione",
-    "runScenario": "Esegui scenario dimostrativo",
     "runScenarioHelp": "Guarda un flusso realistico in azione",
     "runningScenario": "Esecuzione dello scenario…",
     "scenarioComplete": "Scenario completato",

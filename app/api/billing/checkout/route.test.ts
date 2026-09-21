@@ -1,18 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const { requireAuthMock, isDemoRequestMock, createCheckoutSessionMock } = vi.hoisted(() => ({
+const { requireAuthMock, createCheckoutSessionMock } = vi.hoisted(() => ({
   requireAuthMock: vi.fn(),
-  isDemoRequestMock: vi.fn(),
   createCheckoutSessionMock: vi.fn(),
 }));
 
 vi.mock("@/lib/services/auth/auth-middleware", () => ({
   requireAuth: requireAuthMock,
-}));
-
-vi.mock("@/lib/demo/demo-mode", () => ({
-  isDemoRequest: isDemoRequestMock,
 }));
 
 vi.mock("@/lib/billing/subscription-service", () => ({
@@ -24,7 +19,6 @@ import { GET } from "./route";
 describe("GET /api/billing/checkout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    isDemoRequestMock.mockReturnValue(false);
     requireAuthMock.mockResolvedValue({ userId: "user-123" });
   });
 
@@ -78,19 +72,6 @@ describe("GET /api/billing/checkout", () => {
       expect.anything(),
       { trialDays: undefined },
     );
-  });
-
-  it("redirects demo requests back to the referring page instead of Stripe", async () => {
-    isDemoRequestMock.mockReturnValue(true);
-    const request = new NextRequest("http://localhost:3000/api/billing/checkout?plan=pro", {
-      headers: { referer: "http://localhost:3000/pt/settings" },
-    });
-
-    const response = await GET(request);
-
-    expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("http://localhost:3000/pt/settings");
-    expect(createCheckoutSessionMock).not.toHaveBeenCalled();
   });
 
   it("returns a 500 without echoing the internal failure reason", async () => {

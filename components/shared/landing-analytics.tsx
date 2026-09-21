@@ -7,7 +7,6 @@ type EventPrimitive = string | number | boolean;
 
 interface LandingAnalyticsObserverProps {
   locale: string;
-  demoEnabled: boolean;
 }
 
 interface TrackedLandingLinkProps {
@@ -71,7 +70,7 @@ export function TrackedLandingLink({
   );
 }
 
-export function LandingAnalyticsObserver({ locale, demoEnabled }: LandingAnalyticsObserverProps) {
+export function LandingAnalyticsObserver({ locale }: LandingAnalyticsObserverProps) {
   const trackedPageView = useRef(false);
   const trackedDepths = useRef(new Set<number>());
 
@@ -80,10 +79,9 @@ export function LandingAnalyticsObserver({ locale, demoEnabled }: LandingAnalyti
 
     trackLandingEvent("landing.page_view", {
       locale,
-      demoEnabled,
     });
     trackedPageView.current = true;
-  }, [demoEnabled, locale]);
+  }, [locale]);
 
   useEffect(() => {
     const depthMilestones = [50, 90];

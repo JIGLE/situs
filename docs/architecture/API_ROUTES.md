@@ -1,11 +1,11 @@
 # API Routes
 
-Situs exposes **52 API domains** across **158 `route.ts` files** under `app/api/`, organised by
+Situs exposes **51 API domains** across **156 `route.ts` files** under `app/api/`, organised by
 domain per Next.js App Router convention.
 
 This document describes **28 of those domains in detail** — the ones whose contracts are not
 obvious from the handler. It is not, and does not try to be, an endpoint-by-endpoint reference
-for all 154: a hand-maintained one goes stale on the first PR that adds a route, and this file
+for all 156: a hand-maintained one goes stale on the first PR that adds a route, and this file
 spent a while claiming to cover "all" routes while omitting 24 domains.
 
 **The filesystem is the source of truth.** To see what exists right now:
@@ -36,7 +36,6 @@ a domain listing `GET POST` may still have some paths that only answer `GET`.
 | `/api/cron`                    | 3           | GET POST                  |
 | `/api/csrf-token`              | 1           | GET                       |
 | `/api/debug`                   | 6           | GET POST                  |
-| `/api/demo`                    | 2           | GET POST                  |
 | `/api/distributions`           | 2           | GET POST                  |
 | `/api/documents`               | 8           | GET POST PUT DELETE       |
 | `/api/email`                   | 3           | GET POST PUT              |

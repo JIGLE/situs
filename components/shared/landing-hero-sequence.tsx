@@ -390,13 +390,13 @@ export function LandingHeroSequence({ locale }: Props): React.ReactElement {
             className={cn(styles.ctaWrap1, styles.ctaPulse, "w-full sm:w-auto")}
           >
             <TrackedLandingLink
-              href={"/demo?perspective=owner"}
-              eventName="landing.demo_start"
-              eventData={{ location: "hero_primary", perspective: "owner" }}
+              href="/auth/signup"
+              eventName="landing.signup_start"
+              eventData={{ location: "hero_secondary" }}
               className="block w-full sm:w-auto"
             >
               <Button size="lg" className="w-full rounded-none font-semibold sm:w-auto">
-                {t("heroCta.tryIt")}
+                {t("heroCta.join")}
               </Button>
             </TrackedLandingLink>
           </div>
@@ -405,27 +405,6 @@ export function LandingHeroSequence({ locale }: Props): React.ReactElement {
               ctaRefs.current[1] = el;
             }}
             className={cn(styles.ctaWrap2, styles.ctaPulse, "w-full sm:w-auto")}
-          >
-            <TrackedLandingLink
-              href="/auth/signup"
-              eventName="landing.signup_start"
-              eventData={{ location: "hero_secondary" }}
-              className="block w-full sm:w-auto"
-            >
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full rounded-none font-semibold sm:w-auto"
-              >
-                {t("heroCta.join")}
-              </Button>
-            </TrackedLandingLink>
-          </div>
-          <div
-            ref={(el) => {
-              ctaRefs.current[2] = el;
-            }}
-            className={cn(styles.ctaWrap3, styles.ctaPulse, "w-full sm:w-auto")}
           >
             <TrackedLandingLink
               href="/auth/signin"

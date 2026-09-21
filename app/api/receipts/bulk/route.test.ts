@@ -8,9 +8,8 @@ import { NextRequest } from "next/server";
  * re-run, so it is pinned here along with the month window it searches.
  */
 
-const { requireOwnerAccessMock, handleDemoMutationMock, prismaMock } = vi.hoisted(() => ({
+const { requireOwnerAccessMock, prismaMock } = vi.hoisted(() => ({
   requireOwnerAccessMock: vi.fn(),
-  handleDemoMutationMock: vi.fn(),
   prismaMock: {
     lease: { findMany: vi.fn() },
     receipt: { findFirst: vi.fn(), create: vi.fn() },
@@ -22,7 +21,6 @@ vi.mock("@/lib/services/auth/auth-middleware", () => ({
   handleOptions: vi.fn(),
 }));
 vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prismaMock }));
-vi.mock("@/lib/demo/demo-api-handler", () => ({ handleDemoMutation: handleDemoMutationMock }));
 
 import { POST } from "./route";
 
@@ -61,7 +59,6 @@ const createdReceipt = {
 describe("POST /api/receipts/bulk", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    handleDemoMutationMock.mockResolvedValue({ response: null });
     requireOwnerAccessMock.mockResolvedValue({ scopeUserId: "user-123" });
     prismaMock.lease.findMany.mockResolvedValue([lease]);
     prismaMock.receipt.findFirst.mockResolvedValue(null);

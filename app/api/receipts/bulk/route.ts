@@ -4,7 +4,6 @@ import { createSuccessResponse, parseBody, withErrorHandler } from "@/lib/utils/
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { sanitizeForDatabase } from "@/lib/utils/sanitize";
-import { handleDemoMutation } from "@/lib/demo/demo-api-handler";
 import { z } from "zod";
 import { Receipt } from "@/lib/types";
 
@@ -15,9 +14,6 @@ const bulkGenerateSchema = z.object({
 
 // POST /api/receipts/bulk — Generate rent receipts for all active leases in a month
 async function handlePost(request: NextRequest): Promise<Response> {
-  const demo = await handleDemoMutation(request, "receipts");
-  if (demo.response) return demo.response;
-
   const authResult = await requireOwnerAccess(request);
   if (authResult instanceof Response) return authResult;
 

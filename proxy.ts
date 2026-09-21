@@ -1,10 +1,9 @@
 /**
- * Proxy for Next.js 16+ locale routing, auth enforcement, CSRF, demo mode, and URL redirects.
+ * Proxy for Next.js 16+ locale routing, auth enforcement, CSRF, and URL redirects.
  * Handles:
  * - Auth guard: 401 for unauthenticated protected API requests; redirect portal pages to sign-in
  * - CSRF validation for state-changing API requests
  * - Locale prefix enforcement (always use /en, /pt, /es, or /it)
- * - Demo mode: /demo entry redirect + route blocking for demo sessions
  * - Backward compatibility redirects from old tab-based URLs
  * - Security headers (CSP, HSTS, X-Frame-Options, etc.)
  */
@@ -30,12 +29,6 @@ const { getToken } = require("next-auth/jwt") as {
     secret?: string;
   }) => Promise<Record<string, unknown> | null>;
 };
-
-/** Cookie name for demo mode (must match lib/demo/demo-mode.ts) */
-const DEMO_COOKIE_NAME = "situs_demo";
-
-/** Paths blocked during demo mode */
-const DEMO_BLOCKED_PATTERNS = ["/api/user", "/api/debug"];
 
 // Locales supported by the app (keep in sync with lib/i18n/config.ts)
 const SUPPORTED_LOCALES = ["pt", "en", "es", "it"] as const;
@@ -203,18 +196,6 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  // ── /demo needs no handling any more ────────────────────────────────
-  //
-  // It used to redirect to `/${defaultLocale}/demo`, which was right while pages lived at
-  // prefixed URLs. Once the prefix left the address bar that became an infinite loop: this hop
-  // sent `/demo` to `/pt/demo`, and the back-compat rule at the bottom of this file 308s any
-  // prefixed URL to its unprefixed form — straight back to `/demo`. Every entry point into demo
-  // mode (the landing hero, the PWA welcome screen, the sign-in page) dead-ended in
-  // ERR_TOO_MANY_REDIRECTS.
-  //
-  // Nothing replaces it. `/demo` is already the address the app serves, and the rewrite at the
-  // bottom routes it to `app/[locale]/demo` internally, which is all the old redirect was for.
-
   // ── Legacy property payment path redirects ──────────────────────────
   const legacyPropertyPaymentMatch = pathname.match(
     /^\/(en|pt|es|it)\/(?:portfolio|properties)\/([^/]+)\/(?:payments?|payment-review|review-payments)(?:\/review)?\/?$/,
@@ -229,33 +210,6 @@ export async function proxy(request: NextRequest) {
     const response = NextResponse.redirect(url, 301);
     applySecurityHeaders(response, nonce);
     return response;
-  }
-
-  // ── Demo mode route blocking ────────────────────────────────────────
-  const cookieHeader = request.headers.get("cookie") || "";
-  const isDemo = cookieHeader.includes(`${DEMO_COOKIE_NAME}=1`);
-  if (isDemo) {
-    const pathWithoutLocale = pathname.replace(/^\/(pt|en|es|it)(?=\/|$)/, "") || "/";
-
-    const isBlocked = DEMO_BLOCKED_PATTERNS.some(
-      (pattern) => pathWithoutLocale === pattern || pathWithoutLocale.startsWith(pattern + "/"),
-    );
-
-    if (isBlocked) {
-      if (pathWithoutLocale.startsWith("/api/")) {
-        const response = NextResponse.json(
-          { error: "This feature is not available in demo mode" },
-          { status: 403 },
-        );
-        applySecurityHeaders(response, nonce);
-        return response;
-      }
-      const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
-      const response = NextResponse.redirect(url);
-      applySecurityHeaders(response, nonce);
-      return response;
-    }
   }
 
   // The path as the app thinks of it, with a locale segment stripped when one is present. Both
@@ -302,9 +256,7 @@ export async function proxy(request: NextRequest) {
 
   if (isMainPortalPage) {
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-    // A valid demo cookie stands in for a session on portal pages — otherwise
-    // "Try Demo Mode" bounces straight back to sign-in.
-    if (!token && !isDemo) {
+    if (!token) {
       // Sign-in lives at app/auth/signin (outside the [locale] segment). Clone-and-retarget
       // carried the original query onto the sign-in URL and left it out of the callback, so
       // `/financials?tab=tax` became `/auth/signin?tab=tax` and returned you to `/financials`

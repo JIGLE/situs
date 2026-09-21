@@ -16,14 +16,10 @@ import { sanitizeForDatabase, sanitizeNumber } from "@/lib/utils/sanitize";
 import { getPaginationFromRequest, createPaginatedResponse } from "@/lib/utils/pagination";
 import { logger } from "@/lib/utils/logger";
 import { getPrismaClient } from "@/lib/services/database/database";
-import { handleDemoGet, handleDemoMutation } from "@/lib/demo/demo-api-handler";
 import { createReceiptSchema } from "@/lib/schemas/receipt.schema";
 
 // GET /api/receipts - Get all receipts for the authenticated user (with pagination)
 async function handleGet(request: NextRequest): Promise<Response> {
-  const demo = handleDemoGet(request, "receipts");
-  if (demo.response) return demo.response;
-
   const authResult = await getAccessContext(request);
   if (authResult instanceof Response) return authResult;
 
@@ -74,9 +70,6 @@ async function handleGet(request: NextRequest): Promise<Response> {
 
 // POST /api/receipts - Create a new receipt
 async function handlePost(request: NextRequest): Promise<Response> {
-  const demo = await handleDemoMutation(request, "receipts");
-  if (demo.response) return demo.response;
-
   const authResult = await requireOwnerAccess(request);
   if (authResult instanceof Response) return authResult;
 

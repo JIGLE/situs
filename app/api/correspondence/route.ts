@@ -7,7 +7,6 @@ import {
 } from "@/lib/utils/error-handling";
 import { correspondenceService } from "@/lib/services/database/correspondence";
 import { z } from "zod";
-import { handleDemoGet } from "@/lib/demo/demo-api-handler";
 
 // Validation schema for updates
 const updateCorrespondenceSchema = z.object({
@@ -17,9 +16,6 @@ const updateCorrespondenceSchema = z.object({
 
 // GET /api/correspondence - Get all correspondence for the authenticated user
 async function handleGet(request: NextRequest): Promise<Response> {
-  const demo = handleDemoGet(request, "correspondence");
-  if (demo.response) return demo.response;
-
   const authResult = await requireAuth(request);
   if (authResult instanceof Response) return authResult;
 

@@ -2182,25 +2182,6 @@
       "terminated": "Terminado"
     }
   },
-  "demo": {
-    "banner": "Modo Demo – As alterações não são guardadas",
-    "exitButton": "Sair do Demo",
-    "preparing": "A preparar o ambiente de demonstração...",
-    "title": "Situs Demo",
-    "readOnly": "Esta funcionalidade é apenas de leitura no modo demo",
-    "changesNotSaved": "Modo demo: as alterações não são guardadas",
-    "perspectiveOwner": "Proprietário",
-    "perspectiveTenant": "Inquilino",
-    "perspectiveLabel": "Perspetiva da demonstração",
-    "reset": "Reiniciar",
-    "resetTitle": "Repor os dados da demonstração",
-    "extend": "+15 min",
-    "extendTitle": "Prolongar a demonstração em 15 minutos",
-    "timeRemaining": "Tempo restante nesta demonstração",
-    "expiringSoon": "A demonstração termina em menos de 5 minutos",
-    "collapse": "Recolher barra",
-    "expand": "Expandir barra"
-  },
   "loading": {
     "default": "A carregar...",
     "application": "A carregar a aplicação...",
@@ -2420,7 +2401,6 @@
     "password": "Palavra-passe",
     "signIn": "Entrar",
     "createAccount": "Criar conta",
-    "exploreDemo": "Explorar a demonstração",
     "demoModeHint": "Modo de demonstração ativo — introduza quaisquer credenciais",
     "signin": {
       "eyebrow": "Bem-vindo de volta",
@@ -2658,7 +2638,6 @@
     "noSubmissionLog": "Ainda sem registos de submissão.",
     "noScheduledWork": "Sem trabalhos de manutenção agendados ou pendentes.",
     "noTickets": "Ainda sem pedidos de manutenção",
-    "runScenario": "Executar cenário de demonstração",
     "runScenarioHelp": "Veja um fluxo realista a decorrer",
     "runningScenario": "A executar o cenário…",
     "scenarioComplete": "Cenário concluído",

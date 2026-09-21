@@ -8,7 +8,6 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
-import { isDemoRequest } from "@/lib/demo/demo-mode";
 import { createBillingPortalSession } from "@/lib/billing/subscription-service";
 
 function getBaseUrl(request: NextRequest): string {
@@ -16,13 +15,6 @@ function getBaseUrl(request: NextRequest): string {
 }
 
 export async function GET(request: NextRequest): Promise<Response> {
-  if (isDemoRequest(request)) {
-    const referer = request.headers.get("referer");
-    return NextResponse.redirect(
-      referer && referer.startsWith(getBaseUrl(request)) ? referer : "/",
-    );
-  }
-
   const authResult = await requireAuth(request);
   if (authResult instanceof Response) return authResult;
 

@@ -91,9 +91,8 @@ cp .env.example .env      # DATABASE_URL + NEXTAUTH_SECRET are the only must-hav
 npm run dev
 ```
 
-Open <http://localhost:3000>. Prefer to look before you configure? Every install ships a
-read-only demo at `/demo` — 12 properties, 9 tenants, 10 leases of realistic data, no auth, no
-writes.
+Open <http://localhost:3000>. The first account created owns the instance; every other email is
+refused until you add it to `AUTH_ALLOWED_EMAILS`.
 
 ### Docker
 

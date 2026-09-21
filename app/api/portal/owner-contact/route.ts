@@ -7,19 +7,8 @@ import {
 } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { getPrismaClient } from "@/lib/services/database/database";
-import { getDemoStoreData } from "@/lib/demo/demo-local-state";
-import { isDemoRequest } from "@/lib/demo/demo-mode";
-import type { Owner } from "@/lib/types";
 
 async function handleGet(request: NextRequest): Promise<Response> {
-  // Demo mode: return first demo owner's contact
-  if (isDemoRequest(request)) {
-    const owners = getDemoStoreData("owners") as Owner[];
-    const owner = owners[0];
-    if (!owner) return createErrorResponse(new Error("No owner found"), 404, request);
-    return createSuccessResponse({ name: owner.name, email: owner.email, phone: owner.phone });
-  }
-
   const authResult = await getAccessContext(request);
   if (authResult instanceof Response) return authResult;
 

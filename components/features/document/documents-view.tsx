@@ -6,7 +6,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { withEntityDetail } from "@/lib/utils/entity-detail-url";
 import { useSession } from "next-auth/react";
 import { useCsrf } from "@/lib/contexts/csrf-context";
-import { useDemoMode } from "@/lib/contexts/demo-context";
 import { usePortalAccess } from "@/lib/contexts/portal-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,7 +62,6 @@ export function DocumentsView({ propertyId, embedded = false }: DocumentsViewPro
   const { data: session } = useSession();
   const { token: csrfToken } = useCsrf();
   const { isOwnerPortal } = usePortalAccess();
-  const { isDemoMode } = useDemoMode();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -96,7 +94,7 @@ export function DocumentsView({ propertyId, embedded = false }: DocumentsViewPro
     handleDelete,
   } = useDocuments({
     csrfToken,
-    sessionReady: !!(session || isDemoMode),
+    sessionReady: !!session,
     typeFilter,
     propertyFilter,
     searchTerm,
@@ -136,7 +134,7 @@ export function DocumentsView({ propertyId, embedded = false }: DocumentsViewPro
     [documents],
   );
 
-  if (!session && !isDemoMode) {
+  if (!session) {
     return (
       <div className="flex items-center justify-center h-64">
         <p className="text-muted-foreground">{t("signInRequired")}</p>

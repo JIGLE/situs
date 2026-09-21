@@ -9,7 +9,6 @@ import { withRateLimit } from "@/lib/utils/rate-limit";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { maintenanceSchema } from "@/lib/schemas/maintenance.schema";
 import { isMockMode } from "@/lib/config/data-mode";
-import { handleDemoGet, handleDemoMutation } from "@/lib/demo/demo-api-handler";
 import { ZodError } from "zod";
 
 const ticketInclude = {
@@ -33,9 +32,6 @@ function flattenTicket(
 }
 
 async function handleGet(request: NextRequest): Promise<Response> {
-  const demo = handleDemoGet(request, "maintenance");
-  if (demo.response) return demo.response;
-
   if (isMockMode) {
     return createSuccessResponse([]);
   }
@@ -56,9 +52,6 @@ async function handleGet(request: NextRequest): Promise<Response> {
 }
 
 async function handlePost(request: NextRequest): Promise<Response> {
-  const demo = await handleDemoMutation(request, "maintenance");
-  if (demo.response) return demo.response;
-
   if (isMockMode) {
     return createErrorResponse(
       new Error("Write operations not supported in mock mode"),

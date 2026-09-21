@@ -2182,25 +2182,6 @@
       "terminated": "Terminated"
     }
   },
-  "demo": {
-    "banner": "Demo Mode – Changes are not saved",
-    "exitButton": "Exit Demo",
-    "preparing": "Preparing demo environment...",
-    "title": "Situs Demo",
-    "readOnly": "This feature is read-only in demo mode",
-    "changesNotSaved": "Demo mode: changes are not saved",
-    "perspectiveOwner": "Owner",
-    "perspectiveTenant": "Tenant",
-    "perspectiveLabel": "Demo perspective",
-    "reset": "Reset",
-    "resetTitle": "Reset demo data to defaults",
-    "extend": "+15 min",
-    "extendTitle": "Extend the demo session by 15 minutes",
-    "timeRemaining": "Time remaining in this demo session",
-    "expiringSoon": "Demo ends in under 5 minutes",
-    "collapse": "Collapse demo bar",
-    "expand": "Expand demo bar"
-  },
   "loading": {
     "default": "Loading...",
     "application": "Loading application...",
@@ -2420,7 +2401,6 @@
     "password": "Password",
     "signIn": "Sign in",
     "createAccount": "Create account",
-    "exploreDemo": "Explore the live demo",
     "demoModeHint": "Demo mode active — enter any credentials",
     "signin": {
       "eyebrow": "Welcome back",
@@ -2658,7 +2638,6 @@
     "noSubmissionLog": "No submission log entries yet.",
     "noScheduledWork": "No scheduled or due maintenance work.",
     "noTickets": "No maintenance tickets yet",
-    "runScenario": "Run demo scenario",
     "runScenarioHelp": "Watch a realistic workflow unfold",
     "runningScenario": "Running scenario…",
     "scenarioComplete": "Scenario complete",

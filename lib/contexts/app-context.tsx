@@ -17,7 +17,6 @@ import {
 } from "@/lib/types";
 import { useToast } from "./toast-context";
 import { useCsrf } from "./csrf-context";
-import { isDemoModeClient } from "@/lib/demo/demo-mode";
 import { usePortalAccess } from "@/lib/contexts/portal-context";
 import { isPublicPagePath } from "@/lib/utils/public-route";
 import { appReducer, initialState, type AppAction, type AppState } from "./app-reducer";
@@ -80,7 +79,6 @@ export function AppProvider({ children }: { children: ReactNode }): React.ReactE
   const { error: showError, success: showSuccess } = useToast();
   const { token: csrfToken } = useCsrf();
   const userId = (session?.user as { id?: string } | undefined)?.id;
-  const isDemo = isDemoModeClient();
   const isPublicPage = isPublicPagePath(pathname);
 
   const { refreshData } = useAppData({
@@ -89,7 +87,6 @@ export function AppProvider({ children }: { children: ReactNode }): React.ReactE
     csrfToken,
     showError,
     isPublicPage,
-    isDemo,
   });
 
   const {
@@ -103,7 +100,7 @@ export function AppProvider({ children }: { children: ReactNode }): React.ReactE
     expenseActions,
     maintenanceActions,
     leaseActions,
-  } = useEntityActions(state, dispatch, { csrfToken, userId, showError, showSuccess, isDemo });
+  } = useEntityActions(state, dispatch, { csrfToken, userId, showError, showSuccess });
 
   const scopedState = useScopedState(state, { portalRole, selectedTenantId, tenantEmail });
 

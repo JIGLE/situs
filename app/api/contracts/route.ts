@@ -3,14 +3,10 @@ import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { isMockMode } from "@/lib/config/data-mode";
 import { leaseService } from "@/lib/services/database/database.mock";
-import { handleDemoGet } from "@/lib/demo/demo-api-handler";
 
 // GET /api/contracts - List all leases (contracts)
 export async function GET(request: NextRequest) {
   try {
-    const demo = handleDemoGet(request, "leases");
-    if (demo.response) return demo.response;
-
     const authResult = await requireAuth(request);
     if (authResult instanceof Response) return authResult;
 

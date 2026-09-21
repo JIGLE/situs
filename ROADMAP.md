@@ -15,7 +15,7 @@ Capital System** (PRs 1–12 of 13 shipped — see "Situs Rebrand" section below
 brand, country-matched theming, portfolio tree, reference-month rent ledger, bank movement
 matching, receipt lifecycle + PT tax connector, mock OCR classification, generalized audit trail,
 schema consolidation, and an a11y/e2e pass over the new surfaces are all live. Decision-driven UI,
-multi-scenario demo, map view, fiscal compliance (PT/ES), building management, tenant
+map view, fiscal compliance (PT/ES), building management, tenant
 owner-contact callout, and portfolio building grouping remain in place underneath the rebrand.
 
 ### Completed Features
@@ -25,7 +25,6 @@ owner-contact callout, and portfolio building grouping remain in place underneat
 - **Portfolio View**: Compact action-driven layout with IssueAlert zone, List/Map tabs, Next Action column, attention row highlights
 - **Property Detail Modal**: 4-zone decision-driven interface (Status+Health / Primary Action / Issues Panel / Tabbed info incl. Maintenance tab)
 - **Property Map**: Status-coded divIcon markers with legend, slide-in side panel, FitBoundsController, dynamic viewport height
-- **Demo Mode**: 12 properties with real GPS coords, multi-unit buildings, 3 explicit UX scenarios, realistic financial history; 5-min warning + extend button
 - **Financials**: 4-tab container (Action Queue / Receipts / Occupancy & Rent / Tax Summary) — all 4 fully wired; standardized expense categories
 - **Maintenance**: Full work-order lifecycle (category/vendor/cost/scheduleDate/isTenantReport); 4-zone TicketDetailModal; auto-creates Expense on resolve
 - **Buildings**: Building entity in AppState+context; CRUD API; BuildingsView at `/buildings`; nav entry

@@ -3,12 +3,6 @@ import type { Session } from "next-auth";
 import { getAuthOptions } from "@/lib/services/auth/auth";
 import { isMockMode } from "@/lib/config/data-mode";
 import { isDevAuthEnabled } from "@/lib/services/auth/dev-session";
-import {
-  isDemoRequest,
-  DEMO_USER,
-  getDemoPerspectiveFromRequest,
-  getDemoTenantIdFromRequest,
-} from "@/lib/demo/demo-mode";
 import { getPortalRoleFromSessionRole, type PortalRole } from "@/lib/portal/access";
 
 // Authentication middleware for API routes
@@ -20,15 +14,6 @@ export async function requireAuth(_request: NextRequest): Promise<
   | NextResponse
 > {
   try {
-    // Demo mode: return synthetic demo user without requiring a real session
-    if (isDemoRequest(_request)) {
-      const demoSession = {
-        user: { ...DEMO_USER },
-        expires: new Date(Date.now() + 3600_000).toISOString(),
-      } as Session;
-      return { session: demoSession, userId: DEMO_USER.id };
-    }
-
     // Import next-auth lazily so tests can mock getServerSession before we call it
     const mod = await import("next-auth/next").catch(() => import("next-auth"));
     type GetServerSession = (opts?: ReturnType<typeof getAuthOptions>) => Promise<Session | null>;
@@ -203,17 +188,6 @@ export async function getAccessContext(
   }
 
   const { session, userId } = authResult;
-
-  if (isDemoRequest(request)) {
-    const portalRole = getDemoPerspectiveFromRequest(request);
-    return {
-      session,
-      userId,
-      scopeUserId: DEMO_USER.id,
-      portalRole,
-      tenantId: portalRole === "tenant" ? getDemoTenantIdFromRequest(request) : undefined,
-    };
-  }
 
   const portalRole = getPortalRoleFromSessionRole(session.user.role);
   if (portalRole === "owner") {

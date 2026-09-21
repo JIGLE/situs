@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useMemo } from "react";
 import { useSession } from "next-auth/react";
-import { useDemoMode } from "@/lib/contexts/demo-context";
 import {
   canAccessPortalPath,
   getPortalNavigation,
@@ -42,11 +41,7 @@ const PortalContext = createContext<PortalContextValue>({
 
 export function PortalProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
-  const { isDemoMode, demoPerspective, selectedTenantId } = useDemoMode();
-
-  const portalRole = isDemoMode
-    ? demoPerspective
-    : getPortalRoleFromSessionRole(session?.user?.role ?? null);
+  const portalRole = getPortalRoleFromSessionRole(session?.user?.role ?? null);
 
   const value = useMemo<PortalContextValue>(() => {
     const navigation = getPortalNavigation(portalRole);
@@ -60,9 +55,9 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
       mobileSecondaryNavigation: getSecondaryMobileNavigation(portalRole),
       canAccessPath: (pathname: string) => canAccessPortalPath(portalRole, pathname),
       tenantEmail: session?.user?.email ?? null,
-      tenantId: isDemoMode ? selectedTenantId : null,
+      tenantId: null,
     };
-  }, [isDemoMode, portalRole, selectedTenantId, session?.user?.email]);
+  }, [portalRole, session?.user?.email]);
 
   return <PortalContext.Provider value={value}>{children}</PortalContext.Provider>;
 }

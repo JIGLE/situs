@@ -33,7 +33,7 @@ export function isPublicPagePath(pathname: string | null | undefined): boolean {
   const first = appSegments[0]?.toLowerCase();
 
   // Public flows
-  if (first === "auth" || first === "demo") return true;
+  if (first === "auth") return true;
 
   return false;
 }
