@@ -12,6 +12,7 @@ vi.mock("next/navigation", () => ({
     forward: vi.fn(),
     prefetch: vi.fn(),
   }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock("next-auth/react", () => ({
@@ -20,6 +21,20 @@ vi.mock("next-auth/react", () => ({
   }),
   signOut: vi.fn(),
 }));
+
+// The sidebar mounts NotificationBell, which needs a CsrfProvider ancestor for useCsrf() and
+// fetches on mount — renderWithProviders supplies neither, so both are stubbed here the same
+// way document-detail-panel.tsx's own tests stub them.
+vi.mock("@/lib/contexts/csrf-context", () => ({
+  useCsrf: () => ({ token: "test-csrf-token" }),
+}));
+vi.mock("@/lib/utils/api-client", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/utils/api-client")>();
+  return {
+    ...actual,
+    apiFetch: vi.fn().mockResolvedValue({ notifications: [], total: 0, unreadCount: 0 }),
+  };
+});
 
 vi.mock("@/lib/contexts/theme-context", () => ({
   useTheme: () => ({

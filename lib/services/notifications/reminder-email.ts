@@ -39,6 +39,24 @@ function resolveLocale(language: string | null | undefined): SupportedLocale {
 export type ReminderEmailKind =
   "rentReminder" | "overdueNotice" | "leaseRenewal" | "receiptDeadline";
 
+/**
+ * Which reminder kinds are urgent enough to also leave the app as an email.
+ *
+ * In-app is always primary: every kind here still writes its Notification row
+ * unconditionally, right where notification-automation.ts calls this function. This only
+ * decides whether it ALSO reaches the landlord's inbox, on top of the emailNotifications /
+ * taxReminderNotifications checks below.
+ *
+ * rentReminder (D-5) and leaseRenewal (D-60) both have days of runway before anything is
+ * actually due, so the bell is enough to catch someone who checks the app now and then.
+ * overdueNotice (money already late) and receiptDeadline (a legal filing deadline tomorrow)
+ * have no such runway, so they still page the inbox.
+ */
+const URGENT_REMINDER_KINDS: ReadonlySet<ReminderEmailKind> = new Set([
+  "overdueNotice",
+  "receiptDeadline",
+]);
+
 interface UserEmailContext {
   email: string;
   locale: SupportedLocale;
@@ -100,6 +118,8 @@ export async function sendReminderEmail(
   values: Record<string, string | number>,
   options?: { gate?: "tax" },
 ): Promise<void> {
+  if (!URGENT_REMINDER_KINDS.has(kind)) return;
+
   try {
     const ctx = await getUserEmailContext(prisma, userId);
     if (!ctx) return;

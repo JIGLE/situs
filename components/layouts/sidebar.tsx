@@ -9,6 +9,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 
 import { SitusPortalMark } from "@/components/shared/situs-portal-logo";
+import { NotificationBell } from "@/components/shared/notification-bell";
 import { cn } from "@/lib/utils/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -208,6 +209,19 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
             </Button>
           </>
         )}
+      </div>
+
+      {/* Bell sits in its own thin row rather than inside the header: the header's collapsed
+          state is a single button (the whole row toggles expand), which leaves no room for a
+          second interactive element. Icon-only either way, so collapse never changes its
+          layout — only its alignment. */}
+      <div
+        className={cn(
+          "flex items-center border-b border-[var(--color-inner-border)] px-3 py-1.5",
+          collapsed ? "justify-center" : "justify-end",
+        )}
+      >
+        <NotificationBell />
       </div>
 
       {/* Navigation */}

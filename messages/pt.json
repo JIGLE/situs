@@ -1360,6 +1360,11 @@
     "documentUploaded": "Documento Carregado",
     "rentReceiptDue": "Recibo de Renda Pendente",
     "nruaRegistration": "Registo NRUA Necessário",
+    "paymentOverdue": "Pagamento em Atraso",
+    "leaseRenewalReminder": "Lembrete de Renovação de Contrato",
+    "inboundMessage": "Nova Mensagem",
+    "system": "Sistema",
+    "other": "Notificação",
     "markAllRead": "Marcar Tudo como Lido",
     "email": {
       "rentReminder": {
@@ -2137,7 +2142,40 @@
     },
     "batchSubtitle": "Selecione os destinatários das cartas de: {name}",
     "generating": "A gerar…",
-    "generateBatch": "Gerar lote ({count})"
+    "generateBatch": "Gerar lote ({count})",
+    "tabs": {
+      "outbound": "Enviado",
+      "inbox": "Caixa de Entrada"
+    },
+    "inbox": {
+      "loadFailed": "Não foi possível carregar as mensagens. Tente novamente.",
+      "showArchived": "Mostrar arquivadas",
+      "showActive": "Mostrar ativas",
+      "emptyTitle": "Ainda sem mensagens",
+      "emptyDescription": "O correio enviado para o seu endereço Situs aparece aqui.",
+      "emptyArchivedTitle": "Sem mensagens arquivadas",
+      "emptyArchivedDescription": "As mensagens que arquivar aparecem aqui.",
+      "suggested": "Sugestão: {name}",
+      "detailTitle": "Mensagem",
+      "senderChecked": "Remetente verificado (SPF/DKIM aprovado)",
+      "senderUnverified": "Remetente não verificado",
+      "attachments": "Anexos",
+      "saveAttachment": "Guardar em Documentos",
+      "attachmentSaving": "A guardar…",
+      "attachmentSavedLabel": "Guardado",
+      "attachmentSaved": "Anexo guardado em Documentos",
+      "attachmentSaveFailed": "Não foi possível guardar o anexo. Tente novamente.",
+      "linkedTenant": "Inquilino associado",
+      "noTenant": "Sem inquilino associado",
+      "confirm": "Confirmar",
+      "linkSaved": "Associação ao inquilino atualizada",
+      "linkFailed": "Não foi possível atualizar a associação. Tente novamente.",
+      "archive": "Arquivar",
+      "unarchive": "Desarquivar",
+      "archived": "Mensagem arquivada",
+      "unarchived": "Mensagem desarquivada",
+      "archiveFailed": "Não foi possível atualizar a mensagem. Tente novamente."
+    }
   },
   "contracts": {
     "title": "Contratos",
