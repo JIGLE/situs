@@ -38,46 +38,6 @@ describe("admin views unwrap the API envelope exactly once", () => {
     apiFetch.mockReset();
   });
 
-  it("lists the accounts apiFetch returns", async () => {
-    const { AdminUsersView } = await import("@/components/features/admin/admin-users-view");
-
-    // Exactly what `apiFetch` yields for `{"data":{"users":[…]}}` — the envelope is already off.
-    apiFetch.mockResolvedValue({
-      users: [
-        {
-          id: "u1",
-          email: "owner@situs.local",
-          name: "Owner",
-          role: "ADMIN",
-          createdAt: new Date("2026-01-02").toISOString(),
-          isSelf: true,
-          owns: { properties: 2, tenants: 3, leases: 1, receipts: 4 },
-        },
-      ],
-    });
-
-    render(<AdminUsersView />);
-
-    await waitFor(() => {
-      expect(screen.getByText("owner@situs.local")).toBeInTheDocument();
-    });
-    // The empty state must not be what a populated response renders.
-    expect(screen.queryByText("empty")).not.toBeInTheDocument();
-  });
-
-  it("says so when there genuinely are no accounts", async () => {
-    const { AdminUsersView } = await import("@/components/features/admin/admin-users-view");
-    apiFetch.mockResolvedValue({ users: [] });
-
-    render(<AdminUsersView />);
-
-    // A blank panel is the one rendering that hides a fault instead of reporting it: you are
-    // signed in, so the list cannot legitimately be empty.
-    await waitFor(() => {
-      expect(screen.getByText(/No accounts found/)).toBeInTheDocument();
-    });
-  });
-
   it("renders the sign-in status apiFetch returns", async () => {
     const { AdminSignInView } = await import("@/components/features/admin/admin-sign-in-view");
 

@@ -149,10 +149,8 @@ situs/
 │   │   │   ├── *.test.ts
 │   │   │   └── index.ts         # ✨ Barrel export
 │   │   ├── address-verification.ts
-│   │   ├── analytics-service.ts
 │   │   ├── audit-log.ts
 │   │   ├── document-service.ts
-│   │   ├── financial-reports.ts
 │   │   ├── invoice-service.ts
 │   │   ├── pdf-generator.ts
 │   │   └── tax-calculator.ts

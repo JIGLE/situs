@@ -1,11 +1,11 @@
 # API Routes
 
-Situs exposes **49 API domains** across **154 `route.ts` files** under `app/api/`, organised by
+Situs exposes **49 API domains** across **149 `route.ts` files** under `app/api/`, organised by
 domain per Next.js App Router convention.
 
 This document describes **26 of those domains in detail** — the ones whose contracts are not
 obvious from the handler. It is not, and does not try to be, an endpoint-by-endpoint reference
-for all 154: a hand-maintained one goes stale on the first PR that adds a route, and this file
+for all 149: a hand-maintained one goes stale on the first PR that adds a route, and this file
 spent a while claiming to cover "all" routes while omitting 24 domains.
 
 **The filesystem is the source of truth.** To see what exists right now:
@@ -22,7 +22,7 @@ a domain listing `GET POST` may still have some paths that only answer `GET`.
 | Domain                         | Route files | Methods                   |
 | ------------------------------ | ----------- | ------------------------- |
 | `/api/activation`              | 1           | GET                       |
-| `/api/admin`                   | 10          | GET DELETE                |
+| `/api/admin`                   | 5           | GET DELETE                |
 | `/api/audit-trail`             | 1           | GET                       |
 | `/api/auth`                    | 6           | GET POST DELETE           |
 | `/api/bank`                    | 8           | GET POST PUT              |
@@ -280,7 +280,15 @@ answer shape. See the model note in `prisma/schema.prisma` and `lib/services/inb
 
 ### Admin
 
-- `POST /api/admin/database` - Database admin operations (backup, restore, etc.)
+Read-only instance diagnostics for the owner account, plus the one destructive call that clears a
+test connection. Everything here answers "what is actually wired up", which is why each is a `GET`.
+
+- `GET /api/admin/system-status` - What is connected, what is simulated, what is broken. Derives
+  each row from live state rather than asserting it.
+- `GET /api/admin/sign-in-status` - How anyone can get in, and whether registration is closed.
+- `GET /api/admin/bank-provider-check` - Asks each configured bank provider about its own setup.
+- `GET /api/admin/bank-test-connections` - The connections made to prove the PSD2 chain works.
+- `DELETE /api/admin/bank-test-connections/[id]` - Discard one test connection.
 
 ### Debug (Development Only)
 

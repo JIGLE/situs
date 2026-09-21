@@ -20,23 +20,6 @@ interface SignInStatus {
   allowlist: string[];
 }
 
-interface Metrics {
-  portfolio: { rent: number; expenses: number; netIncome: number } | null;
-  instance: {
-    accounts: { total: number; admins: number };
-    databaseBytes: number | null;
-    auditLogEntries: number;
-  };
-}
-
-interface UserRow {
-  id: string;
-  email: string;
-  role: string;
-  isSelf: boolean;
-  owns: { properties: number; tenants: number; leases: number; receipts: number };
-}
-
 /**
  * The instance at a glance.
  *
@@ -61,38 +44,25 @@ export function AdminControlCenter() {
 
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [signIn, setSignIn] = useState<SignInStatus | null>(null);
-  const [metrics, setMetrics] = useState<Metrics | null>(null);
-  const [users, setUsers] = useState<UserRow[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setRefreshing(true);
     // Settled, not all: a control centre whose panels are all blank because one endpoint failed
     // is exactly the outage it exists to report on.
-    const [statusRes, signInRes, metricsRes, usersRes] = await Promise.allSettled([
+    const [statusRes, signInRes] = await Promise.allSettled([
       fetch("/api/admin/system-status", { cache: "no-store" }).then((r) => r.json()),
       apiFetch<SignInStatus>("/api/admin/sign-in-status"),
-      fetch("/api/admin/metrics", { cache: "no-store" }).then((r) => r.json()),
-      apiFetch<{ users?: UserRow[] }>("/api/admin/users"),
     ]);
 
     setStatus(statusRes.status === "fulfilled" ? (statusRes.value?.data ?? null) : null);
     setSignIn(signInRes.status === "fulfilled" ? signInRes.value : null);
-    setMetrics(metricsRes.status === "fulfilled" ? (metricsRes.value?.data ?? null) : null);
-    setUsers(usersRes.status === "fulfilled" ? (usersRes.value?.users ?? []) : []);
     setRefreshing(false);
   }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
-
-  const money = (value: number) =>
-    new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: "EUR",
-      maximumFractionDigits: 0,
-    }).format(value);
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
@@ -212,65 +182,7 @@ export function AdminControlCenter() {
           )}
         </Panel>
 
-        <Panel
-          title={t("metrics.title")}
-          className="lg:col-span-3"
-          action={<DetailLink href="/admin/metrics" label={tc("openDetail")} />}
-          bodyClassName="px-4 py-2.5"
-        >
-          {metrics ? (
-            <>
-              {metrics.portfolio && (
-                <>
-                  <Fact label={tc("rent")} value={money(metrics.portfolio.rent)} />
-                  <Fact label={tc("expenses")} value={money(metrics.portfolio.expenses)} />
-                  <Fact label={tc("net")} value={money(metrics.portfolio.netIncome)} />
-                </>
-              )}
-              <Fact
-                label={tc("auditEntries")}
-                value={metrics.instance.auditLogEntries.toLocaleString()}
-                tone="muted"
-              />
-            </>
-          ) : (
-            <Unavailable label={tc("unavailable")} />
-          )}
-        </Panel>
-
         <BankTestPanel className="lg:col-span-4" />
-
-        <Panel
-          title={t("users.title")}
-          className="lg:col-span-3"
-          action={<DetailLink href="/admin/users" label={tc("openDetail")} />}
-        >
-          {users.length > 0 ? (
-            <ul className="divide-y divide-[var(--color-inner-border)]">
-              {users.map((user) => {
-                const owns =
-                  user.owns.properties + user.owns.tenants + user.owns.leases + user.owns.receipts;
-                return (
-                  <li key={user.id} className="px-4 py-2">
-                    <p className="truncate text-sm text-[var(--color-foreground)]">{user.email}</p>
-                    <p className="text-xs text-[var(--color-muted-foreground)]">
-                      {user.role} · {t("users.owns", { count: owns })}
-                      {/* An administrator who owns nothing is the shape a stranger who signed in
-                          during the open-registration window leaves behind. */}
-                      {user.role === "ADMIN" && owns === 0 && !user.isSelf ? (
-                        <span className="ml-1.5 text-[var(--semantic-warning-readable)]">
-                          {tc("adminOwnsNothing")}
-                        </span>
-                      ) : null}
-                    </p>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <Unavailable label={tc("unavailable")} />
-          )}
-        </Panel>
       </div>
     </div>
   );
