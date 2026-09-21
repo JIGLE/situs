@@ -12,7 +12,6 @@ import type {
   Owner,
   Lease,
   Expense,
-  MaintenanceTicket,
 } from "@/lib/types";
 
 // Minimal MaintenanceContact type used by mock data (not exported from '@/lib/types')
@@ -375,52 +374,6 @@ const MOCK_EXPENSES = [
   },
 ];
 
-const MOCK_MAINTENANCE_TICKETS = [
-  {
-    id: "maint-1",
-    userId: "mock-user",
-    propertyId: "prop-1",
-    tenantId: "tenant-1",
-    title: "Leaking faucet in bathroom",
-    description: "The bathroom faucet has been dripping constantly for the past week.",
-    status: "in_progress",
-    priority: "medium",
-    reportedDate: "2026-02-01",
-    images: "[]",
-    createdAt: "2026-02-01T10:00:00Z",
-    updatedAt: "2026-02-02T14:00:00Z",
-  },
-  {
-    id: "maint-2",
-    userId: "mock-user",
-    propertyId: "prop-2",
-    tenantId: "tenant-2",
-    title: "HVAC system not cooling",
-    description: "Air conditioning unit not producing cold air in office suite.",
-    status: "open",
-    priority: "high",
-    reportedDate: "2026-02-03",
-    images: "[]",
-    createdAt: "2026-02-03T09:00:00Z",
-    updatedAt: "2026-02-03T09:00:00Z",
-  },
-  {
-    id: "maint-3",
-    userId: "mock-user",
-    propertyId: "prop-4",
-    tenantId: "tenant-3",
-    title: "Broken window in living room",
-    description: "Window pane cracked, needs replacement.",
-    status: "resolved",
-    priority: "high",
-    reportedDate: "2026-01-20",
-    completedDate: "2026-01-25",
-    images: "[]",
-    createdAt: "2026-01-20T16:00:00Z",
-    updatedAt: "2026-01-25T11:00:00Z",
-  },
-];
-
 const MOCK_CONTACTS = [
   {
     id: "contact-1",
@@ -677,13 +630,6 @@ export const leaseService = {
 export const expenseService = {
   async getAll(_userId: string): Promise<Expense[]> {
     return [...MOCK_EXPENSES] as unknown as Expense[];
-  },
-};
-
-// Maintenance service (for compatibility)
-export const maintenanceService = {
-  async getAll(_userId: string): Promise<MaintenanceTicket[]> {
-    return [...MOCK_MAINTENANCE_TICKETS] as unknown as MaintenanceTicket[];
   },
 };
 

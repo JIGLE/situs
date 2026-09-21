@@ -12,7 +12,6 @@ import {
   FinancialSkeleton,
   GenericPageSkeleton,
   LeasesSkeleton,
-  MaintenanceSkeleton,
   PeopleListSkeleton,
   PropertiesListSkeleton,
 } from "@/components/ui/page-skeletons";
@@ -57,8 +56,6 @@ const SKELETON_BY_SEGMENT: [string, React.ComponentType<{ className?: string }>]
   ["/owners", PeopleListSkeleton],
   ["/leases", LeasesSkeleton],
   ["/contracts", LeasesSkeleton],
-  ["/maintenance", MaintenanceSkeleton],
-  ["/operations", MaintenanceSkeleton],
   ["/dashboard", DashboardSkeleton],
   ["/overview", DashboardSkeleton],
 ];

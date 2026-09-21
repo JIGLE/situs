@@ -1,12 +1,14 @@
 # API Routes
 
-Situs exposes **49 API domains** across **149 `route.ts` files** under `app/api/`, organised by
+Situs exposes **48 API domains** across **144 `route.ts` files** under `app/api/`, organised by
 domain per Next.js App Router convention.
 
-This document describes **26 of those domains in detail** — the ones whose contracts are not
+This document describes **24 of those domains in detail** — the ones whose contracts are not
 obvious from the handler. It is not, and does not try to be, an endpoint-by-endpoint reference
-for all 149: a hand-maintained one goes stale on the first PR that adds a route, and this file
-spent a while claiming to cover "all" routes while omitting 24 domains.
+for all 144: a hand-maintained one goes stale on the first PR that adds a route, and this file
+spent a while claiming to cover "all" routes while omitting most of them. (The count was 26 for
+a while because it counted `###` headings, two of which are the response-format sections at the
+bottom rather than domains.)
 
 **The filesystem is the source of truth.** To see what exists right now:
 
@@ -49,7 +51,6 @@ a domain listing `GET POST` may still have some paths that only answer `GET`.
 | `/api/info`                    | 1           | GET                       |
 | `/api/invoices`                | 6           | GET POST PUT DELETE       |
 | `/api/leases`                  | 5           | GET POST PUT PATCH DELETE |
-| `/api/maintenance`             | 4           | GET POST PUT DELETE       |
 | `/api/metrics`                 | 1           | GET                       |
 | `/api/monitoring`              | 5           | GET                       |
 | `/api/notifications`           | 3           | GET POST PUT DELETE       |
@@ -65,7 +66,7 @@ a domain listing `GET POST` may still have some paths that only answer `GET`.
 | `/api/tax`                     | 3           | GET POST                  |
 | `/api/tax-filings`             | 3           | GET POST DELETE           |
 | `/api/tax-rules`               | 2           | GET POST PUT DELETE       |
-| `/api/tenant-portal`           | 7           | GET POST PATCH            |
+| `/api/tenant-portal`           | 6           | GET POST PATCH            |
 | `/api/tenants`                 | 5           | GET POST PUT DELETE       |
 | `/api/units`                   | 2           | GET POST PUT DELETE       |
 | `/api/user`                    | 4           | GET POST                  |
@@ -210,14 +211,6 @@ answer shape. See the model note in `prisma/schema.prisma` and `lib/services/inb
 - `GET /api/email/metrics` - Get email metrics
 
 ## Operations
-
-### Maintenance
-
-- `GET /api/maintenance` - List all maintenance requests
-- `POST /api/maintenance` - Create maintenance request
-- `GET /api/maintenance/[id]` - Get maintenance details
-- `PUT /api/maintenance/[id]` - Update maintenance request
-- `DELETE /api/maintenance/[id]` - Delete maintenance request
 
 ### Documents
 

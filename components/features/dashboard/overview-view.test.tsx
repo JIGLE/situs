@@ -58,18 +58,12 @@ vi.mock("@/lib/contexts/app-context", () => ({
           date: new Date().toISOString(),
         },
       ],
-      maintenance: [],
       leases: [],
       expenses: [],
       loading: false,
     },
     refreshData: vi.fn(),
   }),
-}));
-
-// Mock keyboard shortcuts hook
-vi.mock("@/lib/hooks/use-keyboard-shortcuts", () => ({
-  useKeyboardShortcuts: vi.fn(),
 }));
 
 describe("OverviewView", () => {

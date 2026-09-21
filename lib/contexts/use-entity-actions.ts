@@ -17,7 +17,6 @@ import {
   Correspondence,
   Owner,
   Expense,
-  MaintenanceTicket,
   Lease,
 } from "@/lib/types";
 import { createEntityActions, type EntityActions } from "./create-entity-actions";
@@ -40,7 +39,6 @@ export interface EntityActionsBundle {
   correspondenceActions: EntityActions<Correspondence>;
   ownerActions: EntityActions<Owner>;
   expenseActions: EntityActions<Expense>;
-  maintenanceActions: EntityActions<MaintenanceTicket>;
   leaseActions: EntityActions<Lease>;
 }
 
@@ -182,23 +180,6 @@ export function useEntityActions(
     [csrfToken, userId, showError, resolveError, showSuccess, state.expenses, dispatch],
   );
 
-  const maintenanceActions = useMemo(
-    () =>
-      createEntityActions<MaintenanceTicket>({
-        endpoint: "/api/maintenance",
-        getItems: () => state.maintenance,
-        setItems: (items) => dispatch({ type: "SET_MAINTENANCE", payload: items }),
-        showError,
-        resolveError,
-        showSuccess,
-        csrfToken,
-        userId,
-        entityName: "ticket",
-        prependNew: true,
-      }),
-    [csrfToken, userId, showError, resolveError, showSuccess, state.maintenance, dispatch],
-  );
-
   const leaseActions = useMemo(
     () =>
       createEntityActions<Lease>({
@@ -225,7 +206,6 @@ export function useEntityActions(
     correspondenceActions,
     ownerActions,
     expenseActions,
-    maintenanceActions,
     leaseActions,
   };
 }

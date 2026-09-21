@@ -4,7 +4,7 @@
 
 Situs — full name **Situs // Sovereign Capital System** — is a self-hosted
 property management SaaS for landlords and property managers in **Portugal and Spain**. It
-handles properties, units, tenants, leases, receipts, expenses, maintenance, correspondence,
+handles properties, units, tenants, leases, receipts, expenses, correspondence,
 and fiscal compliance, built around a reference-month rent ledger: bank movement → match →
 allocate → receipt → tax filing → audit trail.
 
@@ -14,8 +14,10 @@ reintroduce it. | **Stage**: Production-ready core; the Situs rebrand is complet
 (brand, nav, landing, portfolio tree, rent ledger, bank matching, receipt lifecycle + PT tax
 connector, OCR classification, audit trail/tax dashboard, schema consolidation, a11y/e2e pass).
 The IA consolidation (PR 10b) and the infra rename (PR 13) have since shipped too: `/people`
-and `/operations` are live with redirect shims from the old paths, and the package, Docker and
-env identifiers all read `situs` with Helm dropped for a single Docker path.
+is live with a redirect shim from the old path, and the package, Docker and env identifiers all
+read `situs` with Helm dropped for a single Docker path. A scope cutdown is in progress on top
+of all that — see the phase table in the branch's commits; `/operations` and the maintenance
+ticketing behind it are among the surfaces it has already removed.
 
 ## Tech Stack
 
@@ -80,7 +82,7 @@ e2e/                # Playwright E2E tests
 
 ### Key Patterns
 
-- **4-zone modal pattern**: Status+Health / Primary Action / Issues Panel / Tabbed info — used by the Tenant edit modal (`tenant-detail-modal.tsx`) and the Ticket detail modal (`ticket-detail-modal.tsx`). Property has no modal — `property-detail-view.tsx` renders in a `Sheet` from `/portfolio?modal=<id>`; Building has no modal either.
+- **4-zone modal pattern**: Status+Health / Primary Action / Issues Panel / Tabbed info — used by the Tenant edit modal (`tenant-detail-modal.tsx`). The Ticket detail modal was the other user of it and went with the maintenance cut, so the Tenant modal is the only one left. Property has no modal — `property-detail-view.tsx` renders in a `Sheet` from `/portfolio?modal=<id>`; Building has no modal either.
 - **AppContext**: All entities (properties, tenants, leases, receipts, expenses, tickets, buildings…) live in `AppState` via `lib/contexts/app-context.tsx` (composed from `use-app-data.ts` + `use-entity-actions.ts` + `create-entity-actions.ts`). Mutations go through typed actions (`addProperty`, `updateTenant`, etc.). Bank/tax/OCR domains (added in the Situs rebrand) are read via dedicated fetches in their own components instead — they don't live in `AppState`.
 - **API routes**: Each domain has its own folder under `app/api/`. Use `GET`/`POST`/`PUT`/`DELETE` handlers with Zod validation and NextAuth session checks.
 - **Compliance**: PT (`/api/compliance/rent-receipts`) and ES (`/api/compliance/nrua`) endpoints generate fiscal payloads. Tax logic lives in `app/api/tax/`.
@@ -244,7 +246,7 @@ reasoning is here and the enforcement is there.
 Two related habits worth keeping, both learned the same way. **A stored enum is not a label**:
 `capitalize` and `replace(/_/g, " ")` are formatting rules standing in for a translation, and
 they shipped `partially_paid` and "Rent" into Portuguese screens. When two components render one
-enum, extract the map (`lib/utils/receipt-labels.ts`, `lib/utils/maintenance-labels.ts`) rather
+enum, extract the map (`lib/utils/receipt-labels.ts`) rather
 than copying it — copying is what let them drift. And **`i18n:check:strict` cannot see this**: it
 compares the four catalogues to each other, never to what a component asks for, so a key can be
 complete in four languages and unreachable from the UI. `tests/i18n-no-hardcoded-copy.test.tsx`

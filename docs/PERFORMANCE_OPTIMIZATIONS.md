@@ -57,22 +57,11 @@ This document details the performance optimizations implemented in Week 1 of the
 @@index([category])
 ```
 
-**Maintenance Tickets Table**:
-
-```prisma
-@@index([userId])
-@@index([propertyId])
-@@index([status])
-@@index([priority])
-@@index([userId, status])  // Composite for open tickets
-```
-
 **Expected Performance Gains**:
 
 - Property listing: ~50% faster
 - Overdue tenant queries: ~80% faster
 - Revenue insights: ~90% faster (combined with N+1 fix)
-- Maintenance ticket filtering: ~60% faster
 
 ---
 

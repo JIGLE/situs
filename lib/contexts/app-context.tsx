@@ -12,7 +12,6 @@ import {
   Correspondence,
   Owner,
   Expense,
-  MaintenanceTicket,
   Lease,
 } from "@/lib/types";
 import { useToast } from "./toast-context";
@@ -56,9 +55,6 @@ interface AppContextValue {
   deleteOwner: (id: string) => Promise<void>;
   addExpense: (data: Partial<Expense>) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
-  addMaintenance: (data: Partial<MaintenanceTicket>) => Promise<void>;
-  updateMaintenance: (id: string, data: Partial<MaintenanceTicket>) => Promise<void>;
-  deleteMaintenance: (id: string) => Promise<void>;
   addLease: (data: Partial<Lease>) => Promise<void>;
   updateLease: (id: string, data: Partial<Lease>) => Promise<void>;
   deleteLease: (id: string) => Promise<void>;
@@ -98,7 +94,6 @@ export function AppProvider({ children }: { children: ReactNode }): React.ReactE
     correspondenceActions,
     ownerActions,
     expenseActions,
-    maintenanceActions,
     leaseActions,
   } = useEntityActions(state, dispatch, { csrfToken, userId, showError, showSuccess });
 
@@ -134,9 +129,6 @@ export function AppProvider({ children }: { children: ReactNode }): React.ReactE
       deleteOwner: (id) => ownerActions.remove(id),
       addExpense: (d) => expenseActions.add(d) as unknown as Promise<void>,
       deleteExpense: (id) => expenseActions.remove(id),
-      addMaintenance: (d) => maintenanceActions.add(d) as unknown as Promise<void>,
-      updateMaintenance: (id, d) => maintenanceActions.update(id, d) as unknown as Promise<void>,
-      deleteMaintenance: (id) => maintenanceActions.remove(id),
       addLease: (d) => leaseActions.add(d) as unknown as Promise<void>,
       updateLease: (id, d) => leaseActions.update(id, d) as unknown as Promise<void>,
       deleteLease: (id) => leaseActions.remove(id),
@@ -154,7 +146,6 @@ export function AppProvider({ children }: { children: ReactNode }): React.ReactE
       correspondenceActions,
       ownerActions,
       expenseActions,
-      maintenanceActions,
       leaseActions,
     ],
   );

@@ -1,6 +1,10 @@
 # Project Structure
 
-This document provides a comprehensive overview of the Situs project structure and organization.
+This document provides an overview of the Situs project structure and organization. The trees
+below are **illustrative, not exhaustive** — they name the directories worth knowing about, not
+every one that exists. `find app/api -name route.ts | sort` and `ls components/features` are the
+source of truth, and a tree drawn by hand goes stale on the first PR that adds or removes a
+directory.
 
 ## Repository Overview
 
@@ -13,16 +17,13 @@ situs/
 ├── app/                          # Next.js App Router
 │   ├── [locale]/                 # Internationalized routes
 │   │   ├── (main)/              # Main app route group
-│   │   │   ├── analytics/       # Analytics pages
 │   │   │   ├── correspondence/  # Communication pages
 │   │   │   ├── documents/       # Document management
 │   │   │   ├── financials/      # Financial pages
 │   │   │   ├── leases/          # Lease management
-│   │   │   ├── maintenance/     # Maintenance requests
 │   │   │   ├── overview/        # Dashboard
 │   │   │   ├── owners/          # Owner management
 │   │   │   ├── properties/      # Property management
-│   │   │   ├── reports/         # Reporting
 │   │   │   ├── tenants/         # Tenant management
 │   │   │   ├── error.tsx        # Error boundary
 │   │   │   ├── loading.tsx      # Loading state
@@ -32,7 +33,6 @@ situs/
 │   │   └── page.tsx             # Locale homepage
 │   ├── api/                      # API routes
 │   │   ├── admin/               # Admin operations
-│   │   ├── analytics/           # Analytics endpoints
 │   │   ├── auth/                # NextAuth.js
 │   │   ├── correspondence/      # Communication API
 │   │   ├── debug/               # Debug endpoints (dev only)
@@ -43,13 +43,11 @@ situs/
 │   │   ├── info/                # API metadata
 │   │   ├── invoices/            # Invoice management
 │   │   ├── leases/              # Lease API
-│   │   ├── maintenance/         # Maintenance requests
 │   │   ├── metrics/             # Metrics
 │   │   ├── owners/              # Owner API
 │   │   ├── payments/            # Payment processing
 │   │   ├── properties/          # Property API
 │   │   ├── receipts/            # Receipt management
-│   │   ├── reports/             # Report generation
 │   │   ├── tax/                 # Tax compliance
 │   │   ├── tenant-portal/       # Tenant portal API
 │   │   ├── tenants/             # Tenant API
@@ -69,7 +67,6 @@ situs/
 │   │   │   ├── correspondence-view.test.tsx
 │   │   │   └── index.ts         # ✨ Barrel export
 │   │   ├── dashboard/           # Dashboard features
-│   │   │   ├── analytics-dashboard.tsx
 │   │   │   ├── overview-view.tsx
 │   │   │   ├── overview-view.test.tsx
 │   │   │   └── index.ts         # ✨ Barrel export
@@ -83,7 +80,6 @@ situs/
 │   │   │   ├── *.test.tsx       # Co-located tests
 │   │   │   └── index.ts         # ✨ Barrel export
 │   │   ├── lease/               # Lease features
-│   │   ├── maintenance/         # Maintenance features
 │   │   ├── owner/               # Owner features
 │   │   ├── property/            # Property features
 │   │   │   ├── property-list.tsx

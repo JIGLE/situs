@@ -17,7 +17,6 @@ import {
   Correspondence,
   Owner,
   Expense,
-  MaintenanceTicket,
   Lease,
 } from "@/lib/types";
 import { apiFetch } from "@/lib/utils/api-client";
@@ -93,7 +92,6 @@ export function useAppData({
           correspondenceRes,
           ownersRes,
           expensesRes,
-          maintenanceRes,
           leasesRes,
         ] = await Promise.all([
           apiFetch<{ data: Property[] }>("/api/properties", csrfToken),
@@ -104,7 +102,6 @@ export function useAppData({
           apiFetch<{ data: Correspondence[] }>("/api/correspondence", csrfToken),
           apiFetch<{ data: Owner[] }>("/api/owners", csrfToken),
           apiFetch<{ data: Expense[] }>("/api/expenses", csrfToken),
-          apiFetch<{ data: MaintenanceTicket[] }>("/api/maintenance", csrfToken),
           apiFetch<{ data: Lease[] }>("/api/leases", csrfToken),
         ]);
 
@@ -139,10 +136,6 @@ export function useAppData({
         dispatch({
           type: "SET_EXPENSES",
           payload: (expensesRes.data ?? expensesRes) as Expense[],
-        });
-        dispatch({
-          type: "SET_MAINTENANCE",
-          payload: (maintenanceRes.data ?? maintenanceRes) as MaintenanceTicket[],
         });
         dispatch({
           type: "SET_LEASES",

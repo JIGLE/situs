@@ -10,8 +10,6 @@ const createNotificationSchema = z.object({
     "payment_due",
     "payment_received",
     "payment_overdue",
-    "maintenance_created",
-    "maintenance_completed",
     "document_uploaded",
     "rent_receipt_due",
     "nrua_registration",

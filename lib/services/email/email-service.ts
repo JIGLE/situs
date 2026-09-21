@@ -103,39 +103,6 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
       "companyName",
     ],
   },
-  maintenance_complete: {
-    id: "maintenance_complete",
-    name: "Maintenance Work Completed",
-    subject: "Maintenance Work Completed - {{propertyAddress}}",
-    htmlContent: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Maintenance Work Completed</h2>
-        <p>Dear {{tenantName}},</p>
-        <p>We are pleased to inform you that the maintenance work at your property has been completed.</p>
-        <div style="background-color: #fff3cd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ffc107;">
-          <h3>Work Details:</h3>
-          <ul>
-            <li><strong>Property:</strong> {{propertyAddress}}</li>
-            <li><strong>Work Requested:</strong> {{workDescription}}</li>
-            <li><strong>Completion Date:</strong> {{completionDate}}</li>
-            <li><strong>Contractor:</strong> {{contractorName}}</li>
-          </ul>
-        </div>
-        <p>Please inspect the work and contact us immediately if you notice any issues or have concerns about the completed work.</p>
-        <p>Thank you for bringing this to our attention. We strive to maintain your property in excellent condition.</p>
-        <p>Best regards,<br>{{landlordName}}<br>{{companyName}}</p>
-      </div>
-    `,
-    variables: [
-      "tenantName",
-      "propertyAddress",
-      "workDescription",
-      "completionDate",
-      "contractorName",
-      "landlordName",
-      "companyName",
-    ],
-  },
 };
 
 export interface RetryConfig {

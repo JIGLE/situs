@@ -21,7 +21,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useApiError } from "@/lib/utils/api-error";
-import { TICKET_PRIORITY_KEY, TICKET_STATUS_KEY } from "@/lib/utils/maintenance-labels";
 import { cn } from "@/lib/utils/utils";
 import { apiFetch } from "@/lib/utils/api-client";
 import { useCsrf } from "@/lib/contexts/csrf-context";
@@ -95,7 +94,6 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
   const tFin = useTranslations("financial");
   const tDoc = useTranslations("documents");
   const tTypes = useTranslations("properties.types");
-  const tTicket = useTranslations("maintenance");
   const tPeriod = useTranslations("rentPeriodStatus");
   const apiError = useApiError();
 
@@ -285,10 +283,6 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
     () => state.leases.filter((l) => l.propertyId === propertyId),
     [state.leases, propertyId],
   );
-  const relatedMaintenance = useMemo(
-    () => state.maintenance.filter((m) => m.propertyId === propertyId),
-    [state.maintenance, propertyId],
-  );
   const relatedReceipts = useMemo(
     () => state.receipts.filter((r) => r.propertyId === propertyId),
     [state.receipts, propertyId],
@@ -314,9 +308,6 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
   const totalRevenue = relatedReceipts.reduce((sum, r) => sum + r.amount, 0);
   const totalExpenses = relatedExpenses.reduce((sum, e) => sum + e.amount, 0);
   const netOperatingIncome = totalRevenue - totalExpenses;
-  const openTickets = relatedMaintenance.filter(
-    (m) => m.status === "open" || m.status === "in_progress",
-  ).length;
   const activeLeasesList = relatedLeases.filter((l) => l.status === "active");
 
   // Ownership: derive from owners state
@@ -906,15 +897,16 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
       </Dialog>
 
       {/* The four-card stat row that used to sit here has gone. Every number on it was already
-          on screen: tenants and active leases are listed in People & Contracts below, open
-          tickets were *already* badged on the Operations tab (so the count rendered three times
-          on one screen), and revenue now badges the Money tab. Density rules 2 and 4 in
-          CLAUDE.md — one stat row, and counts as text before counts as boxes. */}
+          on screen: tenants and active leases are listed in People & Contracts below, and
+          revenue now badges the Money tab. Density rules 2 and 4 in CLAUDE.md — one stat row,
+          and counts as text before counts as boxes. */}
 
-      {/* Tabs. Five triggers overflowed their container by 207px at 390px, so Documents and
-          Audit were reachable only by discovering a horizontal scroll — doctrine rule 4 swaps
-          the bar for a select below `md`. Badge counts ride along as `Label (3)` so the mobile
-          view states what the bar states. */}
+      {/* Tabs. The bar overflowed its container by 207px at 390px when it carried five
+          triggers, so Documents and Audit were reachable only by discovering a horizontal
+          scroll — doctrine rule 4 swaps the bar for a select below `md`. The Operations
+          trigger has since gone with the ticketing cut; the select stays, because rule 4 is a
+          space test in the longest locale and not a count. Badge counts ride along as
+          `Label (3)` so the mobile view states what the bar states. */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsMobileSelect
           className="md:hidden"
@@ -927,11 +919,6 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
               value: "finance",
               label: t("tabs.money"),
               badge: totalRevenue > 0 ? formatCurrency(totalRevenue) : undefined,
-            },
-            {
-              value: "maintenance",
-              label: t("tabs.operations"),
-              badge: openTickets > 0 ? openTickets : undefined,
             },
             {
               value: "documents",
@@ -949,15 +936,6 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
             {totalRevenue > 0 && (
               <span className="ml-1 bg-[var(--color-popover)] px-1.5 py-0.5 font-mono text-[12px] md:text-[10px] tabular-nums text-[var(--color-muted-foreground)]">
                 {formatCurrency(totalRevenue)}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="maintenance" className="flex items-center gap-1.5">
-            <Wrench className="h-3.5 w-3.5" />
-            {t("tabs.operations")}
-            {openTickets > 0 && (
-              <span className="ml-1 bg-[var(--color-warning-muted)] text-[var(--color-warning)] px-1.5 py-0.5 font-mono text-[12px] md:text-[10px] tabular-nums">
-                {openTickets}
               </span>
             )}
           </TabsTrigger>
@@ -1230,67 +1208,8 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
           </div>
         </TabsContent>
 
-        {/* Maintenance Tab */}
-        <TabsContent value="maintenance">
-          {relatedMaintenance.length === 0 ? (
-            <EmptyStateIllustration entityType="maintenance" />
-          ) : (
-            <div className="space-y-3">
-              {openTickets > 0 && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-[var(--color-warning)]">
-                    {openTickets} open ticket{openTickets !== 1 ? "s" : ""}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => router.push(`/operations?propertyId=${propertyId}`)}
-                  >
-                    <Wrench className="h-3.5 w-3.5 mr-1.5" />
-                    View in Maintenance
-                  </Button>
-                </div>
-              )}
-              {relatedMaintenance.map((ticket) => (
-                <Card key={ticket.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-medium">{ticket.title}</p>
-                        <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
-                          {ticket.description}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant={
-                            ticket.priority === "urgent" || ticket.priority === "high"
-                              ? "destructive"
-                              : "secondary"
-                          }
-                        >
-                          {tTicket(TICKET_PRIORITY_KEY[ticket.priority])}
-                        </Badge>
-                        <Badge
-                          variant={
-                            ticket.status === "resolved" || ticket.status === "closed"
-                              ? "default"
-                              : "secondary"
-                          }
-                        >
-                          {tTicket(TICKET_STATUS_KEY[ticket.status])}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
         {/* Money Tab — Payments/P&L merged with the former standalone Expenses
-            tab, per the tab merge (Overview/Money/Operations/Audit). */}
+            tab, per the tab merge (Overview/Money/Audit). */}
         <TabsContent value="finance" className="space-y-6">
           {/* Money-tab actions: the expense dialog opens from here, where expenses live. */}
           <div className="flex flex-wrap items-center justify-end gap-2">

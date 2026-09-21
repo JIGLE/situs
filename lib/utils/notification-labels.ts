@@ -6,7 +6,6 @@ import {
   FileText,
   Inbox,
   UserSquare2,
-  Wrench,
   type LucideIcon,
 } from "lucide-react";
 
@@ -20,8 +19,6 @@ export type NotificationType =
   | "payment_due"
   | "payment_received"
   | "payment_overdue"
-  | "maintenance_created"
-  | "maintenance_completed"
   | "document_uploaded"
   | "rent_receipt_due"
   | "nrua_registration"
@@ -41,8 +38,6 @@ export const NOTIFICATION_TYPE_KEY: Record<NotificationType, string> = {
   payment_due: "paymentDue",
   payment_received: "paymentReceived",
   payment_overdue: "paymentOverdue",
-  maintenance_created: "maintenanceCreated",
-  maintenance_completed: "maintenanceCompleted",
   document_uploaded: "documentUploaded",
   rent_receipt_due: "rentReceiptDue",
   nrua_registration: "nruaRegistration",
@@ -58,8 +53,6 @@ export const NOTIFICATION_TYPE_ICON: Record<NotificationType, LucideIcon> = {
   payment_due: Banknote,
   payment_received: Banknote,
   payment_overdue: CircleAlert,
-  maintenance_created: Wrench,
-  maintenance_completed: Wrench,
   document_uploaded: FileText,
   rent_receipt_due: FileText,
   nrua_registration: UserSquare2,

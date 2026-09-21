@@ -38,10 +38,10 @@ Two concrete risks, both real today, neither urgent yet:
    correspondence attachments) already does this correctly, storing a filesystem path or
    URL instead of bytes. `Lease.contractFile` predates that pattern and was never
    migrated to match it.
-2. **`lib/contexts/use-app-data.ts` loads ten full, unpaginated collections
+2. **`lib/contexts/use-app-data.ts` loads nine full, unpaginated collections
    (`/api/properties`, `/api/buildings`, `/api/tenants`, `/api/receipts`,
    `/api/correspondence/templates`, `/api/correspondence`, `/api/owners`,
-   `/api/expenses`, `/api/maintenance`, `/api/leases`) in parallel on every app mount**,
+   `/api/expenses`, `/api/leases`) in parallel on every app mount**,
    regardless of portfolio size. `/api/properties` already supports `?page=`/`?limit=`
    (see `app/api/properties/route.ts`) but this caller doesn't use it — it always hits
    the "return everything" branch. This is a client-side/API-shape problem, not a

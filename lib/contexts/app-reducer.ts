@@ -15,7 +15,6 @@ import {
   Correspondence,
   Owner,
   Expense,
-  MaintenanceTicket,
   Lease,
 } from "@/lib/types";
 
@@ -28,7 +27,6 @@ export interface AppState {
   correspondence: Correspondence[];
   owners: Owner[];
   expenses: Expense[];
-  maintenance: MaintenanceTicket[];
   leases: Lease[];
   loading: boolean;
   error: string | null;
@@ -45,7 +43,6 @@ export type AppAction =
   | { type: "SET_CORRESPONDENCE"; payload: Correspondence[] }
   | { type: "SET_OWNERS"; payload: Owner[] }
   | { type: "SET_EXPENSES"; payload: Expense[] }
-  | { type: "SET_MAINTENANCE"; payload: MaintenanceTicket[] }
   | { type: "SET_LEASES"; payload: Lease[] };
 
 export const initialState: AppState = {
@@ -57,7 +54,6 @@ export const initialState: AppState = {
   correspondence: [],
   owners: [],
   expenses: [],
-  maintenance: [],
   leases: [],
   loading: false,
   error: null,
@@ -85,8 +81,6 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, owners: action.payload };
     case "SET_EXPENSES":
       return { ...state, expenses: action.payload };
-    case "SET_MAINTENANCE":
-      return { ...state, maintenance: action.payload };
     case "SET_LEASES":
       return { ...state, leases: action.payload };
     default:

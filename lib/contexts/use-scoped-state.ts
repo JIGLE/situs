@@ -3,7 +3,7 @@
  *
  * When the active portal role is "tenant", the global AppState is narrowed to
  * only the rows that tenant is allowed to see (their properties, leases,
- * receipts, correspondence, and maintenance). For all other roles the state is
+ * receipts, and correspondence). For all other roles the state is
  * returned unchanged. Extracted from app-context.tsx.
  */
 
@@ -40,7 +40,6 @@ export function useScopedState(state: AppState, params: ScopeParams): AppState {
         correspondence: [],
         owners: [],
         expenses: [],
-        maintenance: [],
         leases: [],
       };
     }
@@ -65,11 +64,6 @@ export function useScopedState(state: AppState, params: ScopeParams): AppState {
       ),
       owners: [],
       expenses: [],
-      maintenance: state.maintenance.filter(
-        (ticket) =>
-          ticket.tenantId === activeTenant.id ||
-          (ticket.propertyId ? tenantPropertyIds.has(ticket.propertyId) : false),
-      ),
       leases: state.leases.filter((lease) => lease.tenantId === activeTenant.id),
     };
   }, [portalRole, selectedTenantId, state, tenantEmail]);

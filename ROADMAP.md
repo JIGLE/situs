@@ -18,20 +18,44 @@ schema consolidation, and an a11y/e2e pass over the new surfaces are all live. D
 map view, fiscal compliance (PT/ES), building management, tenant
 owner-contact callout, and portfolio building grouping remain in place underneath the rebrand.
 
+### Scope cutdown (2026-09, in progress)
+
+The product was judged overscoped — too much surface to maintain, too much for a new landlord
+to face, and too slow to a first shippable version. It is pre-launch with no users, so the work
+is pure subtraction: keep the core loop (bank movement → match → allocate → receipt → tax filing
+→ audit trail) and the compliance substrate around it, and delete the rest rather than hide it
+behind a flag. Git history is the archive.
+
+Removed so far:
+
+| Phase | Removed                                                                              |
+| ----- | ------------------------------------------------------------------------------------ |
+| 1     | Command palette, `/brand` style-guide page, country themes trimmed to EU/PT/ES       |
+| 2     | Demo mode and the scenario runner (demo _login_ kept — E2E signs in with it)         |
+| 3     | Intelligence / Analytics / Reports / Insights                                        |
+| 4     | Admin user directory, instance metrics, database ops endpoint                        |
+| 5     | Maintenance / Operations ticketing (`MaintenanceTicket`, `/operations`, work orders) |
+
+Still to go: contacts/vendor registry, correspondence and inbound mail, the documents browsing
+UI and OCR, the tenant-facing surfaces and their online-payment stack, ownership verification.
+
+**The "Completed Features" list below predates this and is not narrowed phase by phase** — read
+it as a record of what was built, with this table as the correction. `lib/portal/access.ts` is
+the authority on what is reachable today.
+
 ### Completed Features
 
 - **Authentication**: NextAuth v4 with Google OAuth + credentials provider, CSRF protection, session-based auth
-- **CRUD Operations**: Full create/read/update/delete for Properties, Units, Tenants, Leases, Receipts, Expenses, Maintenance Tickets, Correspondence, Owners, Contacts, Documents, Invoices, Notifications, Buildings
+- **CRUD Operations**: Full create/read/update/delete for Properties, Units, Tenants, Leases, Receipts, Expenses, Correspondence, Owners, Contacts, Documents, Invoices, Notifications, Buildings
 - **Portfolio View**: Compact action-driven layout with IssueAlert zone, List/Map tabs, Next Action column, attention row highlights
-- **Property Detail Modal**: 4-zone decision-driven interface (Status+Health / Primary Action / Issues Panel / Tabbed info incl. Maintenance tab)
+- **Property Detail Modal**: 4-zone decision-driven interface (Status+Health / Primary Action / Issues Panel / Tabbed info)
 - **Property Map**: Status-coded divIcon markers with legend, slide-in side panel, FitBoundsController, dynamic viewport height
 - **Financials**: 4-tab container (Action Queue / Receipts / Occupancy & Rent / Tax Summary) — all 4 fully wired; standardized expense categories
-- **Maintenance**: Full work-order lifecycle (category/vendor/cost/scheduleDate/isTenantReport); 4-zone TicketDetailModal; auto-creates Expense on resolve
 - **Buildings**: Building entity in AppState+context; CRUD API; BuildingsView at `/buildings`; nav entry
 - **Tenant Owner Contact**: `/api/portal/owner-contact` endpoint; tenant "Need help?" callout shows managing owner name, email, and phone (demo + real mode)
 - **Portfolio Building Grouping**: Property list uses canonical Building entity for group headers (grid + table); table view inserts section header rows for multi-unit groups
 - **Email Integration**: SMTP with templates, bulk sending, delivery tracking, exponential-backoff retry
-- **Insights Nav**: Analytics, Reports, Correspondence — accessible from sidebar (owner-only)
+- **Correspondence Nav**: accessible from sidebar (owner-only)
 - **Monitoring**: Health endpoints (owner-gated), Prometheus-compatible `/api/metrics`
 - **Compliance**: GDPR audit logging, Iberian tax compliance (PT/ES), admin data-access audit trail
 - **Internationalization**: next-intl with PT, EN, ES, IT locale support

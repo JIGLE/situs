@@ -44,6 +44,28 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    pattern: /`?\/operations`? (?:is|are) live/i,
+    retired: "2026-09-21 (scope cutdown, phase 5)",
+    because:
+      "maintenance/operations ticketing was cut in full — the MaintenanceTicket model, " +
+      "/api/maintenance, the /operations and /maintenance pages and the Operations nav entry " +
+      "are all gone, and there is no redirect shim left to land on",
+  },
+  {
+    pattern: /ticket-detail-modal\.tsx/i,
+    retired: "2026-09-21 (scope cutdown, phase 5)",
+    because:
+      "the Ticket detail modal was one of the two users of the 4-zone modal pattern and went " +
+      "with the ticketing cut; tenant-detail-modal.tsx is the only one left",
+  },
+  {
+    pattern: /maintenance-labels\.ts/i,
+    retired: "2026-09-21 (scope cutdown, phase 5)",
+    because:
+      "the ticket status/priority label maps went with the ticketing cut; receipt-labels.ts is " +
+      "the surviving example of the extract-the-map habit",
+  },
+  {
     pattern: /28[- ]countr(y|ies)/i,
     retired: "2026-09-21 (scope cutdown, phase 1)",
     because:

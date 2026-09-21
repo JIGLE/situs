@@ -8,7 +8,6 @@ import {
   Users,
   Receipt,
   FileText,
-  Wrench,
   Mail,
   BarChart3,
   Plus,
@@ -29,7 +28,6 @@ export interface EmptyStateIllustrationProps {
     | "tenants"
     | "payments"
     | "leases"
-    | "maintenance"
     | "correspondence"
     | "reports"
     | "generic"
@@ -47,7 +45,6 @@ export interface EmptyStateIllustrationProps {
     | "tenants"
     | "payments"
     | "leases"
-    | "maintenance"
     | "correspondence"
     | "reports"
     | "generic"
@@ -106,11 +103,6 @@ const emptyStateMeta: Record<
     icon: FileText,
     gradient: "from-violet-500/20 to-purple-500/20",
     accentColor: "text-violet-400",
-  },
-  maintenance: {
-    icon: Wrench,
-    gradient: "from-rose-500/20 to-pink-500/20",
-    accentColor: "text-rose-400",
   },
   correspondence: {
     icon: Mail,

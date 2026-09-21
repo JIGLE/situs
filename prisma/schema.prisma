@@ -46,7 +46,6 @@ model User {
   expenses                Expense[]
   rentPeriods             RentPeriod[]
   paymentAllocations      PaymentAllocation[]
-  maintenanceTickets      MaintenanceTicket[]
   leases                  Lease[]
   correspondences         Correspondence[]
   correspondenceTemplates CorrespondenceTemplate[]
@@ -309,7 +308,6 @@ model Property {
   receipts            Receipt[]
   owners              PropertyOwner[]
   expenses            Expense[]
-  maintenance         MaintenanceTicket[]
   leases              Lease[]
   units               Unit[]
   documents           Document[]
@@ -359,7 +357,6 @@ model Tenant {
   property            Property?            @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   receipts            Receipt[]
   correspondences     Correspondence[]
-  maintenance         MaintenanceTicket[]
   leases              Lease[]
   documents           Document[]
   invoices            Invoice[]
@@ -667,49 +664,6 @@ model Expense {
   @@index([isRecurring])
   @@index([parentExpenseId])
   @@map("expenses")
-}
-
-model MaintenanceTicket {
-  id               String              @id @default(cuid())
-  userId           String
-  propertyId       String
-  tenantId         String?
-  unitId           String?
-  title            String
-  description      String
-  status           MaintenanceStatus   @default(open)
-  priority         MaintenancePriority @default(medium)
-  category         String? // plumbing, electrical, structural, appliance, cleaning, other
-  images           String // JSON string of image URLs
-  cost             Float? // @deprecated — kept for backward compat; use estimatedCost
-  estimatedCost    Float?
-  actualCost       Float?
-  scheduledDate    DateTime?
-  dueDate          DateTime?
-  assignedTo       String? // @deprecated — kept for backward compat; use vendorName
-  vendorName       String?
-  vendorPhone      String?
-  invoiceRef       String?
-  isTenantReport   Boolean             @default(false)
-  resolvedAt       DateTime?
-  // Situs Operations subtabs (PR 10b-1): Evidence tab flag + SLA due date.
-  evidenceRequired Boolean             @default(false)
-  slaDueAt         DateTime?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-
-  // Relations
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  tenant   Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-
-  // Performance indexes
-  @@index([userId])
-  @@index([propertyId])
-  @@index([status])
-  @@index([priority])
-  @@index([userId, status]) // Composite for open tickets
-  @@map("maintenance_tickets")
 }
 
 model CorrespondenceTemplate {
@@ -1281,20 +1235,6 @@ enum EmailStatus {
   failed
 }
 
-enum MaintenanceStatus {
-  open
-  in_progress
-  resolved
-  closed
-}
-
-enum MaintenancePriority {
-  low
-  medium
-  high
-  urgent
-}
-
 enum LeaseStatus {
   active
   expired
@@ -1332,8 +1272,6 @@ enum NotificationType {
   payment_due
   payment_received
   payment_overdue
-  maintenance_created
-  maintenance_completed
   document_uploaded
   rent_receipt_due
   nrua_registration

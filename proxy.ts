@@ -245,7 +245,6 @@ export async function proxy(request: NextRequest) {
     rest.startsWith("contracts") ||
     rest.startsWith("correspondence") ||
     rest.startsWith("financials") ||
-    rest.startsWith("maintenance") ||
     rest.startsWith("reports") ||
     rest.startsWith("analytics") ||
     rest.startsWith("insights") ||
@@ -291,7 +290,6 @@ export async function proxy(request: NextRequest) {
       expenses: { path: "/financials", financialTab: "queue" },
       invoices: { path: "/financials", financialTab: "receipts" },
       "payment-matrix": { path: "/financials", financialTab: "receipts" },
-      maintenance: "/maintenance",
       owners: "/owners",
       correspondence: "/correspondence",
       settings: "/settings",

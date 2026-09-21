@@ -12,7 +12,6 @@ import {
   Clock,
   FileWarning,
   Flame,
-  Wrench,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils/utils";
@@ -85,7 +84,7 @@ export function ActionPanel(): ReactElement {
   const { state } = useApp();
   const t = useTranslations("dashboard");
 
-  const { leases = [], receipts = [], maintenance = [], properties = [] } = state;
+  const { leases = [], receipts = [], properties = [] } = state;
 
   const [docExpiry, setDocExpiry] = useState<{ critical: number; warning: number } | null>(null);
   useEffect(() => {
@@ -158,34 +157,7 @@ export function ActionPanel(): ReactElement {
       });
     }
 
-    // --- 3. Maintenance open > 7 days ---
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const staleMaintenance = maintenance.filter((ticket) => {
-      return (
-        (ticket.status === "open" || ticket.status === "in_progress") &&
-        new Date(ticket.createdAt) < sevenDaysAgo
-      );
-    });
-
-    if (staleMaintenance.length > 0) {
-      // Find oldest for the message
-      const oldest = [...staleMaintenance].sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-      )[0];
-      const daysOpen = Math.floor(
-        (now.getTime() - new Date(oldest.createdAt).getTime()) / (1000 * 60 * 60 * 24),
-      );
-      results.push({
-        id: "stale-maintenance",
-        icon: Wrench,
-        message: t("maintenanceOpenAlert", { count: staleMaintenance.length, days: daysOpen }),
-        count: staleMaintenance.length,
-        href: "/operations",
-        severity: "critical",
-      });
-    }
-
-    // --- 4. Leases expiring within 30 days (renewal-aware) ---
+    // --- 3. Leases expiring within 30 days (renewal-aware) ---
     const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
     const soonExpiring = activeLeases.filter((l) => {
       const end = new Date(l.endDate);
@@ -240,7 +212,7 @@ export function ActionPanel(): ReactElement {
       });
     }
 
-    // --- 5. Leases expiring within 90 days (secondary warning, no renewal offered) ---
+    // --- 4. Leases expiring within 90 days (secondary warning, no renewal offered) ---
     const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
     const soonExpiring90 = activeLeases.filter((l) => {
       const end = new Date(l.endDate);
@@ -262,7 +234,7 @@ export function ActionPanel(): ReactElement {
       });
     }
 
-    // --- 6. Document expiry ---
+    // --- 5. Document expiry ---
     if (docExpiry?.critical) {
       results.push({
         id: "doc-expiry-critical",
@@ -285,7 +257,7 @@ export function ActionPanel(): ReactElement {
     }
 
     return results;
-  }, [leases, receipts, maintenance, properties, t, docExpiry]);
+  }, [leases, receipts, properties, t, docExpiry]);
 
   return (
     <Card className="border-[var(--color-border)] bg-[var(--color-card)]">

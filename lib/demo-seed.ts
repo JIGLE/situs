@@ -5,8 +5,6 @@ import {
   PaymentStatus,
   ReceiptType,
   ReceiptStatus,
-  MaintenanceStatus,
-  MaintenancePriority,
   UnitStatus,
   DocumentType,
   LeaseStatus,
@@ -53,10 +51,6 @@ export async function seedDemoData(userId: string): Promise<void> {
 
   await cleanup(() => prisma.receipt.deleteMany({ where: { userId } }), "receipts");
   await cleanup(() => prisma.expense.deleteMany({ where: { userId } }), "expenses");
-  await cleanup(
-    () => prisma.maintenanceTicket.deleteMany({ where: { userId } }),
-    "maintenanceTickets",
-  );
   await cleanup(() => prisma.correspondence.deleteMany({ where: { userId } }), "correspondence");
   // After the letters, because a template must outlive the record of what was sent from it.
   // Scoped to `userId`, which also means the system-owned templates (userId NULL) are untouched.
@@ -477,56 +471,7 @@ export async function seedDemoData(userId: string): Promise<void> {
     });
   }
 
-  // 7. Create Maintenance Tickets
-  const maintenanceData = [
-    {
-      propertyIndex: 0,
-      tenantIndex: 0,
-      title: "AC leak in master bedroom",
-      description:
-        "Water dripping from the wall split AC unit during operation. Needs HVAC inspection.",
-      status: "in_progress" as MaintenanceStatus,
-      priority: "high" as MaintenancePriority,
-    },
-    {
-      propertyIndex: 5,
-      tenantIndex: 3,
-      title: "Loose front door handle",
-      description:
-        "Front door lock cylinder and handle are slightly loose. Hard to lock from inside.",
-      status: "open" as MaintenanceStatus,
-      priority: "medium" as MaintenancePriority,
-    },
-    {
-      propertyIndex: 2,
-      tenantIndex: null,
-      title: "Scheduled painting prep",
-      description:
-        "Standard cosmetic wall prep and white painting layer for Apt 1B before renting.",
-      status: "resolved" as MaintenanceStatus,
-      priority: "low" as MaintenancePriority,
-    },
-  ];
-
-  for (const m of maintenanceData) {
-    const prop = dbProperties[m.propertyIndex];
-    const tenant = m.tenantIndex !== null ? dbTenants[m.tenantIndex] : null;
-
-    await prisma.maintenanceTicket.create({
-      data: {
-        userId,
-        propertyId: prop.id,
-        tenantId: tenant ? tenant.id : null,
-        title: m.title,
-        description: m.description,
-        status: m.status,
-        priority: m.priority,
-        images: "[]",
-      },
-    });
-  }
-
-  // 8. Create Units
+  // 7. Create Units
   const unitsData = [
     // Apartment 3A has 1 unit
     {
@@ -607,7 +552,7 @@ export async function seedDemoData(userId: string): Promise<void> {
     dbUnits.push(unit);
   }
 
-  // 9. Create RentPeriods (for Jan-May 2026, all paid; June 2026 due/overdue)
+  // 8. Create RentPeriods (for Jan-May 2026, all paid; June 2026 due/overdue)
   for (const tenant of dbTenants) {
     // Find the lease for this tenant
     const lease = await prisma.lease.findFirst({
@@ -640,7 +585,7 @@ export async function seedDemoData(userId: string): Promise<void> {
     }
   }
 
-  // 10. Create BankConnection and BankAccount
+  // 9. Create BankConnection and BankAccount
   const bankConnection = await prisma.bankConnection.create({
     data: {
       userId,
@@ -664,7 +609,7 @@ export async function seedDemoData(userId: string): Promise<void> {
     },
   });
 
-  // 11. Create BankTransactions (movements matching the receipts)
+  // 10. Create BankTransactions (movements matching the receipts)
   const bankTransactionsData = [
     // João Silva rent payments
     { amount: 1500, date: "2026-01-05", counterparty: "João Silva", ref: "JAN2026-APT3A" },
@@ -702,7 +647,7 @@ export async function seedDemoData(userId: string): Promise<void> {
     });
   }
 
-  // 12. Create Documents (for OCR queue and document vault)
+  // 11. Create Documents (for OCR queue and document vault)
   const documentsData = [
     {
       name: "Lease_Agreement_3A_2025.pdf",
@@ -761,7 +706,7 @@ export async function seedDemoData(userId: string): Promise<void> {
     });
   }
 
-  // 13. Correspondence templates and letters
+  // 12. Correspondence templates and letters
   //
   // The cleanup above has deleted `correspondence` since long before this existed, which is the
   // giveaway: the fixture was always meant to have some and never did. Every audit run therefore
@@ -845,7 +790,7 @@ export async function seedDemoData(userId: string): Promise<void> {
     });
   }
 
-  // 14. Maintenance contacts — what /api/contacts reads, and what Operations links out to.
+  // 13. Maintenance contacts — the vendor registry /api/contacts reads.
   for (const contact of [
     {
       type: MaintenanceContactType.CONTRACTOR,
@@ -904,7 +849,7 @@ export async function seedDemoData(userId: string): Promise<void> {
     });
   }
 
-  // 15. Tax filings — one per year and status, so the list shows both `draft` and `final`.
+  // 14. Tax filings — one per year and status, so the list shows both `draft` and `final`.
   const propertyIdsJson = JSON.stringify(dbProperties.map((p) => p.id));
   for (const filing of [
     { year: 2025, regime: "STANDARD", gross: 42000, expenses: 9800, status: "final" },

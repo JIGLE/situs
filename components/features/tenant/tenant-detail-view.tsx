@@ -10,7 +10,6 @@ import {
   Edit,
   ArrowLeft,
   FileText,
-  Wrench,
   DollarSign,
   Link2,
 } from "lucide-react";
@@ -42,18 +41,9 @@ const PAYMENT_STATUS_VARIANT: Record<string, "default" | "secondary" | "destruct
   overdue: "destructive",
 };
 
-/** Ticket status is snake_case in the schema, camelCase in the `maintenance` catalog. */
-const TICKET_STATUS_KEY = {
-  open: "statusOpen",
-  in_progress: "statusInProgress",
-  resolved: "statusResolved",
-  closed: "statusClosed",
-} as const;
-
 export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
   const t = useTranslations("tenantDetail");
   const tStatus = useTranslations("status");
-  const tMaint = useTranslations("maintenance");
   const tReceipts = useTranslations("financial.receipts");
   const locale = useLocale();
   const { state } = useApp();
@@ -75,10 +65,6 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
   const relatedReceipts = useMemo(
     () => state.receipts.filter((r) => r.tenantId === tenantId),
     [state.receipts, tenantId],
-  );
-  const relatedMaintenance = useMemo(
-    () => state.maintenance.filter((m) => m.tenantId === tenantId),
-    [state.maintenance, tenantId],
   );
   const relatedCorrespondence = useMemo(
     () => state.correspondence.filter((c) => c.tenantId === tenantId),
@@ -107,10 +93,6 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
   const totalPaid = relatedReceipts
     .filter((r) => r.status === "paid")
     .reduce((sum, r) => sum + r.amount, 0);
-  const openTickets = relatedMaintenance.filter(
-    (m) => m.status === "open" || m.status === "in_progress",
-  ).length;
-
   const handleCopyPortalLink = async () => {
     try {
       const res = await fetch(`/api/tenants/${tenantId}/portal-link`, {
@@ -244,11 +226,6 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
               label: t("tabs.payments"),
               badge: relatedReceipts.length > 0 ? relatedReceipts.length : undefined,
             },
-            {
-              value: "maintenance",
-              label: t("tabs.maintenance"),
-              badge: openTickets > 0 ? openTickets : undefined,
-            },
             { value: "messages", label: t("tabs.messages") },
           ]}
         />
@@ -267,15 +244,6 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="maintenance" className="flex items-center gap-1.5">
-            <Wrench className="h-3.5 w-3.5" />
-            {t("tabs.maintenance")}
-            {openTickets > 0 && (
-              <span className="ml-1 rounded-full bg-amber-500/20 text-amber-500 px-2 py-0.5 text-xs">
-                {openTickets}
-              </span>
-            )}
-          </TabsTrigger>
           <TabsTrigger value="messages" className="flex items-center gap-1.5">
             <Mail className="h-3.5 w-3.5" />
             {t("tabs.messages")}
@@ -284,7 +252,7 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <Card>
               <CardContent className="p-4">
                 <div className="text-sm text-[var(--color-muted-foreground)]">
@@ -317,14 +285,6 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                     {activeLease?.endDate ?? tenant.leaseEnd}
                   </span>
                 </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-sm text-[var(--color-muted-foreground)]">
-                  {t("openTickets")}
-                </div>
-                <div className="text-2xl font-bold text-amber-500 mt-1">{openTickets}</div>
               </CardContent>
             </Card>
           </div>
@@ -415,50 +375,6 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                 </div>
               </CardContent>
             </Card>
-          )}
-        </TabsContent>
-
-        {/* Maintenance Tab */}
-        <TabsContent value="maintenance">
-          {relatedMaintenance.length === 0 ? (
-            <EmptyStateIllustration entityType="maintenance" />
-          ) : (
-            <div className="space-y-3">
-              {relatedMaintenance.map((ticket) => (
-                <Card key={ticket.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-medium">{ticket.title}</p>
-                        <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
-                          {ticket.description}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant={
-                            ticket.priority === "urgent" || ticket.priority === "high"
-                              ? "destructive"
-                              : "secondary"
-                          }
-                        >
-                          {tMaint(ticket.priority)}
-                        </Badge>
-                        <Badge
-                          variant={
-                            ticket.status === "resolved" || ticket.status === "closed"
-                              ? "default"
-                              : "secondary"
-                          }
-                        >
-                          {tMaint(TICKET_STATUS_KEY[ticket.status])}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
           )}
         </TabsContent>
 

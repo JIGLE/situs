@@ -31,22 +31,22 @@ ever offered to other people.
 
 ## 2. Processing activities
 
-| Activity                            | Purpose                                     | Lawful basis                                             |
-| ----------------------------------- | ------------------------------------------- | -------------------------------------------------------- |
-| Property, unit and building records | Managing the portfolio                      | Legitimate interest (Art. 6(1)(f))                       |
-| Tenant and lease records            | Performing the tenancy agreement            | Contract (Art. 6(1)(b))                                  |
-| Rent ledger, receipts, allocations  | Recording rent due and paid                 | Contract; legal obligation for the fiscal parts          |
-| Bank movement ingestion (PSD2)      | Reconciling rent against bank credits       | Consent, given at the bank under PSD2 (Art. 6(1)(a))     |
-| Fiscal filing (PT AT, ES NRUA)      | Statutory rent-income reporting             | Legal obligation (Art. 6(1)(c))                          |
-| Maintenance tickets and contacts    | Managing repairs                            | Legitimate interest; contract where the tenant raised it |
-| Transactional email                 | Rent reminders, lease-expiry alerts         | Contract; legitimate interest                            |
-| Tenant portal                       | Giving a tenant access to their own records | Contract                                                 |
-| Audit log                           | Accountability (Art. 5(2)), fraud detection | Legal obligation; legitimate interest                    |
+| Activity                            | Purpose                                     | Lawful basis                                         |
+| ----------------------------------- | ------------------------------------------- | ---------------------------------------------------- |
+| Property, unit and building records | Managing the portfolio                      | Legitimate interest (Art. 6(1)(f))                   |
+| Tenant and lease records            | Performing the tenancy agreement            | Contract (Art. 6(1)(b))                              |
+| Rent ledger, receipts, allocations  | Recording rent due and paid                 | Contract; legal obligation for the fiscal parts      |
+| Bank movement ingestion (PSD2)      | Reconciling rent against bank credits       | Consent, given at the bank under PSD2 (Art. 6(1)(a)) |
+| Fiscal filing (PT AT, ES NRUA)      | Statutory rent-income reporting             | Legal obligation (Art. 6(1)(c))                      |
+| Maintenance contacts                | Reaching a contractor or vendor             | Legitimate interest (Art. 6(1)(f))                   |
+| Transactional email                 | Rent reminders, lease-expiry alerts         | Contract; legitimate interest                        |
+| Tenant portal                       | Giving a tenant access to their own records | Contract                                             |
+| Audit log                           | Accountability (Art. 5(2)), fraud detection | Legal obligation; legitimate interest                |
 
 **No special-category data** (Art. 9) is processed by design. Nothing asks for health, beliefs,
-biometrics or the rest. Free-text fields — a maintenance ticket description, a bank remittance
-line — could contain anything a person typed, which is a reason to keep them no longer than
-needed rather than a reason to treat the app as processing Article 9 data.
+biometrics or the rest. Free-text fields — a bank remittance line, a receipt note — could
+contain anything a person typed, which is a reason to keep them no longer than needed rather
+than a reason to treat the app as processing Article 9 data.
 
 **No automated decision-making with legal effect** (Art. 22). Bank matching scores a movement
 against a lease and, above 0.85, creates a draft receipt; below that a human decides. Nothing

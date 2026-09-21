@@ -12,7 +12,6 @@ import {
   UserCircle,
   Users,
   Wallet,
-  Wrench,
 } from "lucide-react";
 
 export type PortalRole = "owner" | "tenant";
@@ -75,14 +74,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         icon: Wallet,
         roles: ["owner", "tenant"],
         mobilePrimary: true,
-      },
-      {
-        key: "maintenance",
-        href: "/operations",
-        label: "Operations",
-        labelKey: "navigation.operations",
-        icon: Wrench,
-        roles: ["owner"],
       },
       {
         key: "people",
@@ -259,7 +250,6 @@ export function normalizePortalPath(pathname: string): string {
   if (normalized === "/buildings") return "/portfolio";
   if (normalized === "/contracts") return "/leases";
   if (normalized === "/owners") return "/people";
-  if (normalized === "/maintenance") return "/operations";
   return normalized;
 }
 

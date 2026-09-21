@@ -77,13 +77,6 @@ export async function GET(
       },
     });
 
-    // Fetch maintenance requests for this tenant
-    const maintenanceRequests = await prisma.maintenanceTicket.findMany({
-      where: { tenantId: tenant.id },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    });
-
     return createSuccessResponse({
       tenant: {
         id: tenant.id,
@@ -117,14 +110,6 @@ export async function GET(
         method: p.paymentMethod?.type || "unknown",
         status: p.status,
         invoiceNumber: p.invoice?.number,
-      })),
-      maintenanceRequests: maintenanceRequests.map((m) => ({
-        id: m.id,
-        title: m.title,
-        status: m.status,
-        priority: m.priority,
-        createdAt: m.createdAt.toISOString(),
-        description: m.description,
       })),
     });
   } catch (error) {

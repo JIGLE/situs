@@ -69,17 +69,6 @@ export {
   type UpdateReceipt,
 } from "./receipt.schema";
 
-// Maintenance schemas
-export {
-  maintenanceSchema,
-  createMaintenanceSchema,
-  updateMaintenanceSchema,
-  type Maintenance,
-  type MaintenanceFormData,
-  type CreateMaintenance,
-  type UpdateMaintenance,
-} from "./maintenance.schema";
-
 // Owner schemas
 export {
   ownerSchema,

@@ -442,9 +442,6 @@ body {
   flex: 0 0 auto;
   background: var(--semantic-success);
 }
-.status-dot.status-dot-warn {
-  background: var(--semantic-warning);
-}
 .status-dot.status-dot-danger {
   background: var(--semantic-danger);
 }

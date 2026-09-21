@@ -245,47 +245,12 @@ export interface Expense {
   updatedAt: string;
 }
 
-export type MaintenanceStatus = "open" | "in_progress" | "resolved" | "closed";
-export type MaintenancePriority = "low" | "medium" | "high" | "urgent";
-
-export interface MaintenanceTicket {
-  id: string;
-  userId: string;
-  propertyId: string;
-  propertyName?: string;
-  tenantId?: string;
-  tenantName?: string;
-  unitId?: string;
-  title: string;
-  description: string;
-  status: MaintenanceStatus;
-  priority: MaintenancePriority;
-  category?: string;
-  images?: string[];
-  cost?: number; // @deprecated — use estimatedCost
-  estimatedCost?: number;
-  actualCost?: number;
-  scheduledDate?: string;
-  dueDate?: string;
-  assignedTo?: string; // @deprecated — use vendorName
-  vendorName?: string;
-  vendorPhone?: string;
-  invoiceRef?: string;
-  isTenantReport?: boolean;
-  resolvedAt?: string;
-  evidenceRequired?: boolean;
-  slaDueAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 // Initial empty data
 export const initialProperties: Property[] = [];
 export const initialTenants: Tenant[] = [];
 export const initialOwners: Owner[] = [];
 export const initialReceipts: Receipt[] = [];
 export const initialExpenses: Expense[] = [];
-export const initialMaintenance: MaintenanceTicket[] = [];
 export const initialTemplates: CorrespondenceTemplate[] = [
   {
     id: "welcome-template",
