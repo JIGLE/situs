@@ -51,7 +51,6 @@ const SKELETON_BY_SEGMENT: [string, React.ComponentType<{ className?: string }>]
   ["/buildings", PropertiesListSkeleton],
   ["/financials", FinancialSkeleton],
   ["/finance", FinancialSkeleton],
-  ["/reports", FinancialSkeleton],
   ["/people", PeopleListSkeleton],
   ["/tenants", PeopleListSkeleton],
   ["/contacts", PeopleListSkeleton],

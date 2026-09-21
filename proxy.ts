@@ -294,8 +294,6 @@ export async function proxy(request: NextRequest) {
       maintenance: "/maintenance",
       owners: "/owners",
       correspondence: "/correspondence",
-      reports: "/reports",
-      analytics: "/analytics",
       settings: "/settings",
       profile: "/settings/profile",
       preferences: "/settings/preferences",

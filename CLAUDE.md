@@ -13,9 +13,9 @@ allocate → receipt → tax filing → audit trail.
 reintroduce it. | **Stage**: Production-ready core; the Situs rebrand is complete — all 13 PRs shipped
 (brand, nav, landing, portfolio tree, rent ledger, bank matching, receipt lifecycle + PT tax
 connector, OCR classification, audit trail/tax dashboard, schema consolidation, a11y/e2e pass).
-The IA consolidation (PR 10b) and the infra rename (PR 13) have since shipped too: `/people`,
-`/intelligence` and `/operations` are live with redirect shims from the old paths, and the
-package, Docker and env identifiers all read `situs` with Helm dropped for a single Docker path.
+The IA consolidation (PR 10b) and the infra rename (PR 13) have since shipped too: `/people`
+and `/operations` are live with redirect shims from the old paths, and the package, Docker and
+env identifiers all read `situs` with Helm dropped for a single Docker path.
 
 ## Tech Stack
 

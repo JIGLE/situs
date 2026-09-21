@@ -1,9 +1,7 @@
 import type { ComponentType } from "react";
 import {
-  BarChart2,
   Building2,
   Calculator,
-  FileBarChart,
   FileBox,
   FileText,
   HardHat,
@@ -104,14 +102,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         roles: ["owner", "tenant"],
         mobilePrimary: true,
       },
-      {
-        key: "analytics",
-        href: "/intelligence",
-        label: "Intelligence",
-        labelKey: "navigation.intelligence",
-        icon: BarChart2,
-        roles: ["owner"],
-      },
     ],
   },
   {
@@ -152,15 +142,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
     group: "Hidden",
     groupLabelKey: "navigation.systemGroup",
     items: [
-      {
-        key: "reports",
-        href: "/intelligence",
-        label: "Reports",
-        labelKey: "navigation.reports",
-        icon: FileBarChart,
-        roles: ["owner"],
-        hidden: true,
-      },
       {
         key: "correspondence",
         href: "/correspondence",
@@ -279,9 +260,6 @@ export function normalizePortalPath(pathname: string): string {
   if (normalized === "/contracts") return "/leases";
   if (normalized === "/owners") return "/people";
   if (normalized === "/maintenance") return "/operations";
-  if (normalized === "/analytics" || normalized === "/insights" || normalized === "/reports") {
-    return "/intelligence";
-  }
   return normalized;
 }
 

@@ -1,11 +1,11 @@
 # API Routes
 
-Situs exposes **51 API domains** across **156 `route.ts` files** under `app/api/`, organised by
+Situs exposes **49 API domains** across **154 `route.ts` files** under `app/api/`, organised by
 domain per Next.js App Router convention.
 
-This document describes **28 of those domains in detail** — the ones whose contracts are not
+This document describes **26 of those domains in detail** — the ones whose contracts are not
 obvious from the handler. It is not, and does not try to be, an endpoint-by-endpoint reference
-for all 156: a hand-maintained one goes stale on the first PR that adds a route, and this file
+for all 154: a hand-maintained one goes stale on the first PR that adds a route, and this file
 spent a while claiming to cover "all" routes while omitting 24 domains.
 
 **The filesystem is the source of truth.** To see what exists right now:
@@ -23,7 +23,6 @@ a domain listing `GET POST` may still have some paths that only answer `GET`.
 | ------------------------------ | ----------- | ------------------------- |
 | `/api/activation`              | 1           | GET                       |
 | `/api/admin`                   | 10          | GET DELETE                |
-| `/api/analytics`               | 1           | GET                       |
 | `/api/audit-trail`             | 1           | GET                       |
 | `/api/auth`                    | 6           | GET POST DELETE           |
 | `/api/bank`                    | 8           | GET POST PUT              |
@@ -62,7 +61,6 @@ a domain listing `GET POST` may still have some paths that only answer `GET`.
 | `/api/property-owners`         | 1           | POST DELETE               |
 | `/api/ready`                   | 1           | GET                       |
 | `/api/receipts`                | 4           | GET POST PUT DELETE       |
-| `/api/reports`                 | 1           | GET POST                  |
 | `/api/settings`                | 1           | GET POST                  |
 | `/api/tax`                     | 3           | GET POST                  |
 | `/api/tax-filings`             | 3           | GET POST DELETE           |
@@ -232,19 +230,6 @@ answer shape. See the model note in `prisma/schema.prisma` and `lib/services/inb
 - `GET /api/documents/stats` - Get document statistics
 
 ## Analytics & Reporting
-
-### Analytics
-
-- `GET /api/analytics` - Get analytics data
-- `GET /api/analytics/dashboard` - Dashboard analytics
-- `GET /api/analytics/revenue` - Revenue analytics
-- `GET /api/analytics/occupancy` - Occupancy analytics
-
-### Reports
-
-- `GET /api/reports` - List available reports
-- `POST /api/reports` - Generate a report
-- `GET /api/reports/[id]` - Get report details
 
 ### Metrics
 

@@ -161,7 +161,6 @@ money-handling service on a live instance, and the brief's §15 warns against ex
 
 The real exposure is the code that does _not_ apply the engine's discipline:
 
-- `lib/services/analytics-service.ts` — ~8 `reduce((sum, r) => sum + r.amount, 0)` sites
 - `app/api/tax-filings/income-summary/route.ts:48,52` — same pattern
 
 Dashboard drift is cosmetic. A tax-filing figure is not.
@@ -172,7 +171,8 @@ pass unchanged, proving no behaviour change). Applied to `income-summary`'s `gro
 `deductibleExpenses`, and to the three `getAnnualTaxSummary` totals that feed
 `generatePortugalTaxForm` / `generateSpainTaxForm`, plus the `calculateDistribution` totals.
 
-`lib/services/analytics-service.ts` remains **P2 and deliberately untouched**.
+`lib/services/analytics-service.ts` was deleted with the Intelligence surface in the scope
+cutdown, so the remaining P2 exposure went with it.
 
 ---
 

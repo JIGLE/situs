@@ -61,7 +61,6 @@ is _derived_ from this ledger, never hand-set.
 - **Operations** — maintenance tickets with SLA due dates, evidence requirements, contractors, calendar
 - **Documents + OCR** — upload and classification; ambiguous or unlinked results land in a review queue
 - **Correspondence** — templates, bulk generation, SMTP delivery
-- **Intelligence** — occupancy, revenue and ROI analytics
 - **Tenant portal** — token-gated self-service access, no account required
 - **i18n** — Portuguese, English, Spanish, Italian (1,035 keys, full parity, enforced by test)
 
@@ -125,7 +124,7 @@ on top, so the money rules are testable without a database.
 ```
 app/
   [locale]/(main)/     → owner-facing pages (portfolio, financials, people,
-                         operations, leases, documents, intelligence, settings…)
+                         operations, leases, documents, settings…)
   tenant-portal/       → token-gated tenant self-service
   api/                 → 49 domain route folders (Zod-validated, session-checked)
 components/

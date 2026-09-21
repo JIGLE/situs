@@ -55,7 +55,6 @@ describe("normalising a portal path", () => {
     // These predate the prefix change and must survive it — old deep links depend on them.
     expect(normalizePortalPath("/en/properties")).toBe("/portfolio");
     expect(normalizePortalPath("/properties")).toBe("/portfolio");
-    expect(normalizePortalPath("/reports")).toBe("/intelligence");
     expect(normalizePortalPath("/maintenance")).toBe("/operations");
   });
 });
@@ -74,7 +73,7 @@ describe("access derived from the normalised path", () => {
     //
     // These are owner-only. `/portfolio`, `/financials`, `/documents` and `/leases` are NOT —
     // a tenant reaches their own view of each — which is why they are asserted below instead.
-    for (const path of ["/admin", "/admin/users", "/operations", "/intelligence", "/contacts"]) {
+    for (const path of ["/admin", "/admin/users", "/operations", "/contacts"]) {
       expect(canAccessPortalPath("tenant", path)).toBe(false);
       expect(canAccessPortalPath("tenant", `/en${path}`)).toBe(false);
     }
