@@ -98,10 +98,10 @@
     "qrcode": "^1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "react-hot-toast": "^2.6.0",
+    "react-hot-toast": "^2.6.1",
     "react-leaflet": "^5.0.0",
     "stripe": "^22.6.2",
-    "tailwind-merge": "^3.6.0",
+    "tailwind-merge": "^3.7.0",
     "zod": "^4.6.2"
   },
   "optionalDependencies": {
@@ -134,7 +134,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-security": "^4.0.1",
     "husky": "^9.1.7",
-    "js-yaml": "^5.4.1",
+    "js-yaml": "^5.4.2",
     "jsdom": "^29.1.1",
     "prettier": "^3.9.6",
     "prisma": "^7.10.0",
