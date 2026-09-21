@@ -44,6 +44,22 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    pattern: /Brevo Inbound Parsing/i,
+    retired: "2026-09-21 (scope cutdown, phase 7)",
+    because:
+      "inbound mail was cut in full — the webhook, InboundMessage/InboundAttachment, " +
+      "lib/services/inbound/ and BREVO_INBOUND_SECRET are all gone. The delivery-event " +
+      "webhook at /api/webhooks/brevo stays; it writes EmailLog for transactional mail",
+  },
+  {
+    pattern: /Correspondence (Inbox|tab|page)/i,
+    retired: "2026-09-21 (scope cutdown, phase 7)",
+    because:
+      "correspondence was cut in full — templates, the served-letter log, /correspondence and " +
+      "the People Communications tab. Automated rent reminders survive on a separate path " +
+      "(lib/services/notifications/reminder-email.ts)",
+  },
+  {
     pattern: /`?\/operations`? (?:is|are) live/i,
     retired: "2026-09-21 (scope cutdown, phase 5)",
     because:

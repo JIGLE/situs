@@ -3,16 +3,7 @@
  * Read-only in-memory fixtures for development without DATABASE_URL
  */
 
-import type {
-  Property,
-  Tenant,
-  Receipt,
-  CorrespondenceTemplate,
-  Correspondence,
-  Owner,
-  Lease,
-  Expense,
-} from "@/lib/types";
+import type { Property, Tenant, Receipt, Owner, Lease, Expense } from "@/lib/types";
 
 // Mock data stores - read-only
 const MOCK_PROPERTIES = [
@@ -209,42 +200,6 @@ const MOCK_RECEIPTS = [
   },
 ];
 
-const MOCK_TEMPLATES = [
-  {
-    id: "template-1",
-    userId: "mock-user",
-    name: "Rent Reminder",
-    subject: "Rent Payment Reminder",
-    body: "Dear {{tenant_name}},\n\nThis is a friendly reminder that your rent payment of ${{amount}} is due on {{due_date}}.\n\nThank you,\nProperty Management",
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "template-2",
-    userId: "mock-user",
-    name: "Maintenance Notice",
-    subject: "Scheduled Maintenance",
-    body: "Dear {{tenant_name}},\n\nWe will be performing scheduled maintenance on {{date}}. Please ensure access to {{area}}.\n\nBest regards,\nMaintenance Team",
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
-  },
-];
-
-const MOCK_CORRESPONDENCE = [
-  {
-    id: "corr-1",
-    userId: "mock-user",
-    recipientEmail: "sarah.johnson@email.com",
-    recipientName: "Sarah Johnson",
-    subject: "Welcome to Sunset Apartments",
-    body: "Dear Sarah,\n\nWelcome to Sunset Apartments! We are excited to have you as our tenant.\n\nBest regards,\nProperty Management",
-    status: "sent",
-    sentAt: "2025-01-01T12:00:00Z",
-    createdAt: "2025-01-01T11:50:00Z",
-    updatedAt: "2025-01-01T12:00:00Z",
-  },
-];
-
 const MOCK_OWNERS = [
   {
     id: "owner-1",
@@ -429,79 +384,6 @@ export const receiptService = {
 
   async delete(_userId: string, _id: string): Promise<void> {
     throw new Error("Cannot delete receipts in mock mode. Set DATABASE_URL to enable writes.");
-  },
-};
-
-// Template service
-// Signatures mirror the real service exactly — userId first — so mock mode cannot drift into
-// accepting calls the scoped implementation would reject.
-export const templateService = {
-  async getAll(_userId: string): Promise<CorrespondenceTemplate[]> {
-    return [...MOCK_TEMPLATES] as unknown as CorrespondenceTemplate[];
-  },
-
-  async getById(_userId: string, _id: string): Promise<CorrespondenceTemplate | null> {
-    return null;
-  },
-
-  async create(
-    _userId: string,
-    _data: Partial<CorrespondenceTemplate>,
-  ): Promise<CorrespondenceTemplate> {
-    throw new Error("Cannot create templates in mock mode. Set DATABASE_URL to enable writes.");
-  },
-
-  async copyForUser(_userId: string, _id: string): Promise<CorrespondenceTemplate> {
-    throw new Error("Cannot copy templates in mock mode. Set DATABASE_URL to enable writes.");
-  },
-
-  async update(
-    _userId: string,
-    _id: string,
-    _data: Partial<CorrespondenceTemplate>,
-  ): Promise<CorrespondenceTemplate> {
-    throw new Error("Cannot update templates in mock mode. Set DATABASE_URL to enable writes.");
-  },
-
-  async delete(_userId: string, _id: string): Promise<void> {
-    throw new Error("Cannot delete templates in mock mode. Set DATABASE_URL to enable writes.");
-  },
-};
-
-// Correspondence service
-export const correspondenceService = {
-  async getAll(_userId: string): Promise<Correspondence[]> {
-    return [...MOCK_CORRESPONDENCE] as unknown as Correspondence[];
-  },
-
-  async getById(_userId: string, _id: string): Promise<Correspondence | null> {
-    return null;
-  },
-
-  async create(_userId: string, _data: Partial<Correspondence>): Promise<Correspondence> {
-    throw new Error(
-      "Cannot create correspondence in mock mode. Set DATABASE_URL to enable writes.",
-    );
-  },
-
-  async update(
-    _userId: string,
-    _id: string,
-    _data: Partial<Correspondence>,
-  ): Promise<Correspondence> {
-    throw new Error(
-      "Cannot update correspondence in mock mode. Set DATABASE_URL to enable writes.",
-    );
-  },
-
-  async delete(_userId: string, _id: string): Promise<void> {
-    throw new Error(
-      "Cannot delete correspondence in mock mode. Set DATABASE_URL to enable writes.",
-    );
-  },
-
-  async send(_userId: string, _id: string): Promise<Correspondence> {
-    throw new Error("Cannot send correspondence in mock mode. Set DATABASE_URL to enable writes.");
   },
 };
 

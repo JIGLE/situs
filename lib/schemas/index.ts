@@ -91,17 +91,6 @@ export {
   type UpdateExpense,
 } from "./expense.schema";
 
-// Correspondence template schemas
-export {
-  templateSchema,
-  createTemplateSchema,
-  updateTemplateSchema,
-  type Template,
-  type TemplateFormData,
-  type CreateTemplate,
-  type UpdateTemplate,
-} from "./template.schema";
-
 // Settings schema
 export { settingsSchema, type Settings, type SettingsFormData } from "./settings.schema";
 

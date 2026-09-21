@@ -7,7 +7,6 @@
     "totalOwners": "Total de proprietários",
     "tenants": "Inquilinos",
     "owners": "Proprietários",
-    "communications": "Comunicações",
     "addTenant": "Adicionar inquilino",
     "addOwner": "Adicionar proprietário"
   },
@@ -396,9 +395,7 @@
     "payments": "Pagamentos",
     "financials": "Contas",
     "settings": "Configurações",
-    "correspondence": "Mensagens",
     "documents": "Documentos",
-    "communicationGroup": "Comunicação",
     "operationsGroup": "Operações",
     "intelligenceGroup": "Relatórios",
     "systemGroup": "Sistema",
@@ -557,7 +554,6 @@
     "allSetHeadline": "Está tudo pronto!",
     "whatsNext": "O que fazer a seguir?",
     "nextStepLease": "Configure um contrato de arrendamento para o seu inquilino",
-    "nextStepCorrespondence": "Crie modelos de correspondência para emails comuns",
     "nextStepInsights": "Explore o painel para ver receita e ocupação",
     "startAction": "Começar"
   },
@@ -586,11 +582,6 @@
       "title": "Nenhum contrato criado",
       "description": "Crie contratos de arrendamento para formalizar relações com inquilinos e automatizar lembretes de renovação. Comece por adicionar um imóvel e um inquilino.",
       "action": "Criar Contrato"
-    },
-    "correspondence": {
-      "title": "Ainda não há correspondência",
-      "description": "Envie avisos, lembretes e atualizações aos seus inquilinos. Todo o histórico de comunicação fica registado aqui.",
-      "action": "Enviar Mensagem"
     },
     "reports": {
       "title": "Nenhum relatório disponível",
@@ -1169,15 +1160,10 @@
   },
   "notifications": {
     "title": "Notificações",
-    "leaseExpiring": "Contrato a Expirar",
     "paymentDue": "Pagamento em Dívida",
-    "paymentReceived": "Pagamento Recebido",
-    "documentUploaded": "Documento Carregado",
     "rentReceiptDue": "Recibo de Renda Pendente",
-    "nruaRegistration": "Registo NRUA Necessário",
     "paymentOverdue": "Pagamento em Atraso",
     "leaseRenewalReminder": "Lembrete de Renovação de Contrato",
-    "inboundMessage": "Nova Mensagem",
     "system": "Sistema",
     "other": "Notificação",
     "markAllRead": "Marcar Tudo como Lido",
@@ -1786,122 +1772,11 @@
     "addTenant": "Adicionar Inquilino",
     "createLease": "Criar Contrato",
     "recordPayment": "Registar Pagamento",
-    "sendCorrespondence": "Enviar Correspondência",
     "generateInvoice": "Gerar Fatura",
     "addPropertyDesc": "Registar uma nova propriedade no seu portfólio",
     "addTenantDesc": "Registar um novo inquilino",
     "recordPaymentDesc": "Registar um pagamento de renda ou despesa",
-    "createLeaseDesc": "Redigir um novo contrato de arrendamento",
-    "sendCorrespondenceDesc": "Enviar email ou notificar inquilino"
-  },
-  "correspondence": {
-    "title": "Correspondência",
-    "description": "Gerir modelos e comunicações",
-    "types": {
-      "welcome": "Boas-vindas",
-      "rentReminder": "Lembrete de Renda",
-      "evictionNotice": "Aviso de Despejo",
-      "maintenanceRequest": "Pedido de Manutenção",
-      "leaseRenewal": "Renovação de Contrato",
-      "custom": "Personalizado"
-    },
-    "heading": "Correspondência",
-    "subtitle": "Escreva avisos, lembretes de renda e renovações de contrato para os seus inquilinos.",
-    "addTemplate": "Adicionar modelo",
-    "editTemplate": "Editar modelo",
-    "createTemplate": "Criar modelo",
-    "templateDialogDescription": "Crie um modelo reutilizável. Use os marcadores abaixo para inserir automaticamente os dados do inquilino e do imóvel.",
-    "templateName": "Nome do modelo",
-    "templateNameTooltip": "Escolha um nome descritivo para este modelo",
-    "templateNamePlaceholder": "Introduza o nome do modelo…",
-    "templateType": "Tipo de modelo",
-    "templateTypeTooltip": "Selecione o tipo de correspondência deste modelo",
-    "templateTypePlaceholder": "Selecione o tipo de modelo…",
-    "emailSubject": "Assunto do e-mail",
-    "emailSubjectTooltip": "Linha de assunto do e-mail (aceita variáveis)",
-    "emailSubjectPlaceholder": "Introduza o assunto do e-mail…",
-    "emailContent": "Conteúdo do e-mail",
-    "emailContentTooltip": "Insira marcadores para personalizar a mensagem de cada inquilino",
-    "insertPlaceholder": "Clique para inserir um marcador:",
-    "contentPlaceholder": "Escreva aqui a sua mensagem. Clique nos marcadores acima para inserir dados do inquilino ou do imóvel.",
-    "emptyTitle": "Ainda sem modelos",
-    "emptyDescription": "Crie o seu primeiro modelo de correspondência",
-    "batchPdf": "PDF em lote",
-    "send": "Enviar",
-    "sendTitle": "Enviar correspondência",
-    "sendDescription": "Componha e envie uma mensagem com o modelo selecionado",
-    "selectTenant": "Selecionar inquilino",
-    "chooseTenant": "Escolha um inquilino",
-    "subject": "Assunto",
-    "message": "Mensagem",
-    "sendMessage": "Enviar mensagem",
-    "batchTitle": "Gerar PDF em lote",
-    "selectRecipients": "Selecionar destinatários",
-    "selectAll": "Selecionar todos",
-    "noTenants": "Nenhum inquilino encontrado.",
-    "welcomeLetter": "Carta de boas-vindas",
-    "variable": {
-      "tenantName": "Nome do inquilino",
-      "propertyName": "Imóvel",
-      "propertyAddress": "Morada",
-      "rentAmount": "Valor da renda",
-      "dueDate": "Data de vencimento",
-      "leaseStart": "Início do contrato",
-      "leaseEnd": "Fim do contrato"
-    },
-    "toast": {
-      "templateCreated": "Modelo criado com sucesso",
-      "templateUpdated": "Modelo atualizado com sucesso",
-      "templateDeleted": "Modelo eliminado com sucesso",
-      "selectTemplate": "Selecione um modelo.",
-      "selectRecipient": "Selecione pelo menos um destinatário.",
-      "selectOneTenant": "Selecione um inquilino.",
-      "batchGenerated": "{count, plural, one {PDF gerado para # destinatário.} other {PDF gerado para # destinatários.}}",
-      "batchFailed": "Não foi possível gerar o PDF em lote.",
-      "sent": "Correspondência enviada com sucesso",
-      "sendFailed": "Não foi possível enviar a correspondência. Tente novamente."
-    },
-    "deleteDialog": {
-      "title": "Eliminar modelo",
-      "description": "Este modelo será removido definitivamente. Esta ação não pode ser anulada.",
-      "confirmLabel": "Eliminar modelo"
-    },
-    "batchSubtitle": "Selecione os destinatários das cartas de: {name}",
-    "generating": "A gerar…",
-    "generateBatch": "Gerar lote ({count})",
-    "tabs": {
-      "outbound": "Enviado",
-      "inbox": "Caixa de Entrada"
-    },
-    "inbox": {
-      "loadFailed": "Não foi possível carregar as mensagens. Tente novamente.",
-      "showArchived": "Mostrar arquivadas",
-      "showActive": "Mostrar ativas",
-      "emptyTitle": "Ainda sem mensagens",
-      "emptyDescription": "O correio enviado para o seu endereço Situs aparece aqui.",
-      "emptyArchivedTitle": "Sem mensagens arquivadas",
-      "emptyArchivedDescription": "As mensagens que arquivar aparecem aqui.",
-      "suggested": "Sugestão: {name}",
-      "detailTitle": "Mensagem",
-      "senderChecked": "Remetente verificado (SPF/DKIM aprovado)",
-      "senderUnverified": "Remetente não verificado",
-      "attachments": "Anexos",
-      "saveAttachment": "Guardar em Documentos",
-      "attachmentSaving": "A guardar…",
-      "attachmentSavedLabel": "Guardado",
-      "attachmentSaved": "Anexo guardado em Documentos",
-      "attachmentSaveFailed": "Não foi possível guardar o anexo. Tente novamente.",
-      "linkedTenant": "Inquilino associado",
-      "noTenant": "Sem inquilino associado",
-      "confirm": "Confirmar",
-      "linkSaved": "Associação ao inquilino atualizada",
-      "linkFailed": "Não foi possível atualizar a associação. Tente novamente.",
-      "archive": "Arquivar",
-      "unarchive": "Desarquivar",
-      "archived": "Mensagem arquivada",
-      "unarchived": "Mensagem desarquivada",
-      "archiveFailed": "Não foi possível atualizar a mensagem. Tente novamente."
-    }
+    "createLeaseDesc": "Redigir um novo contrato de arrendamento"
   },
   "contracts": {
     "title": "Contratos",
@@ -2175,8 +2050,7 @@
     "tabs": {
       "overview": "Visão geral",
       "lease": "Contrato",
-      "payments": "Pagamentos",
-      "messages": "Mensagens"
+      "payments": "Pagamentos"
     },
     "monthlyRent": "Renda mensal",
     "totalPaid": "Total pago",
@@ -2184,12 +2058,7 @@
     "notes": "Notas",
     "paymentHistory": "Histórico de pagamentos",
     "notFound": "Inquilino não encontrado",
-    "backToTenants": "Voltar aos inquilinos",
-    "messageStatus": {
-      "draft": "Rascunho",
-      "sent": "Enviada",
-      "delivered": "Entregue"
-    }
+    "backToTenants": "Voltar aos inquilinos"
   },
   "tenants": {
     "dialogCreateTitle": "Adicionar inquilino",

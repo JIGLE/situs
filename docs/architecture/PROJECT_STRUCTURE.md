@@ -17,7 +17,6 @@ situs/
 ├── app/                          # Next.js App Router
 │   ├── [locale]/                 # Internationalized routes
 │   │   ├── (main)/              # Main app route group
-│   │   │   ├── correspondence/  # Communication pages
 │   │   │   ├── documents/       # Document management
 │   │   │   ├── financials/      # Financial pages
 │   │   │   ├── leases/          # Lease management
@@ -34,7 +33,6 @@ situs/
 │   ├── api/                      # API routes
 │   │   ├── admin/               # Admin operations
 │   │   ├── auth/                # NextAuth.js
-│   │   ├── correspondence/      # Communication API
 │   │   ├── debug/               # Debug endpoints (dev only)
 │   │   ├── documents/           # Document API
 │   │   ├── email/               # Email operations
@@ -62,10 +60,6 @@ situs/
 │   └── page.tsx                 # Homepage
 ├── components/                   # React components
 │   ├── features/                # Feature modules (with barrel exports)
-│   │   ├── correspondence/      # Communication features
-│   │   │   ├── correspondence-view.tsx
-│   │   │   ├── correspondence-view.test.tsx
-│   │   │   └── index.ts         # ✨ Barrel export
 │   │   ├── dashboard/           # Dashboard features
 │   │   │   ├── overview-view.tsx
 │   │   │   ├── overview-view.test.tsx

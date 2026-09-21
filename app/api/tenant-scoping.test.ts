@@ -101,8 +101,10 @@ describe("app/api tenant scoping", () => {
     const owned = userOwnedModels();
     expect(owned.has("receipt")).toBe(true);
     expect(owned.has("property")).toBe(true);
-    // CorrespondenceTemplate gained a nullable userId when templates stopped being global.
-    expect(owned.has("correspondenceTemplate")).toBe(true);
+    // A nullable `userId String?` still counts as owned — EmailLog is the surviving example.
+    // This pinned CorrespondenceTemplate until the scope cutdown removed it; the parser
+    // property it proves is the same one.
+    expect(owned.has("emailLog")).toBe(true);
 
     // A negative pin is what keeps this parser honest. PropertyOwner has no owner column of its
     // own and is immediately followed in the schema by GovernmentVerification, which does — so a

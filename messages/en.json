@@ -7,7 +7,6 @@
     "totalOwners": "Total owners",
     "tenants": "Tenants",
     "owners": "Owners",
-    "communications": "Communications",
     "addTenant": "Add tenant",
     "addOwner": "Add owner"
   },
@@ -396,9 +395,7 @@
     "payments": "Payments",
     "financials": "Accounts",
     "settings": "Settings",
-    "correspondence": "Messages",
     "documents": "Documents",
-    "communicationGroup": "Communication",
     "operationsGroup": "Operations",
     "intelligenceGroup": "Reports",
     "systemGroup": "System",
@@ -557,7 +554,6 @@
     "allSetHeadline": "You're all set!",
     "whatsNext": "What's next?",
     "nextStepLease": "Set up a lease agreement for your tenant",
-    "nextStepCorrespondence": "Create correspondence templates for common emails",
     "nextStepInsights": "Explore the dashboard for revenue and occupancy insights",
     "startAction": "Start"
   },
@@ -586,11 +582,6 @@
       "title": "No leases created",
       "description": "Create lease agreements to formalise tenant relationships and automate renewal reminders. Start by adding a property and a tenant first.",
       "action": "Create Lease"
-    },
-    "correspondence": {
-      "title": "No correspondence yet",
-      "description": "Send notices, reminders, and updates to your tenants. All communication history is tracked here.",
-      "action": "Send Message"
     },
     "reports": {
       "title": "No reports available",
@@ -1169,15 +1160,10 @@
   },
   "notifications": {
     "title": "Notifications",
-    "leaseExpiring": "Lease Expiring",
     "paymentDue": "Payment Due",
-    "paymentReceived": "Payment Received",
-    "documentUploaded": "Document Uploaded",
     "rentReceiptDue": "Rent Receipt Due",
-    "nruaRegistration": "NRUA Registration Required",
     "paymentOverdue": "Payment Overdue",
     "leaseRenewalReminder": "Lease Renewal Reminder",
-    "inboundMessage": "New Message",
     "system": "System",
     "other": "Notification",
     "markAllRead": "Mark All as Read",
@@ -1786,122 +1772,11 @@
     "addTenant": "Add Tenant",
     "createLease": "Create Lease",
     "recordPayment": "Record Payment",
-    "sendCorrespondence": "Send Correspondence",
     "generateInvoice": "Generate Invoice",
     "addPropertyDesc": "Register a new property to your portfolio",
     "addTenantDesc": "Register a new tenant",
     "recordPaymentDesc": "Log a rent or expense payment",
-    "createLeaseDesc": "Draft a new lease agreement",
-    "sendCorrespondenceDesc": "Email or notify a tenant"
-  },
-  "correspondence": {
-    "title": "Correspondence",
-    "description": "Manage templates and communications",
-    "types": {
-      "welcome": "Welcome",
-      "rentReminder": "Rent Reminder",
-      "evictionNotice": "Eviction Notice",
-      "maintenanceRequest": "Maintenance Request",
-      "leaseRenewal": "Lease Renewal",
-      "custom": "Custom"
-    },
-    "heading": "Correspondence",
-    "subtitle": "Write notices, rent reminders, and lease renewals for your tenants.",
-    "addTemplate": "Add Template",
-    "editTemplate": "Edit Template",
-    "createTemplate": "Create Template",
-    "templateDialogDescription": "Create a reusable template. Use the placeholders below to insert tenant and property details automatically.",
-    "templateName": "Template Name",
-    "templateNameTooltip": "Choose a descriptive name for this template",
-    "templateNamePlaceholder": "Enter template name…",
-    "templateType": "Template Type",
-    "templateTypeTooltip": "Select the type of correspondence this template is for",
-    "templateTypePlaceholder": "Select template type…",
-    "emailSubject": "Email Subject",
-    "emailSubjectTooltip": "Subject line for the email (supports variables)",
-    "emailSubjectPlaceholder": "Enter email subject…",
-    "emailContent": "Email Content",
-    "emailContentTooltip": "Insert placeholders to personalise the message for each tenant",
-    "insertPlaceholder": "Click to insert a placeholder:",
-    "contentPlaceholder": "Write your message here. Click the placeholders above to insert tenant or property details.",
-    "emptyTitle": "No templates yet",
-    "emptyDescription": "Create your first correspondence template",
-    "batchPdf": "Batch PDF",
-    "send": "Send",
-    "sendTitle": "Send Correspondence",
-    "sendDescription": "Compose and send a message using the selected template",
-    "selectTenant": "Select Tenant",
-    "chooseTenant": "Choose a tenant",
-    "subject": "Subject",
-    "message": "Message",
-    "sendMessage": "Send Message",
-    "batchTitle": "Batch Generate PDF",
-    "selectRecipients": "Select Recipients",
-    "selectAll": "Select All",
-    "noTenants": "No tenants found.",
-    "welcomeLetter": "Welcome Letter",
-    "variable": {
-      "tenantName": "Tenant name",
-      "propertyName": "Property",
-      "propertyAddress": "Address",
-      "rentAmount": "Rent amount",
-      "dueDate": "Due date",
-      "leaseStart": "Lease start",
-      "leaseEnd": "Lease end"
-    },
-    "toast": {
-      "templateCreated": "Template created successfully",
-      "templateUpdated": "Template updated successfully",
-      "templateDeleted": "Template deleted successfully",
-      "selectTemplate": "Please select a template.",
-      "selectRecipient": "Please select at least one recipient.",
-      "selectOneTenant": "Please select a tenant.",
-      "batchGenerated": "{count, plural, one {Generated a PDF for # recipient.} other {Generated PDFs for # recipients.}}",
-      "batchFailed": "Failed to generate the batch PDF.",
-      "sent": "Correspondence sent successfully",
-      "sendFailed": "Failed to send the correspondence. Please try again."
-    },
-    "deleteDialog": {
-      "title": "Delete template",
-      "description": "This template will be permanently removed. This action cannot be undone.",
-      "confirmLabel": "Delete template"
-    },
-    "batchSubtitle": "Select recipients to generate letters for: {name}",
-    "generating": "Generating…",
-    "generateBatch": "Generate batch ({count})",
-    "tabs": {
-      "outbound": "Sent",
-      "inbox": "Inbox"
-    },
-    "inbox": {
-      "loadFailed": "Couldn't load your messages. Try again.",
-      "showArchived": "Show archived",
-      "showActive": "Show active",
-      "emptyTitle": "No messages yet",
-      "emptyDescription": "Mail sent to your Situs address will appear here.",
-      "emptyArchivedTitle": "No archived messages",
-      "emptyArchivedDescription": "Messages you archive will appear here.",
-      "suggested": "Suggested: {name}",
-      "detailTitle": "Message",
-      "senderChecked": "Sender checked (SPF/DKIM pass)",
-      "senderUnverified": "Sender not verified",
-      "attachments": "Attachments",
-      "saveAttachment": "Save to Documents",
-      "attachmentSaving": "Saving…",
-      "attachmentSavedLabel": "Saved",
-      "attachmentSaved": "Attachment saved to Documents",
-      "attachmentSaveFailed": "Couldn't save the attachment. Try again.",
-      "linkedTenant": "Linked tenant",
-      "noTenant": "No tenant linked",
-      "confirm": "Confirm",
-      "linkSaved": "Tenant link updated",
-      "linkFailed": "Couldn't update the tenant link. Try again.",
-      "archive": "Archive",
-      "unarchive": "Unarchive",
-      "archived": "Message archived",
-      "unarchived": "Message unarchived",
-      "archiveFailed": "Couldn't update the message. Try again."
-    }
+    "createLeaseDesc": "Draft a new lease agreement"
   },
   "contracts": {
     "title": "Contracts",
@@ -2175,8 +2050,7 @@
     "tabs": {
       "overview": "Overview",
       "lease": "Lease",
-      "payments": "Payments",
-      "messages": "Messages"
+      "payments": "Payments"
     },
     "monthlyRent": "Monthly rent",
     "totalPaid": "Total paid",
@@ -2184,12 +2058,7 @@
     "notes": "Notes",
     "paymentHistory": "Payment history",
     "notFound": "Tenant not found",
-    "backToTenants": "Back to tenants",
-    "messageStatus": {
-      "draft": "Draft",
-      "sent": "Sent",
-      "delivered": "Delivered"
-    }
+    "backToTenants": "Back to tenants"
   },
   "tenants": {
     "dialogCreateTitle": "Add New Tenant",

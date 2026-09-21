@@ -36,9 +36,10 @@ Removed so far:
 | 4     | Admin user directory, instance metrics, database ops endpoint                        |
 | 5     | Maintenance / Operations ticketing (`MaintenanceTicket`, `/operations`, work orders) |
 | 6     | Contacts / vendor registry (`MaintenanceContact`, `/contacts`, the People sub-tab)   |
+| 7     | Correspondence and inbound mail (templates, letter log, the mail Inbox)              |
 
-Still to go: correspondence and inbound mail, the documents browsing UI and OCR, the
-tenant-facing surfaces and their online-payment stack, ownership verification.
+Still to go: the documents browsing UI and OCR, the tenant-facing surfaces and their
+online-payment stack, ownership verification.
 
 **The "Completed Features" list below predates this and is not narrowed phase by phase** — read
 it as a record of what was built, with this table as the correction. `lib/portal/access.ts` is
@@ -47,7 +48,7 @@ the authority on what is reachable today.
 ### Completed Features
 
 - **Authentication**: NextAuth v4 with Google OAuth + credentials provider, CSRF protection, session-based auth
-- **CRUD Operations**: Full create/read/update/delete for Properties, Units, Tenants, Leases, Receipts, Expenses, Correspondence, Owners, Documents, Invoices, Notifications, Buildings
+- **CRUD Operations**: Full create/read/update/delete for Properties, Units, Tenants, Leases, Receipts, Expenses, Owners, Documents, Invoices, Notifications, Buildings
 - **Portfolio View**: Compact action-driven layout with IssueAlert zone, List/Map tabs, Next Action column, attention row highlights
 - **Property Detail Modal**: 4-zone decision-driven interface (Status+Health / Primary Action / Issues Panel / Tabbed info)
 - **Property Map**: Status-coded divIcon markers with legend, slide-in side panel, FitBoundsController, dynamic viewport height
@@ -56,7 +57,6 @@ the authority on what is reachable today.
 - **Tenant Owner Contact**: `/api/portal/owner-contact` endpoint; tenant "Need help?" callout shows managing owner name, email, and phone (demo + real mode)
 - **Portfolio Building Grouping**: Property list uses canonical Building entity for group headers (grid + table); table view inserts section header rows for multi-unit groups
 - **Email Integration**: SMTP with templates, bulk sending, delivery tracking, exponential-backoff retry
-- **Correspondence Nav**: accessible from sidebar (owner-only)
 - **Monitoring**: Health endpoints (owner-gated), Prometheus-compatible `/api/metrics`
 - **Compliance**: GDPR audit logging, Iberian tax compliance (PT/ES), admin data-access audit trail
 - **Internationalization**: next-intl with PT, EN, ES, IT locale support

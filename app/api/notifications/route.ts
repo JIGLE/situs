@@ -6,15 +6,10 @@ import { z } from "zod";
 
 const createNotificationSchema = z.object({
   type: z.enum([
-    "lease_expiring",
     "payment_due",
-    "payment_received",
     "payment_overdue",
-    "document_uploaded",
     "rent_receipt_due",
-    "nrua_registration",
     "lease_renewal_reminder",
-    "inbound_message",
     "system",
     "other",
   ]),

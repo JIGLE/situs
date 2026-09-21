@@ -66,10 +66,6 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
     () => state.receipts.filter((r) => r.tenantId === tenantId),
     [state.receipts, tenantId],
   );
-  const relatedCorrespondence = useMemo(
-    () => state.correspondence.filter((c) => c.tenantId === tenantId),
-    [state.correspondence, tenantId],
-  );
 
   // Find tenant's property
   const property = tenant?.propertyId
@@ -226,7 +222,6 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
               label: t("tabs.payments"),
               badge: relatedReceipts.length > 0 ? relatedReceipts.length : undefined,
             },
-            { value: "messages", label: t("tabs.messages") },
           ]}
         />
         <TabsList className="max-md:hidden">
@@ -243,10 +238,6 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                 {relatedReceipts.length}
               </span>
             )}
-          </TabsTrigger>
-          <TabsTrigger value="messages" className="flex items-center gap-1.5">
-            <Mail className="h-3.5 w-3.5" />
-            {t("tabs.messages")}
           </TabsTrigger>
         </TabsList>
 
@@ -375,39 +366,6 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                 </div>
               </CardContent>
             </Card>
-          )}
-        </TabsContent>
-
-        {/* Messages Tab */}
-        <TabsContent value="messages">
-          {relatedCorrespondence.length === 0 ? (
-            <EmptyStateIllustration entityType="correspondence" />
-          ) : (
-            <div className="space-y-3">
-              {relatedCorrespondence.map((msg) => (
-                <Card key={msg.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-medium">{msg.subject}</p>
-                        <p className="text-sm text-[var(--color-muted-foreground)] mt-1 line-clamp-2">
-                          {msg.content}
-                        </p>
-                      </div>
-                      <Badge
-                        variant={
-                          msg.status === "sent" || msg.status === "delivered"
-                            ? "default"
-                            : "secondary"
-                        }
-                      >
-                        {t(`messageStatus.${msg.status}`)}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
           )}
         </TabsContent>
       </Tabs>

@@ -4,7 +4,7 @@
 
 Situs — full name **Situs // Sovereign Capital System** — is a self-hosted
 property management SaaS for landlords and property managers in **Portugal and Spain**. It
-handles properties, units, tenants, leases, receipts, expenses, correspondence,
+handles properties, units, tenants, leases, receipts, expenses
 and fiscal compliance, built around a reference-month rent ledger: bank movement → match →
 allocate → receipt → tax filing → audit trail.
 
@@ -16,8 +16,8 @@ connector, OCR classification, audit trail/tax dashboard, schema consolidation, 
 The IA consolidation (PR 10b) and the infra rename (PR 13) have since shipped too: `/people`
 is live with a redirect shim from the old path, and the package, Docker and env identifiers all
 read `situs` with Helm dropped for a single Docker path. A scope cutdown is in progress on top
-of all that — see the phase table in the branch's commits; `/operations` and the maintenance
-ticketing behind it are among the surfaces it has already removed.
+of all that — see the phase table in `ROADMAP.md`; ticketing, the vendor registry and
+correspondence (including the inbound mail Inbox) are among the surfaces it has removed.
 
 ## Tech Stack
 

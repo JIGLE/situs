@@ -6,25 +6,13 @@
  * backward compatibility with existing consumers.
  */
 
-import {
-  Building,
-  Property,
-  Tenant,
-  Receipt,
-  CorrespondenceTemplate,
-  Correspondence,
-  Owner,
-  Expense,
-  Lease,
-} from "@/lib/types";
+import { Building, Property, Tenant, Receipt, Owner, Expense, Lease } from "@/lib/types";
 
 export interface AppState {
   buildings: Building[];
   properties: Property[];
   tenants: Tenant[];
   receipts: Receipt[];
-  templates: CorrespondenceTemplate[];
-  correspondence: Correspondence[];
   owners: Owner[];
   expenses: Expense[];
   leases: Lease[];
@@ -39,8 +27,6 @@ export type AppAction =
   | { type: "SET_PROPERTIES"; payload: Property[] }
   | { type: "SET_TENANTS"; payload: Tenant[] }
   | { type: "SET_RECEIPTS"; payload: Receipt[] }
-  | { type: "SET_TEMPLATES"; payload: CorrespondenceTemplate[] }
-  | { type: "SET_CORRESPONDENCE"; payload: Correspondence[] }
   | { type: "SET_OWNERS"; payload: Owner[] }
   | { type: "SET_EXPENSES"; payload: Expense[] }
   | { type: "SET_LEASES"; payload: Lease[] };
@@ -50,8 +36,6 @@ export const initialState: AppState = {
   properties: [],
   tenants: [],
   receipts: [],
-  templates: [],
-  correspondence: [],
   owners: [],
   expenses: [],
   leases: [],
@@ -73,10 +57,6 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, tenants: action.payload };
     case "SET_RECEIPTS":
       return { ...state, receipts: action.payload };
-    case "SET_TEMPLATES":
-      return { ...state, templates: action.payload };
-    case "SET_CORRESPONDENCE":
-      return { ...state, correspondence: action.payload };
     case "SET_OWNERS":
       return { ...state, owners: action.payload };
     case "SET_EXPENSES":

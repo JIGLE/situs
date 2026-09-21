@@ -4,8 +4,6 @@ import {
   CalendarClock,
   CircleAlert,
   FileText,
-  Inbox,
-  UserSquare2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -15,15 +13,10 @@ import {
  * else in the tree pulls the generated Prisma client across that boundary.
  */
 export type NotificationType =
-  | "lease_expiring"
   | "payment_due"
-  | "payment_received"
   | "payment_overdue"
-  | "document_uploaded"
   | "rent_receipt_due"
-  | "nrua_registration"
   | "lease_renewal_reminder"
-  | "inbound_message"
   | "system"
   | "other";
 
@@ -34,30 +27,20 @@ export type NotificationType =
  * label (or, worse, printing the raw snake_case value).
  */
 export const NOTIFICATION_TYPE_KEY: Record<NotificationType, string> = {
-  lease_expiring: "leaseExpiring",
   payment_due: "paymentDue",
-  payment_received: "paymentReceived",
   payment_overdue: "paymentOverdue",
-  document_uploaded: "documentUploaded",
   rent_receipt_due: "rentReceiptDue",
-  nrua_registration: "nruaRegistration",
   lease_renewal_reminder: "leaseRenewalReminder",
-  inbound_message: "inboundMessage",
   system: "system",
   other: "other",
 };
 
 /** Icon shown next to a notification of this type in the bell and anywhere else it is listed. */
 export const NOTIFICATION_TYPE_ICON: Record<NotificationType, LucideIcon> = {
-  lease_expiring: CalendarClock,
   payment_due: Banknote,
-  payment_received: Banknote,
   payment_overdue: CircleAlert,
-  document_uploaded: FileText,
   rent_receipt_due: FileText,
-  nrua_registration: UserSquare2,
   lease_renewal_reminder: CalendarClock,
-  inbound_message: Inbox,
   system: Bell,
   other: Bell,
 };

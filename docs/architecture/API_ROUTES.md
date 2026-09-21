@@ -1,11 +1,11 @@
 # API Routes
 
-Situs exposes **47 API domains** across **142 `route.ts` files** under `app/api/`, organised by
+Situs exposes **44 API domains** across **132 `route.ts` files** under `app/api/`, organised by
 domain per Next.js App Router convention.
 
-This document describes **24 of those domains in detail** — the ones whose contracts are not
+This document describes **22 of those domains in detail** — the ones whose contracts are not
 obvious from the handler. It is not, and does not try to be, an endpoint-by-endpoint reference
-for all 142: a hand-maintained one goes stale on the first PR that adds a route, and this file
+for all 132: a hand-maintained one goes stale on the first PR that adds a route, and this file
 spent a while claiming to cover "all" routes while omitting most of them. (The count was 26 for
 a while because it counted `###` headings, two of which are the response-format sections at the
 bottom rather than domains.)
@@ -32,7 +32,6 @@ a domain listing `GET POST` may still have some paths that only answer `GET`.
 | `/api/buildings`               | 2           | GET POST PUT DELETE       |
 | `/api/compliance`              | 4           | GET POST                  |
 | `/api/contracts`               | 1           | GET POST                  |
-| `/api/correspondence`          | 6           | GET POST PUT DELETE       |
 | `/api/cron`                    | 3           | GET POST                  |
 | `/api/csrf-token`              | 1           | GET                       |
 | `/api/debug`                   | 6           | GET POST                  |
@@ -45,8 +44,6 @@ a domain listing `GET POST` may still have some paths that only answer `GET`.
 | `/api/finance`                 | 2           | GET                       |
 | `/api/fiscal`                  | 1           | GET POST                  |
 | `/api/health`                  | 3           | GET                       |
-| `/api/inbound-attachments`     | 1           | POST                      |
-| `/api/inbound-messages`        | 2           | GET PUT                   |
 | `/api/info`                    | 1           | GET                       |
 | `/api/invoices`                | 6           | GET POST PUT DELETE       |
 | `/api/leases`                  | 5           | GET POST PUT PATCH DELETE |
@@ -69,7 +66,7 @@ a domain listing `GET POST` may still have some paths that only answer `GET`.
 | `/api/tenants`                 | 5           | GET POST PUT DELETE       |
 | `/api/units`                   | 2           | GET POST PUT DELETE       |
 | `/api/user`                    | 4           | GET POST                  |
-| `/api/webhooks`                | 5           | POST                      |
+| `/api/webhooks`                | 4           | POST                      |
 
 ## Route Organization
 
@@ -174,36 +171,11 @@ error endpoint; it was deleted in PR #352.
 
 ## Communication
 
-### Correspondence
-
-- `GET /api/correspondence` - List all correspondence
-- `POST /api/correspondence` - Create correspondence
-- `GET /api/correspondence/[id]` - Get correspondence details
-- `PUT /api/correspondence/[id]` - Update correspondence
-- `DELETE /api/correspondence/[id]` - Delete correspondence
-- `POST /api/correspondence/generate` - Generate correspondence from template
-- `GET /api/correspondence/templates` - List templates
-- `GET /api/correspondence/templates/[id]` - Get template details
-
-### Inbound Messages
-
-The Correspondence Inbox tab's own domain — separate from `/api/correspondence` because
-`InboundMessage` is a different question (mail we received, not one we sent) with a different
-answer shape. See the model note in `prisma/schema.prisma` and `lib/services/inbound/`.
-
-- `GET /api/inbound-messages` - List the caller's messages (unread/archived filters, paginated).
-  Resolves `suggestedTenantId` names via a separate query, not a Prisma `include` — the column
-  carries no foreign key on purpose, so a suggestion can survive the tenant it points at being
-  deleted.
-- `GET /api/inbound-messages/[id]` - Full message, with attachments, for the Inbox detail panel.
-- `PUT /api/inbound-messages/[id]` - Confirm/change the tenant link, archive, or mark read.
-  Setting `tenantId` re-derives `propertyId` from that tenant and writes a `LINK_INBOUND_MESSAGE`
-  audit entry — the one human decision this domain logs; see the note on `ingest.ts`.
-- `POST /api/inbound-attachments/[id]/save` - File one attachment into Documents, inheriting the
-  message's tenant/property. Never automatic: anyone who learns the parse address can send an
-  attachment, so filing one into Documents is always an explicit per-attachment action.
-
 ### Email
+
+Transactional mail only, since the scope cutdown removed correspondence: rent reminders and
+overdue notices dispatched by `lib/services/notifications/reminder-email.ts`, plus the delivery
+log the Brevo webhook updates.
 
 - `POST /api/email` - Send email
 - `GET /api/email/logs` - Get email logs
@@ -246,11 +218,6 @@ answer shape. See the model note in `prisma/schema.prisma` and `lib/services/inb
 
 - `POST /api/webhooks/brevo` - Brevo delivery-event webhook. Requires `BREVO_WEBHOOK_SECRET`:
   Brevo does not sign its requests, so a shared secret is the only authentication.
-- `POST /api/webhooks/brevo/inbound` - Brevo Inbound Parsing: mail sent to the instance becomes
-  `InboundMessage` rows. Requires its own `BREVO_INBOUND_SECRET`, never the delivery-event one —
-  this route writes message bodies and fetches attachments to disk, so the two credentials are
-  deliberately not interchangeable. Also rate-limited, since a secret bounds who may call it and
-  not how often.
 - `POST /api/webhooks/stripe` - Stripe webhook handler
 
 ### Tenant Portal

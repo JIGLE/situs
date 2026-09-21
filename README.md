@@ -58,11 +58,9 @@ is _derived_ from this ledger, never hand-set.
 
 - **Properties, units, buildings, tenants, owners** — with a structural portfolio tree and role-based access
 - **Leases** — lifecycle, renewals, expiry alerts, bilingual PDF templates
-- **Operations** — maintenance tickets with SLA due dates, evidence requirements, contractors, calendar
 - **Documents + OCR** — upload and classification; ambiguous or unlinked results land in a review queue
-- **Correspondence** — templates, bulk generation, SMTP delivery
 - **Tenant portal** — token-gated self-service access, no account required
-- **i18n** — Portuguese, English, Spanish, Italian (1,035 keys, full parity, enforced by test)
+- **i18n** — Portuguese, English, Spanish, Italian (full parity, enforced by test — `npm run i18n:check:strict` counts them, so this line does not)
 
 ### 🇵🇹 Portugal
 

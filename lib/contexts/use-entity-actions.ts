@@ -8,17 +8,7 @@
 
 import { useMemo } from "react";
 import type React from "react";
-import {
-  Building,
-  Property,
-  Tenant,
-  Receipt,
-  CorrespondenceTemplate,
-  Correspondence,
-  Owner,
-  Expense,
-  Lease,
-} from "@/lib/types";
+import { Building, Property, Tenant, Receipt, Owner, Expense, Lease } from "@/lib/types";
 import { createEntityActions, type EntityActions } from "./create-entity-actions";
 import { useApiError } from "@/lib/utils/api-error";
 import type { AppAction, AppState } from "./app-reducer";
@@ -35,8 +25,6 @@ export interface EntityActionsBundle {
   propertyActions: EntityActions<Property>;
   tenantActions: EntityActions<Tenant>;
   receiptActions: EntityActions<Receipt>;
-  templateActions: EntityActions<CorrespondenceTemplate>;
-  correspondenceActions: EntityActions<Correspondence>;
   ownerActions: EntityActions<Owner>;
   expenseActions: EntityActions<Expense>;
   leaseActions: EntityActions<Lease>;
@@ -114,39 +102,6 @@ export function useEntityActions(
     [csrfToken, userId, showError, resolveError, showSuccess, state.receipts, dispatch],
   );
 
-  const templateActions = useMemo(
-    () =>
-      createEntityActions<CorrespondenceTemplate>({
-        endpoint: "/api/correspondence/templates",
-        getItems: () => state.templates,
-        setItems: (items) => dispatch({ type: "SET_TEMPLATES", payload: items }),
-        showError,
-        resolveError,
-        showSuccess,
-        csrfToken,
-        userId,
-        entityName: "template",
-        requireAuth: false,
-      }),
-    [csrfToken, userId, showError, resolveError, showSuccess, state.templates, dispatch],
-  );
-
-  const correspondenceActions = useMemo(
-    () =>
-      createEntityActions<Correspondence>({
-        endpoint: "/api/correspondence",
-        getItems: () => state.correspondence,
-        setItems: (items) => dispatch({ type: "SET_CORRESPONDENCE", payload: items }),
-        showError,
-        resolveError,
-        showSuccess,
-        csrfToken,
-        userId,
-        entityName: "correspondence",
-      }),
-    [csrfToken, userId, showError, resolveError, showSuccess, state.correspondence, dispatch],
-  );
-
   const ownerActions = useMemo(
     () =>
       createEntityActions<Owner>({
@@ -202,8 +157,6 @@ export function useEntityActions(
     propertyActions,
     tenantActions,
     receiptActions,
-    templateActions,
-    correspondenceActions,
     ownerActions,
     expenseActions,
     leaseActions,

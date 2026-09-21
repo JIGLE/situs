@@ -72,7 +72,7 @@ describe("access derived from the normalised path", () => {
     //
     // These are owner-only. `/portfolio`, `/financials`, `/documents` and `/leases` are NOT —
     // a tenant reaches their own view of each — which is why they are asserted below instead.
-    for (const path of ["/admin", "/admin/system-status", "/people", "/correspondence"]) {
+    for (const path of ["/admin", "/admin/system-status", "/people", "/compliance/modelo179"]) {
       expect(canAccessPortalPath("tenant", path)).toBe(false);
       expect(canAccessPortalPath("tenant", `/en${path}`)).toBe(false);
     }

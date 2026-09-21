@@ -3,17 +3,7 @@
 import React, { createContext, useContext, ReactNode, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
-import {
-  Building,
-  Property,
-  Tenant,
-  Receipt,
-  CorrespondenceTemplate,
-  Correspondence,
-  Owner,
-  Expense,
-  Lease,
-} from "@/lib/types";
+import { Building, Property, Tenant, Receipt, Owner, Expense, Lease } from "@/lib/types";
 import { useToast } from "./toast-context";
 import { useCsrf } from "./csrf-context";
 import { usePortalAccess } from "@/lib/contexts/portal-context";
@@ -44,12 +34,6 @@ interface AppContextValue {
   addReceipt: (data: Partial<Receipt>) => Promise<void>;
   updateReceipt: (id: string, data: Partial<Receipt>) => Promise<void>;
   deleteReceipt: (id: string) => Promise<void>;
-  addTemplate: (data: Partial<CorrespondenceTemplate>) => Promise<void>;
-  updateTemplate: (id: string, data: Partial<CorrespondenceTemplate>) => Promise<void>;
-  deleteTemplate: (id: string) => Promise<void>;
-  addCorrespondence: (data: Partial<Correspondence>) => Promise<void>;
-  updateCorrespondence: (id: string, data: Partial<Correspondence>) => Promise<void>;
-  deleteCorrespondence: (id: string) => Promise<void>;
   addOwner: (data: Partial<Owner>) => Promise<void>;
   updateOwner: (id: string, data: Partial<Owner>) => Promise<void>;
   deleteOwner: (id: string) => Promise<void>;
@@ -90,8 +74,6 @@ export function AppProvider({ children }: { children: ReactNode }): React.ReactE
     propertyActions,
     tenantActions,
     receiptActions,
-    templateActions,
-    correspondenceActions,
     ownerActions,
     expenseActions,
     leaseActions,
@@ -117,13 +99,6 @@ export function AppProvider({ children }: { children: ReactNode }): React.ReactE
       addReceipt: (d) => receiptActions.add(d) as unknown as Promise<void>,
       updateReceipt: (id, d) => receiptActions.update(id, d) as unknown as Promise<void>,
       deleteReceipt: (id) => receiptActions.remove(id),
-      addTemplate: (d) => templateActions.add(d) as unknown as Promise<void>,
-      updateTemplate: (id, d) => templateActions.update(id, d) as unknown as Promise<void>,
-      deleteTemplate: (id) => templateActions.remove(id),
-      addCorrespondence: (d) => correspondenceActions.add(d) as unknown as Promise<void>,
-      updateCorrespondence: (id, d) =>
-        correspondenceActions.update(id, d) as unknown as Promise<void>,
-      deleteCorrespondence: (id) => correspondenceActions.remove(id),
       addOwner: (d) => ownerActions.add(d) as unknown as Promise<void>,
       updateOwner: (id, d) => ownerActions.update(id, d) as unknown as Promise<void>,
       deleteOwner: (id) => ownerActions.remove(id),
@@ -142,8 +117,6 @@ export function AppProvider({ children }: { children: ReactNode }): React.ReactE
       propertyActions,
       tenantActions,
       receiptActions,
-      templateActions,
-      correspondenceActions,
       ownerActions,
       expenseActions,
       leaseActions,

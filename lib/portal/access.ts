@@ -5,7 +5,6 @@ import {
   FileBox,
   FileText,
   Home,
-  Mail,
   Settings,
   ShieldCheck,
   UserCircle,
@@ -132,15 +131,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
     group: "Hidden",
     groupLabelKey: "navigation.systemGroup",
     items: [
-      {
-        key: "correspondence",
-        href: "/correspondence",
-        label: "Messages",
-        labelKey: "navigation.correspondence",
-        icon: Mail,
-        roles: ["owner"],
-        hidden: true,
-      },
       {
         key: "compliance",
         href: "/compliance/modelo179",

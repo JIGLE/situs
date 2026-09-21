@@ -8,7 +8,6 @@ import {
   Users,
   Receipt,
   FileText,
-  Mail,
   BarChart3,
   Plus,
   ArrowRight,
@@ -27,7 +26,6 @@ export interface EmptyStateIllustrationProps {
     | "tenants"
     | "payments"
     | "leases"
-    | "correspondence"
     | "reports"
     | "generic"
     | "owners"
@@ -43,7 +41,6 @@ export interface EmptyStateIllustrationProps {
     | "tenants"
     | "payments"
     | "leases"
-    | "correspondence"
     | "reports"
     | "generic"
     | "owners"
@@ -100,11 +97,6 @@ const emptyStateMeta: Record<
     icon: FileText,
     gradient: "from-violet-500/20 to-purple-500/20",
     accentColor: "text-violet-400",
-  },
-  correspondence: {
-    icon: Mail,
-    gradient: "from-cyan-500/20 to-sky-500/20",
-    accentColor: "text-cyan-400",
   },
   reports: {
     icon: BarChart3,

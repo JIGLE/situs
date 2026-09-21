@@ -98,9 +98,10 @@ describe("demo seed cleanup", () => {
  * This is not hypothetical twice over. Documents and the bank graph were created and never
  * cleared, so identical runs drifted 54 → 60 documents and 90 → 100 transactions and any
  * count-based baseline crept upward. Correspondence was the mirror image — cleaned since long
- * before anything created it — and the result was that every audit run measured the
- * Correspondence page's empty state and reported 484px of "wasted space" that was really "no
- * data". Both directions cost real time; both are one grep apart from being impossible.
+ * before anything created it — so every audit run measured an empty page and reported 484px of
+ * "wasted space" that was really "no data". (That feature has since been removed by the scope
+ * cutdown; the asymmetry it demonstrated has not.) Both directions cost real time; both are one
+ * grep apart from being impossible.
  *
  * Read from the source rather than from a list, for the same reason the redirect-stub sweep is:
  * a list has to be updated by whoever forgot to update the cleanup.
@@ -140,7 +141,7 @@ describe("seed cleanup covers everything the seed creates", () => {
   );
 
   it("seeds the domains whose absence was read as a layout defect", () => {
-    for (const model of ["correspondence", "correspondenceTemplate", "taxFiling"]) {
+    for (const model of ["taxFiling", "document", "bankTransaction"]) {
       expect(created.has(model)).toBe(true);
     }
   });

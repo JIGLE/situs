@@ -8,17 +8,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import type React from "react";
-import {
-  Building,
-  Property,
-  Tenant,
-  Receipt,
-  CorrespondenceTemplate,
-  Correspondence,
-  Owner,
-  Expense,
-  Lease,
-} from "@/lib/types";
+import { Building, Property, Tenant, Receipt, Owner, Expense, Lease } from "@/lib/types";
 import { apiFetch } from "@/lib/utils/api-client";
 import { useApiError } from "@/lib/utils/api-error";
 import type { AppAction } from "./app-reducer";
@@ -88,8 +78,6 @@ export function useAppData({
           buildingsRes,
           tenantsRes,
           receiptsRes,
-          templatesRes,
-          correspondenceRes,
           ownersRes,
           expensesRes,
           leasesRes,
@@ -98,8 +86,6 @@ export function useAppData({
           apiFetch<{ data: Building[] }>("/api/buildings", csrfToken),
           apiFetch<{ data: Tenant[] }>("/api/tenants", csrfToken),
           apiFetch<{ data: Receipt[] }>("/api/receipts", csrfToken),
-          apiFetch<{ data: CorrespondenceTemplate[] }>("/api/correspondence/templates", csrfToken),
-          apiFetch<{ data: Correspondence[] }>("/api/correspondence", csrfToken),
           apiFetch<{ data: Owner[] }>("/api/owners", csrfToken),
           apiFetch<{ data: Expense[] }>("/api/expenses", csrfToken),
           apiFetch<{ data: Lease[] }>("/api/leases", csrfToken),
@@ -120,14 +106,6 @@ export function useAppData({
         dispatch({
           type: "SET_RECEIPTS",
           payload: (receiptsRes.data ?? receiptsRes) as Receipt[],
-        });
-        dispatch({
-          type: "SET_TEMPLATES",
-          payload: (templatesRes.data ?? templatesRes) as CorrespondenceTemplate[],
-        });
-        dispatch({
-          type: "SET_CORRESPONDENCE",
-          payload: (correspondenceRes.data ?? correspondenceRes) as Correspondence[],
         });
         dispatch({
           type: "SET_OWNERS",

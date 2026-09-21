@@ -255,10 +255,6 @@ export function OnboardingChecklist({
                     </li>
                     <li className="flex items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
                       <ArrowRight className="h-3 w-3 text-[var(--color-primary)] shrink-0" />
-                      <span>{t("nextStepCorrespondence")}</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
-                      <ArrowRight className="h-3 w-3 text-[var(--color-primary)] shrink-0" />
                       <span>{t("nextStepInsights")}</span>
                     </li>
                   </ul>

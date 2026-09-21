@@ -8,8 +8,6 @@ import {
   UnitStatus,
   DocumentType,
   LeaseStatus,
-  TemplateType,
-  CorrespondenceStatus,
 } from "@prisma/client";
 
 export async function seedDemoData(userId: string): Promise<void> {
@@ -50,13 +48,6 @@ export async function seedDemoData(userId: string): Promise<void> {
 
   await cleanup(() => prisma.receipt.deleteMany({ where: { userId } }), "receipts");
   await cleanup(() => prisma.expense.deleteMany({ where: { userId } }), "expenses");
-  await cleanup(() => prisma.correspondence.deleteMany({ where: { userId } }), "correspondence");
-  // After the letters, because a template must outlive the record of what was sent from it.
-  // Scoped to `userId`, which also means the system-owned templates (userId NULL) are untouched.
-  await cleanup(
-    () => prisma.correspondenceTemplate.deleteMany({ where: { userId } }),
-    "correspondenceTemplates",
-  );
   // TaxFiling is unique on (userId, year, country, regime), so without this a second seed
   // collides rather than replacing.
   await cleanup(() => prisma.taxFiling.deleteMany({ where: { userId } }), "taxFilings");
@@ -701,91 +692,7 @@ export async function seedDemoData(userId: string): Promise<void> {
     });
   }
 
-  // 12. Correspondence templates and letters
-  //
-  // The cleanup above has deleted `correspondence` since long before this existed, which is the
-  // giveaway: the fixture was always meant to have some and never did. Every audit run therefore
-  // measured the Correspondence page's empty state and reported 484px of "wasted space" that was
-  // really "no data" — a layout verdict on a screen that had nothing to lay out.
-  // Enum MEMBERS, not `"literal" as Enum`. The cast compiles whatever you write — a lowercase
-  // literal type-checked cleanly against an uppercase enum and then failed at the database,
-  // which is the wrong place to learn the enum's casing.
-  const dbTemplates = [];
-  for (const tpl of [
-    {
-      name: "Rent reminder",
-      type: TemplateType.rent_reminder,
-      subject: "Rent due — {{month}}",
-      content:
-        "Dear {{tenantName}},\n\nThis is a reminder that rent of {{amount}} for {{month}} " +
-        "is due on {{dueDate}}.\n\nThank you,\n{{ownerName}}",
-    },
-    {
-      name: "Welcome letter",
-      type: TemplateType.welcome,
-      subject: "Welcome to {{propertyName}}",
-      content:
-        "Dear {{tenantName}},\n\nWelcome to {{propertyName}}. Your lease begins on " +
-        "{{startDate}}.\n\n{{ownerName}}",
-    },
-    {
-      name: "Annual inspection notice",
-      type: TemplateType.maintenance_request,
-      subject: "Scheduled inspection — {{propertyName}}",
-      content:
-        "Dear {{tenantName}},\n\nA routine inspection is scheduled for {{date}}.\n\n" +
-        "{{ownerName}}",
-    },
-  ]) {
-    dbTemplates.push(
-      await prisma.correspondenceTemplate.create({
-        data: {
-          userId,
-          name: tpl.name,
-          type: tpl.type,
-          subject: tpl.subject,
-          content: tpl.content,
-          variables: JSON.stringify(["tenantName", "propertyName", "amount", "month", "dueDate"]),
-          country: "PT",
-          locale: "pt",
-        },
-      }),
-    );
-  }
-
-  // Statuses spread deliberately: the list renders one row per state, so a fixture that is all
-  // `sent` hides two thirds of the component.
-  const correspondenceData = [
-    { tenantIndex: 0, templateIndex: 0, status: CorrespondenceStatus.sent, daysAgo: 12 },
-    { tenantIndex: 1, templateIndex: 0, status: CorrespondenceStatus.delivered, daysAgo: 9 },
-    { tenantIndex: 2, templateIndex: 1, status: CorrespondenceStatus.delivered, daysAgo: 40 },
-    { tenantIndex: 0, templateIndex: 2, status: CorrespondenceStatus.draft, daysAgo: 2 },
-    { tenantIndex: 1, templateIndex: 1, status: CorrespondenceStatus.sent, daysAgo: 65 },
-  ] as const;
-
-  for (const item of correspondenceData) {
-    const tenant = dbTenants[item.tenantIndex % dbTenants.length];
-    const template = dbTemplates[item.templateIndex];
-    const created = new Date(now.getTime() - item.daysAgo * 24 * 60 * 60 * 1000);
-    await prisma.correspondence.create({
-      data: {
-        userId,
-        templateId: template.id,
-        tenantId: tenant.id,
-        propertyId: tenant.propertyId,
-        subject: template.subject.replace("{{month}}", "June 2026"),
-        content: template.content.replace("{{tenantName}}", tenant.name),
-        status: item.status,
-        sentAt: item.status === CorrespondenceStatus.draft ? null : created,
-        createdAt: created,
-        templateNameSnapshot: template.name,
-        templateVersionSnapshot: template.version,
-        templateOriginSnapshot: "user",
-      },
-    });
-  }
-
-  // 13. Tax filings — one per year and status, so the list shows both `draft` and `final`.
+  // 12. Tax filings — one per year and status, so the list shows both `draft` and `final`.
   const propertyIdsJson = JSON.stringify(dbProperties.map((p) => p.id));
   for (const filing of [
     { year: 2025, regime: "STANDARD", gross: 42000, expenses: 9800, status: "final" },
