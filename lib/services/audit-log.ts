@@ -90,7 +90,10 @@ export type AuditAction =
   | "LINK_EXPENSE_DOCUMENT"
   // Property ownership assignment
   | "ASSIGN_PROPERTY_OWNER"
-  | "REMOVE_PROPERTY_OWNER";
+  | "REMOVE_PROPERTY_OWNER"
+  // Correspondence inbox: confirming or changing who an inbound email belongs to. Not logged
+  // on receipt (see the note on InboundMessage) — only on this human decision.
+  | "LINK_INBOUND_MESSAGE";
 
 export interface AuditLogEntry {
   userId: string;

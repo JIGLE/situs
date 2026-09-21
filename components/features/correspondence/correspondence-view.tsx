@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { FileText, Plus, Edit, Trash2, Send } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { FileText, Plus, Edit, Trash2, Send, Inbox as InboxIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { InboxView } from "./inbox-view";
+import { useTabPersistence } from "@/lib/hooks/use-tab-persistence";
 import {
   Dialog,
   DialogContent,
@@ -60,6 +64,8 @@ export function CorrespondenceView(): React.ReactElement {
   const tActions = useTranslations("actions");
   const tForms = useTranslations("forms");
   const locale = useLocale();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useTabPersistence("correspondence", "outbound");
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<CorrespondenceTemplate | null>(null);
   const [composeData, setComposeData] = useState({
@@ -72,6 +78,16 @@ export function CorrespondenceView(): React.ReactElement {
   const [selectedRecipientIds, setSelectedRecipientIds] = useState<string[]>([]);
   const [generatingBatch, setGeneratingBatch] = useState(false);
   const contentRef = useRef<HTMLTextAreaElement>(null);
+
+  // External deep link (the notification bell's inbound_message click, `?tab=inbox`), same
+  // `tab=` convention financials-container.tsx uses — separate from useTabPersistence's own
+  // `?view=`, which is what a manual tab click updates afterwards.
+  useEffect(() => {
+    if (searchParams.get("tab") === "inbox" && activeTab !== "inbox") {
+      setActiveTab("inbox");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const insertVariable = (variable: string) => {
     const textarea = contentRef.current;
@@ -318,378 +334,410 @@ export function CorrespondenceView(): React.ReactElement {
         <LoadingState variant="cards" count={6} />
       ) : (
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight text-[var(--color-foreground)]">
-                {t("heading")}
-              </h2>
-              <p className="text-[var(--color-muted-foreground)]">{t("subtitle")}</p>
-            </div>
-            <Dialog open={dialog.isOpen} onOpenChange={(open) => !open && dialog.closeDialog()}>
-              <DialogTrigger asChild>
-                <Button onClick={dialog.openDialog} className="flex items-center gap-2">
-                  <Plus className="w-4 h-4" />
-                  {t("addTemplate")}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-[var(--color-card)] border-[var(--color-border)] max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="text-[var(--color-foreground)]">
-                    {dialog.editingItem ? t("editTemplate") : t("createTemplate")}
-                  </DialogTitle>
-                  <DialogDescription>{t("templateDialogDescription")}</DialogDescription>
-                </DialogHeader>
-                <form onSubmit={dialog.handleSubmit} className="space-y-6">
-                  <FormGrid columns={2} gap="md">
-                    <FormField
-                      label={t("templateName")}
-                      required
-                      error={dialog.formErrors.name}
-                      tooltip={t("templateNameTooltip")}
-                    >
-                      <EnhancedInput
-                        id="name"
-                        value={dialog.formData.name}
-                        onChange={(e) => dialog.updateFormData({ name: e.target.value })}
-                        placeholder={t("templateNamePlaceholder")}
-                        required
-                      />
-                    </FormField>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight text-[var(--color-foreground)]">
+              {t("heading")}
+            </h2>
+            <p className="text-[var(--color-muted-foreground)]">{t("subtitle")}</p>
+          </div>
 
-                    <FormField
-                      label={t("templateType")}
-                      required
-                      error={dialog.formErrors.type}
-                      tooltip={t("templateTypeTooltip")}
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <div className="flex items-center justify-between gap-3">
+              <TabsList>
+                <TabsTrigger value="outbound" className="flex items-center gap-2">
+                  <Send className="h-3.5 w-3.5" />
+                  {t("tabs.outbound")}
+                </TabsTrigger>
+                <TabsTrigger value="inbox" className="flex items-center gap-2">
+                  <InboxIcon className="h-3.5 w-3.5" />
+                  {t("tabs.inbox")}
+                </TabsTrigger>
+              </TabsList>
+
+              {activeTab === "outbound" && (
+                <Dialog open={dialog.isOpen} onOpenChange={(open) => !open && dialog.closeDialog()}>
+                  <DialogTrigger asChild>
+                    <Button onClick={dialog.openDialog} className="flex items-center gap-2">
+                      <Plus className="w-4 h-4" />
+                      {t("addTemplate")}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-[var(--color-card)] border-[var(--color-border)] max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="text-[var(--color-foreground)]">
+                        {dialog.editingItem ? t("editTemplate") : t("createTemplate")}
+                      </DialogTitle>
+                      <DialogDescription>{t("templateDialogDescription")}</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={dialog.handleSubmit} className="space-y-6">
+                      <FormGrid columns={2} gap="md">
+                        <FormField
+                          label={t("templateName")}
+                          required
+                          error={dialog.formErrors.name}
+                          tooltip={t("templateNameTooltip")}
+                        >
+                          <EnhancedInput
+                            id="name"
+                            value={dialog.formData.name}
+                            onChange={(e) => dialog.updateFormData({ name: e.target.value })}
+                            placeholder={t("templateNamePlaceholder")}
+                            required
+                          />
+                        </FormField>
+
+                        <FormField
+                          label={t("templateType")}
+                          required
+                          error={dialog.formErrors.type}
+                          tooltip={t("templateTypeTooltip")}
+                        >
+                          <Select
+                            value={dialog.formData.type}
+                            onValueChange={(value: TemplateFormData["type"]) =>
+                              dialog.updateFormData({ type: value })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={t("templateTypePlaceholder")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="welcome">{t("welcomeLetter")}</SelectItem>
+                              <SelectItem value="rent_reminder">
+                                {t("types.rentReminder")}
+                              </SelectItem>
+                              <SelectItem value="eviction_notice">
+                                {t("types.evictionNotice")}
+                              </SelectItem>
+                              <SelectItem value="maintenance_request">
+                                {t("types.maintenanceRequest")}
+                              </SelectItem>
+                              <SelectItem value="lease_renewal">
+                                {t("types.leaseRenewal")}
+                              </SelectItem>
+                              <SelectItem value="custom">{t("types.custom")}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormField>
+                      </FormGrid>
+
+                      <FormField
+                        label={t("emailSubject")}
+                        required
+                        error={dialog.formErrors.subject}
+                        tooltip={t("emailSubjectTooltip")}
+                      >
+                        <EnhancedInput
+                          id="subject"
+                          value={dialog.formData.subject}
+                          onChange={(e) => dialog.updateFormData({ subject: e.target.value })}
+                          placeholder={t("emailSubjectPlaceholder")}
+                          maxLength={200}
+                          showCharCount
+                          required
+                        />
+                      </FormField>
+
+                      <FormField
+                        label={t("emailContent")}
+                        required
+                        error={dialog.formErrors.content}
+                        tooltip={t("emailContentTooltip")}
+                      >
+                        <div className="space-y-2">
+                          <div>
+                            <p className="text-xs text-[var(--color-muted-foreground)] mb-1.5">
+                              {t("insertPlaceholder")}
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {TEMPLATE_VARIABLES.map(({ key, labelKey }) => (
+                                <button
+                                  key={key}
+                                  type="button"
+                                  onClick={() => insertVariable(key)}
+                                  className="inline-flex items-center rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-0.5 text-xs text-[var(--color-muted-foreground)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-foreground)] transition-colors font-mono"
+                                >
+                                  {t(`variable.${labelKey}`)}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <EnhancedTextarea
+                            ref={contentRef}
+                            id="content"
+                            value={dialog.formData.content}
+                            onChange={(e) => dialog.updateFormData({ content: e.target.value })}
+                            rows={8}
+                            placeholder={t("contentPlaceholder")}
+                            maxLength={5000}
+                            showCharCount
+                            autoResize
+                            required
+                          />
+                        </div>
+                      </FormField>
+
+                      <FormActions align="right">
+                        <Button type="button" variant="outline" onClick={dialog.closeDialog}>
+                          {tActions("cancel")}
+                        </Button>
+                        <Button type="submit" disabled={dialog.isSubmitting}>
+                          {dialog.isSubmitting
+                            ? tForms("saving")
+                            : dialog.editingItem
+                              ? t("editTemplate")
+                              : t("createTemplate")}
+                        </Button>
+                      </FormActions>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
+
+            <TabsContent value="outbound" className="space-y-6">
+              <div className="grid gap-4">
+                {templates.length === 0 ? (
+                  <EmptyStateIllustration
+                    type="correspondence"
+                    title={t("emptyTitle")}
+                    description={t("emptyDescription")}
+                    onAction={dialog.openDialog}
+                    actionLabel={t("createTemplate")}
+                  />
+                ) : (
+                  templates.map((template) => (
+                    <Card
+                      key={template.id}
+                      className="bg-[var(--color-card)] border-[var(--color-border)]"
                     >
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="text-lg font-semibold text-[var(--color-foreground)]">
+                                {template.name}
+                              </h3>
+                              {getTypeBadge(template.type)}
+                            </div>
+                            <p className="text-sm font-medium text-[var(--color-foreground)] mb-1">
+                              {template.subject}
+                            </p>
+                            <p className="text-sm text-[var(--color-muted-foreground)] line-clamp-2 mb-2">
+                              {template.content.length > 150
+                                ? `${template.content.substring(0, 150)}...`
+                                : template.content}
+                            </p>
+                            {template.variables.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {template.variables.map((variable: string) => (
+                                  <Badge key={variable} variant="outline" className="text-xs">
+                                    {variable}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => handleBatchClick(template)}
+                              className="flex items-center gap-1"
+                            >
+                              <FileText className="w-3 h-3" />
+                              {t("batchPdf")}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCompose(template)}
+                              className="flex items-center gap-1"
+                            >
+                              <Send className="w-3 h-3" />
+                              {t("send")}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(template)}
+                              className="flex items-center gap-1"
+                            >
+                              <Edit className="w-3 h-3" />
+                              {tActions("edit")}
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(template.id)}
+                              className="flex items-center gap-1"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              {tActions("delete")}
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+
+              {/* Compose Dialog */}
+              <Dialog open={isComposeOpen} onOpenChange={setIsComposeOpen}>
+                <DialogContent className="bg-[var(--color-card)] border-[var(--color-border)] max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="text-[var(--color-foreground)]">
+                      {t("sendTitle")}
+                    </DialogTitle>
+                    <DialogDescription>{t("sendDescription")}</DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleSendCorrespondence} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="tenant">{t("selectTenant")}</Label>
                       <Select
-                        value={dialog.formData.type}
-                        onValueChange={(value: TemplateFormData["type"]) =>
-                          dialog.updateFormData({ type: value })
+                        value={composeData.tenantId}
+                        onValueChange={(value) =>
+                          setComposeData({ ...composeData, tenantId: value })
                         }
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder={t("templateTypePlaceholder")} />
+                          <SelectValue placeholder={t("chooseTenant")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="welcome">{t("welcomeLetter")}</SelectItem>
-                          <SelectItem value="rent_reminder">{t("types.rentReminder")}</SelectItem>
-                          <SelectItem value="eviction_notice">
-                            {t("types.evictionNotice")}
-                          </SelectItem>
-                          <SelectItem value="maintenance_request">
-                            {t("types.maintenanceRequest")}
-                          </SelectItem>
-                          <SelectItem value="lease_renewal">{t("types.leaseRenewal")}</SelectItem>
-                          <SelectItem value="custom">{t("types.custom")}</SelectItem>
+                          {tenants.map((tenant) => (
+                            <SelectItem key={tenant.id} value={tenant.id}>
+                              {tenant.name} - {tenant.propertyName}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
-                    </FormField>
-                  </FormGrid>
+                    </div>
 
-                  <FormField
-                    label={t("emailSubject")}
-                    required
-                    error={dialog.formErrors.subject}
-                    tooltip={t("emailSubjectTooltip")}
-                  >
-                    <EnhancedInput
-                      id="subject"
-                      value={dialog.formData.subject}
-                      onChange={(e) => dialog.updateFormData({ subject: e.target.value })}
-                      placeholder={t("emailSubjectPlaceholder")}
-                      maxLength={200}
-                      showCharCount
-                      required
-                    />
-                  </FormField>
-
-                  <FormField
-                    label={t("emailContent")}
-                    required
-                    error={dialog.formErrors.content}
-                    tooltip={t("emailContentTooltip")}
-                  >
                     <div className="space-y-2">
-                      <div>
-                        <p className="text-xs text-[var(--color-muted-foreground)] mb-1.5">
-                          {t("insertPlaceholder")}
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {TEMPLATE_VARIABLES.map(({ key, labelKey }) => (
-                            <button
-                              key={key}
-                              type="button"
-                              onClick={() => insertVariable(key)}
-                              className="inline-flex items-center rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-0.5 text-xs text-[var(--color-muted-foreground)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-foreground)] transition-colors font-mono"
-                            >
-                              {t(`variable.${labelKey}`)}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <EnhancedTextarea
-                        ref={contentRef}
-                        id="content"
-                        value={dialog.formData.content}
-                        onChange={(e) => dialog.updateFormData({ content: e.target.value })}
-                        rows={8}
-                        placeholder={t("contentPlaceholder")}
-                        maxLength={5000}
-                        showCharCount
-                        autoResize
+                      <Label htmlFor="compose-subject">{t("subject")}</Label>
+                      <Input
+                        id="compose-subject"
+                        value={composeData.subject}
+                        onChange={(e) =>
+                          setComposeData({
+                            ...composeData,
+                            subject: e.target.value,
+                          })
+                        }
                         required
                       />
                     </div>
-                  </FormField>
 
-                  <FormActions align="right">
-                    <Button type="button" variant="outline" onClick={dialog.closeDialog}>
-                      {tActions("cancel")}
-                    </Button>
-                    <Button type="submit" disabled={dialog.isSubmitting}>
-                      {dialog.isSubmitting
-                        ? tForms("saving")
-                        : dialog.editingItem
-                          ? t("editTemplate")
-                          : t("createTemplate")}
-                    </Button>
-                  </FormActions>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="compose-content">{t("message")}</Label>
+                      <Textarea
+                        id="compose-content"
+                        value={composeData.content}
+                        onChange={(e) =>
+                          setComposeData({
+                            ...composeData,
+                            content: e.target.value,
+                          })
+                        }
+                        rows={10}
+                        required
+                      />
+                    </div>
 
-          <div className="grid gap-4">
-            {templates.length === 0 ? (
-              <EmptyStateIllustration
-                type="correspondence"
-                title={t("emptyTitle")}
-                description={t("emptyDescription")}
-                onAction={dialog.openDialog}
-                actionLabel={t("createTemplate")}
-              />
-            ) : (
-              templates.map((template) => (
-                <Card
-                  key={template.id}
-                  className="bg-[var(--color-card)] border-[var(--color-border)]"
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-[var(--color-foreground)]">
-                            {template.name}
-                          </h3>
-                          {getTypeBadge(template.type)}
-                        </div>
-                        <p className="text-sm font-medium text-[var(--color-foreground)] mb-1">
-                          {template.subject}
-                        </p>
-                        <p className="text-sm text-[var(--color-muted-foreground)] line-clamp-2 mb-2">
-                          {template.content.length > 150
-                            ? `${template.content.substring(0, 150)}...`
-                            : template.content}
-                        </p>
-                        {template.variables.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {template.variables.map((variable: string) => (
-                              <Badge key={variable} variant="outline" className="text-xs">
-                                {variable}
-                              </Badge>
-                            ))}
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsComposeOpen(false)}
+                      >
+                        {tActions("cancel")}
+                      </Button>
+                      <Button type="submit" className="flex items-center gap-2">
+                        <Send className="w-4 h-4" />
+                        {t("sendMessage")}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+
+              {/* Batch Dialog */}
+              <Dialog open={isBatchOpen} onOpenChange={setIsBatchOpen}>
+                <DialogContent className="bg-[var(--color-card)] border-[var(--color-border)] max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="text-[var(--color-foreground)]">
+                      {t("batchTitle")}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {t("batchSubtitle", { name: selectedTemplate?.name ?? "" })}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="border border-[var(--color-border)] rounded-md p-4 max-h-[300px] overflow-y-auto">
+                      <div className="flex items-center justify-between mb-2">
+                        <Label>{t("selectRecipients")}</Label>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedRecipientIds(tenants.map((t) => t.id))}
+                        >
+                          {t("selectAll")}
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        {tenants.map((tenant) => (
+                          <div
+                            key={tenant.id}
+                            className="flex items-center space-x-2 p-2 hover:bg-[var(--color-surface-hover)] rounded"
+                          >
+                            <input
+                              type="checkbox"
+                              id={`batch-${tenant.id}`}
+                              checked={selectedRecipientIds.includes(tenant.id)}
+                              onChange={() => toggleRecipient(tenant.id)}
+                              className="rounded border-[var(--color-border)] bg-[var(--color-surface)] text-blue-600 focus:ring-blue-600"
+                            />
+                            <div className="flex-1">
+                              <Label
+                                htmlFor={`batch-${tenant.id}`}
+                                className="cursor-pointer font-medium text-[var(--color-foreground)]"
+                              >
+                                {tenant.name}
+                              </Label>
+                              <p className="text-xs text-[var(--color-muted-foreground)]">
+                                {tenant.propertyName}
+                              </p>
+                            </div>
                           </div>
+                        ))}
+                        {tenants.length === 0 && (
+                          <p className="text-sm text-[var(--color-muted-foreground)] text-center">
+                            {t("noTenants")}
+                          </p>
                         )}
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleBatchClick(template)}
-                          className="flex items-center gap-1"
-                        >
-                          <FileText className="w-3 h-3" />
-                          {t("batchPdf")}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCompose(template)}
-                          className="flex items-center gap-1"
-                        >
-                          <Send className="w-3 h-3" />
-                          {t("send")}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(template)}
-                          className="flex items-center gap-1"
-                        >
-                          <Edit className="w-3 h-3" />
-                          {tActions("edit")}
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(template.id)}
-                          className="flex items-center gap-1"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          {tActions("delete")}
-                        </Button>
-                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
 
-          {/* Compose Dialog */}
-          <Dialog open={isComposeOpen} onOpenChange={setIsComposeOpen}>
-            <DialogContent className="bg-[var(--color-card)] border-[var(--color-border)] max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-[var(--color-foreground)]">
-                  {t("sendTitle")}
-                </DialogTitle>
-                <DialogDescription>{t("sendDescription")}</DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSendCorrespondence} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="tenant">{t("selectTenant")}</Label>
-                  <Select
-                    value={composeData.tenantId}
-                    onValueChange={(value) => setComposeData({ ...composeData, tenantId: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("chooseTenant")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tenants.map((tenant) => (
-                        <SelectItem key={tenant.id} value={tenant.id}>
-                          {tenant.name} - {tenant.propertyName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="compose-subject">{t("subject")}</Label>
-                  <Input
-                    id="compose-subject"
-                    value={composeData.subject}
-                    onChange={(e) =>
-                      setComposeData({
-                        ...composeData,
-                        subject: e.target.value,
-                      })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="compose-content">{t("message")}</Label>
-                  <Textarea
-                    id="compose-content"
-                    value={composeData.content}
-                    onChange={(e) =>
-                      setComposeData({
-                        ...composeData,
-                        content: e.target.value,
-                      })
-                    }
-                    rows={10}
-                    required
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setIsComposeOpen(false)}>
-                    {tActions("cancel")}
-                  </Button>
-                  <Button type="submit" className="flex items-center gap-2">
-                    <Send className="w-4 h-4" />
-                    {t("sendMessage")}
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-
-          {/* Batch Dialog */}
-          <Dialog open={isBatchOpen} onOpenChange={setIsBatchOpen}>
-            <DialogContent className="bg-[var(--color-card)] border-[var(--color-border)] max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-[var(--color-foreground)]">
-                  {t("batchTitle")}
-                </DialogTitle>
-                <DialogDescription>
-                  {t("batchSubtitle", { name: selectedTemplate?.name ?? "" })}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="border border-[var(--color-border)] rounded-md p-4 max-h-[300px] overflow-y-auto">
-                  <div className="flex items-center justify-between mb-2">
-                    <Label>{t("selectRecipients")}</Label>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedRecipientIds(tenants.map((t) => t.id))}
-                    >
-                      {t("selectAll")}
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setIsBatchOpen(false)}>
+                        {tActions("cancel")}
+                      </Button>
+                      <Button onClick={generateBatchPDF} disabled={generatingBatch}>
+                        {generatingBatch
+                          ? t("generating")
+                          : t("generateBatch", { count: selectedRecipientIds.length })}
+                      </Button>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    {tenants.map((tenant) => (
-                      <div
-                        key={tenant.id}
-                        className="flex items-center space-x-2 p-2 hover:bg-[var(--color-surface-hover)] rounded"
-                      >
-                        <input
-                          type="checkbox"
-                          id={`batch-${tenant.id}`}
-                          checked={selectedRecipientIds.includes(tenant.id)}
-                          onChange={() => toggleRecipient(tenant.id)}
-                          className="rounded border-[var(--color-border)] bg-[var(--color-surface)] text-blue-600 focus:ring-blue-600"
-                        />
-                        <div className="flex-1">
-                          <Label
-                            htmlFor={`batch-${tenant.id}`}
-                            className="cursor-pointer font-medium text-[var(--color-foreground)]"
-                          >
-                            {tenant.name}
-                          </Label>
-                          <p className="text-xs text-[var(--color-muted-foreground)]">
-                            {tenant.propertyName}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                    {tenants.length === 0 && (
-                      <p className="text-sm text-[var(--color-muted-foreground)] text-center">
-                        {t("noTenants")}
-                      </p>
-                    )}
-                  </div>
-                </div>
+                </DialogContent>
+              </Dialog>
+            </TabsContent>
 
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsBatchOpen(false)}>
-                    {tActions("cancel")}
-                  </Button>
-                  <Button onClick={generateBatchPDF} disabled={generatingBatch}>
-                    {generatingBatch
-                      ? t("generating")
-                      : t("generateBatch", { count: selectedRecipientIds.length })}
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+            <TabsContent value="inbox">
+              <InboxView />
+            </TabsContent>
+          </Tabs>
         </div>
       )}
       <ConfirmationDialog dialog={confirmDialog} />

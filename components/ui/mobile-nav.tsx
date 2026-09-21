@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "./sheet";
 import { LanguageSelector } from "@/components/shared/language-selector";
 import { SitusPortalMark } from "@/components/shared/situs-portal-logo";
+import { NotificationBell } from "@/components/shared/notification-bell";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -251,9 +252,12 @@ export function MobileTopBar(): React.ReactElement {
       >
         <SitusPortalMark size="sm" className="h-6 w-6" />
       </Link>
-      <h1 className="truncate text-base font-semibold tracking-tight text-[var(--color-foreground)]">
+      <h1 className="min-w-0 flex-1 truncate text-base font-semibold tracking-tight text-[var(--color-foreground)]">
         {title}
       </h1>
+      <div className="shrink-0">
+        <NotificationBell />
+      </div>
     </header>
   );
 }

@@ -1,9 +1,9 @@
 # API Routes
 
-Situs exposes **50 API domains** across **154 `route.ts` files** under `app/api/`, organised by
+Situs exposes **52 API domains** across **158 `route.ts` files** under `app/api/`, organised by
 domain per Next.js App Router convention.
 
-This document describes **26 of those domains in detail** — the ones whose contracts are not
+This document describes **28 of those domains in detail** — the ones whose contracts are not
 obvious from the handler. It is not, and does not try to be, an endpoint-by-endpoint reference
 for all 154: a hand-maintained one goes stale on the first PR that adds a route, and this file
 spent a while claiming to cover "all" routes while omitting 24 domains.
@@ -46,6 +46,8 @@ a domain listing `GET POST` may still have some paths that only answer `GET`.
 | `/api/finance`                 | 2           | GET                       |
 | `/api/fiscal`                  | 1           | GET POST                  |
 | `/api/health`                  | 3           | GET                       |
+| `/api/inbound-attachments`     | 1           | POST                      |
+| `/api/inbound-messages`        | 2           | GET PUT                   |
 | `/api/info`                    | 1           | GET                       |
 | `/api/invoices`                | 6           | GET POST PUT DELETE       |
 | `/api/leases`                  | 5           | GET POST PUT PATCH DELETE |
@@ -185,6 +187,24 @@ error endpoint; it was deleted in PR #352.
 - `POST /api/correspondence/generate` - Generate correspondence from template
 - `GET /api/correspondence/templates` - List templates
 - `GET /api/correspondence/templates/[id]` - Get template details
+
+### Inbound Messages
+
+The Correspondence Inbox tab's own domain — separate from `/api/correspondence` because
+`InboundMessage` is a different question (mail we received, not one we sent) with a different
+answer shape. See the model note in `prisma/schema.prisma` and `lib/services/inbound/`.
+
+- `GET /api/inbound-messages` - List the caller's messages (unread/archived filters, paginated).
+  Resolves `suggestedTenantId` names via a separate query, not a Prisma `include` — the column
+  carries no foreign key on purpose, so a suggestion can survive the tenant it points at being
+  deleted.
+- `GET /api/inbound-messages/[id]` - Full message, with attachments, for the Inbox detail panel.
+- `PUT /api/inbound-messages/[id]` - Confirm/change the tenant link, archive, or mark read.
+  Setting `tenantId` re-derives `propertyId` from that tenant and writes a `LINK_INBOUND_MESSAGE`
+  audit entry — the one human decision this domain logs; see the note on `ingest.ts`.
+- `POST /api/inbound-attachments/[id]/save` - File one attachment into Documents, inheriting the
+  message's tenant/property. Never automatic: anyone who learns the parse address can send an
+  attachment, so filing one into Documents is always an explicit per-attachment action.
 
 ### Email
 

@@ -1338,9 +1338,12 @@ enum NotificationType {
   rent_receipt_due
   nrua_registration
   lease_renewal_reminder
-  /// Mail arrived from outside, via Brevo Inbound Parsing. Never emailed onward — see
-  /// URGENT_NOTIFICATION_TYPES: forwarding an unauthenticated message to the landlord's real
-  /// mailbox would launder a spoofed sender through our own authenticated domain.
+  /// Mail arrived from outside, via Brevo Inbound Parsing. In-app only, by construction:
+  /// lib/services/inbound/ingest.ts writes this Notification directly and never calls
+  /// sendReminderEmail for it. Forwarding an unauthenticated message to the landlord's real
+  /// mailbox would launder a spoofed sender through our own authenticated domain — the same
+  /// email-is-not-the-default reasoning URGENT_REMINDER_KINDS (reminder-email.ts) applies to
+  /// the four automated-reminder kinds that do dispatch mail.
   inbound_message
   system
   other
