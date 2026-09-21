@@ -17,6 +17,7 @@ const createNotificationSchema = z.object({
     "rent_receipt_due",
     "nrua_registration",
     "lease_renewal_reminder",
+    "inbound_message",
     "system",
     "other",
   ]),

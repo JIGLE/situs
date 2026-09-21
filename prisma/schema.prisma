@@ -71,6 +71,7 @@ model User {
   taxAuthorityConnectors  TaxAuthorityConnector[]
   taxSubmissionLogs       TaxSubmissionLog[]
   documentExtractions     DocumentExtraction[]
+  inboundMessages         InboundMessage[]
 }
 
 model EmailLog {
@@ -319,6 +320,7 @@ model Property {
   verificationClaims  PropertyVerificationClaim[]
   correspondences     Correspondence[]
   rentPeriods         RentPeriod[]
+  inboundMessages     InboundMessage[]
 
   // Performance indexes
   @@index([userId])
@@ -366,6 +368,7 @@ model Tenant {
   rentReceipts        RentReceipt[]
   nruaRegistrations   NRUARegistration[]
   rentPeriods         RentPeriod[]
+  inboundMessages     InboundMessage[]
 
   // Performance indexes
   @@index([userId])
@@ -785,6 +788,101 @@ model Correspondence {
   @@map("correspondence")
 }
 
+/// Mail that arrived FROM the outside world, via Brevo Inbound Parsing.
+///
+/// Deliberately not a `direction` column on Correspondence above. That model requires a
+/// `tenantId`, and carries the template-provenance fields that decide a liability argument
+/// about words we sent. Inbound mail arrives from an address that may match no tenant at all,
+/// and it has no provenance to record because we did not write it. Two models, because they
+/// answer two different questions.
+///
+/// SECURITY: nothing on this row is attributable to the person it claims to be from. Brevo
+/// hands us whatever the sending server said. `spfResult`/`dkimResult` are the only evidence
+/// here, and even they only speak for the sending *domain*.
+model InboundMessage {
+  id     String @id @default(cuid())
+  userId String
+
+  /// Envelope, as received. NOT proof of identity — see spfResult/dkimResult.
+  fromAddress String
+  fromName    String?
+  /// The parse address it arrived at, e.g. rendas@reply.example.com.
+  toAddress   String
+  subject     String
+  /// Plain text only. The HTML part is deliberately not stored: rendering attacker-authored
+  /// markup inside the app is an XSS surface, and a stripped-to-text body is what the Inbox
+  /// shows anyway. When a message carries only HTML, it is reduced to text on ingest.
+  textBody    String
+
+  /// RFC 5322 Message-ID. Unique because Brevo retries a failed delivery, and a retry must
+  /// update the row it already wrote rather than produce a second copy of the same email.
+  rfcMessageId String? @unique
+  inReplyTo    String?
+
+  /// What Brevo's own checks reported, stored verbatim rather than reduced to a boolean: a
+  /// dispute about who sent something is settled from the record, and "pass"/"fail"/"none"/
+  /// "softfail" are not the same claim.
+  spfResult  String?
+  dkimResult String?
+
+  /// A SUGGESTION, never a link. Set when the sender address matches exactly one tenant.
+  /// `tenantId` is set only by an explicit human action in the Inbox.
+  ///
+  /// Weaker on purpose than the ≥0.85 auto-allocate the bank matcher uses: a movement's
+  /// counterparty is asserted by the bank, and a From header is asserted by whoever sent the
+  /// mail. Auto-linking on a forgeable header would file a stranger's message into a tenant's
+  /// record, where it would then look like part of that tenancy's history.
+  suggestedTenantId String?
+  tenantId          String?
+  propertyId        String?
+
+  read       Boolean  @default(false)
+  archived   Boolean  @default(false)
+  receivedAt DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant      Tenant?             @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  property    Property?           @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  attachments InboundAttachment[]
+
+  @@index([userId, read])
+  @@index([userId, receivedAt])
+  @@index([userId, archived])
+  @@map("inbound_messages")
+}
+
+/// A file that came in attached to an InboundMessage.
+///
+/// Held apart from `Document` on purpose. Anyone who learns the parse address can send us a
+/// file; if those landed in Documents automatically, the Documents screen would be writable by
+/// the public. Filing one into Documents is an explicit action, and `documentId` records that
+/// it happened.
+model InboundAttachment {
+  id        String @id @default(cuid())
+  messageId String
+
+  /// The sender's filename, kept as a label to show. NEVER used to build a path — the stored
+  /// file is named from a random id plus the magic-byte-detected extension.
+  filename    String
+  /// Detected from the file's own bytes, not from the Content-Type the sender claimed.
+  mimeType    String
+  fileSize    Int
+  storagePath String
+
+  /// Set when the user files this into Documents. Null means it lives only in the Inbox.
+  documentId String?
+
+  createdAt DateTime @default(now())
+
+  message  InboundMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  document Document?      @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@index([messageId])
+  @@map("inbound_attachments")
+}
+
 model Lease {
   id                  String      @id @default(cuid())
   userId              String
@@ -882,13 +980,16 @@ model Document {
   updatedAt DateTime @updatedAt
 
   // Relations
-  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property   Property?           @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  unit       Unit?               @relation(fields: [unitId], references: [id], onDelete: SetNull)
-  owner      Owner?              @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  tenant     Tenant?             @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  expenses   Expense[] // Situs: deduction-evidence links (Expense.documentId)
-  extraction DocumentExtraction?
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property           Property?           @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  unit               Unit?               @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  owner              Owner?              @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  tenant             Tenant?             @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  expenses           Expense[] // Situs: deduction-evidence links (Expense.documentId)
+  extraction         DocumentExtraction?
+  /// Set when a user files an inbound email attachment into Documents. The attachment row is
+  /// the original; this is the copy they chose to keep.
+  inboundAttachments InboundAttachment[]
 
   @@index([userId])
   @@index([propertyId])
@@ -1237,6 +1338,10 @@ enum NotificationType {
   rent_receipt_due
   nrua_registration
   lease_renewal_reminder
+  /// Mail arrived from outside, via Brevo Inbound Parsing. Never emailed onward — see
+  /// URGENT_NOTIFICATION_TYPES: forwarding an unauthenticated message to the landlord's real
+  /// mailbox would launder a spoofed sender through our own authenticated domain.
+  inbound_message
   system
   other
 }

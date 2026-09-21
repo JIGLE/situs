@@ -194,11 +194,16 @@ needs no hand-maintained list of valid utilities and survives Tailwind upgrades 
 v4 `@utility`, never a v3 plugin.
 
 **Regenerating `package-lock.json` takes npm 11**, which `packageManager` in `package.json` pins.
-npm 10 rewrites the lockfile without the `libc` fields, and the only packages that carry them are
-the four `@next/swc-linux-*` binaries — Next.js publishes `libc` in their manifests, and nothing
-else in this tree does. Losing them costs npm the glibc/musl filter for those four, so both
-variants get considered instead of the right one. Nothing breaks; the diff is just noise that
+npm 10 rewrites the lockfile without the `libc` fields, which several families of prebuilt native
+binaries publish in their manifests: `@img/sharp-*` (16 entries), `@rolldown/*` and `@swc/*` (6
+each) and `@next/swc-linux-*` (4). Losing them costs npm the glibc/musl filter on all of them, so
+both variants get considered instead of the right one. Nothing breaks; the diff is just noise that
 reappears every time an npm 10 user installs.
+
+Count them with `grep -c '"libc"' package-lock.json` rather than trusting a number written here —
+it moves whenever a dependency adds or drops a prebuilt binary, and it did: the `@img/sharp-*`
+family arrived with the sharp bump that closed GHSA-rgj7-g3m4-5g8c, taking the total from 16 to 32. A regeneration that drops it to zero is the npm 10 failure; any other change is a real
+dependency change, so read the diff rather than the total.
 
 Corepack only honours the pin once `corepack enable` has run, so on a machine without it `npm`
 is still whatever Node bundled. Check with `npm -v` before regenerating, or use `npx npm@11 install`
