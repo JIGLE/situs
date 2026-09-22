@@ -49,8 +49,11 @@ git checkout -B <new-branch-name> origin/main
 If the branch already carries unmerged commits beyond the merged history, keep them — rebase onto
 the new base rather than discarding.
 
-**Branches are not auto-deleted on merge.** The repository setting is off, whatever older
-documentation said. Delete the head branch yourself after merging, or run the sweep in §6.
+**After merging, check that the head branch is gone, and delete it if it is not.** Do not rely
+on the repository setting in either direction. Merging #386 on 2026-09-22 deleted its head branch
+automatically; `release/v1.24.0` and `release/v1.25.0` were not deleted when #319 and #362 merged.
+`git ls-remote --heads origin <branch>` answers it for the branch in front of you, and the sweep
+in §6 answers it for all of them.
 
 ## 3. Pull requests
 
@@ -70,7 +73,7 @@ documentation said. Delete the head branch yourself after merging, or run the sw
    `ci.yml`'s calling job id change, update `.github/branch-protection-config.json` in the same
    commit.
 
-4. Merge, then delete the head branch.
+4. Merge, then confirm the head branch is gone (§2).
 
 **Do not open a pull request unless it was asked for.** An unrequested PR is a review request
 somebody now has to decline.
@@ -109,7 +112,8 @@ Only a tag push may write `:latest` or a bare `:<version>`; a manual deploy disp
 false`; turning that on requires giving the workflow a fine-grained PAT or a GitHub App with
 bypass rights first. See `.github/BRANCH_PROTECTION.md`.
 
-Release branches are not deleted automatically either — sweep them (§6).
+Release PRs are squash-merged, so a release branch never becomes an ancestor of `main` and
+`git branch --merged` never lists one. The sweep in §6 compares patches instead, which finds them.
 
 ## 6. Session procedure
 
@@ -153,11 +157,25 @@ commit message and had to be amended before the push.
 
 ```bash
 git fetch origin --prune
-git branch -r --merged origin/main | grep -vE 'origin/(main|HEAD)'
+for b in $(git for-each-ref --format='%(refname:lstrip=3)' refs/remotes/origin); do
+  case "$b" in main|HEAD|gh-pages|dependabot/*) continue ;; esac
+  if [ -z "$(git cherry origin/main "origin/$b" | grep '^+')" ]; then echo "merged: $b"; fi
+done
 ```
 
-Anything listed is merged and can be deleted. Check `gh-pages` is never in the list — it is the
-Pages publish target, not a source branch, and is permanently divergent by design.
+A branch is listed when every one of its commits already has an equivalent patch on `main`, so
+merge-commit, rebase and single-commit squash merges are all caught. Anything listed can be
+deleted. It skips `gh-pages`, the Pages publish target and permanently divergent by design, and
+`dependabot/*`, which Dependabot owns (§4).
+
+It replaced `git branch -r --merged origin/main`, which only sees branches that are ancestors of
+`main`. Release PRs are squash-merged, so that command printed nothing while `release/v1.24.0`
+and `release/v1.25.0` sat on the remote for weeks — a sweep that reported clean on exactly the
+case it existed for.
+
+**One blind spot, stated so it is not mistaken for coverage:** a branch of _several_ commits that
+was squash-merged still shows as unmerged here, because the single squash commit matches none of
+its individual patches. For those, the pull request's merged state is the source of truth.
 
 ## 7. Never
 

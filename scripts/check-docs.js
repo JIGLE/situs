@@ -56,8 +56,18 @@ const RETIRED_CLAIMS = [
     pattern: /head branch is auto-?deleted/i,
     retired: "2026-09-22 (repository audit)",
     because:
-      "the repository setting is off — release/v1.24.0 and release/v1.25.0 both outlived their " +
-      "merged PRs (#319, #362). Delete the head yourself, or run the sweep in §6",
+      "it has not held consistently: #386's head branch was deleted on merge, while " +
+      "release/v1.24.0 and release/v1.25.0 outlived their merged PRs (#319, #362). Check the " +
+      "branch rather than assert the setting — docs/REPOSITORY_PROCEDURES.md §2",
+  },
+  {
+    // The opposite absolute, which the audit wrote in place of the one above. Merging the PR
+    // that wrote it disproved it within the hour, so neither form may come back.
+    pattern: /not auto-?deleted on merge/i,
+    retired: "2026-09-22 (merge of #386)",
+    because:
+      "#386's own head branch was deleted when it merged, with no workflow involved. Neither " +
+      "absolute has held — check the branch: docs/REPOSITORY_PROCEDURES.md §2",
   },
   {
     // `feature/` only; `feat/` is the live convention and must not match.
