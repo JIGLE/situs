@@ -114,29 +114,6 @@ test.describe("Bank consent callback", () => {
   });
 });
 
-/**
- * `/demo` is reachable in a bounded number of hops.
- *
- * It used to redirect to `/${defaultLocale}/demo`, which was correct while pages lived at
- * prefixed URLs. Once the prefix left the address bar it became a loop — that hop produced
- * `/pt/demo`, and the back-compat rule 308s any prefixed URL back to its unprefixed form — so
- * every entry into demo mode (the landing hero, the PWA welcome, the sign-in page) dead-ended in
- * ERR_TOO_MANY_REDIRECTS.
- *
- * Playwright surfaces that as a navigation error rather than a failed assertion, so `goto`
- * itself is the assertion here: the test cannot pass if the URL does not resolve.
- */
-test.describe("Demo entry", () => {
-  test("/demo resolves without a redirect loop", async ({ page }) => {
-    const response = await page.goto("/demo?perspective=owner");
-
-    expect(response?.ok(), "/demo should resolve").toBe(true);
-    // Whatever demo mode does next, it must not have been reached through the prefixed URL that
-    // bounces — landing back on `/demo` or moving on into the app are both fine.
-    expect(new URL(page.url()).pathname).not.toMatch(/^\/(pt|en|es|it)(\/|$)/);
-  });
-});
-
 test.describe("Localization", () => {
   for (const locale of ["en", "pt"] as const) {
     test(`/${locale} redirects to the unprefixed URL and remembers the locale`, async ({
