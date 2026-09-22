@@ -39,32 +39,31 @@ model User {
   auditLogs AuditLog[] // GDPR logging
 
   // App-specific relations
-  properties              Property[]
-  buildings               Building[]
-  tenants                 Tenant[]
-  receipts                Receipt[]
-  expenses                Expense[]
-  rentPeriods             RentPeriod[]
-  paymentAllocations      PaymentAllocation[]
-  leases                  Lease[]
-  owners                  Owner[]
-  emailLogs               EmailLog[]
-  documents               Document[]
-  notifications           Notification[]
-  rentReceipts            RentReceipt[]
-  settings                UserSettings?
-  governmentVerifications GovernmentVerification[]
-  modelo179Submissions    Modelo179Submission[]
-  taxFilings              TaxFiling[]
-  productEvents           ProductEvent[]
-  subscription            Subscription?
-  bankConnections         BankConnection[]
-  bankAccounts            BankAccount[]
-  bankTransactions        BankTransaction[]
-  bankSyncJobs            BankSyncJob[]
-  reconciliationRules     ReconciliationRule[]
-  taxAuthorityConnectors  TaxAuthorityConnector[]
-  taxSubmissionLogs       TaxSubmissionLog[]
+  properties             Property[]
+  buildings              Building[]
+  tenants                Tenant[]
+  receipts               Receipt[]
+  expenses               Expense[]
+  rentPeriods            RentPeriod[]
+  paymentAllocations     PaymentAllocation[]
+  leases                 Lease[]
+  owners                 Owner[]
+  emailLogs              EmailLog[]
+  documents              Document[]
+  notifications          Notification[]
+  rentReceipts           RentReceipt[]
+  settings               UserSettings?
+  modelo179Submissions   Modelo179Submission[]
+  taxFilings             TaxFiling[]
+  productEvents          ProductEvent[]
+  subscription           Subscription?
+  bankConnections        BankConnection[]
+  bankAccounts           BankAccount[]
+  bankTransactions       BankTransaction[]
+  bankSyncJobs           BankSyncJob[]
+  reconciliationRules    ReconciliationRule[]
+  taxAuthorityConnectors TaxAuthorityConnector[]
+  taxSubmissionLogs      TaxSubmissionLog[]
 }
 
 model EmailLog {
@@ -132,56 +131,6 @@ model PropertyOwner {
 
   @@unique([propertyId, ownerId])
   @@map("property_owners")
-}
-
-model GovernmentVerification {
-  id                String                         @id @default(cuid())
-  userId            String
-  provider          GovernmentVerificationProvider
-  scope             GovernmentVerificationScope
-  status            GovernmentVerificationStatus   @default(pending)
-  externalReference String?
-  verifiedFullName  String?
-  verifiedTaxId     String?
-  requestedAt       DateTime                       @default(now())
-  authorizedAt      DateTime?
-  completedAt       DateTime?
-  expiresAt         DateTime?
-  errorCode         String?
-  errorMessage      String?
-  metadata          String?
-  createdAt         DateTime                       @default(now())
-  updatedAt         DateTime                       @updatedAt
-
-  user           User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  propertyClaims PropertyVerificationClaim[]
-
-  @@index([userId, status])
-  @@index([provider, status])
-  @@map("government_verifications")
-}
-
-model PropertyVerificationClaim {
-  id                  String                          @id @default(cuid())
-  verificationId      String
-  propertyId          String
-  claimType           PropertyVerificationClaimType   @default(ownership)
-  status              PropertyVerificationClaimStatus @default(pending)
-  ownershipPercentage Float?
-  sourceReference     String?
-  matchedAddress      String?
-  registryData        String?
-  verifiedAt          DateTime?
-  createdAt           DateTime                        @default(now())
-  updatedAt           DateTime                        @updatedAt
-
-  verification GovernmentVerification @relation(fields: [verificationId], references: [id], onDelete: Cascade)
-  property     Property               @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-
-  @@unique([verificationId, propertyId])
-  @@index([propertyId, status])
-  @@index([verificationId])
-  @@map("property_verification_claims")
 }
 
 model Account {
@@ -296,7 +245,7 @@ model Property {
   updatedAt DateTime @updatedAt
 
   // Relations
-  user                User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   tenants             Tenant[]
   receipts            Receipt[]
   owners              PropertyOwner[]
@@ -307,7 +256,6 @@ model Property {
   incomeDistributions IncomeDistribution[]
   rentReceipts        RentReceipt[]
   nruaRegistrations   NRUARegistration[]
-  verificationClaims  PropertyVerificationClaim[]
   rentPeriods         RentPeriod[]
 
   // Performance indexes
@@ -815,41 +763,6 @@ enum UserRole {
   USER
   ADMIN
   MANAGER
-}
-
-enum GovernmentVerificationProvider {
-  financas
-  cadastro
-  land_registry
-  manual_review
-}
-
-enum GovernmentVerificationScope {
-  identity
-  property_ownership
-  property_details
-}
-
-enum GovernmentVerificationStatus {
-  pending
-  authorized
-  verified
-  rejected
-  expired
-  failed
-}
-
-enum PropertyVerificationClaimType {
-  ownership
-  management
-  details_access
-}
-
-enum PropertyVerificationClaimStatus {
-  pending
-  matched
-  verified
-  rejected
 }
 
 enum EmailStatus {

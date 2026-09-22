@@ -15,12 +15,14 @@ reintroduce it. | **Stage**: Production-ready core; the Situs rebrand is complet
 connector, audit trail/tax dashboard, schema consolidation, a11y/e2e pass).
 The IA consolidation (PR 10b) and the infra rename (PR 13) have since shipped too: `/people`
 is live with a redirect shim from the old path, and the package, Docker and env identifiers all
-read `situs` with Helm dropped for a single Docker path. A scope cutdown is in progress on top
-of all that — see the phase table in `ROADMAP.md`; ticketing, the vendor registry,
-correspondence (including the inbound mail Inbox), the Documents browser with its OCR
-classifier, and both tenant-facing surfaces with the online-payment stack behind them are among
-the surfaces it has removed. Stripe stays for the app's own subscription billing only — rent
-reaches the ledger as a matched bank movement, never as a card payment.
+read `situs` with Helm dropped for a single Docker path. A ten-phase scope cutdown has since
+finished on top of all that — see the phase table in `ROADMAP.md` for what each one took.
+Ticketing, the vendor registry, correspondence (including the inbound mail Inbox), the Documents
+browser with its OCR classifier, both tenant-facing surfaces with the online-payment stack
+behind them, and the ownership-verification scaffold are all gone. What remains is the core
+loop, the portfolio and tenancy records it runs on, and the compliance substrate around it.
+Stripe stays for the app's own subscription billing only — rent reaches the ledger as a matched
+bank movement, never as a card payment.
 
 ## Tech Stack
 

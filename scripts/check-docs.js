@@ -44,6 +44,16 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // The MODELS and the endpoint, not the word "verification" — NIF validation, the tax
+    // connectors and `timingSafeEqualString` all legitimately verify things.
+    pattern:
+      /`?(?:GovernmentVerification|PropertyVerificationClaim)`?|\/api\/ownership-verifications/,
+    retired: "2026-09-22 (scope cutdown, phase 10)",
+    because:
+      "the ownership-verification scaffold was removed — two models, five enums, a service and " +
+      "one endpoint, built provider-agnostic for a registry integration that never followed",
+  },
+  {
     // The MODEL, not the word: `PaymentAllocation` and `Tenant.paymentStatus` are the live
     // ledger and must not match. Backticked or as a Prisma relation field.
     pattern:

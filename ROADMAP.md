@@ -18,7 +18,7 @@ schema consolidation, and an a11y/e2e pass over the new surfaces are all live. D
 map view, fiscal compliance (PT/ES), building management, tenant
 owner-contact callout, and portfolio building grouping remain in place underneath the rebrand.
 
-### Scope cutdown (2026-09, in progress)
+### Scope cutdown (2026-09, complete)
 
 The product was judged overscoped — too much surface to maintain, too much for a new landlord
 to face, and too slow to a first shippable version. It is pre-launch with no users, so the work
@@ -26,7 +26,7 @@ is pure subtraction: keep the core loop (bank movement → match → allocate �
 → audit trail) and the compliance substrate around it, and delete the rest rather than hide it
 behind a flag. Git history is the archive.
 
-Removed so far:
+Removed, in order:
 
 | Phase | Removed                                                                              |
 | ----- | ------------------------------------------------------------------------------------ |
@@ -41,8 +41,12 @@ Removed so far:
 | 9     | Both tenant-facing surfaces and the online rent-collection stack behind them. Three  |
 |       | of the four bell alerts were rewired onto the rent ledger rather than deleted with   |
 |       | it, and the SAF-T PT export onto the emitted recibos                                 |
+| 10    | The ownership-verification scaffold — two models, five enums, a service and one      |
+|       | endpoint, built provider-agnostic for a registry integration that never followed     |
 
-Still to go: ownership verification.
+**The cutdown is complete.** What remains is the core loop — bank movement → match → allocate
+→ receipt → tax filing → audit trail — the portfolio and tenancy records it runs on, and the
+compliance substrate around it.
 
 **The "Completed Features" list below predates this and is not narrowed phase by phase** — read
 it as a record of what was built, with this table as the correction. `lib/portal/access.ts` is
