@@ -1,31 +1,19 @@
 # Contributing to Situs
 
-## Branch Strategy
+## Branching and pull requests
 
-- **`main`** — protected, release-ready; all merges require a passing CI gate
-- **`feature/<short-description>`** — new work branched from `main`
-- **`fix/<short-description>`** — bug fixes
-- **`hotfix/<short-description>`** — urgent production fixes
-- **`chore/<short-description>`** — non-functional changes (CI, docs, deps)
-
-## Pull Request Workflow
-
-1. Branch from `main`
-2. Push your branch and open a PR against `main`
-3. All required checks must be green. The exact names are `verify / Lint & Type Check`,
-   `verify / Unit Tests`, `Build validation` and `Dependency Security Scan` — a required check
-   is matched by string, so an approximation here is worse than nothing (see
-   `.github/BRANCH_PROTECTION.md`, where a mismatch once left the two most important gates
-   permanently "Expected — waiting…")
-4. At least one approving review required (for team projects)
-5. Merge — the head branch is auto-deleted
+**See [`docs/REPOSITORY_PROCEDURES.md`](docs/REPOSITORY_PROCEDURES.md)** — branch naming, the
+merged-PR rule, the exact required-check names, Dependabot and releases all live there, in one
+place, because they used to live in three and disagree.
 
 **PR checklist:**
 
-- [ ] `npx tsc --noEmit` exits 0 (TypeScript strict mode)
-- [ ] `npm run lint` exits 0 (no ESLint warnings)
+- [ ] `npm run verify:ci` read by **exit code** — see the procedures doc for the two known
+      non-green results that are not yours to fix
 - [ ] Tests pass and coverage is maintained or improved
-- [ ] All new UI strings added to all three locale files (`messages/en.json`, `messages/pt.json`, `messages/es.json`)
+- [ ] New UI strings added to all four locale files (`messages/en.json`, `messages/pt.json`,
+      `messages/es.json`, `messages/it.json`)
+- [ ] Any document the change made false is rewritten in the same commit
 - [ ] No secrets committed
 
 ## Licensing and Intellectual Property
@@ -215,210 +203,19 @@ Releases are automated via GitHub Actions:
 3. Add optional release notes
 4. The workflow bumps `package.json`, tags the commit, creates a GitHub Release, and triggers the Docker build/push to GHCR
 
-## Branch Protection Rules (Admins)
+Semantic versioning: **MAJOR** breaking, **MINOR** backward-compatible features, **PATCH** fixes.
+Nothing publishes on merge — see
+[`docs/REPOSITORY_PROCEDURES.md`](docs/REPOSITORY_PROCEDURES.md) §5 for the full chain.
 
-Recommended settings under **Settings → Branches → `main`**:
+### E2E tests are opt-in
 
-- **Require a pull request before merging** (1 review for teams, 0 for solo)
-- **Require status checks to pass**: `Lint & Type Check`, `Unit Tests with Coverage`, `Production Build`
-- **Require branches to be up to date before merging**
-- **Require conversation resolution before merging**
-- **Do not allow bypassing the above settings**
-- **Automatically delete head branches** — already enabled in this repo
+Playwright is heavy, so the `e2e` job in `ci.yml` is gated: add the **`run-e2e`** label to a pull
+request, or dispatch the `CI` workflow manually. `E2E Smoke` runs on every PR regardless, and is
+required.
 
 ---
 
-Thanks for contributing — open an issue or a PR if you need help with the process.
-
-- `develop` — integration branch (optional).
-- `feature/<short-description>` — new features.
-- `bugfix/<short-description>` — bug fixes targeting `develop` or `main`.
-- `hotfix/<short-description>` — urgent fixes for `main`.
-- `chore/<short-description>` — non-functional changes (CI, docs, deps).
-
-PR workflow
-
-- Open PRs against `main` (or `develop` if used).
-- Require at least one approving review before merge.
-- Ensure CI checks pass: `Lint & Type Check`, `Unit Tests`, and `Build` must be green.
-- Use clear titles and a short description; reference related issue numbers when available.
-
-Branch protection & automated rules (recommended)
-
-- Require status checks: `Lint & Type Check`, `Unit Tests`, `Build`.
-- Require pull request reviews before merging.
-- Disable force-push to protected branches.
-- Enable `Automatically delete head branches` (this repo has it enabled) to keep remotes tidy.
-
-E2E / Playwright guidance
-
-- Long-running E2E tests are opt-in to avoid noisy runs:
-  - Run Playwright manually via the `Playwright E2E Tests` workflow (`workflow_dispatch`).
-  - Or trigger E2E in the consolidated CI by either:
-    - Manually dispatching the `CI - Consolidated` workflow with `run_e2e=true`, or
-    - Adding the `run-e2e` label to a Pull Request.
-
-Security & secrets
-
-- Never commit secrets into the repo or workflow logs.
-- Use repository `Secrets` or protected environments for tokens and webhook URLs.
-
-Release and webhook notes
-
-- Releases are managed via the `release.yml` workflow. CI can notify a running instance when `ENABLE_RELEASE_NOTIFY=true` and secrets are configured.
-- The in-app update webhook is disabled by default; to re-enable set `UPDATE_WEBHOOK_ENABLED=true` in your deployment.
+Branch protection mechanics — the required-check contexts and how to apply them — live in
+[`.github/BRANCH_PROTECTION.md`](.github/BRANCH_PROTECTION.md).
 
 Thanks for contributing — open an issue or a PR if you need help with the process.
-
-# Contributing to Situs
-
-## Development Workflow
-
-### Branch Strategy
-
-We use a simple trunk-based development model:
-
-- **`main`** - Production-ready code
-- **Feature branches** - Created from `main` for new features/fixes
-
-### Workflow
-
-1. Create a feature branch from `main`
-2. Make your changes
-3. Push and create a Pull Request
-4. Wait for CI checks to pass
-5. Get code review approval
-6. Merge to `main`
-
-### Version Control
-
-We follow [Semantic Versioning](https://semver.org/):
-
-- **MAJOR** (`x.0.0`) - Breaking changes
-- **MINOR** (`0.x.0`) - New features, backward compatible
-- **PATCH** (`0.0.x`) - Bug fixes, backward compatible
-
-### Release Process
-
-Releases are automated via GitHub Actions:
-
-1. Go to **Actions** → **Release**
-2. Click **Run workflow**
-3. Select version bump type (`patch`, `minor`, `major`)
-4. Optionally add release notes
-5. The workflow will:
-   - Bump version in `package.json`
-   - Create a git tag
-   - Create a GitHub Release
-   - Build and push Docker image to GHCR
-
-### CI Pipeline
-
-Every push/PR triggers the CI pipeline:
-
-| Stage             | Description          | Timeout |
-| ----------------- | -------------------- | ------- |
-| Lint & Type Check | ESLint + TypeScript  | 5 min   |
-| Unit Tests        | Vitest with coverage | 10 min  |
-| Build Validation  | Docker build test    | 15 min  |
-
-### Code Quality Requirements
-
-Before merging:
-
-- [ ] All CI checks pass
-- [ ] Test coverage maintained or improved
-- [ ] No TypeScript errors
-- [ ] No ESLint warnings/errors
-- [ ] Documentation updated if needed
-
-## Setting Up Branch Protection (Repository Admin)
-
-Configure these settings in **Settings** → **Branches** → **Branch protection rules**:
-
-### For `main` branch:
-
-```
-Pattern: main
-```
-
-**Recommended settings:**
-
-- [x] Require a pull request before merging
-  - [x] Require approvals: 1 (for team projects)
-  - [x] Dismiss stale pull request approvals when new commits are pushed
-- [x] Require status checks to pass before merging
-  - [x] Require branches to be up to date before merging
-  - Required checks:
-    - `Lint & Type Check`
-    - `Unit Tests`
-    - `Build Validation`
-- [x] Require conversation resolution before merging
-- [x] Do not allow bypassing the above settings
-- [ ] Restrict who can push to matching branches (optional)
-
-## Local Development
-
-### Prerequisites
-
-- Node.js 22+
-- npm 10+
-- Docker (for build testing)
-
-### Commands
-
-```bash
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Run tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Type check
-npx tsc --noEmit
-
-# Lint
-npm run lint
-
-# Build Docker image
-docker build -t situs:local .
-```
-
-### Testing
-
-We use Vitest with React Testing Library:
-
-```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run tests with coverage report
-npm run test:coverage
-
-# Run specific test file
-npm test -- tests/path/to/file.test.tsx
-```
-
-### Database
-
-Development uses SQLite by default:
-
-```bash
-# Generate Prisma client
-npx prisma generate
-
-# Push schema changes
-npx prisma db push
-
-# Open Prisma Studio
-npx prisma studio
-```

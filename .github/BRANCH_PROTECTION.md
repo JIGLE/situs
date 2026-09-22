@@ -1,28 +1,12 @@
 # Branch Protection Rules
 
-## Branching Model
+This file covers **protection mechanics** — the required-check contexts, how to apply the
+configuration, and the release workflow's dependency on `enforce_admins: false`.
 
-This repository uses **trunk-based development**:
-
-- `main` — production-only, fully protected. All changes arrive via PR.
-- `feature/<id>-description` — short-lived feature branches, PR to `main`.
-- `fix/<id>-description` — short-lived bug fix branches, PR to `main`.
-- `release/vX.Y.Z` — created automatically by `release.yml`, PR to `main`, auto-merged by the workflow.
-- `hotfix/<description>` — critical patches branched from `main`, PR back to `main`.
-
-There is no long-lived `develop` branch. Dependabot branches follow the standard `dependabot/**` pattern.
-
----
-
-## Branch Naming Convention
-
-| Prefix                  | Purpose                  | Example                        |
-| ----------------------- | ------------------------ | ------------------------------ |
-| `feat/<id>-description` | New feature              | `feat/7.3-lease-expiry-alerts` |
-| `fix/<id>-description`  | Bug fix                  | `fix/157-unused-nav-helper`    |
-| `chore/<description>`   | Maintenance              | `chore/upgrade-prisma-7`       |
-| `release/vX.Y.Z`        | Automated release        | `release/v1.14.0`              |
-| `hotfix/<description>`  | Critical patch from main | `hotfix/auth-token-leak`       |
+The branching model and naming convention live in
+[`docs/REPOSITORY_PROCEDURES.md`](../docs/REPOSITORY_PROCEDURES.md), which is authoritative.
+They used to be described here, in `CONTRIBUTING.md` and in `CLAUDE.md` simultaneously, in three
+mutually inconsistent versions. `scripts/check-branch-name.js` enforces the convention.
 
 ---
 
