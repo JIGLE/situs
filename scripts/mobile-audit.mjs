@@ -194,13 +194,14 @@ const BASELINE = {
   // fixed at the source, so this measures a property of the layout rather than of the run.
   // Confirmed 0 on two consecutive full sweeps.
   clippedContainers: 0,
-  // 192 on the 38-surface sweep, against ~310 on 52. The drop is the seven removed surfaces
-  // taking their nav labels and avatar initials with them, not a legibility fix, so it is a
-  // real move rather than a lucky run. The ceiling sits three above the measurement because
-  // this is the non-deterministic metric described above — 308/308/309 across three identical
-  // runs — and there has been exactly one run at 38 surfaces. A second agreeing run is what
-  // would justify pinning it to 192.
-  smallText: 195,
+  // 192 on the 38-surface sweep, twice — CI on `dc2cdf2` and again on `97e308d` — against ~310
+  // on 52. The drop is the seven removed surfaces taking their nav labels and avatar initials
+  // with them, not a legibility fix. The ceiling keeps one point of margin rather than sitting
+  // on 192, the same margin the old one kept (310 over a worst run of 309): this is the
+  // non-deterministic metric described above, and its cause is still live — the second run
+  // logged 2 of 38 surface-runs missing networkidle inside the 5s cap. Two agreeing runs are
+  // enough to tighten on; they are not enough to prove the spread is zero.
+  smallText: 193,
 };
 
 /**
