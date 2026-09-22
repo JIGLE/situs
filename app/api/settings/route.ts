@@ -2,26 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { isMockMode } from "@/lib/config/data-mode";
-import { isDemoRequest } from "@/lib/demo/demo-mode";
 
 export async function GET(request: NextRequest) {
   try {
-    if (isDemoRequest(request)) {
-      return NextResponse.json({
-        data: {
-          userId: "demo-user",
-          theme: "system",
-          language: "en",
-          defaultCurrency: "EUR",
-          defaultTaxCountry: "PT",
-          emailNotifications: true,
-          taxReminderNotifications: true,
-          distributionNotifications: true,
-          onboardingDismissedAt: null,
-        },
-      });
-    }
-
     const authResult = await requireAuth(request);
     if (authResult instanceof Response) return authResult;
 
@@ -58,23 +41,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    if (isDemoRequest(request)) {
-      const data = await request.json();
-      return NextResponse.json({
-        data: {
-          userId: "demo-user",
-          theme: data.theme || "system",
-          language: data.language || "en",
-          defaultCurrency: data.defaultCurrency || "EUR",
-          defaultTaxCountry: data.defaultTaxCountry || "PT",
-          emailNotifications: data.emailNotifications ?? true,
-          taxReminderNotifications: data.taxReminderNotifications ?? true,
-          distributionNotifications: data.distributionNotifications ?? true,
-          onboardingDismissedAt: data.onboardingDismissedAt ?? null,
-        },
-      });
-    }
-
     const authResult = await requireAuth(request);
     if (authResult instanceof Response) return authResult;
 

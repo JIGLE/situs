@@ -3,14 +3,10 @@ import { requireAuth, handleOptions } from "@/lib/services/auth/auth-middleware"
 import { getPrismaClient } from "@/lib/services/database/database";
 import { ownerSchema } from "@/lib/schemas/owner.schema";
 import { isMockMode } from "@/lib/config/data-mode";
-import { handleDemoGet, handleDemoMutation } from "@/lib/demo/demo-api-handler";
 import { createSuccessResponse, parseJsonBody, withErrorHandler } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 
 async function handleGet(request: NextRequest): Promise<Response> {
-  const demo = handleDemoGet(request, "owners");
-  if (demo.response) return demo.response;
-
   if (isMockMode) {
     return createSuccessResponse([]);
   }
@@ -36,9 +32,6 @@ async function handleGet(request: NextRequest): Promise<Response> {
 }
 
 async function handlePost(request: NextRequest): Promise<Response> {
-  const demo = await handleDemoMutation(request, "owners");
-  if (demo.response) return demo.response;
-
   if (isMockMode) {
     return createSuccessResponse({ error: "Write operations not supported in mock mode" }, 403);
   }

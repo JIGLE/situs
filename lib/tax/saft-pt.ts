@@ -286,11 +286,22 @@ export async function generateSAFTPT(userId: string, options: SAFTExportOptions)
   const startDate = new Date(fiscalYear, startMonth - 1, 1);
   const endDate = new Date(fiscalYear, endMonth, 0); // Last day of endMonth
 
-  // Fetch all invoices for the period
-  const invoices = await prisma.invoice.findMany({
+  // Fetch the period's fiscal documents.
+  //
+  // These used to be `Invoice` rows. The scope cutdown removed the tenant-facing invoicing
+  // and payment stack, and nothing creates an `Invoice` any more — so left as it was, this
+  // export would have kept succeeding and produced a SAF-T declaring no activity at all.
+  // An empty fiscal file is worse than a failing one: it is a filing, and it is false.
+  //
+  // `RentReceipt` is what replaced it, and is the better source regardless: the recibo de
+  // renda IS the Portuguese fiscal document for rent, it carries its own sequential
+  // `receiptNumber` (the unique document number SAF-T and the hash chain both need, which
+  // `Receipt` has no equivalent of), and it stores the tenant NIF and property address as
+  // filed rather than as they read today.
+  const rentReceipts = await prisma.rentReceipt.findMany({
     where: {
       userId,
-      createdAt: {
+      receiptDate: {
         gte: startDate,
         lte: endDate,
       },
@@ -298,12 +309,11 @@ export async function generateSAFTPT(userId: string, options: SAFTExportOptions)
     include: {
       tenant: true,
       property: true,
-      owner: true,
     },
-    orderBy: { createdAt: "asc" },
+    orderBy: { receiptDate: "asc" },
   });
 
-  // Build unique customers from invoices
+  // Build unique customers from the receipts
   const customersMap = new Map<string, SAFTCustomer>();
   const productsMap = new Map<string, SAFTProduct>();
 
@@ -316,18 +326,17 @@ export async function generateSAFTPT(userId: string, options: SAFTExportOptions)
     productNumberCode: "RENT",
   });
 
-  for (const invoice of invoices) {
-    if (invoice.tenant && !customersMap.has(invoice.tenant.id)) {
-      // Use property address if available, otherwise use default
-      const propertyAddress = invoice.property?.address || "Morada desconhecida";
-
-      customersMap.set(invoice.tenant.id, {
-        customerID: invoice.tenant.id,
+  for (const receipt of rentReceipts) {
+    if (!customersMap.has(receipt.tenantId)) {
+      customersMap.set(receipt.tenantId, {
+        customerID: receipt.tenantId,
         accountID: "Desconhecido",
-        customerTaxID: "999999990", // Consumidor final if no NIF
-        companyName: invoice.tenant.name,
+        // The NIF as it was filed on the recibo. "999999990" is AT's consumidor final
+        // placeholder, correct for a non-resident tenant with no Portuguese NIF.
+        customerTaxID: receipt.tenantNif || "999999990",
+        companyName: receipt.tenant?.name ?? "Consumidor Final",
         billingAddress: {
-          addressDetail: propertyAddress,
+          addressDetail: receipt.propertyAddress || "Morada desconhecida",
           city: "Desconhecida",
           postalCode: "0000-000",
           country: "PT",
@@ -383,124 +392,85 @@ export async function generateSAFTPT(userId: string, options: SAFTExportOptions)
     },
     customers: Array.from(customersMap.values()),
     products: Array.from(productsMap.values()),
-    invoices: invoices.map((inv, index) => {
-      const grossTotal = inv.amount;
-      const taxAmount = 0; // Residential rental usually exempt
+    invoices: rentReceipts.map((receipt, index) => {
+      const grossTotal = receipt.rentAmount;
+      const taxAmount = 0; // Residential rental is IVA-exempt under art. 9 CIVA
       const netTotal = grossTotal - taxAmount;
 
       const invoiceStatus =
-        inv.status === "cancelled" ? INVOICE_STATUS.CANCELLED : INVOICE_STATUS.NORMAL;
-      const invoiceType = inv.amount >= 0 ? DOCUMENT_TYPES.INVOICE : DOCUMENT_TYPES.CREDIT_NOTE;
+        receipt.status === "cancelled" ? INVOICE_STATUS.CANCELLED : INVOICE_STATUS.NORMAL;
 
-      // Parse metadata for line items
-      let lineItems: SAFTLine[] = [];
-      try {
-        const metadata = inv.metadata ? JSON.parse(inv.metadata) : null;
-        if (metadata?.lineItems && Array.isArray(metadata.lineItems)) {
-          lineItems = metadata.lineItems.map(
-            (
-              item: {
-                description: string;
-                quantity: number;
-                unitPrice: number;
-                total: number;
-              },
-              lineNum: number,
-            ) => ({
-              lineNumber: lineNum + 1,
-              productCode: "RENT",
-              productDescription: item.description || "Renda",
-              quantity: item.quantity || 1,
-              unitOfMeasure: "UN",
-              unitPrice: item.unitPrice || item.total,
-              taxPointDate: formatSAFTDate(inv.createdAt),
-              description: item.description || "Renda mensal",
-              creditAmount: inv.amount >= 0 ? item.total : undefined,
-              debitAmount: inv.amount < 0 ? Math.abs(item.total) : undefined,
-              tax: {
-                taxType: "IVA",
-                taxCountryRegion: "PT",
-                taxCode: TAX_CODES.EXEMPT,
-                taxPercentage: 0,
-              },
-              taxExemptionReason: "M07 - Isento nos termos do art.º 9.º do CIVA",
-              taxExemptionCode: "M07",
-            }),
-          );
-        }
-      } catch {
-        // Ignore metadata parsing errors
-      }
-
-      // Default line if no line items
-      if (lineItems.length === 0) {
-        lineItems = [
-          {
-            lineNumber: 1,
-            productCode: "RENT",
-            productDescription: inv.description || "Renda mensal",
-            quantity: 1,
-            unitOfMeasure: "UN",
-            unitPrice: Math.abs(grossTotal),
-            taxPointDate: formatSAFTDate(inv.createdAt),
-            description: inv.description || "Renda mensal",
-            creditAmount: inv.amount >= 0 ? Math.abs(grossTotal) : undefined,
-            debitAmount: inv.amount < 0 ? Math.abs(grossTotal) : undefined,
-            tax: {
-              taxType: "IVA",
-              taxCountryRegion: "PT",
-              taxCode: TAX_CODES.EXEMPT,
-              taxPercentage: 0,
-            },
-            taxExemptionReason: "M07 - Isento nos termos do art.º 9.º do CIVA",
-            taxExemptionCode: "M07",
+      // A recibo covers one rental period, so it is always a single line. The `Invoice`
+      // source this replaced could carry multi-line JSON in a `metadata` column; nothing
+      // wrote one, and RentReceipt has no equivalent field, so that branch is gone.
+      const periodLabel = `${formatSAFTDate(receipt.periodStart)} - ${formatSAFTDate(receipt.periodEnd)}`;
+      const lineItems: SAFTLine[] = [
+        {
+          lineNumber: 1,
+          productCode: "RENT",
+          productDescription: "Renda mensal",
+          quantity: 1,
+          unitOfMeasure: "UN",
+          unitPrice: grossTotal,
+          taxPointDate: formatSAFTDate(receipt.receiptDate),
+          description: `Renda ${periodLabel}`,
+          creditAmount: grossTotal,
+          tax: {
+            taxType: "IVA",
+            taxCountryRegion: "PT",
+            taxCode: TAX_CODES.EXEMPT,
+            taxPercentage: 0,
           },
-        ];
-      }
+          taxExemptionReason: "M07 - Isento nos termos do art.º 9.º do CIVA",
+          taxExemptionCode: "M07",
+        },
+      ];
 
-      // Hash chain: each invoice's hash uses the previous invoice's hash
+      // Hash chain: each document's hash uses the previous document's hash
       const previousHash = index > 0 ? hashChain[index - 1] : undefined;
       const currentHash = generateDocumentHash(
-        formatSAFTDate(inv.createdAt),
-        formatSAFTDateTime(inv.createdAt),
-        inv.number,
+        formatSAFTDate(receipt.receiptDate),
+        formatSAFTDateTime(receipt.createdAt),
+        receipt.receiptNumber,
         grossTotal,
         previousHash,
       );
       hashChain.push(currentHash);
 
       return {
-        invoiceNo: inv.number,
+        invoiceNo: receipt.receiptNumber,
         ATCUD: generateATCUD("SITUS", index + 1),
         documentStatus: {
           invoiceStatus,
-          invoiceStatusDate: formatSAFTDateTime(inv.updatedAt),
+          invoiceStatusDate: formatSAFTDateTime(receipt.updatedAt),
           sourceID: userId,
           sourceBilling: "P", // Produced by invoicing program
         },
         hash: currentHash,
         hashControl: "1",
-        period: new Date(inv.createdAt).getMonth() + 1,
-        invoiceDate: formatSAFTDate(inv.createdAt),
-        invoiceType,
+        period: new Date(receipt.receiptDate).getMonth() + 1,
+        invoiceDate: formatSAFTDate(receipt.receiptDate),
+        invoiceType: DOCUMENT_TYPES.INVOICE,
         selfBillingIndicator: 0,
         sourceID: userId,
-        systemEntryDate: formatSAFTDateTime(inv.createdAt),
-        customerID: inv.tenantId || "CONSUMIDOR_FINAL",
+        systemEntryDate: formatSAFTDateTime(receipt.createdAt),
+        customerID: receipt.tenantId,
         lines: lineItems,
         documentTotals: {
           taxPayable: taxAmount,
           netTotal,
-          grossTotal: Math.abs(grossTotal),
-          payment: inv.paidDate
-            ? [
-                {
-                  paymentMechanism: "OU", // Other
-                  paymentAmount: Math.abs(grossTotal),
-                  paymentDate: formatSAFTDate(inv.paidDate),
-                },
-              ]
-            : undefined,
+          grossTotal,
+          // `paymentDate` is required on a recibo, so every document carries its payment.
+          // The gross rent is reported here, not `netAmount`: IRS withholding (retenção na
+          // fonte) is the tenant remitting part of the landlord's income tax, not a
+          // reduction of the sum invoiced, and it has no SAF-T IVA representation.
+          payment: [
+            {
+              paymentMechanism: "OU", // Other
+              paymentAmount: grossTotal,
+              paymentDate: formatSAFTDate(receipt.paymentDate),
+            },
+          ],
         },
       } as SAFTInvoice;
     }),

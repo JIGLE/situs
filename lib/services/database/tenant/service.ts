@@ -6,7 +6,7 @@ export const tenantService = {
   async getAll(userId: string): Promise<Tenant[]> {
     const tenants = await getPrismaClient().tenant.findMany({
       where: { userId },
-      include: { property: true, receipts: true, correspondences: true },
+      include: { property: true, receipts: true },
     });
     return tenants.map((t) => ({
       ...t,
@@ -24,7 +24,7 @@ export const tenantService = {
   async getById(userId: string, id: string): Promise<Tenant | null> {
     const tenant = await getPrismaClient().tenant.findFirst({
       where: { id, userId },
-      include: { property: true, receipts: true, correspondences: true },
+      include: { property: true, receipts: true },
     });
     if (!tenant) return null;
     return {

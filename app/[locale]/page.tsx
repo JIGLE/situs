@@ -52,7 +52,7 @@ export default async function LandingPage({ params }: Props) {
         style={{ "--page-max": "1400px" } as React.CSSProperties}
         className="relative mx-auto w-full max-w-[var(--page-max)] px-5 pt-8 pb-16 sm:px-10 lg:flex lg:min-h-screen lg:flex-col lg:justify-center lg:py-24"
       >
-        <LandingAnalyticsObserver locale={locale} demoEnabled={true} />
+        <LandingAnalyticsObserver locale={locale} />
 
         <LandingHeroSequence locale={locale} />
 

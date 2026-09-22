@@ -1,6 +1,10 @@
 # Project Structure
 
-This document provides a comprehensive overview of the Situs project structure and organization.
+This document provides an overview of the Situs project structure and organization. The trees
+below are **illustrative, not exhaustive** — they name the directories worth knowing about, not
+every one that exists. `find app/api -name route.ts | sort` and `ls components/features` are the
+source of truth, and a tree drawn by hand goes stale on the first PR that adds or removes a
+directory.
 
 ## Repository Overview
 
@@ -13,16 +17,12 @@ situs/
 ├── app/                          # Next.js App Router
 │   ├── [locale]/                 # Internationalized routes
 │   │   ├── (main)/              # Main app route group
-│   │   │   ├── analytics/       # Analytics pages
-│   │   │   ├── correspondence/  # Communication pages
 │   │   │   ├── documents/       # Document management
 │   │   │   ├── financials/      # Financial pages
 │   │   │   ├── leases/          # Lease management
-│   │   │   ├── maintenance/     # Maintenance requests
 │   │   │   ├── overview/        # Dashboard
 │   │   │   ├── owners/          # Owner management
 │   │   │   ├── properties/      # Property management
-│   │   │   ├── reports/         # Reporting
 │   │   │   ├── tenants/         # Tenant management
 │   │   │   ├── error.tsx        # Error boundary
 │   │   │   ├── loading.tsx      # Loading state
@@ -32,44 +32,31 @@ situs/
 │   │   └── page.tsx             # Locale homepage
 │   ├── api/                      # API routes
 │   │   ├── admin/               # Admin operations
-│   │   ├── analytics/           # Analytics endpoints
 │   │   ├── auth/                # NextAuth.js
-│   │   ├── correspondence/      # Communication API
 │   │   ├── debug/               # Debug endpoints (dev only)
 │   │   ├── documents/           # Document API
 │   │   ├── email/               # Email operations
 │   │   ├── expenses/            # Expense tracking
 │   │   ├── health/              # Health checks
 │   │   ├── info/                # API metadata
-│   │   ├── invoices/            # Invoice management
 │   │   ├── leases/              # Lease API
-│   │   ├── maintenance/         # Maintenance requests
 │   │   ├── metrics/             # Metrics
 │   │   ├── owners/              # Owner API
-│   │   ├── payments/            # Payment processing
 │   │   ├── properties/          # Property API
 │   │   ├── receipts/            # Receipt management
-│   │   ├── reports/             # Report generation
 │   │   ├── tax/                 # Tax compliance
-│   │   ├── tenant-portal/       # Tenant portal API
 │   │   ├── tenants/             # Tenant API
 │   │   ├── units/               # Unit API
 │   │   ├── user/                # User data (GDPR)
 │   │   ├── webhooks/            # External webhooks
 │   │   └── README.md            # API documentation
 │   ├── auth/                     # Auth pages
-│   ├── tenant-portal/           # Public tenant portal
 │   ├── globals.css              # Global styles
 │   ├── layout.tsx               # Root layout
 │   └── page.tsx                 # Homepage
 ├── components/                   # React components
 │   ├── features/                # Feature modules (with barrel exports)
-│   │   ├── correspondence/      # Communication features
-│   │   │   ├── correspondence-view.tsx
-│   │   │   ├── correspondence-view.test.tsx
-│   │   │   └── index.ts         # ✨ Barrel export
 │   │   ├── dashboard/           # Dashboard features
-│   │   │   ├── analytics-dashboard.tsx
 │   │   │   ├── overview-view.tsx
 │   │   │   ├── overview-view.test.tsx
 │   │   │   └── index.ts         # ✨ Barrel export
@@ -77,13 +64,11 @@ situs/
 │   │   ├── financial/           # Financial features
 │   │   │   ├── financials-container.tsx
 │   │   │   ├── financials-view.tsx
-│   │   │   ├── invoices-view.tsx
 │   │   │   ├── payment-matrix-view.tsx
 │   │   │   ├── receipts-view.tsx
 │   │   │   ├── *.test.tsx       # Co-located tests
 │   │   │   └── index.ts         # ✨ Barrel export
 │   │   ├── lease/               # Lease features
-│   │   ├── maintenance/         # Maintenance features
 │   │   ├── owner/               # Owner features
 │   │   ├── property/            # Property features
 │   │   │   ├── property-list.tsx
@@ -130,13 +115,11 @@ situs/
 │   │   ├── property.ts
 │   │   ├── tenant.ts
 │   │   ├── lease.ts
-│   │   ├── invoice.ts
 │   │   └── index.ts             # ✨ Barrel export
 │   ├── services/                # Business logic
 │   │   ├── auth/                # Authentication services
 │   │   │   ├── auth.ts
 │   │   │   ├── auth-middleware.ts
-│   │   │   ├── tenant-portal-auth.ts
 │   │   │   ├── *.test.ts        # Co-located tests
 │   │   │   └── index.ts         # ✨ Barrel export
 │   │   ├── database/            # Database utilities
@@ -149,11 +132,8 @@ situs/
 │   │   │   ├── *.test.ts
 │   │   │   └── index.ts         # ✨ Barrel export
 │   │   ├── address-verification.ts
-│   │   ├── analytics-service.ts
 │   │   ├── audit-log.ts
 │   │   ├── document-service.ts
-│   │   ├── financial-reports.ts
-│   │   ├── invoice-service.ts
 │   │   ├── pdf-generator.ts
 │   │   └── tax-calculator.ts
 │   ├── utils/                   # Utility functions (with barrel exports)
@@ -363,7 +343,8 @@ SMTP_USER=your-login
 SMTP_PASS=your-smtp-key
 FROM_EMAIL=noreply@example.com
 
-# Payment (Optional)
+# App subscription billing (Optional) — not rent collection, which arrives
+# as a bank movement and is matched against the ledger
 STRIPE_SECRET_KEY=your-stripe-secret
 STRIPE_WEBHOOK_SECRET=your-webhook-secret
 ```

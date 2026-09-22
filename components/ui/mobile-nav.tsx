@@ -50,10 +50,10 @@ export function MobileBottomNav({
     icon: item.icon,
     href: item.href,
   }));
-  // Everything not on the bottom bar (Maintenance, Leases, Analytics, Reports,
-  // Documents, Messages, Compliance, Settings…) has no other home on a phone — the
-  // desktop sidebar is hidden below `md`. Surface it inside the "More" sheet so the
-  // whole app stays reachable from mobile chrome, not just the 4 primary tabs.
+  // Everything not on the bottom bar (Leases, Documents, Messages, Compliance,
+  // Settings…) has no other home on a phone — the desktop sidebar is hidden below
+  // `md`. Surface it inside the "More" sheet so the whole app stays reachable from
+  // mobile chrome, not just the 4 primary tabs.
   const secondaryNavItems = mobileSecondaryNavigation.map((item) => ({
     id: item.key,
     label: tNav(item.labelKey.replace("navigation.", "") as Parameters<typeof tNav>[0]),

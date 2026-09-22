@@ -8,15 +8,12 @@ import {
   Users,
   Receipt,
   FileText,
-  Wrench,
-  Mail,
   BarChart3,
   Plus,
   ArrowRight,
   Briefcase,
   DollarSign,
   FileSpreadsheet,
-  Contact,
   Home,
 } from "lucide-react";
 import { Button } from "./button";
@@ -29,8 +26,6 @@ export interface EmptyStateIllustrationProps {
     | "tenants"
     | "payments"
     | "leases"
-    | "maintenance"
-    | "correspondence"
     | "reports"
     | "generic"
     | "owners"
@@ -39,7 +34,6 @@ export interface EmptyStateIllustrationProps {
     | "invoices"
     | "contracts"
     | "documents"
-    | "contacts"
     | "units";
   /** Alias for type (backwards compatibility) */
   entityType?:
@@ -47,8 +41,6 @@ export interface EmptyStateIllustrationProps {
     | "tenants"
     | "payments"
     | "leases"
-    | "maintenance"
-    | "correspondence"
     | "reports"
     | "generic"
     | "owners"
@@ -57,7 +49,6 @@ export interface EmptyStateIllustrationProps {
     | "invoices"
     | "contracts"
     | "documents"
-    | "contacts"
     | "units";
   /** Title override (defaults based on type) */
   title?: string;
@@ -107,16 +98,6 @@ const emptyStateMeta: Record<
     gradient: "from-violet-500/20 to-purple-500/20",
     accentColor: "text-violet-400",
   },
-  maintenance: {
-    icon: Wrench,
-    gradient: "from-rose-500/20 to-pink-500/20",
-    accentColor: "text-rose-400",
-  },
-  correspondence: {
-    icon: Mail,
-    gradient: "from-cyan-500/20 to-sky-500/20",
-    accentColor: "text-cyan-400",
-  },
   reports: {
     icon: BarChart3,
     gradient: "from-lime-500/20 to-green-500/20",
@@ -156,11 +137,6 @@ const emptyStateMeta: Record<
     icon: FileText,
     gradient: "from-sky-500/20 to-cyan-500/20",
     accentColor: "text-sky-400",
-  },
-  contacts: {
-    icon: Contact,
-    gradient: "from-pink-500/20 to-rose-500/20",
-    accentColor: "text-pink-400",
   },
   units: {
     icon: Home,

@@ -7,20 +7,16 @@ import { NextRequest } from "next/server";
  * withErrorHandler — which has no ZodError branch and reports everything as 500.
  */
 
-const { requireAuthMock, prismaMock, handleDemoMutationMock, handleDemoGetMock } = vi.hoisted(
-  () => ({
-    requireAuthMock: vi.fn(),
-    prismaMock: {
-      expense: { create: vi.fn(), findMany: vi.fn() },
-      // handlePost now calls assertOwnsRelations, which resolves the body's propertyId
-      // against this user before writing. Defaults to "owned"; the refusal case sets it
-      // to null explicitly.
-      property: { findFirst: vi.fn() },
-    },
-    handleDemoMutationMock: vi.fn(),
-    handleDemoGetMock: vi.fn(),
-  }),
-);
+const { requireAuthMock, prismaMock } = vi.hoisted(() => ({
+  requireAuthMock: vi.fn(),
+  prismaMock: {
+    expense: { create: vi.fn(), findMany: vi.fn() },
+    // handlePost now calls assertOwnsRelations, which resolves the body's propertyId
+    // against this user before writing. Defaults to "owned"; the refusal case sets it
+    // to null explicitly.
+    property: { findFirst: vi.fn() },
+  },
+}));
 
 vi.mock("@/lib/services/auth/auth-middleware", () => ({
   requireAuth: requireAuthMock,
@@ -28,11 +24,6 @@ vi.mock("@/lib/services/auth/auth-middleware", () => ({
 }));
 vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prismaMock }));
 vi.mock("@/lib/config/data-mode", () => ({ isMockMode: false }));
-vi.mock("@/lib/demo/demo-api-handler", () => ({
-  handleDemoGet: handleDemoGetMock,
-  handleDemoMutation: handleDemoMutationMock,
-}));
-
 import { POST } from "./route";
 
 const postRequest = (body: unknown) =>
@@ -52,8 +43,6 @@ const validExpense = {
 describe("POST /api/expenses", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    handleDemoGetMock.mockReturnValue({ response: null });
-    handleDemoMutationMock.mockResolvedValue({ response: null });
     requireAuthMock.mockResolvedValue({ userId: "user-123" });
     prismaMock.property.findFirst.mockResolvedValue({ id: "prop-1" });
     prismaMock.expense.create.mockResolvedValue({

@@ -65,10 +65,7 @@ under `tests/`.
 
 ## Integrations
 
-- [Government verification](integrations/GOVERNMENT_VERIFICATION.md) — the ownership-verification
-  scaffold behind `GovernmentVerification` / `PropertyVerificationClaim`
 - [Email retry logic](EMAIL_RETRY_LOGIC.md)
-- [Bizum integration](BIZUM_INTEGRATION.md)
 - [Redis rate limiting](REDIS_RATE_LIMITING.md)
 - [Webhook templates](webhook-templates.md)
 

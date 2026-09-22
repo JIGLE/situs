@@ -7,7 +7,6 @@ import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { createSuccessResponse, withErrorHandler } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
-import { isDemoRequest } from "@/lib/demo/demo-mode";
 import { getCurrentPlanInfo } from "@/lib/billing/subscription-service";
 import { isEnabled } from "@/lib/utils/env";
 
@@ -17,18 +16,6 @@ async function handleGet(request: NextRequest): Promise<Response> {
   // all subscription framing (Billing tab, plan badges, upgrade prompts) when
   // it's off — the account is effectively unlimited.
   const billingEnabled = isEnabled("ENABLE_BILLING");
-
-  if (isDemoRequest(request)) {
-    return createSuccessResponse({
-      plan: "free",
-      status: "active",
-      currentPeriodEnd: null,
-      cancelAtPeriodEnd: false,
-      maxProperties: 1,
-      propertyCount: 1,
-      billingEnabled,
-    });
-  }
 
   const authResult = await requireAuth(request);
   if (authResult instanceof Response) return authResult;

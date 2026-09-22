@@ -63,14 +63,7 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
     ref,
   ): React.ReactElement {
     const { state, addBuilding: _addBuilding } = useApp();
-    const {
-      properties = [],
-      tenants = [],
-      leases = [],
-      maintenance = [],
-      buildings = [],
-      loading,
-    } = state;
+    const { properties = [], tenants = [], leases = [], buildings = [], loading } = state;
     const router = useRouter();
     const confirmDialog = useConfirmDialog();
     // Property detail modal state
@@ -160,14 +153,6 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
       );
     }, [leases]);
 
-    const openMaintenancePropertyIds = useMemo(() => {
-      return new Set(
-        maintenance
-          .filter((ticket) => ticket.status === "open" || ticket.status === "in_progress")
-          .map((ticket) => ticket.propertyId),
-      );
-    }, [maintenance]);
-
     const occupiedWithoutActiveLeaseIds = useMemo(() => {
       return new Set(
         properties
@@ -180,12 +165,8 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
     }, [activeLeasePropertyIds, properties]);
 
     const needsAttentionPropertyIds = useMemo(() => {
-      return new Set([
-        ...expiringLeasePropertyIds,
-        ...openMaintenancePropertyIds,
-        ...occupiedWithoutActiveLeaseIds,
-      ]);
-    }, [expiringLeasePropertyIds, openMaintenancePropertyIds, occupiedWithoutActiveLeaseIds]);
+      return new Set([...expiringLeasePropertyIds, ...occupiedWithoutActiveLeaseIds]);
+    }, [expiringLeasePropertyIds, occupiedWithoutActiveLeaseIds]);
 
     // Expose dialog methods to parent via ref
     useImperativeHandle(ref, () => ({
@@ -354,7 +335,6 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
                         properties={filteredProperties}
                         buildings={buildings}
                         tenants={tenants}
-                        maintenance={maintenance}
                         leases={leases}
                         onSelectProperty={handleTreeSelect}
                         highlightedPropertyId={workspacePropertyId ?? highlightedPropertyId}

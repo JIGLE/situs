@@ -35,15 +35,11 @@ const COMING_SOON_LOCALES: { code: string; flag: string; label: string }[] = [
   { code: "de", flag: "🇩🇪", label: "Deutsch" },
 ];
 
-// A representative subset of lib/design/country-themes.ts's 28 entries — enough to demonstrate
-// the picker without the popover growing unwieldy; any entry in that table can be added here.
+// The countries Situs operates in. lib/design/country-themes.ts holds a theme per entry here;
+// adding a country means adding it to both.
 const COUNTRY_SWATCH: { code: CountryCode; hex: string }[] = [
   { code: "PT", hex: "#006600" },
   { code: "ES", hex: "#aa151b" },
-  { code: "DE", hex: "#000000" },
-  { code: "FR", hex: "#0055a4" },
-  { code: "IT", hex: "#009246" },
-  { code: "SE", hex: "#006aa7" },
 ];
 
 interface Props {
@@ -394,13 +390,13 @@ export function LandingHeroSequence({ locale }: Props): React.ReactElement {
             className={cn(styles.ctaWrap1, styles.ctaPulse, "w-full sm:w-auto")}
           >
             <TrackedLandingLink
-              href={"/demo?perspective=owner"}
-              eventName="landing.demo_start"
-              eventData={{ location: "hero_primary", perspective: "owner" }}
+              href="/auth/signup"
+              eventName="landing.signup_start"
+              eventData={{ location: "hero_secondary" }}
               className="block w-full sm:w-auto"
             >
               <Button size="lg" className="w-full rounded-none font-semibold sm:w-auto">
-                {t("heroCta.tryIt")}
+                {t("heroCta.join")}
               </Button>
             </TrackedLandingLink>
           </div>
@@ -409,27 +405,6 @@ export function LandingHeroSequence({ locale }: Props): React.ReactElement {
               ctaRefs.current[1] = el;
             }}
             className={cn(styles.ctaWrap2, styles.ctaPulse, "w-full sm:w-auto")}
-          >
-            <TrackedLandingLink
-              href="/auth/signup"
-              eventName="landing.signup_start"
-              eventData={{ location: "hero_secondary" }}
-              className="block w-full sm:w-auto"
-            >
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full rounded-none font-semibold sm:w-auto"
-              >
-                {t("heroCta.join")}
-              </Button>
-            </TrackedLandingLink>
-          </div>
-          <div
-            ref={(el) => {
-              ctaRefs.current[2] = el;
-            }}
-            className={cn(styles.ctaWrap3, styles.ctaPulse, "w-full sm:w-auto")}
           >
             <TrackedLandingLink
               href="/auth/signin"

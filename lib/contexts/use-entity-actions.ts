@@ -8,18 +8,7 @@
 
 import { useMemo } from "react";
 import type React from "react";
-import {
-  Building,
-  Property,
-  Tenant,
-  Receipt,
-  CorrespondenceTemplate,
-  Correspondence,
-  Owner,
-  Expense,
-  MaintenanceTicket,
-  Lease,
-} from "@/lib/types";
+import { Building, Property, Tenant, Receipt, Owner, Expense, Lease } from "@/lib/types";
 import { createEntityActions, type EntityActions } from "./create-entity-actions";
 import { useApiError } from "@/lib/utils/api-error";
 import type { AppAction, AppState } from "./app-reducer";
@@ -29,7 +18,6 @@ interface EntityActionsContext {
   userId?: string;
   showError: (msg: string) => void;
   showSuccess: (msg: string) => void;
-  isDemo: boolean;
 }
 
 export interface EntityActionsBundle {
@@ -37,11 +25,8 @@ export interface EntityActionsBundle {
   propertyActions: EntityActions<Property>;
   tenantActions: EntityActions<Tenant>;
   receiptActions: EntityActions<Receipt>;
-  templateActions: EntityActions<CorrespondenceTemplate>;
-  correspondenceActions: EntityActions<Correspondence>;
   ownerActions: EntityActions<Owner>;
   expenseActions: EntityActions<Expense>;
-  maintenanceActions: EntityActions<MaintenanceTicket>;
   leaseActions: EntityActions<Lease>;
 }
 
@@ -50,7 +35,7 @@ export function useEntityActions(
   dispatch: React.Dispatch<AppAction>,
   ctx: EntityActionsContext,
 ): EntityActionsBundle {
-  const { csrfToken, userId, showError, showSuccess, isDemo } = ctx;
+  const { csrfToken, userId, showError, showSuccess } = ctx;
   const resolveError = useApiError();
 
   const propertyActions = useMemo(
@@ -65,9 +50,8 @@ export function useEntityActions(
         csrfToken,
         userId,
         entityName: "property",
-        isDemo,
       }),
-    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.properties, dispatch],
+    [csrfToken, userId, showError, resolveError, showSuccess, state.properties, dispatch],
   );
 
   const buildingActions = useMemo(
@@ -82,9 +66,8 @@ export function useEntityActions(
         csrfToken,
         userId,
         entityName: "building",
-        isDemo,
       }),
-    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.buildings, dispatch],
+    [csrfToken, userId, showError, resolveError, showSuccess, state.buildings, dispatch],
   );
 
   const tenantActions = useMemo(
@@ -99,9 +82,8 @@ export function useEntityActions(
         csrfToken,
         userId,
         entityName: "tenant",
-        isDemo,
       }),
-    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.tenants, dispatch],
+    [csrfToken, userId, showError, resolveError, showSuccess, state.tenants, dispatch],
   );
 
   const receiptActions = useMemo(
@@ -116,53 +98,8 @@ export function useEntityActions(
         csrfToken,
         userId,
         entityName: "receipt",
-        isDemo,
       }),
-    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.receipts, dispatch],
-  );
-
-  const templateActions = useMemo(
-    () =>
-      createEntityActions<CorrespondenceTemplate>({
-        endpoint: "/api/correspondence/templates",
-        getItems: () => state.templates,
-        setItems: (items) => dispatch({ type: "SET_TEMPLATES", payload: items }),
-        showError,
-        resolveError,
-        showSuccess,
-        csrfToken,
-        userId,
-        entityName: "template",
-        requireAuth: false,
-        isDemo,
-      }),
-    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.templates, dispatch],
-  );
-
-  const correspondenceActions = useMemo(
-    () =>
-      createEntityActions<Correspondence>({
-        endpoint: "/api/correspondence",
-        getItems: () => state.correspondence,
-        setItems: (items) => dispatch({ type: "SET_CORRESPONDENCE", payload: items }),
-        showError,
-        resolveError,
-        showSuccess,
-        csrfToken,
-        userId,
-        entityName: "correspondence",
-        isDemo,
-      }),
-    [
-      csrfToken,
-      userId,
-      showError,
-      resolveError,
-      showSuccess,
-      isDemo,
-      state.correspondence,
-      dispatch,
-    ],
+    [csrfToken, userId, showError, resolveError, showSuccess, state.receipts, dispatch],
   );
 
   const ownerActions = useMemo(
@@ -177,9 +114,8 @@ export function useEntityActions(
         csrfToken,
         userId,
         entityName: "owner",
-        isDemo,
       }),
-    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.owners, dispatch],
+    [csrfToken, userId, showError, resolveError, showSuccess, state.owners, dispatch],
   );
 
   const expenseActions = useMemo(
@@ -195,27 +131,8 @@ export function useEntityActions(
         userId,
         entityName: "expense",
         prependNew: true,
-        isDemo,
       }),
-    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.expenses, dispatch],
-  );
-
-  const maintenanceActions = useMemo(
-    () =>
-      createEntityActions<MaintenanceTicket>({
-        endpoint: "/api/maintenance",
-        getItems: () => state.maintenance,
-        setItems: (items) => dispatch({ type: "SET_MAINTENANCE", payload: items }),
-        showError,
-        resolveError,
-        showSuccess,
-        csrfToken,
-        userId,
-        entityName: "ticket",
-        prependNew: true,
-        isDemo,
-      }),
-    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.maintenance, dispatch],
+    [csrfToken, userId, showError, resolveError, showSuccess, state.expenses, dispatch],
   );
 
   const leaseActions = useMemo(
@@ -231,9 +148,8 @@ export function useEntityActions(
         userId,
         entityName: "lease",
         prependNew: true,
-        isDemo,
       }),
-    [csrfToken, userId, showError, resolveError, showSuccess, isDemo, state.leases, dispatch],
+    [csrfToken, userId, showError, resolveError, showSuccess, state.leases, dispatch],
   );
 
   return {
@@ -241,11 +157,8 @@ export function useEntityActions(
     propertyActions,
     tenantActions,
     receiptActions,
-    templateActions,
-    correspondenceActions,
     ownerActions,
     expenseActions,
-    maintenanceActions,
     leaseActions,
   };
 }

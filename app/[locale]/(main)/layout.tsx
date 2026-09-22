@@ -2,11 +2,8 @@ import { Suspense } from "react";
 import { Sidebar } from "@/components/layouts/sidebar";
 import { MobileBottomNav, MobileTopBar } from "@/components/ui/mobile-nav";
 import { SkipLink } from "@/components/ui/accessibility";
-import { DemoBanner } from "@/components/shared/demo-banner";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
-import { CommandPalette } from "@/components/shared/command-palette";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
-import { ScenarioRunner } from "@/components/shared/scenario-runner";
 import { PortalAccessGuard } from "@/components/shared/portal-access-guard";
 import { EntityDetailRouteClient } from "@/components/shared/entity-detail-route-client";
 import { AppDataGate } from "@/components/shared/app-data-gate";
@@ -31,9 +28,6 @@ export default function MainLayout({
 
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Demo Mode Banner */}
-        <DemoBanner />
-
         {/* Sticky app-chrome header — mobile only (no sidebar below md). */}
         <MobileTopBar />
 
@@ -66,16 +60,11 @@ export default function MainLayout({
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav />
 
-      {/* Command Palette (⌘K) */}
-      <CommandPalette />
-
       {/* Entity detail overlay — mounted once so `?detail=<type>:<id>` works from any page */}
       <Suspense fallback={null}>
         <EntityDetailRouteClient />
       </Suspense>
 
-      {/* Demo Scenario Runner FAB */}
-      <ScenarioRunner />
       {/* Intercepting modal slot */}
       {modal}
     </div>

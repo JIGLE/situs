@@ -46,7 +46,6 @@ than assumed — several sections of the V1 brief were not covered in this pass 
 | **Bank import idempotency**     | `lib/services/bank/import.ts:316-325` — `computeFingerprint` plus a `fingerprint` unique constraint and a pre-insert `findUnique`. Re-importing the same statement is a no-op.                                                                                                |
 | **Matching engine**             | `lib/services/matching/engine.ts` — 12 test cases including the equal-rent ambiguity guard ("top-two too close → needs_review, never auto") and the fuzzy-duplicate window.                                                                                                   |
 | **Receipt state machine**       | `lib/services/receipts/lifecycle.ts` — explicit `TRANSITIONS` table, 12 test cases pinning every edge including terminality of `accepted`/`voided`. Money state (`status`) and document state (`lifecycle`) are correctly separate.                                           |
-| **Tenant portal tokens**        | `lib/services/auth/tenant-portal-auth.ts` — HMAC-SHA256, constant-time signature comparison via `timingSafeEqualString`, `exp` checked, tenant existence re-verified server-side.                                                                                             |
 | **API authorization**           | ~141 routes swept; the IDOR in `/api/distributions`, six body-trusted foreign-key create paths, and the tax-rules privilege gap were fixed in PR #330. Guarded by `app/api/tenant-scoping.test.ts` and `income-distribution.scoping.test.ts`.                                 |
 | **Prisma error handling**       | Prisma codes are _mapped_, not leaked — `P2002`/`P2025` handled in `units`, `tax-rules` and elsewhere.                                                                                                                                                                        |
 | **CI gates**                    | Repaired in PR #329 and independently re-verified. 986 unit tests pass.                                                                                                                                                                                                       |
@@ -161,7 +160,6 @@ money-handling service on a live instance, and the brief's §15 warns against ex
 
 The real exposure is the code that does _not_ apply the engine's discipline:
 
-- `lib/services/analytics-service.ts` — ~8 `reduce((sum, r) => sum + r.amount, 0)` sites
 - `app/api/tax-filings/income-summary/route.ts:48,52` — same pattern
 
 Dashboard drift is cosmetic. A tax-filing figure is not.
@@ -172,7 +170,8 @@ pass unchanged, proving no behaviour change). Applied to `income-summary`'s `gro
 `deductibleExpenses`, and to the three `getAnnualTaxSummary` totals that feed
 `generatePortugalTaxForm` / `generateSpainTaxForm`, plus the `calculateDistribution` totals.
 
-`lib/services/analytics-service.ts` remains **P2 and deliberately untouched**.
+`lib/services/analytics-service.ts` was deleted with the Intelligence surface in the scope
+cutdown, so the remaining P2 exposure went with it.
 
 ---
 

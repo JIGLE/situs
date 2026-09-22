@@ -113,11 +113,6 @@ export function NotificationBell(): React.ReactElement {
     (row: NotificationRow) => {
       if (!row.read) markRead(row.id);
 
-      if (row.type === "inbound_message" && row.entityId) {
-        setOpen(false);
-        router.push(`/correspondence?tab=inbox&messageId=${row.entityId}`);
-        return;
-      }
       if (row.entityType === "Lease" && row.entityId) {
         setOpen(false);
         router.push(withEntityDetail(pathname, searchParams.toString(), "lease", row.entityId));
@@ -178,7 +173,7 @@ export function NotificationBell(): React.ReactElement {
             <ul className="divide-y divide-[var(--color-border)]">
               {notifications.map((row) => {
                 const Icon = NOTIFICATION_TYPE_ICON[row.type];
-                const navigable = row.type === "inbound_message" || row.entityType === "Lease";
+                const navigable = row.entityType === "Lease";
                 return (
                   <li key={row.id}>
                     <button

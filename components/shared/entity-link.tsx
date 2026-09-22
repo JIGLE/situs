@@ -2,18 +2,17 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Building2, Users, UserCircle, FileText, FileIcon, Wrench, Receipt } from "lucide-react";
+import { Building2, Users, UserCircle, FileText, FileIcon, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils/utils";
 import { Badge } from "@/components/ui/badge";
 import { withEntityDetail } from "@/lib/utils/entity-detail-url";
 
-type EntityType =
-  "property" | "tenant" | "owner" | "lease" | "document" | "maintenance" | "receipt";
+type EntityType = "property" | "tenant" | "owner" | "lease" | "document" | "receipt";
 
 /**
  * Entities with `overlay: true` open the shared `?detail=<type>:<id>` overlay
  * on the current page instead of navigating to a full-page route — `basePath`
- * is unused for those. Maintenance/receipt have no overlay yet and keep
+ * is unused for those. Receipt has no overlay yet and keeps
  * navigating to their existing full-page destination.
  */
 const ENTITY_CONFIG: Record<
@@ -30,7 +29,6 @@ const ENTITY_CONFIG: Record<
   owner: { icon: UserCircle, overlay: true, color: "text-sky-500" },
   lease: { icon: FileText, overlay: true, color: "text-violet-500" },
   document: { icon: FileIcon, overlay: true, color: "text-[var(--color-muted-foreground)]" },
-  maintenance: { icon: Wrench, basePath: "/operations", color: "text-amber-500" },
   receipt: { icon: Receipt, basePath: "/financials", color: "text-green-500" },
 };
 

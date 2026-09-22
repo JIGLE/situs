@@ -67,7 +67,7 @@ write is almost always this.
 | Variable             | Example                       | Notes                                                                        |
 | -------------------- | ----------------------------- | ---------------------------------------------------------------------------- |
 | `NEXTAUTH_URL`       | `https://situs.example.com`   | Full external URL, no trailing slash. Must match how users reach the app.    |
-| `NEXTAUTH_SECRET`    | `openssl rand -base64 32`     | Minimum 32 characters. Signs sessions and tenant portal tokens.              |
+| `NEXTAUTH_SECRET`    | `openssl rand -base64 32`     | Minimum 32 characters. Signs sessions.                                       |
 | `DATABASE_URL`       | `file:/app/data/situs.sqlite` | Path **inside** the container, on the mounted dataset.                       |
 | `PII_ENCRYPTION_KEY` | `openssl rand -hex 32`        | Exactly 64 hex chars. **The app refuses to start in production without it.** |
 

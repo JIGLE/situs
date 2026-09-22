@@ -14,7 +14,7 @@ interface NavigationState {
 
 interface RecentItem {
   id: string;
-  type: "property" | "tenant" | "lease" | "receipt" | "maintenance";
+  type: "property" | "tenant" | "lease" | "receipt";
   name: string;
   timestamp: number;
 }

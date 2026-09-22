@@ -6,10 +6,12 @@ import { join } from "node:path";
  * A standing guard, not a unit test.
  *
  * `proxy.ts` gates every /api/** route behind a session, but it only checks that a session
- * exists — never whose. Per-record ownership is each handler's own responsibility, and
- * `app/api/contacts/[id]/route.ts` simply never did it: three handlers looking `MaintenanceContact`
- * up by id alone, so any signed-in user could read, edit or delete another landlord's contractor
- * records. The file contained the string `userId` zero times.
+ * exists — never whose. Per-record ownership is each handler's own responsibility, and the
+ * vendor-registry route simply never did it: three handlers looking a contact up by id alone, so
+ * any signed-in user could read, edit or delete another landlord's contractor records. The file
+ * contained the string `userId` zero times. (That route and its model have since been removed by
+ * the scope cutdown, which is why this comment no longer names a file you can open — the shape of
+ * the bug is the point, and it is still reachable by any new route that skips the scoping.)
  *
  * ## What this checks, and what it deliberately does not
  *
@@ -49,7 +51,7 @@ const SCHEMA = join(process.cwd(), "prisma", "schema.prisma");
 // Public by design (the proxy.ts allowlist) — authenticated by token or provider signature
 // rather than by session, so caller scoping does not apply in the same way.
 const PUBLIC =
-  /^(auth|health|ready|info|tenant-portal|csrf-token|monitoring|webhooks|billing\/checkout|debug|cron|demo|exchange|metrics)\//;
+  /^(auth|health|ready|info|tenant-portal|csrf-token|monitoring|webhooks|billing\/checkout|debug|cron|exchange|metrics)\//;
 
 /**
  * Models carrying their own `userId` column. Parsed per model body — a naive grep with a fixed
@@ -97,10 +99,12 @@ function unscopedRoutes(): string[] {
 describe("app/api tenant scoping", () => {
   it("recognises the user-owned models in the schema", () => {
     const owned = userOwnedModels();
-    expect(owned.has("maintenanceContact")).toBe(true);
+    expect(owned.has("receipt")).toBe(true);
     expect(owned.has("property")).toBe(true);
-    // CorrespondenceTemplate gained a nullable userId when templates stopped being global.
-    expect(owned.has("correspondenceTemplate")).toBe(true);
+    // A nullable `userId String?` still counts as owned — EmailLog is the surviving example.
+    // This pinned CorrespondenceTemplate until the scope cutdown removed it; the parser
+    // property it proves is the same one.
+    expect(owned.has("emailLog")).toBe(true);
 
     // A negative pin is what keeps this parser honest. PropertyOwner has no owner column of its
     // own and is immediately followed in the schema by GovernmentVerification, which does — so a

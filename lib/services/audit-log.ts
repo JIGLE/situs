@@ -36,12 +36,6 @@ export type AuditAction =
   | "CREATE_EXPENSE"
   | "UPDATE_EXPENSE"
   | "DELETE_EXPENSE"
-  | "CREATE_MAINTENANCE"
-  | "UPDATE_MAINTENANCE"
-  | "DELETE_MAINTENANCE"
-  | "CREATE_CORRESPONDENCE"
-  | "UPDATE_CORRESPONDENCE"
-  | "DELETE_CORRESPONDENCE"
   | "SEND_EMAIL"
   // Compliance operations
   | "VIEW_NRUA_REGISTRATIONS"
@@ -90,10 +84,7 @@ export type AuditAction =
   | "LINK_EXPENSE_DOCUMENT"
   // Property ownership assignment
   | "ASSIGN_PROPERTY_OWNER"
-  | "REMOVE_PROPERTY_OWNER"
-  // Correspondence inbox: confirming or changing who an inbound email belongs to. Not logged
-  // on receipt (see the note on InboundMessage) — only on this human decision.
-  | "LINK_INBOUND_MESSAGE";
+  | "REMOVE_PROPERTY_OWNER";
 
 export interface AuditLogEntry {
   userId: string;

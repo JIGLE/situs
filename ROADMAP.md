@@ -13,26 +13,57 @@ against a shipped **1.24.0**; a number copied into prose has no reason to move w
 **Stage**: Production-ready. All Q3 sprints (1–5) complete. Mid-rebrand to **Situs // Sovereign
 Capital System** (PRs 1–12 of 13 shipped — see "Situs Rebrand" section below): Bauhaus-rectilinear
 brand, country-matched theming, portfolio tree, reference-month rent ledger, bank movement
-matching, receipt lifecycle + PT tax connector, mock OCR classification, generalized audit trail,
+matching, receipt lifecycle + PT tax connector, generalized audit trail,
 schema consolidation, and an a11y/e2e pass over the new surfaces are all live. Decision-driven UI,
-multi-scenario demo, map view, fiscal compliance (PT/ES), building management, tenant
+map view, fiscal compliance (PT/ES), building management, tenant
 owner-contact callout, and portfolio building grouping remain in place underneath the rebrand.
+
+### Scope cutdown (2026-09, complete)
+
+The product was judged overscoped — too much surface to maintain, too much for a new landlord
+to face, and too slow to a first shippable version. It is pre-launch with no users, so the work
+is pure subtraction: keep the core loop (bank movement → match → allocate → receipt → tax filing
+→ audit trail) and the compliance substrate around it, and delete the rest rather than hide it
+behind a flag. Git history is the archive.
+
+Removed, in order:
+
+| Phase | Removed                                                                              |
+| ----- | ------------------------------------------------------------------------------------ |
+| 1     | Command palette, `/brand` style-guide page, country themes trimmed to EU/PT/ES       |
+| 2     | Demo mode and the scenario runner (demo _login_ kept — E2E signs in with it)         |
+| 3     | Intelligence / Analytics / Reports / Insights                                        |
+| 4     | Admin user directory, instance metrics, database ops endpoint                        |
+| 5     | Maintenance / Operations ticketing (`MaintenanceTicket`, `/operations`, work orders) |
+| 6     | Contacts / vendor registry (`MaintenanceContact`, `/contacts`, the People sub-tab)   |
+| 7     | Correspondence and inbound mail (templates, letter log, the mail Inbox)              |
+| 8     | Documents browser + OCR classifier — receipt archive kept, and now reachable         |
+| 9     | Both tenant-facing surfaces and the online rent-collection stack behind them. Three  |
+|       | of the four bell alerts were rewired onto the rent ledger rather than deleted with   |
+|       | it, and the SAF-T PT export onto the emitted recibos                                 |
+| 10    | The ownership-verification scaffold — two models, five enums, a service and one      |
+|       | endpoint, built provider-agnostic for a registry integration that never followed     |
+
+**The cutdown is complete.** What remains is the core loop — bank movement → match → allocate
+→ receipt → tax filing → audit trail — the portfolio and tenancy records it runs on, and the
+compliance substrate around it.
+
+**The "Completed Features" list below predates this and is not narrowed phase by phase** — read
+it as a record of what was built, with this table as the correction. `lib/portal/access.ts` is
+the authority on what is reachable today.
 
 ### Completed Features
 
 - **Authentication**: NextAuth v4 with Google OAuth + credentials provider, CSRF protection, session-based auth
-- **CRUD Operations**: Full create/read/update/delete for Properties, Units, Tenants, Leases, Receipts, Expenses, Maintenance Tickets, Correspondence, Owners, Contacts, Documents, Invoices, Notifications, Buildings
+- **CRUD Operations**: Full create/read/update/delete for Properties, Units, Tenants, Leases, Receipts, Expenses, Owners, Documents, Invoices, Notifications, Buildings <!-- pre-cutdown list; see the phase table above -->
 - **Portfolio View**: Compact action-driven layout with IssueAlert zone, List/Map tabs, Next Action column, attention row highlights
-- **Property Detail Modal**: 4-zone decision-driven interface (Status+Health / Primary Action / Issues Panel / Tabbed info incl. Maintenance tab)
+- **Property Detail Modal**: 4-zone decision-driven interface (Status+Health / Primary Action / Issues Panel / Tabbed info)
 - **Property Map**: Status-coded divIcon markers with legend, slide-in side panel, FitBoundsController, dynamic viewport height
-- **Demo Mode**: 12 properties with real GPS coords, multi-unit buildings, 3 explicit UX scenarios, realistic financial history; 5-min warning + extend button
 - **Financials**: 4-tab container (Action Queue / Receipts / Occupancy & Rent / Tax Summary) — all 4 fully wired; standardized expense categories
-- **Maintenance**: Full work-order lifecycle (category/vendor/cost/scheduleDate/isTenantReport); 4-zone TicketDetailModal; auto-creates Expense on resolve
 - **Buildings**: Building entity in AppState+context; CRUD API; BuildingsView at `/buildings`; nav entry
 - **Tenant Owner Contact**: `/api/portal/owner-contact` endpoint; tenant "Need help?" callout shows managing owner name, email, and phone (demo + real mode)
 - **Portfolio Building Grouping**: Property list uses canonical Building entity for group headers (grid + table); table view inserts section header rows for multi-unit groups
 - **Email Integration**: SMTP with templates, bulk sending, delivery tracking, exponential-backoff retry
-- **Insights Nav**: Analytics, Reports, Correspondence — accessible from sidebar (owner-only)
 - **Monitoring**: Health endpoints (owner-gated), Prometheus-compatible `/api/metrics`
 - **Compliance**: GDPR audit logging, Iberian tax compliance (PT/ES), admin data-access audit trail
 - **Internationalization**: next-intl with PT, EN, ES, IT locale support
@@ -170,7 +201,7 @@ the session's plan checkpoint for the full per-PR breakdown.
 
 | #    | Task                                                                                                                                                                               | Status         |
 | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| 8.1  | Brand foundation: fonts, radius-0 rectilinear tokens, 28-country theme system, Situs Portal logo                                                                                   | Done           |
+| 8.1  | Brand foundation: fonts, radius-0 rectilinear tokens, country theme system, Situs Portal logo                                                                                      | Done           |
 | 8.2  | Nav IA: Core/System groups, sidebar rail restyle                                                                                                                                   | Done           |
 | 8.3  | Situs landing page + auth pages restyle                                                                                                                                            | Done           |
 | 8.4  | Settings Appearance country/mode picker + dedicated Account page                                                                                                                   | Done           |
@@ -187,7 +218,7 @@ the session's plan checkpoint for the full per-PR breakdown.
 > **PR 10b** and **PR 4b** were deferred here and have since shipped. Operations carries its
 > Task Queue/Calendar/Contractors/Evidence subtabs, `/people` consolidates Tenants/Owners/Contacts/
 > Communications, `/analytics`+`/insights`+`/reports` 301 to `/intelligence` (`lib/portal/access.ts`),
-> and settings is thirteen tab components with an Integrations hub and a dev-only `/brand` page.
+> and settings is thirteen tab components with an Integrations hub.
 > This note previously read as though all of it were still outstanding.
 
 ---

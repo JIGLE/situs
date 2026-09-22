@@ -16,18 +16,14 @@ import { sanitizeForDatabase, sanitizeNumber } from "@/lib/utils/sanitize";
 import { getPaginationFromRequest, createPaginatedResponse } from "@/lib/utils/pagination";
 import { logger } from "@/lib/utils/logger";
 import { getPrismaClient } from "@/lib/services/database/database";
-import { handleDemoGet, handleDemoMutation } from "@/lib/demo/demo-api-handler";
 import { createReceiptSchema } from "@/lib/schemas/receipt.schema";
 
 // GET /api/receipts - Get all receipts for the authenticated user (with pagination)
 async function handleGet(request: NextRequest): Promise<Response> {
-  const demo = handleDemoGet(request, "receipts");
-  if (demo.response) return demo.response;
-
   const authResult = await getAccessContext(request);
   if (authResult instanceof Response) return authResult;
 
-  const { scopeUserId, portalRole, tenantId } = authResult;
+  const { scopeUserId } = authResult;
 
   try {
     // Check if pagination is requested
@@ -41,19 +37,13 @@ async function handleGet(request: NextRequest): Promise<Response> {
 
       const [receipts, total] = await Promise.all([
         prisma.receipt.findMany({
-          where:
-            portalRole === "tenant" && tenantId
-              ? { userId: scopeUserId, tenantId }
-              : { userId: scopeUserId },
+          where: { userId: scopeUserId },
           skip: pagination.skip,
           take: pagination.limit,
           orderBy: { date: "desc" },
         }),
         prisma.receipt.count({
-          where:
-            portalRole === "tenant" && tenantId
-              ? { userId: scopeUserId, tenantId }
-              : { userId: scopeUserId },
+          where: { userId: scopeUserId },
         }),
       ]);
 
@@ -61,11 +51,7 @@ async function handleGet(request: NextRequest): Promise<Response> {
     } else {
       // Legacy: Return all receipts (backward compatible)
       const receipts = await receiptService.getAll(scopeUserId);
-      return createSuccessResponse(
-        portalRole === "tenant" && tenantId
-          ? receipts.filter((receipt) => receipt.tenantId === tenantId)
-          : receipts,
-      );
+      return createSuccessResponse(receipts);
     }
   } catch (error) {
     return createErrorResponse(error as Error, 500, request);
@@ -74,9 +60,6 @@ async function handleGet(request: NextRequest): Promise<Response> {
 
 // POST /api/receipts - Create a new receipt
 async function handlePost(request: NextRequest): Promise<Response> {
-  const demo = await handleDemoMutation(request, "receipts");
-  if (demo.response) return demo.response;
-
   const authResult = await requireOwnerAccess(request);
   if (authResult instanceof Response) return authResult;
 

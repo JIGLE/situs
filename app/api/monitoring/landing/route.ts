@@ -56,7 +56,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const summary = {
     pageViews: landingCounters["landing.page_view"] ?? 0,
     signInClicks: landingCounters["landing.signin_click"] ?? 0,
-    demoStarts: landingCounters["landing.demo_start"] ?? 0,
     workflowCtaClicks: landingCounters["landing.workflow_cta_click"] ?? 0,
     scrollDepthEvents: landingCounters["landing.scroll_depth"] ?? 0,
   };

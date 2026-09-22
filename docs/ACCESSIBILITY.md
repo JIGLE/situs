@@ -13,7 +13,7 @@ both shipped some time ago, and its example was weaker than the spec that actual
 ## The automated check
 
 `e2e/situs-a11y.spec.ts` runs `@axe-core/playwright` over the Situs workflow surfaces (bank
-movements, rent ledger, receipts, tax, OCR review). It is part of the Playwright suite:
+movements, rent ledger, receipts, tax). It is part of the Playwright suite:
 
 ```bash
 npm run test:e2e -- situs-a11y

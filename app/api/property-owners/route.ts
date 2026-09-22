@@ -26,9 +26,6 @@ import { withRateLimit } from "@/lib/utils/rate-limit";
  * looked like a data problem. A cross-reference of all 87 client API calls against the 139
  * implemented routes found this as the only such gap in the app.
  *
- * No demo-mode branch: `DemoEntityType` has no "property-owners" member, because the demo store
- * models entities rather than the links between them. In demo mode the request simply falls
- * through to the real handler and fails the auth check, which is the same behaviour as before.
  */
 
 /** Percentages are floats, so compare with a tolerance rather than exactly — matches the UI. */

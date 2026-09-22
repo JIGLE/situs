@@ -22,6 +22,11 @@
  * Keep this small and pointed at high-traffic shared components. It is a tripwire for a class of
  * defect, not coverage of every string; a test asserting hundreds of translations becomes a
  * second catalogue to maintain and gets deleted the first time it is annoying.
+ *
+ * The document-detail case was removed with the Documents UI in the scope cutdown. Two cases
+ * below still stub `fetch` and render what comes back — the tax-connector one and the failed
+ * request one — which is the property that matters here: a subject that never makes a request
+ * asserts against a component that never rendered anything.
  */
 import { describe, it, expect, vi } from "vitest";
 import { renderWithProviders, screen } from "@/tests/helpers/render-with-providers";
@@ -29,7 +34,6 @@ import { ExportButton } from "@/components/ui/export-button";
 import { AuditTrail } from "@/components/shared/audit-trail";
 import { FinancialsView } from "@/components/features/financial/financials-view";
 import { TaxConnectorDashboard } from "@/components/features/financial/tax-connector-dashboard";
-import { DocumentDetailPanel } from "@/components/features/document/document-detail-panel";
 import { AuditTrail as AuditTrailForError } from "@/components/shared/audit-trail";
 import ptMessages from "@/messages/pt.json";
 
@@ -158,49 +162,6 @@ describe("user-visible copy comes from the catalogue, not from literals", () => 
 
     expect(await screen.findByText(/Ainda sem conectores fiscais/)).toBeInTheDocument();
   });
-  it("renders a document's type and expiry in Portuguese", async () => {
-    // `documentTypeConfig` held the English word for each type ("Contract", "Floor Plan") and
-    // three components rendered it straight into a Badge — the type filter, the upload dialog's
-    // type Select, and every document card and detail panel. The Portuguese was in the catalogue
-    // the entire time, under `documents.contract` and its six siblings; nothing asked for it.
-    //
-    // `getExpiryInfo` was the same defect one function over: it built "Expired" and
-    // `Expires in ${days}d` itself and handed back finished English.
-    const in7Days = new Date(Date.now() + 7 * 86400000).toISOString();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              data: {
-                id: "d1",
-                name: "Contrato Ana.pdf",
-                type: "contract",
-                mimeType: "application/pdf",
-                storagePath: "/x",
-                fileSize: 1024,
-                expiresAt: in7Days,
-                uploadedAt: TODAY,
-                createdAt: TODAY,
-                updatedAt: TODAY,
-              },
-            }),
-        }),
-      ),
-    );
-
-    renderWithProviders(<DocumentDetailPanel documentId="d1" />, { initialLocale: "pt" });
-
-    // "Contrato", not "Contract".
-    expect(await screen.findByText("Contrato")).toBeInTheDocument();
-    // "Expira em 7 d", not "Expires in 7d".
-    expect(screen.getByText(/Expira em/)).toBeInTheDocument();
-    // The download action, which was a bare literal in the JSX next to the icon.
-    expect(screen.getByRole("button", { name: /Transferir/ })).toBeInTheDocument();
-  });
-
   it("renders a failed request in Portuguese, not in the server's English", async () => {
     // The failure path was the last place English survived. Every route replies through
     // `createErrorResponse`, which writes English into the envelope, and around thirty

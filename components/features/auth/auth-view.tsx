@@ -4,7 +4,7 @@ import { Suspense, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/shared/language-selector";
@@ -185,17 +185,6 @@ function AuthContent({ mode, demoLoginEnabled }: { mode: AuthMode; demoLoginEnab
             <GoogleGlyph />
             {tMode("primary")}
           </Button>
-
-          {/* Secondary: try the live demo — the lowest-friction path, no account */}
-          <button
-            type="button"
-            onClick={() => router.push("/demo?perspective=owner")}
-            className="mt-3 flex h-12 w-full items-center justify-center gap-2 border border-[var(--color-border)] bg-transparent text-sm font-medium text-[var(--color-foreground)] transition-colors hover:bg-[var(--color-hover)]"
-          >
-            <Sparkles className="h-4 w-4 text-[var(--country-highlight-readable)]" />
-            {t("exploreDemo")}
-            <ArrowRight className="h-4 w-4" />
-          </button>
 
           {/* Credentials — self-hosted / demo instances only */}
           {demoLoginEnabled && (

@@ -65,7 +65,6 @@ export function createPrismaMock() {
     session: [],
     verificationToken: [],
     lease: [],
-    maintenanceTicket: [],
     expense: [],
     owner: [],
     correspondenceTemplate: [],

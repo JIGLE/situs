@@ -13,14 +13,59 @@
  * email inherits the in-app notification's existing per-entity dedup check,
  * so it's sent exactly once per entity, same as the notification is.
  *
+ * WHAT THESE READ FROM. Three of the four used to be driven by the tenant-facing
+ * payment stack: `Invoice.dueDate` for the two payment alerts, and a succeeded
+ * `PaymentTransaction` for the receipt deadline. The scope cutdown removed that
+ * stack, so they now read the reference-month rent ledger, which is where rent is
+ * actually owed and paid in this app:
+ *
+ *   - money OWED is a `RentPeriod` — one row per lease per reference month, with
+ *     `dueAmount` snapshotted at generation and `allocatedAmount` materialized from
+ *     its non-reversed allocations;
+ *   - money RECEIVED is a `PaymentAllocation` — written in the same transaction that
+ *     moves the period's status, so `allocatedAt` is when the money landed;
+ *   - the document the PT deadline is about is a `RentReceipt` (recibo de renda), the
+ *     fiscal filing, not the internal `Receipt`.
+ *
+ * Had they simply been deleted with the payment stack, the bell would have kept
+ * working while silently emitting only one of its four alert types.
+ *
  * Designed to be called from a cron endpoint (e.g., /api/cron/notifications)
  */
 
 import { getPrismaClient } from "@/lib/services/database/database";
 import { logger } from "@/lib/utils/logger";
+import { MONEY_EPSILON } from "@/lib/utils/money";
 import { sendReminderEmail, resetReminderEmailCache } from "./reminder-email";
 
 const log = logger.child("notification-automation");
+
+/**
+ * RentPeriod statuses meaning nothing more is owed, so no payment alert applies.
+ *
+ * `waived` is in the schema's status comment and rendered by the rent matrix and the
+ * property year strip, but missing from the `RentPeriodStatus` union in
+ * lib/services/allocation/types.ts. Leaving it out here would chase a landlord for rent
+ * they had deliberately written off, so it is listed explicitly rather than derived
+ * from that type.
+ */
+const SETTLED_PERIOD_STATUSES = ["paid", "paid_late", "waived"];
+
+/** Outstanding balance on a period, guarding against float drift on exact payments. */
+function outstanding(period: { dueAmount: number; allocatedAmount: number }): number {
+  return period.dueAmount - period.allocatedAmount;
+}
+
+/** Start and end of the calendar day `offsetDays` from now. */
+function dayWindow(offsetDays: number): { start: Date; end: Date } {
+  const target = new Date();
+  target.setDate(target.getDate() + offsetDays);
+  const start = new Date(target);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(target);
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
+}
 
 interface AutomationResult {
   rentReminders: number;
@@ -31,23 +76,19 @@ interface AutomationResult {
 }
 
 /**
- * Generate rent payment reminders for invoices due in 5 days
+ * Generate rent payment reminders for reference months falling due in 5 days.
+ *
+ * The reminder quotes what is still OUTSTANDING rather than the period's full
+ * `dueAmount`: a period carrying a part payment is still worth chasing, but for the
+ * balance, not the original rent.
  */
 async function generateRentReminders(prisma: ReturnType<typeof getPrismaClient>): Promise<number> {
-  const now = new Date();
-  const fiveDaysFromNow = new Date(now);
-  fiveDaysFromNow.setDate(fiveDaysFromNow.getDate() + 5);
+  const { start, end } = dayWindow(5);
 
-  const startOfTargetDay = new Date(fiveDaysFromNow);
-  startOfTargetDay.setHours(0, 0, 0, 0);
-  const endOfTargetDay = new Date(fiveDaysFromNow);
-  endOfTargetDay.setHours(23, 59, 59, 999);
-
-  // Find invoices due in 5 days that don't already have a reminder notification
-  const upcomingInvoices = await prisma.invoice.findMany({
+  const upcomingPeriods = await prisma.rentPeriod.findMany({
     where: {
-      dueDate: { gte: startOfTargetDay, lte: endOfTargetDay },
-      status: "pending",
+      dueDate: { gte: start, lte: end },
+      status: { notIn: SETTLED_PERIOD_STATUSES },
     },
     include: {
       tenant: true,
@@ -56,35 +97,40 @@ async function generateRentReminders(prisma: ReturnType<typeof getPrismaClient>)
   });
 
   let created = 0;
-  for (const invoice of upcomingInvoices) {
-    // Check if a reminder was already created for this invoice
+  for (const period of upcomingPeriods) {
+    const owed = outstanding(period);
+    // A period can sit in an unsettled status with nothing left on it while the
+    // status recompute catches up. Nothing to chase.
+    if (owed <= MONEY_EPSILON) continue;
+
+    // Check if a reminder was already created for this period
     const existing = await prisma.notification.findFirst({
       where: {
-        userId: invoice.userId,
+        userId: period.userId,
         type: "payment_due",
-        entityType: "Invoice",
-        entityId: invoice.id,
+        entityType: "RentPeriod",
+        entityId: period.id,
       },
     });
     if (existing) continue;
 
-    const tenantName = invoice.tenant?.name ?? "Tenant";
-    const propertyAddr = invoice.property?.address ?? "Property";
+    const tenantName = period.tenant?.name ?? "Tenant";
+    const propertyAddr = period.property?.address ?? "Property";
 
-    const amount = `€${invoice.amount.toFixed(2)}`;
-    const date = invoice.dueDate.toLocaleDateString("pt-PT");
+    const amount = `€${owed.toFixed(2)}`;
+    const date = period.dueDate.toLocaleDateString("pt-PT");
 
     await prisma.notification.create({
       data: {
-        userId: invoice.userId,
+        userId: period.userId,
         type: "payment_due",
         title: `Rent payment due in 5 days`,
         message: `Payment of ${amount} from ${tenantName} for ${propertyAddr} is due on ${date}.`,
-        entityType: "Invoice",
-        entityId: invoice.id,
+        entityType: "RentPeriod",
+        entityId: period.id,
       },
     });
-    await sendReminderEmail(prisma, invoice.userId, "rentReminder", {
+    await sendReminderEmail(prisma, period.userId, "rentReminder", {
       tenant: tenantName,
       property: propertyAddr,
       amount,
@@ -97,17 +143,18 @@ async function generateRentReminders(prisma: ReturnType<typeof getPrismaClient>)
 
 /**
  * Generate overdue payment notices (D+1 and D+7)
+ *
+ * Reads the ledger rather than the period's `overdue` status: a part-paid period sits
+ * at `partially_paid`, not `overdue`, and the balance on it is still late.
  */
 async function generateOverdueNotices(prisma: ReturnType<typeof getPrismaClient>): Promise<number> {
-  const now = new Date();
-  const today = new Date(now);
+  const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Invoices past due date and still pending
-  const overdueInvoices = await prisma.invoice.findMany({
+  const overduePeriods = await prisma.rentPeriod.findMany({
     where: {
       dueDate: { lt: today },
-      status: "pending",
+      status: { notIn: SETTLED_PERIOD_STATUSES },
     },
     include: {
       tenant: true,
@@ -116,9 +163,12 @@ async function generateOverdueNotices(prisma: ReturnType<typeof getPrismaClient>
   });
 
   let created = 0;
-  for (const invoice of overdueInvoices) {
+  for (const period of overduePeriods) {
+    const owed = outstanding(period);
+    if (owed <= MONEY_EPSILON) continue;
+
     const daysPastDue = Math.floor(
-      (today.getTime() - new Date(invoice.dueDate).getTime()) / (1000 * 60 * 60 * 24),
+      (today.getTime() - new Date(period.dueDate).getTime()) / (1000 * 60 * 60 * 24),
     );
 
     // Only send at D+1 and D+7
@@ -129,31 +179,31 @@ async function generateOverdueNotices(prisma: ReturnType<typeof getPrismaClient>
     // Check if this specific overdue notice was already sent
     const existing = await prisma.notification.findFirst({
       where: {
-        userId: invoice.userId,
+        userId: period.userId,
         type: "payment_overdue",
-        entityType: "Invoice",
-        entityId: invoice.id,
+        entityType: "RentPeriod",
+        entityId: period.id,
         message: { contains: suffix },
       },
     });
     if (existing) continue;
 
-    const tenantName = invoice.tenant?.name ?? "Tenant";
-    const propertyAddr = invoice.property?.address ?? "Property";
+    const tenantName = period.tenant?.name ?? "Tenant";
+    const propertyAddr = period.property?.address ?? "Property";
 
-    const amount = `€${invoice.amount.toFixed(2)}`;
+    const amount = `€${owed.toFixed(2)}`;
 
     await prisma.notification.create({
       data: {
-        userId: invoice.userId,
+        userId: period.userId,
         type: "payment_overdue",
         title: `Payment overdue by ${suffix}`,
         message: `Payment of ${amount} from ${tenantName} for ${propertyAddr} is overdue by ${suffix}.`,
-        entityType: "Invoice",
-        entityId: invoice.id,
+        entityType: "RentPeriod",
+        entityId: period.id,
       },
     });
-    await sendReminderEmail(prisma, invoice.userId, "overdueNotice", {
+    await sendReminderEmail(prisma, period.userId, "overdueNotice", {
       tenant: tenantName,
       property: propertyAddr,
       amount,
@@ -230,87 +280,86 @@ async function generateLeaseRenewalReminders(
 
 /**
  * Generate Recibo de Renda deadline reminders (Portugal only)
- * Portuguese law requires rent receipts within 5 days of payment.
- * This triggers a reminder for payments received 4 days ago without a receipt.
+ *
+ * Portuguese law requires a rent receipt within 5 days of payment. This fires for money
+ * received 4 days ago that still has no recibo, leaving one day to issue it.
+ *
+ * "Money received" is a non-reversed `PaymentAllocation`: allocation is what the bank
+ * matching pipeline writes when a movement is attributed to a reference month, in the
+ * same transaction that moves the period's status, so `allocatedAt` is when the money
+ * landed on the ledger. A reversed allocation is one that was undone — voiding a receipt
+ * soft-reverses its allocations — and chasing a receipt for money that was taken back
+ * would be wrong.
+ *
+ * The document being chased is a `RentReceipt` (the fiscal recibo filed with the AT),
+ * not the internal `Receipt` that tracks the money. Scoping the check to the allocation's
+ * own reference month is narrower than the date-window match this replaces, which could
+ * be satisfied by any filing for the same tenant and property that happened to land in
+ * the same day's window.
  */
 async function generateReceiptDeadlineReminders(
   prisma: ReturnType<typeof getPrismaClient>,
 ): Promise<number> {
-  const now = new Date();
-  const fourDaysAgo = new Date(now);
-  fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
+  const { start: startOfTargetDay, end: endOfTargetDay } = dayWindow(-4);
 
-  const startOfTargetDay = new Date(fourDaysAgo);
-  startOfTargetDay.setHours(0, 0, 0, 0);
-  const endOfTargetDay = new Date(fourDaysAgo);
-  endOfTargetDay.setHours(23, 59, 59, 999);
-
-  // Find payments from 4 days ago that don't have a rent receipt yet
-  const payments = await prisma.paymentTransaction.findMany({
+  const allocations = await prisma.paymentAllocation.findMany({
     where: {
-      status: "succeeded",
-      createdAt: { gte: startOfTargetDay, lte: endOfTargetDay },
+      reversedAt: null,
+      allocatedAt: { gte: startOfTargetDay, lte: endOfTargetDay },
     },
     include: {
-      tenant: {
+      rentPeriod: {
         include: {
+          tenant: true,
           property: true,
+          rentReceiptFilings: { select: { id: true } },
         },
       },
     },
   });
 
   let created = 0;
-  for (const payment of payments) {
-    if (!payment.tenant?.property) continue;
+  for (const allocation of allocations) {
+    const period = allocation.rentPeriod;
+    if (!period?.property) continue;
 
     // Only for Portuguese properties (check country or tax regime)
-    const country = (payment.tenant.property.country ?? "").toUpperCase();
+    const country = (period.property.country ?? "").toUpperCase();
     const isPortugueseProperty = country === "PT" || country === "PORTUGAL";
     if (!isPortugueseProperty) continue;
 
-    // Check if a rent receipt already exists for this payment
-    const receiptExists = await prisma.rentReceipt.findFirst({
-      where: {
-        tenantId: payment.tenantId,
-        propertyId: payment.tenant.property.id,
-        paymentDate: {
-          gte: startOfTargetDay,
-          lte: endOfTargetDay,
-        },
-      },
-    });
-    if (receiptExists) continue;
+    // A recibo already filed for this reference month discharges the obligation.
+    if (period.rentReceiptFilings.length > 0) continue;
 
     // Check if reminder already sent
     const existing = await prisma.notification.findFirst({
       where: {
-        userId: payment.tenant.userId,
+        userId: allocation.userId,
         type: "rent_receipt_due",
-        entityType: "PaymentTransaction",
-        entityId: payment.id,
+        entityType: "PaymentAllocation",
+        entityId: allocation.id,
       },
     });
     if (existing) continue;
 
-    const tenantName = payment.tenant.name ?? "Tenant";
-    const propertyAddr = payment.tenant.property.address ?? "Property";
+    const tenantName = period.tenant?.name ?? "Tenant";
+    const propertyAddr = period.property.address ?? "Property";
 
-    const amount = `€${payment.amount.toFixed(2)}`;
+    const amount = `€${allocation.amount.toFixed(2)}`;
 
     await prisma.notification.create({
       data: {
-        userId: payment.tenant.userId,
+        userId: allocation.userId,
         type: "rent_receipt_due",
         title: "Recibo de renda deadline tomorrow",
         message: `A rent receipt for ${tenantName} at ${propertyAddr} (payment of ${amount}) must be issued by tomorrow to meet the 5-day legal deadline.`,
-        entityType: "PaymentTransaction",
-        entityId: payment.id,
+        entityType: "PaymentAllocation",
+        entityId: allocation.id,
       },
     });
     await sendReminderEmail(
       prisma,
-      payment.tenant.userId,
+      allocation.userId,
       "receiptDeadline",
       { tenant: tenantName, property: propertyAddr, amount },
       { gate: "tax" },

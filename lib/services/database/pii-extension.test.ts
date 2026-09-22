@@ -61,15 +61,18 @@ describe("piiEncryptionExtension — transform logic", () => {
   });
 
   it("round-trips: decryptResult recovers the original plaintext", () => {
-    const original = { iban: "PT50000201231234567890154", accountHolder: "Ana Costa" };
-    const encrypted = encryptArgs({ data: original }, PII_FIELDS.PaymentMethod) as {
+    // Was PaymentMethod's iban/accountHolder until the payment stack was cut. RentReceipt's
+    // NIFs exercise the same path — several declared fields on one model, encrypted on write
+    // and recovered on read.
+    const original = { landlordNif: "111222333", tenantNif: "444555666" };
+    const encrypted = encryptArgs({ data: original }, PII_FIELDS.RentReceipt) as {
       data: typeof original;
     };
 
-    const decrypted = decryptResult(encrypted.data, PII_FIELDS.PaymentMethod) as typeof original;
+    const decrypted = decryptResult(encrypted.data, PII_FIELDS.RentReceipt) as typeof original;
 
-    expect(decrypted.iban).toBe(original.iban);
-    expect(decrypted.accountHolder).toBe(original.accountHolder);
+    expect(decrypted.landlordNif).toBe(original.landlordNif);
+    expect(decrypted.tenantNif).toBe(original.tenantNif);
   });
 
   it("decrypts arrays of rows (findMany-shaped results)", () => {

@@ -9,7 +9,6 @@ import { ExportButton } from "@/components/ui/export-button";
 import { useTabPersistence } from "@/lib/hooks/use-tab-persistence";
 import { useApp } from "@/lib/contexts/app-context";
 import { useCurrency } from "@/lib/contexts/currency-context";
-import { usePortalAccess } from "@/lib/contexts/portal-context";
 import { getActiveLease } from "@/lib/utils/lease-helpers";
 import { cn } from "@/lib/utils/utils";
 import { PaymentMatrixView } from "./payment-matrix-view";
@@ -36,7 +35,6 @@ export function FinancialsContainer() {
   const tabParam = searchParams.get("tab") as PaymentTab | "overview" | null;
   const { state } = useApp();
   const { formatCurrency } = useCurrency();
-  const { isOwnerPortal } = usePortalAccess();
   // `ReceiptsView` (which owns the record-payment dialog) only mounts while the Receipts
   // tab is the active TabsContent — Radix unmounts inactive tab panels by default. The
   // header "Record payment" button used to poke a ref, which silently no-op'd whenever
@@ -73,12 +71,6 @@ export function FinancialsContainer() {
       setActiveTab("tax");
     }
   }, [activeTab, setActiveTab, tabParam]);
-
-  useEffect(() => {
-    if (!isOwnerPortal && activeTab !== "receipts") {
-      setActiveTab("receipts");
-    }
-  }, [activeTab, isOwnerPortal, setActiveTab]);
 
   const metrics = useMemo(() => {
     const now = new Date();
@@ -121,197 +113,127 @@ export function FinancialsContainer() {
   const selectedProperty = propertyId
     ? state.properties.find((property) => property.id === propertyId)
     : undefined;
-  const tenantSummary = state.tenants[0];
-  const tenantLease = tenantSummary ? getActiveLease(tenantSummary.id, state.leases) : null;
-  const tenantPaidReceipts = state.receipts.filter((receipt) => receipt.status === "paid");
-
   const ownerDescription = tenantId
     ? t("descTenantScope", { name: selectedTenant?.name ?? t("theSelectedTenant") })
     : propertyId
       ? t("descPropertyScope", { name: selectedProperty?.name ?? t("theSelectedProperty") })
       : t("desc");
 
-  const tenantDescription = t("descTenant");
-
   /** Tab set as data, so the bar and its mobile select can never drift apart. */
-  const paymentTabs: { value: PaymentTab; label: string; icon: LucideIcon }[] = isOwnerPortal
-    ? [
-        { value: "queue", label: t("tabs.queue"), icon: Grid3X3 },
-        { value: "receipts", label: t("tabs.receipts"), icon: Receipt },
-        { value: "rent-matrix", label: t("tabs.rentMatrix"), icon: Grid3X3 },
-        { value: "bank", label: t("tabs.bank"), icon: Landmark },
-        { value: "rent-roll", label: t("tabs.rentRoll"), icon: BadgeEuro },
-        { value: "tax", label: t("tabs.tax"), icon: FileText },
-      ]
-    : [{ value: "receipts", label: t("tabs.history"), icon: Receipt }];
+  const paymentTabs: { value: PaymentTab; label: string; icon: LucideIcon }[] = [
+    { value: "queue", label: t("tabs.queue"), icon: Grid3X3 },
+    { value: "receipts", label: t("tabs.receipts"), icon: Receipt },
+    { value: "rent-matrix", label: t("tabs.rentMatrix"), icon: Grid3X3 },
+    { value: "bank", label: t("tabs.bank"), icon: Landmark },
+    { value: "rent-roll", label: t("tabs.rentRoll"), icon: BadgeEuro },
+    { value: "tax", label: t("tabs.tax"), icon: FileText },
+  ];
   const collapseTabs = paymentTabs.length > 4;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
-            {isOwnerPortal ? t("title") : t("titleTenant")}
-          </h1>
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            {isOwnerPortal ? ownerDescription : tenantDescription}
-          </p>
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">{t("title")}</h1>
+          <p className="text-sm text-[var(--color-muted-foreground)]">{ownerDescription}</p>
         </div>
         <div className="flex items-center gap-2">
-          {isOwnerPortal && (
-            <>
-              <ExportButton
-                data={state.receipts}
-                filename="payments-export"
-                columns={[
-                  { key: "tenantName", label: t("colTenant") },
-                  { key: "propertyName", label: t("colProperty") },
-                  { key: "amount", label: t("colAmount") },
-                  { key: "date", label: t("colDate") },
-                  { key: "status", label: t("colStatus") },
-                ]}
-              />
-              <Button
-                onClick={() => {
-                  setPendingRecordPayment(true);
-                  setActiveTab("receipts");
-                }}
-                className="gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                {t("recordPayment")}
-              </Button>
-            </>
-          )}
+          <ExportButton
+            data={state.receipts}
+            filename="payments-export"
+            columns={[
+              { key: "tenantName", label: t("colTenant") },
+              { key: "propertyName", label: t("colProperty") },
+              { key: "amount", label: t("colAmount") },
+              { key: "date", label: t("colDate") },
+              { key: "status", label: t("colStatus") },
+            ]}
+          />
+          <Button
+            onClick={() => {
+              setPendingRecordPayment(true);
+              setActiveTab("receipts");
+            }}
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            {t("recordPayment")}
+          </Button>
         </div>
       </div>
 
-      {isOwnerPortal ? (
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <button
-            type="button"
-            onClick={() => setActiveTab("queue")}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <button
+          type="button"
+          onClick={() => setActiveTab("queue")}
+          className={cn(
+            "panel p-4 text-left transition-colors hover:border-[var(--color-border-hover)]",
+            metrics.overdueAmount > 0 &&
+              "border-l-[3px] border-l-[var(--semantic-danger)] bg-[var(--semantic-danger-soft)]",
+          )}
+        >
+          <p className="mono-label">{t("overdueRent")}</p>
+          <p
             className={cn(
-              "panel p-4 text-left transition-colors hover:border-[var(--color-border-hover)]",
-              metrics.overdueAmount > 0 &&
-                "border-l-[3px] border-l-[var(--semantic-danger)] bg-[var(--semantic-danger-soft)]",
+              "mt-2 text-xl font-light tabular-nums sm:text-2xl",
+              metrics.overdueAmount > 0
+                ? "text-[var(--semantic-danger)]"
+                : "text-[var(--color-foreground)]",
             )}
           >
-            <p className="mono-label">{t("overdueRent")}</p>
-            <p
-              className={cn(
-                "mt-2 text-xl font-light tabular-nums sm:text-2xl",
-                metrics.overdueAmount > 0
-                  ? "text-[var(--semantic-danger)]"
-                  : "text-[var(--color-foreground)]",
-              )}
-            >
-              {formatCurrency(metrics.overdueAmount)}
-            </p>
-            <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">
-              {t("overdueRentHint")}
-            </p>
-          </button>
+            {formatCurrency(metrics.overdueAmount)}
+          </p>
+          <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">
+            {t("overdueRentHint")}
+          </p>
+        </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("receipts")}
-            className={cn(
-              "panel p-4 text-left transition-colors hover:border-[var(--color-border-hover)]",
-              metrics.pendingReceipts > 0 &&
-                "border-l-[3px] border-l-[var(--country-highlight-readable)] bg-[var(--country-highlight-soft)]",
-            )}
-          >
-            <p className="mono-label">{t("pendingReceipts")}</p>
-            <p className="mt-2 text-xl font-light tabular-nums text-[var(--color-foreground)] sm:text-2xl">
-              {metrics.pendingReceipts}
-            </p>
-            <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">
-              {t("pendingReceiptsHint")}
-            </p>
-          </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("receipts")}
+          className={cn(
+            "panel p-4 text-left transition-colors hover:border-[var(--color-border-hover)]",
+            metrics.pendingReceipts > 0 &&
+              "border-l-[3px] border-l-[var(--country-highlight-readable)] bg-[var(--country-highlight-soft)]",
+          )}
+        >
+          <p className="mono-label">{t("pendingReceipts")}</p>
+          <p className="mt-2 text-xl font-light tabular-nums text-[var(--color-foreground)] sm:text-2xl">
+            {metrics.pendingReceipts}
+          </p>
+          <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">
+            {t("pendingReceiptsHint")}
+          </p>
+        </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("receipts")}
-            className="panel p-4 text-left transition-colors hover:border-[var(--color-border-hover)]"
-          >
-            <p className="mono-label">{t("collectedMonth")}</p>
-            <p className="mt-2 text-xl font-light tabular-nums text-[var(--semantic-success)] sm:text-2xl">
-              {formatCurrency(metrics.monthlyCollected)}
-            </p>
-            <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">
-              {t("collectedMonthHint")}
-            </p>
-          </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("receipts")}
+          className="panel p-4 text-left transition-colors hover:border-[var(--color-border-hover)]"
+        >
+          <p className="mono-label">{t("collectedMonth")}</p>
+          <p className="mt-2 text-xl font-light tabular-nums text-[var(--semantic-success)] sm:text-2xl">
+            {formatCurrency(metrics.monthlyCollected)}
+          </p>
+          <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">
+            {t("collectedMonthHint")}
+          </p>
+        </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("tax")}
-            className="panel p-4 text-left transition-colors hover:border-[var(--color-border-hover)]"
-          >
-            <p className="mono-label">{t("taxLinked")}</p>
-            <p className="mt-2 text-xl font-light tabular-nums text-[var(--color-foreground)] sm:text-2xl">
-              {metrics.taxTrackedLeases}
-            </p>
-            <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">
-              {t("taxLinkedHint")}
-            </p>
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <div className="panel border-l-[3px] border-l-[var(--country-highlight-readable)] p-4">
-            <p className="mono-label">{t("nextRent")}</p>
-            <p className="mt-2 text-xl font-light tabular-nums text-[var(--color-foreground)] sm:text-2xl">
-              {formatCurrency(tenantLease?.monthlyRent ?? tenantSummary?.rent ?? 0)}
-            </p>
-            <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">
-              {t("nextRentHint")}
-            </p>
-          </div>
-          <div className="panel p-4">
-            <p className="mono-label">{t("receiptsAvailable")}</p>
-            <p className="mt-2 text-xl font-light tabular-nums text-[var(--color-foreground)] sm:text-2xl">
-              {tenantPaidReceipts.length}
-            </p>
-            <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">
-              {t("receiptsAvailableHint")}
-            </p>
-          </div>
-          <div
-            className={cn(
-              "panel p-4",
-              tenantSummary?.paymentStatus === "overdue" &&
-                "border-l-[3px] border-l-[var(--semantic-danger)] bg-[var(--semantic-danger-soft)]",
-            )}
-          >
-            <p className="mono-label">{t("currentStatus")}</p>
-            <p
-              className={cn(
-                "mt-2 text-xl font-light capitalize tabular-nums sm:text-2xl",
-                tenantSummary?.paymentStatus === "overdue"
-                  ? "text-[var(--semantic-danger)]"
-                  : "text-[var(--color-foreground)]",
-              )}
-            >
-              {tenantSummary?.paymentStatus ?? "pending"}
-            </p>
-            <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">
-              {t("currentStatusHint")}
-            </p>
-          </div>
-          <div className="panel p-4">
-            <p className="mono-label">{t("leaseStatus")}</p>
-            <p className="mt-2 text-xl font-light capitalize tabular-nums text-[var(--color-foreground)] sm:text-2xl">
-              {tenantLease?.status ?? "active"}
-            </p>
-            <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">
-              Your current contract status
-            </p>
-          </div>
-        </div>
-      )}
+        <button
+          type="button"
+          onClick={() => setActiveTab("tax")}
+          className="panel p-4 text-left transition-colors hover:border-[var(--color-border-hover)]"
+        >
+          <p className="mono-label">{t("taxLinked")}</p>
+          <p className="mt-2 text-xl font-light tabular-nums text-[var(--color-foreground)] sm:text-2xl">
+            {metrics.taxTrackedLeases}
+          </p>
+          <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">
+            {t("taxLinkedHint")}
+          </p>
+        </button>
+      </div>
 
       <Tabs
         value={activeTab}
@@ -329,16 +251,14 @@ export function FinancialsContainer() {
               value={activeTab}
               onValueChange={(value) => setActiveTab(value as PaymentTab)}
               items={paymentTabs.map(({ value, label }) => ({ value, label }))}
-              aria-label={isOwnerPortal ? t("title") : t("titleTenant")}
+              aria-label={t("title")}
             />
           )}
           <TabsList
             className={cn(
               "w-full",
               collapseTabs && "max-md:hidden",
-              isOwnerPortal
-                ? "flex max-w-full justify-start gap-1 overflow-x-auto"
-                : "grid max-w-sm grid-cols-1",
+              "flex max-w-full justify-start gap-1 overflow-x-auto",
             )}
           >
             {paymentTabs.map(({ value, label, icon: Icon }) => (
@@ -350,14 +270,12 @@ export function FinancialsContainer() {
           </TabsList>
         </div>
 
-        {isOwnerPortal && (
-          <TabsContent value="queue" className="mt-0">
-            <PaymentMatrixView />
-          </TabsContent>
-        )}
+        <TabsContent value="queue" className="mt-0">
+          <PaymentMatrixView />
+        </TabsContent>
 
         <TabsContent value="receipts" className="mt-0 space-y-4">
-          {isOwnerPortal && <ReceiptAutomationQueue />}
+          <ReceiptAutomationQueue />
           <ReceiptsView
             tenantId={tenantId}
             propertyId={propertyId}
@@ -366,30 +284,22 @@ export function FinancialsContainer() {
           />
         </TabsContent>
 
-        {isOwnerPortal && (
-          <TabsContent value="rent-matrix" className="mt-0">
-            <YearlyRentMatrix />
-          </TabsContent>
-        )}
+        <TabsContent value="rent-matrix" className="mt-0">
+          <YearlyRentMatrix />
+        </TabsContent>
 
-        {isOwnerPortal && (
-          <TabsContent value="bank" className="mt-0">
-            <BankMovementsInbox />
-          </TabsContent>
-        )}
+        <TabsContent value="bank" className="mt-0">
+          <BankMovementsInbox />
+        </TabsContent>
 
-        {isOwnerPortal && (
-          <TabsContent value="rent-roll" className="mt-0">
-            <RentRollView />
-          </TabsContent>
-        )}
+        <TabsContent value="rent-roll" className="mt-0">
+          <RentRollView />
+        </TabsContent>
 
-        {isOwnerPortal && (
-          <TabsContent value="tax" className="mt-0 space-y-4">
-            <TaxConnectorDashboard />
-            <FinancialsView />
-          </TabsContent>
-        )}
+        <TabsContent value="tax" className="mt-0 space-y-4">
+          <TaxConnectorDashboard />
+          <FinancialsView />
+        </TabsContent>
       </Tabs>
     </div>
   );

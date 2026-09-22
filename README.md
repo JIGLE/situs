@@ -58,18 +58,13 @@ is _derived_ from this ledger, never hand-set.
 
 - **Properties, units, buildings, tenants, owners** — with a structural portfolio tree and role-based access
 - **Leases** — lifecycle, renewals, expiry alerts, bilingual PDF templates
-- **Operations** — maintenance tickets with SLA due dates, evidence requirements, contractors, calendar
-- **Documents + OCR** — upload and classification; ambiguous or unlinked results land in a review queue
-- **Correspondence** — templates, bulk generation, SMTP delivery
-- **Intelligence** — occupancy, revenue and ROI analytics
-- **Tenant portal** — token-gated self-service access, no account required
-- **i18n** — Portuguese, English, Spanish, Italian (1,035 keys, full parity, enforced by test)
+- **i18n** — Portuguese, English, Spanish, Italian (full parity, enforced by test — `npm run i18n:check:strict` counts them, so this line does not)
 
 ### 🇵🇹 Portugal
 
 - **Recibos de Renda Eletrónicos** — AT-compatible XML payload, NIF validation, 5-day deadline enforcement
 - **2026 IRS brackets** — 9 progressive bands (13.25% → 48%), plus the Renda Acessível flat 10% rate for rents ≤ €2,300/mo
-- **SAF-T PT export** — RSA-SHA1 signature with invoice hash chain
+- **SAF-T PT export** — RSA-SHA1 signature with a hash chain over the emitted recibos
 
 ### 🇪🇸 Spain
 
@@ -77,9 +72,8 @@ is _derived_ from this ledger, never hand-set.
 - **Ley de Vivienda 12/2023** — rent-cap validation, stressed-zone deductions (50/60/70/90% tiers), _grandes tenedores_ detection
 - **2026 IRPF brackets** — 6 progressive bands (19% → 47%)
 
-### Payments and security
+### Security
 
-- **Stripe** card + SEPA Direct Debit, with full mandate lifecycle. Multibanco, MB WAY and Bizum need additional provider/banking setup by region.
 - **PII encryption** — AES-256-GCM field-level encryption for IBAN, NIF and phone
 - CSRF protection, nonce-based CSP, rate limiting (in-memory + Redis), JWT sessions
 
@@ -91,9 +85,8 @@ cp .env.example .env      # DATABASE_URL + NEXTAUTH_SECRET are the only must-hav
 npm run dev
 ```
 
-Open <http://localhost:3000>. Prefer to look before you configure? Every install ships a
-read-only demo at `/demo` — 12 properties, 9 tenants, 10 leases of realistic data, no auth, no
-writes.
+Open <http://localhost:3000>. The first account created owns the instance; every other email is
+refused until you add it to `AUTH_ALLOWED_EMAILS`.
 
 ### Docker
 
@@ -114,7 +107,6 @@ docker compose --profile dev up -d     # build from source
 | Validation | Zod                                                    |
 | i18n       | next-intl (pt / en / es / it)                          |
 | Email      | SMTP (Brevo by default; any provider)                  |
-| Payments   | Stripe (card + SEPA DD)                                |
 | Testing    | Vitest (unit/integration) + Playwright (E2E)           |
 | Deployment | Docker / TrueNAS SCALE                                 |
 
@@ -126,9 +118,8 @@ on top, so the money rules are testable without a database.
 ```
 app/
   [locale]/(main)/     → owner-facing pages (portfolio, financials, people,
-                         operations, leases, documents, intelligence, settings…)
-  tenant-portal/       → token-gated tenant self-service
-  api/                 → 49 domain route folders (Zod-validated, session-checked)
+                         operations, leases, documents, settings…)
+  api/                 → 40 domain route folders (Zod-validated, session-checked)
 components/
   features/            → domain components, one folder per pillar
   ui/                  → shadcn/ui primitives + responsive primitives
@@ -139,13 +130,12 @@ lib/
     matching/          → bank-movement→lease confidence scoring (pure)
     bank/              → CSV import, fingerprint dedupe, matching pipeline
     receipts/          → receipt document-lifecycle state machine (pure)
-    ocr/               → document classification engine (pure) + orchestration
     tax/               → connector find-or-create + submission log
   tax/connectors/      → per-country TaxConnector implementations
   contexts/            → global AppState, CSRF, toast, currency
   utils/               → PII encryption, API client, logger, env validation
 prisma/
-  schema.prisma        → 47 models, 33 enums (SQLite)
+  schema.prisma        → the schema; `grep -c '^model ' prisma/schema.prisma` counts it
 scripts/
   mobile-audit.mjs     → responsive measurement harness (see Quality gates)
 ```

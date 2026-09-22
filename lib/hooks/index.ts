@@ -8,7 +8,6 @@
 export { useAutoSave } from "./use-auto-save";
 export { useBulkSelection } from "./use-bulk-selection";
 export { useFormDialog } from "./use-form-dialog";
-export { useKeyboardShortcuts } from "./use-keyboard-shortcuts";
 export { useMagneticHover } from "./use-magnetic-hover";
 export { useMultiStepForm } from "./use-multi-step-form";
 export { useNavigationPersistence } from "./use-navigation-persistence";

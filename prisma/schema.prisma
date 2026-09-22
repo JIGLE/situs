@@ -39,39 +39,31 @@ model User {
   auditLogs AuditLog[] // GDPR logging
 
   // App-specific relations
-  properties              Property[]
-  buildings               Building[]
-  tenants                 Tenant[]
-  receipts                Receipt[]
-  expenses                Expense[]
-  rentPeriods             RentPeriod[]
-  paymentAllocations      PaymentAllocation[]
-  maintenanceTickets      MaintenanceTicket[]
-  leases                  Lease[]
-  correspondences         Correspondence[]
-  correspondenceTemplates CorrespondenceTemplate[]
-  owners                  Owner[]
-  emailLogs               EmailLog[]
-  documents               Document[]
-  notifications           Notification[]
-  invoices                Invoice[]
-  maintenanceContacts     MaintenanceContact[]
-  rentReceipts            RentReceipt[]
-  settings                UserSettings?
-  governmentVerifications GovernmentVerification[]
-  modelo179Submissions    Modelo179Submission[]
-  taxFilings              TaxFiling[]
-  productEvents           ProductEvent[]
-  subscription            Subscription?
-  bankConnections         BankConnection[]
-  bankAccounts            BankAccount[]
-  bankTransactions        BankTransaction[]
-  bankSyncJobs            BankSyncJob[]
-  reconciliationRules     ReconciliationRule[]
-  taxAuthorityConnectors  TaxAuthorityConnector[]
-  taxSubmissionLogs       TaxSubmissionLog[]
-  documentExtractions     DocumentExtraction[]
-  inboundMessages         InboundMessage[]
+  properties             Property[]
+  buildings              Building[]
+  tenants                Tenant[]
+  receipts               Receipt[]
+  expenses               Expense[]
+  rentPeriods            RentPeriod[]
+  paymentAllocations     PaymentAllocation[]
+  leases                 Lease[]
+  owners                 Owner[]
+  emailLogs              EmailLog[]
+  documents              Document[]
+  notifications          Notification[]
+  rentReceipts           RentReceipt[]
+  settings               UserSettings?
+  modelo179Submissions   Modelo179Submission[]
+  taxFilings             TaxFiling[]
+  productEvents          ProductEvent[]
+  subscription           Subscription?
+  bankConnections        BankConnection[]
+  bankAccounts           BankAccount[]
+  bankTransactions       BankTransaction[]
+  bankSyncJobs           BankSyncJob[]
+  reconciliationRules    ReconciliationRule[]
+  taxAuthorityConnectors TaxAuthorityConnector[]
+  taxSubmissionLogs      TaxSubmissionLog[]
 }
 
 model EmailLog {
@@ -119,7 +111,6 @@ model Owner {
   user                User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   properties          PropertyOwner[]
   documents           Document[]
-  invoices            Invoice[]
   incomeDistributions IncomeDistributionShare[]
 
   @@map("owners")
@@ -140,56 +131,6 @@ model PropertyOwner {
 
   @@unique([propertyId, ownerId])
   @@map("property_owners")
-}
-
-model GovernmentVerification {
-  id                String                         @id @default(cuid())
-  userId            String
-  provider          GovernmentVerificationProvider
-  scope             GovernmentVerificationScope
-  status            GovernmentVerificationStatus   @default(pending)
-  externalReference String?
-  verifiedFullName  String?
-  verifiedTaxId     String?
-  requestedAt       DateTime                       @default(now())
-  authorizedAt      DateTime?
-  completedAt       DateTime?
-  expiresAt         DateTime?
-  errorCode         String?
-  errorMessage      String?
-  metadata          String?
-  createdAt         DateTime                       @default(now())
-  updatedAt         DateTime                       @updatedAt
-
-  user           User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  propertyClaims PropertyVerificationClaim[]
-
-  @@index([userId, status])
-  @@index([provider, status])
-  @@map("government_verifications")
-}
-
-model PropertyVerificationClaim {
-  id                  String                          @id @default(cuid())
-  verificationId      String
-  propertyId          String
-  claimType           PropertyVerificationClaimType   @default(ownership)
-  status              PropertyVerificationClaimStatus @default(pending)
-  ownershipPercentage Float?
-  sourceReference     String?
-  matchedAddress      String?
-  registryData        String?
-  verifiedAt          DateTime?
-  createdAt           DateTime                        @default(now())
-  updatedAt           DateTime                        @updatedAt
-
-  verification GovernmentVerification @relation(fields: [verificationId], references: [id], onDelete: Cascade)
-  property     Property               @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-
-  @@unique([verificationId, propertyId])
-  @@index([propertyId, status])
-  @@index([verificationId])
-  @@map("property_verification_claims")
 }
 
 model Account {
@@ -304,23 +245,18 @@ model Property {
   updatedAt DateTime @updatedAt
 
   // Relations
-  user                User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   tenants             Tenant[]
   receipts            Receipt[]
   owners              PropertyOwner[]
   expenses            Expense[]
-  maintenance         MaintenanceTicket[]
   leases              Lease[]
   units               Unit[]
   documents           Document[]
-  invoices            Invoice[]
   incomeDistributions IncomeDistribution[]
   rentReceipts        RentReceipt[]
   nruaRegistrations   NRUARegistration[]
-  verificationClaims  PropertyVerificationClaim[]
-  correspondences     Correspondence[]
   rentPeriods         RentPeriod[]
-  inboundMessages     InboundMessage[]
 
   // Performance indexes
   @@index([userId])
@@ -345,30 +281,15 @@ model Tenant {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  // Portal-link revocation epoch. Portal tokens are stateless signed JWTs, so before this there
-  // was no way to invalidate one — a link forwarded to the wrong address, or a tenant who moved
-  // out, stayed valid until it expired on its own up to 7 days later.
-  //
-  // Every token carries `iat`; verification rejects any token issued at or before this instant,
-  // which revokes ALL outstanding links for the tenant in one write. Generating a new link
-  // afterwards works normally, because its `iat` is later. Null means nothing was ever revoked.
-  portalAccessRevokedAt DateTime?
-
   // Relations
-  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property            Property?            @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  receipts            Receipt[]
-  correspondences     Correspondence[]
-  maintenance         MaintenanceTicket[]
-  leases              Lease[]
-  documents           Document[]
-  invoices            Invoice[]
-  paymentMethods      PaymentMethod[]
-  paymentTransactions PaymentTransaction[]
-  rentReceipts        RentReceipt[]
-  nruaRegistrations   NRUARegistration[]
-  rentPeriods         RentPeriod[]
-  inboundMessages     InboundMessage[]
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property          Property?          @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  receipts          Receipt[]
+  leases            Lease[]
+  documents         Document[]
+  rentReceipts      RentReceipt[]
+  nruaRegistrations NRUARegistration[]
+  rentPeriods       RentPeriod[]
 
   // Performance indexes
   @@index([userId])
@@ -669,220 +590,6 @@ model Expense {
   @@map("expenses")
 }
 
-model MaintenanceTicket {
-  id               String              @id @default(cuid())
-  userId           String
-  propertyId       String
-  tenantId         String?
-  unitId           String?
-  title            String
-  description      String
-  status           MaintenanceStatus   @default(open)
-  priority         MaintenancePriority @default(medium)
-  category         String? // plumbing, electrical, structural, appliance, cleaning, other
-  images           String // JSON string of image URLs
-  cost             Float? // @deprecated — kept for backward compat; use estimatedCost
-  estimatedCost    Float?
-  actualCost       Float?
-  scheduledDate    DateTime?
-  dueDate          DateTime?
-  assignedTo       String? // @deprecated — kept for backward compat; use vendorName
-  vendorName       String?
-  vendorPhone      String?
-  invoiceRef       String?
-  isTenantReport   Boolean             @default(false)
-  resolvedAt       DateTime?
-  // Situs Operations subtabs (PR 10b-1): Evidence tab flag + SLA due date.
-  evidenceRequired Boolean             @default(false)
-  slaDueAt         DateTime?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-
-  // Relations
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  tenant   Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-
-  // Performance indexes
-  @@index([userId])
-  @@index([propertyId])
-  @@index([status])
-  @@index([priority])
-  @@index([userId, status]) // Composite for open tickets
-  @@map("maintenance_tickets")
-}
-
-model CorrespondenceTemplate {
-  id        String       @id @default(cuid())
-  name      String
-  type      TemplateType
-  subject   String
-  content   String
-  variables String // JSON string of variable names
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-
-  /// NULL = system-owned: shipped with the product, readable by everyone, editable by nobody.
-  /// Non-NULL = owned by that user, private to them. This column is what separates a statutory
-  /// instrument (whose wording carries professional liability) from a landlord's own copy.
-  userId String?
-
-  /// Jurisdiction and language. A Portuguese statutory notice must be in Portuguese and must not
-  /// be offered for a Spanish property. NULL on both = applies anywhere (operational templates).
-  country String? // ISO 3166-1 alpha-2, matched against Property.propertyCountry
-  locale  String? // BCP 47, one of the app's four catalogues
-
-  /// Bumped on every edit. A sent letter pins the version it rendered from, so "which words went
-  /// out" stays answerable after the template moves on.
-  version Int @default(1)
-
-  /// Set when a user copies a system template. Together these are the liability record: they say
-  /// which instrument this descended from and at which revision it stopped being ours.
-  derivedFromId      String?
-  derivedFromVersion Int?
-
-  // Relations
-  correspondences Correspondence[]
-  user            User?                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  derivedFrom     CorrespondenceTemplate?  @relation("TemplateLineage", fields: [derivedFromId], references: [id], onDelete: SetNull)
-  derivatives     CorrespondenceTemplate[] @relation("TemplateLineage")
-
-  @@index([userId])
-  @@index([country, locale])
-  @@map("correspondence_templates")
-}
-
-/// A served letter is evidence. Everything needed to prove what was sent lives on this row —
-/// the rendered subject and content, plus a snapshot of the template's identity at render time —
-/// so the record survives the template being edited, deleted, or forked afterwards.
-model Correspondence {
-  id         String               @id @default(cuid())
-  userId     String
-  templateId String?
-  tenantId   String
-  propertyId String?
-  subject    String
-  content    String
-  status     CorrespondenceStatus @default(draft)
-  sentAt     DateTime?
-  createdAt  DateTime             @default(now())
-  updatedAt  DateTime             @updatedAt
-
-  /// Provenance, captured at render time and never updated afterwards. templateId above is a
-  /// convenience link that may go NULL; these three answer "whose words were these?" on their own.
-  templateNameSnapshot    String?
-  templateVersionSnapshot Int?
-  /// "system" if rendered from a locked statutory template, "user" if from the sender's own copy.
-  /// This is the field a liability argument actually turns on.
-  templateOriginSnapshot  String?
-
-  // Relations
-  user     User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// SetNull, never Cascade: deleting a template must not destroy the record of letters sent from
-  /// it. Under the previous Cascade, one landlord deleting a globally-shared template erased
-  /// another landlord's proof of service.
-  template CorrespondenceTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  tenant   Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  property Property?               @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-
-  @@map("correspondence")
-}
-
-/// Mail that arrived FROM the outside world, via Brevo Inbound Parsing.
-///
-/// Deliberately not a `direction` column on Correspondence above. That model requires a
-/// `tenantId`, and carries the template-provenance fields that decide a liability argument
-/// about words we sent. Inbound mail arrives from an address that may match no tenant at all,
-/// and it has no provenance to record because we did not write it. Two models, because they
-/// answer two different questions.
-///
-/// SECURITY: nothing on this row is attributable to the person it claims to be from. Brevo
-/// hands us whatever the sending server said. `spfResult`/`dkimResult` are the only evidence
-/// here, and even they only speak for the sending *domain*.
-model InboundMessage {
-  id     String @id @default(cuid())
-  userId String
-
-  /// Envelope, as received. NOT proof of identity — see spfResult/dkimResult.
-  fromAddress String
-  fromName    String?
-  /// The parse address it arrived at, e.g. rendas@reply.example.com.
-  toAddress   String
-  subject     String
-  /// Plain text only. The HTML part is deliberately not stored: rendering attacker-authored
-  /// markup inside the app is an XSS surface, and a stripped-to-text body is what the Inbox
-  /// shows anyway. When a message carries only HTML, it is reduced to text on ingest.
-  textBody    String
-
-  /// RFC 5322 Message-ID. Unique because Brevo retries a failed delivery, and a retry must
-  /// update the row it already wrote rather than produce a second copy of the same email.
-  rfcMessageId String? @unique
-  inReplyTo    String?
-
-  /// What Brevo's own checks reported, stored verbatim rather than reduced to a boolean: a
-  /// dispute about who sent something is settled from the record, and "pass"/"fail"/"none"/
-  /// "softfail" are not the same claim.
-  spfResult  String?
-  dkimResult String?
-
-  /// A SUGGESTION, never a link. Set when the sender address matches exactly one tenant.
-  /// `tenantId` is set only by an explicit human action in the Inbox.
-  ///
-  /// Weaker on purpose than the ≥0.85 auto-allocate the bank matcher uses: a movement's
-  /// counterparty is asserted by the bank, and a From header is asserted by whoever sent the
-  /// mail. Auto-linking on a forgeable header would file a stranger's message into a tenant's
-  /// record, where it would then look like part of that tenancy's history.
-  suggestedTenantId String?
-  tenantId          String?
-  propertyId        String?
-
-  read       Boolean  @default(false)
-  archived   Boolean  @default(false)
-  receivedAt DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tenant      Tenant?             @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  property    Property?           @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  attachments InboundAttachment[]
-
-  @@index([userId, read])
-  @@index([userId, receivedAt])
-  @@index([userId, archived])
-  @@map("inbound_messages")
-}
-
-/// A file that came in attached to an InboundMessage.
-///
-/// Held apart from `Document` on purpose. Anyone who learns the parse address can send us a
-/// file; if those landed in Documents automatically, the Documents screen would be writable by
-/// the public. Filing one into Documents is an explicit action, and `documentId` records that
-/// it happened.
-model InboundAttachment {
-  id        String @id @default(cuid())
-  messageId String
-
-  /// The sender's filename, kept as a label to show. NEVER used to build a path — the stored
-  /// file is named from a random id plus the magic-byte-detected extension.
-  filename    String
-  /// Detected from the file's own bytes, not from the Content-Type the sender claimed.
-  mimeType    String
-  fileSize    Int
-  storagePath String
-
-  /// Set when the user files this into Documents. Null means it lives only in the Inbox.
-  documentId String?
-
-  createdAt DateTime @default(now())
-
-  message  InboundMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  document Document?      @relation(fields: [documentId], references: [id], onDelete: SetNull)
-
-  @@index([messageId])
-  @@map("inbound_attachments")
-}
-
 model Lease {
   id                  String      @id @default(cuid())
   userId              String
@@ -980,82 +687,18 @@ model Document {
   updatedAt DateTime @updatedAt
 
   // Relations
-  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property           Property?           @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  unit               Unit?               @relation(fields: [unitId], references: [id], onDelete: SetNull)
-  owner              Owner?              @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  tenant             Tenant?             @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  expenses           Expense[] // Situs: deduction-evidence links (Expense.documentId)
-  extraction         DocumentExtraction?
-  /// Set when a user files an inbound email attachment into Documents. The attachment row is
-  /// the original; this is the copy they chose to keep.
-  inboundAttachments InboundAttachment[]
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  unit     Unit?     @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  owner    Owner?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  tenant   Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  expenses Expense[] // Situs: deduction-evidence links (Expense.documentId)
 
   @@index([userId])
   @@index([propertyId])
   @@index([type])
   @@index([expiresAt])
   @@map("documents")
-}
-
-// Situs OCR sidecar (Migration D) — 1:1 with Document, leaves the hot
-// Document model untouched. "mock" is the only engine today (no live OCR
-// integration yet — same mock-first pattern as the bank/tax connector
-// layers); classification proposes a document type + a linked entity for a
-// human to confirm in the Review Required tab.
-model DocumentExtraction {
-  id               String    @id @default(cuid())
-  documentId       String    @unique
-  userId           String
-  status           String    @default("pending") // pending|processing|completed|failed|review_required
-  engine           String    @default("mock")
-  confidence       Float?
-  extractedFields  String? // JSON — engine-specific key/value proposals
-  suggestedType    String? // proposed DocumentType value
-  linkedEntityType String? // "tenant"|"property"|"lease"|"expense"
-  linkedEntityId   String?
-  reviewedAt       DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, status])
-  @@map("document_extractions")
-}
-
-model Invoice {
-  id          String        @id @default(cuid())
-  userId      String
-  number      String        @unique // Invoice number
-  amount      Float
-  dueDate     DateTime
-  paidDate    DateTime?
-  status      InvoiceStatus @default(pending)
-  description String?
-  metadata    String? // JSON for additional data
-
-  // Optional relations
-  propertyId String?
-  ownerId    String?
-  tenantId   String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  property            Property?            @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  owner               Owner?               @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  tenant              Tenant?              @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  paymentTransactions PaymentTransaction[]
-
-  @@index([userId])
-  @@index([status])
-  @@index([dueDate])
-  @@index([tenantId])
-  @@map("invoices")
 }
 
 model Notification {
@@ -1081,108 +724,6 @@ model Notification {
 }
 
 // Payment System Models for Portugal/Spain
-model PaymentMethod {
-  id       String            @id @default(cuid())
-  tenantId String
-  type     PaymentMethodType
-  provider String // 'stripe', 'manual', 'bank_transfer'
-
-  // Stripe-specific fields
-  stripeCustomerId      String?
-  stripePaymentMethodId String?
-
-  // Bank account details (for SEPA/bank transfers)
-  bankName      String?
-  iban          String? // Masked IBAN for display
-  ibanLast4     String? // Last 4 digits
-  bic           String? // BIC/SWIFT code
-  accountHolder String?
-
-  // Regional payment method details
-  country String @default("PT") // PT, ES, etc.
-
-  // Multibanco reference (Portugal)
-  multibancoEntity    String? // 5-digit entity
-  multibancoReference String? // Reference number
-
-  // MB WAY (Portugal)
-  mbwayPhone String? // Phone number for MB WAY
-
-  isDefault Boolean @default(false)
-  isActive  Boolean @default(true)
-  metadata  String? // JSON for additional data
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  transactions PaymentTransaction[]
-
-  @@map("payment_methods")
-}
-
-model PaymentTransaction {
-  id              String  @id @default(cuid())
-  paymentMethodId String?
-  invoiceId       String?
-  tenantId        String
-
-  // Amount details
-  amount   Float // Amount in cents
-  currency String @default("EUR")
-
-  // Transaction status
-  status TransactionStatus @default(pending)
-
-  // Provider details
-  provider              String // 'stripe', 'multibanco', 'mbway', 'sepa', 'bank_transfer'
-  providerTransactionId String? // External transaction ID
-
-  // Stripe-specific
-  stripePaymentIntentId String?
-  stripeChargeId        String?
-
-  // Multibanco-specific (Portugal)
-  multibancoEntity    String?
-  multibancoReference String?
-  multibancoExpiresAt DateTime?
-
-  // MB WAY-specific (Portugal)
-  mbwayRequestId String?
-
-  // SEPA-specific
-  sepaMandateId String?
-  sepaDebitDate DateTime?
-
-  // Processing details
-  processedAt    DateTime?
-  failedAt       DateTime?
-  failureCode    String?
-  failureMessage String?
-
-  // Refund details
-  refundedAmount Float?
-  refundedAt     DateTime?
-  refundReason   String?
-
-  // Metadata
-  description String?
-  metadata    String? // JSON for webhooks, additional data
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  paymentMethod PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
-  invoice       Invoice?       @relation(fields: [invoiceId], references: [id])
-  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@index([invoiceId])
-  @@index([tenantId])
-  @@index([status])
-  @@map("payment_transactions")
-}
 
 // Enums
 enum PropertyType {
@@ -1218,60 +759,10 @@ enum ReceiptStatus {
   pending
 }
 
-enum TemplateType {
-  welcome
-  rent_reminder
-  eviction_notice
-  maintenance_request
-  lease_renewal
-  custom
-}
-
-enum CorrespondenceStatus {
-  draft
-  sent
-  delivered
-}
-
 enum UserRole {
   USER
   ADMIN
   MANAGER
-}
-
-enum GovernmentVerificationProvider {
-  financas
-  cadastro
-  land_registry
-  manual_review
-}
-
-enum GovernmentVerificationScope {
-  identity
-  property_ownership
-  property_details
-}
-
-enum GovernmentVerificationStatus {
-  pending
-  authorized
-  verified
-  rejected
-  expired
-  failed
-}
-
-enum PropertyVerificationClaimType {
-  ownership
-  management
-  details_access
-}
-
-enum PropertyVerificationClaimStatus {
-  pending
-  matched
-  verified
-  rejected
 }
 
 enum EmailStatus {
@@ -1279,20 +770,6 @@ enum EmailStatus {
   delivered
   bounced
   failed
-}
-
-enum MaintenanceStatus {
-  open
-  in_progress
-  resolved
-  closed
-}
-
-enum MaintenancePriority {
-  low
-  medium
-  high
-  urgent
 }
 
 enum LeaseStatus {
@@ -1320,84 +797,26 @@ enum DocumentType {
   other
 }
 
-enum InvoiceStatus {
-  pending
-  paid
-  overdue
-  cancelled
-}
-
+/// Only values something actually writes. Five were dropped in the scope cutdown: four
+/// (lease_expiring, payment_received, document_uploaded, nrua_registration) had no producer
+/// anywhere and never had; inbound_message went with the mail inbox. Every value below is
+/// written by lib/services/notifications/notification-automation.ts, except the two catch-alls.
+/// Adding one back is a line here and a line in lib/utils/notification-labels.ts — cheaper than
+/// carrying an enum whose members are aspirations.
 enum NotificationType {
-  lease_expiring
   payment_due
-  payment_received
   payment_overdue
-  maintenance_created
-  maintenance_completed
-  document_uploaded
   rent_receipt_due
-  nrua_registration
   lease_renewal_reminder
-  /// Mail arrived from outside, via Brevo Inbound Parsing. In-app only, by construction:
-  /// lib/services/inbound/ingest.ts writes this Notification directly and never calls
-  /// sendReminderEmail for it. Forwarding an unauthenticated message to the landlord's real
-  /// mailbox would launder a spoofed sender through our own authenticated domain — the same
-  /// email-is-not-the-default reasoning URGENT_REMINDER_KINDS (reminder-email.ts) applies to
-  /// the four automated-reminder kinds that do dispatch mail.
-  inbound_message
   system
   other
 }
 
 // Payment-specific enums
-enum PaymentMethodType {
-  card // Credit/debit card via Stripe
-  sepa_debit // SEPA Direct Debit
-  multibanco // Portugal: Multibanco reference
-  mbway // Portugal: MB WAY
-  bank_transfer // Manual bank transfer
-  cash // Cash payment
-  other
-}
-
-enum TransactionStatus {
-  pending // Transaction initiated
-  processing // Being processed by provider
-  requires_action // Needs customer action (3D Secure, MB WAY confirm)
-  succeeded // Payment successful
-  failed // Payment failed
-  cancelled // Cancelled by user/system
-  refunded // Fully refunded
-  partially_refunded // Partially refunded
-}
 
 // ========================================
 // New Models for Navigation Restructuring
 // ========================================
-
-// Maintenance Contacts (Contractors, Vendors, Staff)
-model MaintenanceContact {
-  id            String                 @id @default(cuid())
-  userId        String
-  type          MaintenanceContactType
-  company       String?
-  contactPerson String
-  email         String?
-  phone         String?
-  specialties   String // JSON array: ["Plumber", "Electrician", "HVAC", etc.]
-  hourlyRate    Float?
-  currency      Currency               @default(EUR)
-  rating        Float? // 1-5 rating
-  notes         String?
-  isActive      Boolean                @default(true)
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("maintenance_contacts")
-}
 
 // Income Distribution (with audit trail)
 model IncomeDistribution {
@@ -1491,8 +910,8 @@ model ProductEvent {
   @@map("product_events")
 }
 
-/// SaaS subscription state for the app itself (distinct from the
-/// tenant-facing Stripe rent-collection flow in PaymentMethod/PaymentTransaction).
+/// SaaS subscription state for the app itself (distinct from rent collection,
+/// which reaches the ledger as a matched bank movement, not a card payment).
 /// No row for a user means Free — a row is only created once a Checkout
 /// Session completes (docs/PRODUCT_AUDIT_2026.md §2: pricing tiers were
 /// previously unbacked marketing copy).
@@ -1555,12 +974,6 @@ enum DistributionFrequency {
   MONTHLY
   QUARTERLY
   ANNUAL
-}
-
-enum MaintenanceContactType {
-  CONTRACTOR // External contractor
-  VENDOR // Supplier/vendor
-  INTERNAL_STAFF // In-house staff
 }
 
 // ========================================

@@ -57,22 +57,11 @@ This document details the performance optimizations implemented in Week 1 of the
 @@index([category])
 ```
 
-**Maintenance Tickets Table**:
-
-```prisma
-@@index([userId])
-@@index([propertyId])
-@@index([status])
-@@index([priority])
-@@index([userId, status])  // Composite for open tickets
-```
-
 **Expected Performance Gains**:
 
 - Property listing: ~50% faster
 - Overdue tenant queries: ~80% faster
 - Revenue insights: ~90% faster (combined with N+1 fix)
-- Maintenance ticket filtering: ~60% faster
 
 ---
 
@@ -80,8 +69,8 @@ This document details the performance optimizations implemented in Week 1 of the
 
 **File**: `lib/services/insights.real.ts` — **deleted.** The whole four-file insights service
 (`insights.ts`, `.real.ts`, `.mock.ts`, `.types.ts`) was removed as unreferenced: nothing ever
-imported it, because `components/features/insights/insights-view.tsx` reads its data from
-`AppContext` instead. So this optimisation was real, and it was applied to a code path that
+imported it, because the Insights view read its data from `AppContext` instead (that view has
+since been deleted too). So this optimisation was real, and it was applied to a code path that
 never ran — which is the more useful lesson of the two. The pattern below is kept because it
 still applies wherever a loop issues one query per period.
 

@@ -43,8 +43,6 @@ interface EntityActionConfig<T extends { id: string }> {
   userId?: string | null;
   /** Whether to prepend new items (default: false = append) */
   prependNew?: boolean;
-  /** Whether in demo mode — appends qualifier to success messages */
-  isDemo?: boolean;
 }
 
 /**
@@ -70,12 +68,10 @@ export function createEntityActions<T extends { id: string }>(
     requireAuth = true,
     userId,
     prependNew = false,
-    isDemo = false,
     resolveError,
   } = config;
 
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-  const demoSuffix = isDemo ? " (demo mode)" : "";
 
   const add = async (data: Partial<T>): Promise<T> => {
     if (requireAuth && !userId) throw new Error("User not authenticated");
@@ -83,7 +79,7 @@ export function createEntityActions<T extends { id: string }>(
       const res = await apiFetch<T | { data: T }>(endpoint, csrfToken, "POST", data);
       const created = (res as { data: T }).data ?? (res as T);
       setItems(prependNew ? [created, ...getItems()] : [...getItems(), created]);
-      showSuccess?.(`${capitalize(entityName)} added successfully${demoSuffix}`);
+      showSuccess?.(`${capitalize(entityName)} added successfully`);
       return created;
     } catch (err) {
       const msg = resolveError(err);
@@ -98,7 +94,7 @@ export function createEntityActions<T extends { id: string }>(
       const res = await apiFetch<T | { data: T }>(`${endpoint}/${id}`, csrfToken, "PUT", data);
       const updated = (res as { data: T }).data ?? (res as T);
       setItems(getItems().map((item) => (item.id === id ? updated : item)));
-      showSuccess?.(`${capitalize(entityName)} updated successfully${demoSuffix}`);
+      showSuccess?.(`${capitalize(entityName)} updated successfully`);
       return updated;
     } catch (err) {
       const msg = resolveError(err);
@@ -114,7 +110,7 @@ export function createEntityActions<T extends { id: string }>(
     setItems(previous.filter((item) => item.id !== id));
     try {
       await apiFetch(`${endpoint}/${id}`, csrfToken, "DELETE");
-      showSuccess?.(`${capitalize(entityName)} deleted successfully${demoSuffix}`);
+      showSuccess?.(`${capitalize(entityName)} deleted successfully`);
     } catch (err) {
       // Rollback on failure
       setItems(previous);

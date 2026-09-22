@@ -13,7 +13,6 @@ import { NotificationBell } from "@/components/shared/notification-bell";
 import { cn } from "@/lib/utils/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useDemoMode } from "@/lib/contexts/demo-context";
 import { usePortalAccess } from "@/lib/contexts/portal-context";
 import { useTheme } from "@/lib/contexts/theme-context";
 
@@ -30,14 +29,12 @@ interface SidebarFooterProps {
   collapsed: boolean;
   onToggleCollapsed: () => void;
   user?: { name?: string | null; email?: string | null; image?: string | null };
-  subtitle?: string | null;
 }
 
 function SidebarFooter({
   collapsed,
   onToggleCollapsed,
   user,
-  subtitle,
 }: SidebarFooterProps): React.ReactElement {
   const { country, resolvedTheme } = useTheme();
   const tNav = useTranslations("navigation");
@@ -58,8 +55,7 @@ function SidebarFooter({
       //
       // The email is the line that goes: it is the least glanceable of the three, and it is
       // already on the account page this row opens. `country · mode` stays because it is live
-      // app state you want to see without clicking. In demo mode `subtitle` still wins, so the
-      // demo perspective keeps its place.
+      // app state you want to see without clicking.
       //
       // The sign-out button is a sibling of the link rather than inside it — an anchor cannot
       // contain a button, and the previous layout only avoided that by giving the button its
@@ -87,8 +83,7 @@ function SidebarFooter({
                   printed straight out, so the light theme announced itself as "PT · NORMAL".
                   Nobody calls a theme "normal", and it was the one word on the screen that had
                   not been through i18n. */}
-              {subtitle ??
-                `${country} · ${resolvedTheme === "dark" ? tCommon("themeDark") : tCommon("themeLight")}`}
+              {`${country} · ${resolvedTheme === "dark" ? tCommon("themeDark") : tCommon("themeLight")}`}
             </p>
           </div>
         </Link>
@@ -137,7 +132,6 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
   const [collapsed, setCollapsed] = useState(false);
   const { data: session } = useSession();
   const pathname = usePathname();
-  const { isDemoMode, demoPerspective } = useDemoMode();
   const { navigation } = usePortalAccess();
   const t = useTranslations("navigation");
 
@@ -307,11 +301,6 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
             collapsed={collapsed}
             onToggleCollapsed={handleToggleCollapsed}
             user={user}
-            // Demo perspective only. This used to fall back to the email, which is why the
-            // secondary line under the name rendered as an address — the least glanceable thing
-            // that could go there, and already on the account page this row opens. Undefined
-            // lets the footer show `country · mode`, which is live state worth a glance.
-            subtitle={isDemoMode ? `Demo ${demoPerspective}` : undefined}
           />
         </div>
       )}

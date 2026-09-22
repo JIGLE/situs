@@ -16,19 +16,15 @@ import { propertySchema } from "@/lib/schemas/property.schema";
 import { getPaginationFromRequest, createPaginatedResponse } from "@/lib/utils/pagination";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { ZodError } from "zod";
-import { handleDemoGet, handleDemoMutation } from "@/lib/demo/demo-api-handler";
 import { canCreateProperty } from "@/lib/billing/subscription-service";
 import { PlanLimitError } from "@/lib/utils/error-handling";
 
 // GET /api/properties - Get all properties for the authenticated user (with pagination)
 async function handleGet(request: NextRequest): Promise<Response> {
-  const demo = handleDemoGet(request, "properties");
-  if (demo.response) return demo.response;
-
   const authResult = await getAccessContext(request);
   if (authResult instanceof Response) return authResult;
 
-  const { scopeUserId, portalRole, propertyId } = authResult;
+  const { scopeUserId } = authResult;
 
   try {
     // Check if pagination is requested
@@ -42,19 +38,13 @@ async function handleGet(request: NextRequest): Promise<Response> {
 
       const [properties, total] = await Promise.all([
         prisma.property.findMany({
-          where:
-            portalRole === "tenant" && propertyId
-              ? { userId: scopeUserId, id: propertyId }
-              : { userId: scopeUserId },
+          where: { userId: scopeUserId },
           skip: pagination.skip,
           take: pagination.limit,
           orderBy: { createdAt: "desc" },
         }),
         prisma.property.count({
-          where:
-            portalRole === "tenant" && propertyId
-              ? { userId: scopeUserId, id: propertyId }
-              : { userId: scopeUserId },
+          where: { userId: scopeUserId },
         }),
       ]);
 
@@ -62,11 +52,7 @@ async function handleGet(request: NextRequest): Promise<Response> {
     } else {
       // Legacy: Return all properties (backward compatible)
       const properties = await propertyService.getAll(scopeUserId);
-      return createSuccessResponse(
-        portalRole === "tenant" && propertyId
-          ? properties.filter((property) => property.id === propertyId)
-          : properties,
-      );
+      return createSuccessResponse(properties);
     }
   } catch (error) {
     return createErrorResponse(error as Error, 500, request);
@@ -75,9 +61,6 @@ async function handleGet(request: NextRequest): Promise<Response> {
 
 // POST /api/properties - Create a new property
 async function handlePost(request: NextRequest): Promise<Response> {
-  const demo = await handleDemoMutation(request, "properties");
-  if (demo.response) return demo.response;
-
   const authResult = await requireOwnerAccess(request);
   if (authResult instanceof Response) return authResult;
 

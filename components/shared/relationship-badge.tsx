@@ -1,9 +1,9 @@
 "use client";
 
 import { cn } from "@/lib/utils/utils";
-import { Building2, Users, FileText, Wrench, Calendar, AlertCircle } from "lucide-react";
+import { Building2, Users, FileText, Calendar, AlertCircle } from "lucide-react";
 
-type BadgeVariant = "property" | "tenant" | "lease" | "maintenance" | "expiry" | "overdue";
+type BadgeVariant = "property" | "tenant" | "lease" | "expiry" | "overdue";
 
 const VARIANT_CONFIG: Record<
   BadgeVariant,
@@ -24,11 +24,6 @@ const VARIANT_CONFIG: Record<
     icon: FileText,
     className:
       "bg-[color-mix(in_oklab,var(--color-primary)_12%,transparent)] text-[var(--color-primary)] border-[color-mix(in_oklab,var(--color-primary)_25%,transparent)]",
-  },
-  maintenance: {
-    icon: Wrench,
-    className:
-      "bg-[color-mix(in_oklab,var(--color-warning)_12%,transparent)] text-[var(--color-warning)] border-[color-mix(in_oklab,var(--color-warning)_25%,transparent)]",
   },
   expiry: {
     icon: Calendar,

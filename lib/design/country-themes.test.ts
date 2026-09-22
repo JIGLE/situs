@@ -41,9 +41,11 @@ describe("country-themes color math", () => {
 });
 
 describe("country table integrity", () => {
-  it("contains all 27 EU member palettes plus the EU itself", () => {
-    expect(COUNTRY_CODES).toHaveLength(28);
-    expect(COUNTRY_CODES).toContain("EU");
+  it("covers the countries Situs operates in, plus the EU fallback", () => {
+    // Trimmed from 28 (EU + every member state) to the two markets the product actually
+    // serves. countryLabel() reads Intl.DisplayNames first, so a property in an unlisted
+    // country still renders its name correctly — only the theme falls back to EU.
+    expect(COUNTRY_CODES).toEqual(["EU", "PT", "ES"]);
     expect(COUNTRY_CODES).toContain(DEFAULT_COUNTRY);
   });
 
@@ -68,19 +70,11 @@ describe("country table integrity", () => {
       secondary: "#AA151B",
       accent: "#F1BF00",
     });
-    expect(COUNTRY_THEMES.DE.roles).toMatchObject({
-      primary: "#000000",
-      secondary: "#DD0000",
-      accent: "#FFCE00",
-    });
     expect(COUNTRY_THEMES.EU.roles).toMatchObject({
       primary: "#003399",
       secondary: "#003399",
       accent: "#FFCC00",
     });
-    // Bicolour flags keep only their two real colours (dot falls back to white).
-    expect(COUNTRY_THEMES.PL.roles.accent).toBe("#FFFFFF");
-    expect(COUNTRY_THEMES.FI.roles.accent).toBe("#FFFFFF");
   });
 });
 

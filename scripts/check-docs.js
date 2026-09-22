@@ -44,6 +44,107 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // The MODELS and the endpoint, not the word "verification" — NIF validation, the tax
+    // connectors and `timingSafeEqualString` all legitimately verify things.
+    pattern:
+      /`?(?:GovernmentVerification|PropertyVerificationClaim)`?|\/api\/ownership-verifications/,
+    retired: "2026-09-22 (scope cutdown, phase 10)",
+    because:
+      "the ownership-verification scaffold was removed — two models, five enums, a service and " +
+      "one endpoint, built provider-agnostic for a registry integration that never followed",
+  },
+  {
+    // The MODEL, not the word: `PaymentAllocation` and `Tenant.paymentStatus` are the live
+    // ledger and must not match. Backticked or as a Prisma relation field.
+    pattern:
+      /`(?:Invoice|PaymentMethod|PaymentTransaction)`|prisma\.(?:invoice|paymentMethod|paymentTransaction)\b/,
+    retired: "2026-09-22 (scope cutdown, phase 9)",
+    because:
+      "the tenant online-payment stack was removed; rent reaches the ledger as a matched bank " +
+      "movement. SAF-T PT now reads RentReceipt, and the payment alerts read RentPeriod",
+  },
+  {
+    // Targets the CAPABILITY claim, not the two words: `app/tenant-portal/` and the token auth
+    // are gone, so anything offering a tenant their own login is false.
+    pattern:
+      /token-gated (?:tenant )?self-service|tenant portal (?:token|link)s?\b|\/api\/tenant-portal/i,
+    retired: "2026-09-22 (scope cutdown, phase 9)",
+    because:
+      "both tenant-facing surfaces were removed — the token portal and role=USER access to the " +
+      "main app. There is no tenant login of any kind now",
+  },
+  {
+    // The payment METHODS, which only ever existed for tenant rent collection.
+    pattern: /\b(?:Multibanco|MB WAY|MBWay|Bizum)\b/i,
+    retired: "2026-09-22 (scope cutdown, phase 9)",
+    because:
+      "the SIBS and Bizum adapters and their webhooks went with the payment stack; Stripe " +
+      "survives for the app's own subscription billing only",
+  },
+  {
+    // Narrow on purpose: "review required" also means a PR review in CONTRIBUTING.md, and
+    // ROADMAP's sprint rows record what Migration D shipped, which is history rather than a
+    // claim about what exists. Pin the two artifacts instead.
+    pattern: /lib\/services\/ocr\/|Documents "Review Required" tab/i,
+    retired: "2026-09-22 (scope cutdown, phase 8)",
+    because:
+      "the mock OCR classifier and DocumentExtraction went with the Documents browsing UI. " +
+      "The Document model stays: receipt emission archives a PDF against it, and that copy is " +
+      "the proof of a filing made at Finanças",
+  },
+  {
+    pattern: /Brevo Inbound Parsing/i,
+    retired: "2026-09-21 (scope cutdown, phase 7)",
+    because:
+      "inbound mail was cut in full — the webhook, InboundMessage/InboundAttachment, " +
+      "lib/services/inbound/ and BREVO_INBOUND_SECRET are all gone. The delivery-event " +
+      "webhook at /api/webhooks/brevo stays; it writes EmailLog for transactional mail",
+  },
+  {
+    pattern: /Correspondence (Inbox|tab|page)/i,
+    retired: "2026-09-21 (scope cutdown, phase 7)",
+    because:
+      "correspondence was cut in full — templates, the served-letter log, /correspondence and " +
+      "the People Communications tab. Automated rent reminders survive on a separate path " +
+      "(lib/services/notifications/reminder-email.ts)",
+  },
+  {
+    pattern: /`?\/operations`? (?:is|are) live/i,
+    retired: "2026-09-21 (scope cutdown, phase 5)",
+    because:
+      "maintenance/operations ticketing was cut in full — the MaintenanceTicket model, " +
+      "/api/maintenance, the /operations and /maintenance pages and the Operations nav entry " +
+      "are all gone, and there is no redirect shim left to land on",
+  },
+  {
+    pattern: /ticket-detail-modal\.tsx/i,
+    retired: "2026-09-21 (scope cutdown, phase 5)",
+    because:
+      "the Ticket detail modal was one of the two users of the 4-zone modal pattern and went " +
+      "with the ticketing cut; tenant-detail-modal.tsx is the only one left",
+  },
+  {
+    pattern: /maintenance-labels\.ts/i,
+    retired: "2026-09-21 (scope cutdown, phase 5)",
+    because:
+      "the ticket status/priority label maps went with the ticketing cut; receipt-labels.ts is " +
+      "the surviving example of the extract-the-map habit",
+  },
+  {
+    pattern: /28[- ]countr(y|ies)/i,
+    retired: "2026-09-21 (scope cutdown, phase 1)",
+    because:
+      "the theme table was trimmed to EU/PT/ES — the two markets the product serves. " +
+      "countryLabel() reads Intl.DisplayNames first, so an unlisted country still renders " +
+      "its name; only the theme falls back to EU",
+  },
+  {
+    pattern: /dev-only `?\/brand`? page/i,
+    retired: "2026-09-21 (scope cutdown, phase 1)",
+    because:
+      "the /brand style-guide page and the ⌘K command palette were deleted as dev/cosmetic surface",
+  },
+  {
     // The branch itself still exists and still holds two unmerged commits, so the NAME is not
     // retired — the instruction "all changes go to it" is. Pin the instruction, not the ref.
     pattern: /changes go to:?\s*\*{0,2}`?claude\/proman-design-polish-6zpz2f/i,
@@ -265,6 +366,11 @@ const CLAIM_ALLOWLIST = [
   /makes it (worse|~?2,272)/i,
   /RETIRED_CLAIMS/, // this file
   /retired:/,
+  // Two historical records, not claims about what exists. A changelog entry for a shipped
+  // version stays true about that version, and a dated Decisions Log row records what was
+  // decided on the day. Both name the payment methods phase 9 removed; neither offers them.
+  /Full payment integration for Portugal and Spain markets/,
+  /Keep MB WAY\/Bizum as documented placeholders/,
 ];
 
 const LINK = /\[[^\]]*\]\(([^)]+)\)/g;

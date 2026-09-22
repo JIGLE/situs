@@ -103,60 +103,6 @@ export interface Receipt {
   updatedAt: string;
 }
 
-export interface CorrespondenceTemplate {
-  id: string;
-  name: string;
-  type:
-    | "welcome"
-    | "rent_reminder"
-    | "eviction_notice"
-    | "maintenance_request"
-    | "lease_renewal"
-    | "custom";
-  subject: string;
-  content: string;
-  variables: string[];
-  /** null for system templates — shipped with the product, readable by all, editable by none. */
-  userId?: string | null;
-  /** Convenience mirror of `userId === null`, so the UI does not have to reason about nulls. */
-  isSystem?: boolean;
-  /** ISO 3166-1 alpha-2. A statutory notice is only valid in its own jurisdiction. */
-  country?: string | null;
-  /** BCP 47. A Portuguese notice has to be written in Portuguese. */
-  locale?: string | null;
-  /** Bumped on every edit; sent letters pin the version they rendered from. */
-  version?: number;
-  /** Set when this row was copied from another template — the liability record. */
-  derivedFromId?: string | null;
-  derivedFromVersion?: number | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Correspondence {
-  id: string;
-  userId: string;
-  /** Nullable: a template may be deleted long after the letters it produced were served. */
-  templateId: string | null;
-  tenantId: string;
-  tenantName: string;
-  propertyId?: string;
-  subject: string;
-  content: string;
-  status: "draft" | "sent" | "delivered";
-  sentAt?: string;
-  /**
-   * Provenance captured at render time. `subject` and `content` above already hold the words that
-   * went out; these say whose words they were, so the record stands alone as evidence.
-   */
-  templateNameSnapshot?: string | null;
-  templateVersionSnapshot?: number | null;
-  /** "system" = rendered from a locked statutory template; "user" = from the sender's own copy. */
-  templateOriginSnapshot?: "system" | "user" | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface Owner {
   id: string;
   userId: string;
@@ -245,107 +191,9 @@ export interface Expense {
   updatedAt: string;
 }
 
-export type MaintenanceStatus = "open" | "in_progress" | "resolved" | "closed";
-export type MaintenancePriority = "low" | "medium" | "high" | "urgent";
-
-export interface MaintenanceTicket {
-  id: string;
-  userId: string;
-  propertyId: string;
-  propertyName?: string;
-  tenantId?: string;
-  tenantName?: string;
-  unitId?: string;
-  title: string;
-  description: string;
-  status: MaintenanceStatus;
-  priority: MaintenancePriority;
-  category?: string;
-  images?: string[];
-  cost?: number; // @deprecated — use estimatedCost
-  estimatedCost?: number;
-  actualCost?: number;
-  scheduledDate?: string;
-  dueDate?: string;
-  assignedTo?: string; // @deprecated — use vendorName
-  vendorName?: string;
-  vendorPhone?: string;
-  invoiceRef?: string;
-  isTenantReport?: boolean;
-  resolvedAt?: string;
-  evidenceRequired?: boolean;
-  slaDueAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 // Initial empty data
 export const initialProperties: Property[] = [];
 export const initialTenants: Tenant[] = [];
 export const initialOwners: Owner[] = [];
 export const initialReceipts: Receipt[] = [];
 export const initialExpenses: Expense[] = [];
-export const initialMaintenance: MaintenanceTicket[] = [];
-export const initialTemplates: CorrespondenceTemplate[] = [
-  {
-    id: "welcome-template",
-    name: "Welcome Letter",
-    type: "welcome",
-    subject: "Welcome to {{property_name}}",
-    content: `Dear {{tenant_name}},
-
-Welcome to {{property_name}}! We're excited to have you as our tenant.
-
-Your lease begins on {{lease_start}} and runs through {{lease_end}}.
-
-Property Details:
-- Address: {{property_address}}
-- Monthly Rent: $\{{rent_amount}}
-- Bedrooms: {{bedrooms}}
-- Bathrooms: {{bathrooms}}
-
-Please don't hesitate to contact us if you need anything.
-
-Best regards,
-Property Management Team`,
-    variables: [
-      "tenant_name",
-      "property_name",
-      "lease_start",
-      "lease_end",
-      "property_address",
-      "rent_amount",
-      "bedrooms",
-      "bathrooms",
-    ],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "rent-reminder-template",
-    name: "Rent Payment Reminder",
-    type: "rent_reminder",
-    subject: "Rent Payment Due - {{property_name}}",
-    content: `Dear {{tenant_name}},
-
-This is a friendly reminder that your rent payment of $\{{rent_amount}} for {{property_name}} is due on {{due_date}}.
-
-Please ensure payment is made by the due date to avoid any late fees.
-
-Payment can be made via:
-- Bank transfer to: [Account details]
-- Online portal: [Portal link]
-- Check mailed to: [Mailing address]
-
-If you have already made this payment, please disregard this notice.
-
-Thank you for your prompt attention to this matter.
-
-Best regards,
-Property Management Team`,
-    variables: ["tenant_name", "property_name", "rent_amount", "due_date"],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-export const initialCorrespondence: Correspondence[] = [];

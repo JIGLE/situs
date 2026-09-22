@@ -8,7 +8,7 @@ This document defines the **non-negotiable rules** for all UI development in Sit
 
 > **Status (2026-07-09, roadmap 3.3):** this flat "Assets/People/Finance" grouping was
 > **not adopted**. Three IA proposals existed; only one was built. The canonical IA is the
-> Operations / Intelligence (Reports) / System grouping, and the authority for it is now the
+> Core / System grouping, and the authority for it is now the
 > code — `lib/portal/access.ts`, where the routes and their redirects live — rather than any
 > document. The two audits this note previously cited have been deleted as point-in-time
 > records. Kept here for history; do not use this structure as a reference for new nav work.

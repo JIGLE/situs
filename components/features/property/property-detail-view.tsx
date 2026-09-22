@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import {
   Building2,
   MapPin,
@@ -16,12 +16,10 @@ import {
   Trash2,
   History,
   Pencil,
-  ExternalLink,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useApiError } from "@/lib/utils/api-error";
-import { TICKET_PRIORITY_KEY, TICKET_STATUS_KEY } from "@/lib/utils/maintenance-labels";
 import { cn } from "@/lib/utils/utils";
 import { apiFetch } from "@/lib/utils/api-client";
 import { useCsrf } from "@/lib/contexts/csrf-context";
@@ -63,17 +61,6 @@ import { usePropertyActivity } from "@/lib/hooks/use-property-activity";
 import { AuditTrail } from "@/components/shared/audit-trail";
 import { PropertyFormDialog, type PropertyFormDialogRef } from "./property-form-dialog";
 import { PropertyYearStrip, type YearStripSelection } from "./property-year-strip";
-import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { DocumentsView } from "@/components/features/document/documents-view";
-
-/** The slice of `Document` this view needs — enough to list and group by type. */
-interface PropertyDocument {
-  id: string;
-  name: string;
-  type: string;
-  createdAt?: string;
-  fileSize?: number;
-}
 
 interface PropertyDetailViewProps {
   propertyId: string;
@@ -93,22 +80,9 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
   const [activeTab, setActiveTab] = useTabPersistence("property-detail", "overview");
   const t = useTranslations("propertyDetail");
   const tFin = useTranslations("financial");
-  const tDoc = useTranslations("documents");
   const tTypes = useTranslations("properties.types");
-  const tTicket = useTranslations("maintenance");
   const tPeriod = useTranslations("rentPeriodStatus");
   const apiError = useApiError();
-
-  /**
-   * DocumentType is snake_case in the schema (`floor_plan`) but camelCase in the catalog
-   * (`documents.floorPlan`), so bridge the two and fall back to a humanised label for any
-   * type without a translation.
-   */
-  const documentTypeLabel = (raw: string): string => {
-    const key = raw.replace(/_(\w)/g, (_, c: string) => c.toUpperCase());
-    const label = tDoc(key);
-    return label.endsWith(key) ? raw.replace(/_/g, " ") : label;
-  };
 
   /**
    * Expense categories are stored as human labels ("Mortgage Interest") while the catalog keys
@@ -143,40 +117,8 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
   const [ownerAssignError, setOwnerAssignError] = useState("");
   const [ownerAssignSaving, setOwnerAssignSaving] = useState(false);
 
-  // Quick-action overlay: Documents still opens in place from the empty-state link below.
-  const [documentsOpen, setDocumentsOpen] = useState(false);
   // The reference month whose detail modal is open, set by clicking a year-strip cell.
   const [selectedMonth, setSelectedMonth] = useState<YearStripSelection | null>(null);
-
-  // Documents already tagged to this property. Feeds both the deduction-evidence picker in the
-  // Add Expense dialog (Expense.documentId, Migration A) and the Documents tab, which groups
-  // them by `type` — so the fetch keeps type/date/size rather than just id and name.
-  const [propertyDocuments, setPropertyDocuments] = useState<PropertyDocument[]>([]);
-  useEffect(() => {
-    if (!propertyId) return;
-    let cancelled = false;
-    fetch(`/api/documents?propertyId=${propertyId}`, { credentials: "include" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((body) => {
-        if (!cancelled && body?.data) {
-          setPropertyDocuments(
-            body.data.map((d: PropertyDocument) => ({
-              id: d.id,
-              name: d.name,
-              type: d.type,
-              createdAt: d.createdAt,
-              fileSize: d.fileSize,
-            })),
-          );
-        }
-      })
-      .catch(() => {
-        // Document linking is optional — a failed fetch just hides the picker.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [propertyId]);
 
   // Stable initialData and onSubmit for quick-add dialogs (prevents infinite re-render loop)
   const expenseInitialData = useMemo<ExpenseFormData>(
@@ -187,7 +129,6 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
       category: "other" as const,
       description: "",
       isDeductible: true,
-      documentId: null,
     }),
     [propertyId],
   );
@@ -285,10 +226,6 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
     () => state.leases.filter((l) => l.propertyId === propertyId),
     [state.leases, propertyId],
   );
-  const relatedMaintenance = useMemo(
-    () => state.maintenance.filter((m) => m.propertyId === propertyId),
-    [state.maintenance, propertyId],
-  );
   const relatedReceipts = useMemo(
     () => state.receipts.filter((r) => r.propertyId === propertyId),
     [state.receipts, propertyId],
@@ -314,9 +251,6 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
   const totalRevenue = relatedReceipts.reduce((sum, r) => sum + r.amount, 0);
   const totalExpenses = relatedExpenses.reduce((sum, e) => sum + e.amount, 0);
   const netOperatingIncome = totalRevenue - totalExpenses;
-  const openTickets = relatedMaintenance.filter(
-    (m) => m.status === "open" || m.status === "in_progress",
-  ).length;
   const activeLeasesList = relatedLeases.filter((l) => l.status === "active");
 
   // Ownership: derive from owners state
@@ -430,39 +364,6 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
       {/* Edit property — own instance of the shared create/edit form */}
       <PropertyFormDialog ref={editFormDialogRef} />
 
-      {/* Quick-action overlay: Documents — scoped DocumentsView, stays on this page */}
-      <Sheet open={documentsOpen} onOpenChange={setDocumentsOpen}>
-        <SheetContent side="center" className="p-0">
-          <SheetTitle className="sr-only">{t("actions.documents")}</SheetTitle>
-          <SheetDescription className="sr-only">
-            {t("actions.documents")} — {property.name}
-          </SheetDescription>
-          <div className="flex h-full flex-col">
-            <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] p-4">
-              <div>
-                <p className="text-sm font-medium text-[var(--color-foreground)]">
-                  {t("actions.documents")}
-                </p>
-                <p className="text-xs text-[var(--color-muted-foreground)]">{property.name}</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setDocumentsOpen(false);
-                  router.push(`/documents?propertyId=${property.id}`);
-                }}
-              >
-                {t("actions.openInDocuments")} <ExternalLink className="h-3.5 w-3.5 ml-1" />
-              </Button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              <DocumentsView propertyId={property.id} embedded />
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
-
       {/* Header */}
       <div className="flex flex-col gap-4 sticky top-0 z-20 bg-[var(--color-card-solid)]/95 backdrop-blur-sm">
         <div className="flex flex-col gap-4 @lg:flex-row @lg:items-start @lg:justify-between">
@@ -574,29 +475,6 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                       }
                     />
                   </div>
-                  {propertyDocuments.length > 0 && (
-                    <div className="space-y-1.5">
-                      <Label htmlFor="exp-document">Deduction evidence (optional)</Label>
-                      <Select
-                        value={expenseDialog.formData.documentId ?? "none"}
-                        onValueChange={(v) =>
-                          expenseDialog.updateFormData({ documentId: v === "none" ? null : v })
-                        }
-                      >
-                        <SelectTrigger id="exp-document">
-                          <SelectValue placeholder="Link a document…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">No document</SelectItem>
-                          {propertyDocuments.map((doc) => (
-                            <SelectItem key={doc.id} value={doc.id}>
-                              {doc.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
                   <div className="flex justify-end gap-2 pt-2">
                     <Button type="button" variant="outline" onClick={expenseDialog.closeDialog}>
                       Cancel
@@ -906,15 +784,16 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
       </Dialog>
 
       {/* The four-card stat row that used to sit here has gone. Every number on it was already
-          on screen: tenants and active leases are listed in People & Contracts below, open
-          tickets were *already* badged on the Operations tab (so the count rendered three times
-          on one screen), and revenue now badges the Money tab. Density rules 2 and 4 in
-          CLAUDE.md — one stat row, and counts as text before counts as boxes. */}
+          on screen: tenants and active leases are listed in People & Contracts below, and
+          revenue now badges the Money tab. Density rules 2 and 4 in CLAUDE.md — one stat row,
+          and counts as text before counts as boxes. */}
 
-      {/* Tabs. Five triggers overflowed their container by 207px at 390px, so Documents and
-          Audit were reachable only by discovering a horizontal scroll — doctrine rule 4 swaps
-          the bar for a select below `md`. Badge counts ride along as `Label (3)` so the mobile
-          view states what the bar states. */}
+      {/* Tabs. The bar overflowed its container by 207px at 390px when it carried five
+          triggers, so Documents and Audit were reachable only by discovering a horizontal
+          scroll — doctrine rule 4 swaps the bar for a select below `md`. The Operations
+          trigger has since gone with the ticketing cut; the select stays, because rule 4 is a
+          space test in the longest locale and not a count. Badge counts ride along as
+          `Label (3)` so the mobile view states what the bar states. */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsMobileSelect
           className="md:hidden"
@@ -928,16 +807,6 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
               label: t("tabs.money"),
               badge: totalRevenue > 0 ? formatCurrency(totalRevenue) : undefined,
             },
-            {
-              value: "maintenance",
-              label: t("tabs.operations"),
-              badge: openTickets > 0 ? openTickets : undefined,
-            },
-            {
-              value: "documents",
-              label: t("actions.documents"),
-              badge: propertyDocuments.length > 0 ? propertyDocuments.length : undefined,
-            },
             { value: "audit", label: t("tabs.audit") },
           ]}
         />
@@ -949,24 +818,6 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
             {totalRevenue > 0 && (
               <span className="ml-1 bg-[var(--color-popover)] px-1.5 py-0.5 font-mono text-[12px] md:text-[10px] tabular-nums text-[var(--color-muted-foreground)]">
                 {formatCurrency(totalRevenue)}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="maintenance" className="flex items-center gap-1.5">
-            <Wrench className="h-3.5 w-3.5" />
-            {t("tabs.operations")}
-            {openTickets > 0 && (
-              <span className="ml-1 bg-[var(--color-warning-muted)] text-[var(--color-warning)] px-1.5 py-0.5 font-mono text-[12px] md:text-[10px] tabular-nums">
-                {openTickets}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="documents" className="flex items-center gap-1.5">
-            <FileText className="h-3.5 w-3.5" />
-            {t("actions.documents")}
-            {propertyDocuments.length > 0 && (
-              <span className="ml-1 bg-[var(--color-popover)] px-1.5 py-0.5 font-mono text-[12px] md:text-[10px] tabular-nums text-[var(--color-muted-foreground)]">
-                {propertyDocuments.length}
               </span>
             )}
           </TabsTrigger>
@@ -1230,67 +1081,8 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
           </div>
         </TabsContent>
 
-        {/* Maintenance Tab */}
-        <TabsContent value="maintenance">
-          {relatedMaintenance.length === 0 ? (
-            <EmptyStateIllustration entityType="maintenance" />
-          ) : (
-            <div className="space-y-3">
-              {openTickets > 0 && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-[var(--color-warning)]">
-                    {openTickets} open ticket{openTickets !== 1 ? "s" : ""}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => router.push(`/operations?propertyId=${propertyId}`)}
-                  >
-                    <Wrench className="h-3.5 w-3.5 mr-1.5" />
-                    View in Maintenance
-                  </Button>
-                </div>
-              )}
-              {relatedMaintenance.map((ticket) => (
-                <Card key={ticket.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-medium">{ticket.title}</p>
-                        <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
-                          {ticket.description}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant={
-                            ticket.priority === "urgent" || ticket.priority === "high"
-                              ? "destructive"
-                              : "secondary"
-                          }
-                        >
-                          {tTicket(TICKET_PRIORITY_KEY[ticket.priority])}
-                        </Badge>
-                        <Badge
-                          variant={
-                            ticket.status === "resolved" || ticket.status === "closed"
-                              ? "default"
-                              : "secondary"
-                          }
-                        >
-                          {tTicket(TICKET_STATUS_KEY[ticket.status])}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
         {/* Money Tab — Payments/P&L merged with the former standalone Expenses
-            tab, per the tab merge (Overview/Money/Operations/Audit). */}
+            tab, per the tab merge (Overview/Money/Audit). */}
         <TabsContent value="finance" className="space-y-6">
           {/* Money-tab actions: the expense dialog opens from here, where expenses live. */}
           <div className="flex flex-wrap items-center justify-end gap-2">
@@ -1445,55 +1237,6 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
 
         {/* Audit Tab — the shared AuditTrail component (GET /api/audit-trail), scoped to
             this property plus its tenants/leases/receipts/expenses (Migration A resourceId keys). */}
-        {/* Documents — promoted from a header quick-action sheet to a tab of its own, grouped
-            by document type so a property's paperwork reads as categories rather than one
-            undifferentiated list. */}
-        <TabsContent value="documents" className="space-y-6">
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={() => setDocumentsOpen(true)}>
-              <FileText className="mr-1.5 h-3.5 w-3.5" />
-              {t("actions.manageDocuments")}
-            </Button>
-          </div>
-
-          {propertyDocuments.length === 0 ? (
-            <EmptyStateIllustration entityType="documents" />
-          ) : (
-            <div className="space-y-6">
-              {Object.entries(
-                propertyDocuments.reduce<Record<string, PropertyDocument[]>>((acc, doc) => {
-                  (acc[doc.type] ??= []).push(doc);
-                  return acc;
-                }, {}),
-              )
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([type, docs]) => (
-                  <div key={type} className="space-y-2">
-                    <div className="flex items-baseline justify-between gap-2 border-b border-[var(--color-border)] pb-1.5">
-                      <h3 className="mono-label">{documentTypeLabel(type)}</h3>
-                      <span className="font-mono text-[12px] md:text-[10px] tabular-nums text-[var(--color-muted-foreground)]">
-                        {docs.length}
-                      </span>
-                    </div>
-                    {docs.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="flex items-center justify-between gap-3 py-1.5 text-sm"
-                      >
-                        <span className="truncate text-[var(--color-foreground)]" title={doc.name}>
-                          {doc.name}
-                        </span>
-                        <span className="shrink-0 font-mono text-[12px] md:text-[10px] tabular-nums text-[var(--color-muted-foreground)]">
-                          {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString(locale) : "—"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-            </div>
-          )}
-        </TabsContent>
-
         <TabsContent value="audit">
           <AuditTrail
             resourceIds={auditResourceIds}

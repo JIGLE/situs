@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { requireAuth, handleOptions } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
-import { isDemoRequest } from "@/lib/demo/demo-mode";
 import { isMockMode } from "@/lib/config/data-mode";
 import { recordProductEvent, PRODUCT_EVENT_NAMES } from "@/lib/services/analytics/product-events";
 import { createSuccessResponse, parseJsonBody, withErrorHandler } from "@/lib/utils/error-handling";
@@ -14,10 +13,9 @@ const eventSchema = z.object({
 });
 
 // POST /api/events - Record a client-side product-analytics event.
-// Demo sessions and mock mode are intentionally no-ops: demo activity isn't
-// real user behavior, and mock mode has no database to write to.
+// Mock mode is intentionally a no-op: there is no database to write to.
 async function handlePost(request: NextRequest): Promise<Response> {
-  if (isDemoRequest(request) || isMockMode) {
+  if (isMockMode) {
     return createSuccessResponse({ ok: true });
   }
 

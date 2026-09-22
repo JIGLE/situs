@@ -9,7 +9,6 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
-import { isDemoRequest } from "@/lib/demo/demo-mode";
 import { createCheckoutSession } from "@/lib/billing/subscription-service";
 import { getSecret } from "@/lib/utils/env";
 
@@ -35,13 +34,6 @@ export async function GET(request: NextRequest): Promise<Response> {
     return NextResponse.json(
       { error: "A valid plan (pro or business) is required" },
       { status: 400 },
-    );
-  }
-
-  if (isDemoRequest(request)) {
-    const referer = request.headers.get("referer");
-    return NextResponse.redirect(
-      referer && referer.startsWith(getBaseUrl(request)) ? referer : "/",
     );
   }
 

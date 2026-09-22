@@ -1,13 +1,13 @@
 // SaaS subscription billing for the app itself — Stripe Checkout + Billing
 // Portal + webhook sync, backing the Free/Pro/Business tiers on the landing
 // page (previously unbacked marketing copy, see docs/PRODUCT_AUDIT_2026.md §2).
-// Distinct from lib/payment/, which handles tenant-to-landlord rent collection.
+// Distinct from rent collection, which arrives as a bank movement, not a card payment.
 
 import type Stripe from "stripe";
 import { getSecret, isEnabled } from "@/lib/utils/env";
 import { getPrismaClient } from "@/lib/services/database/database";
 import type { PrismaClient, Subscription } from "@prisma/client";
-import { paymentService } from "@/lib/payment/payment-service";
+import { getStripeClient } from "./stripe-client";
 import { getPlanLimits, type PlanId } from "./plan-limits";
 
 const PAID_PLAN_PRICE_ENV: Record<"pro" | "business", string> = {
@@ -36,7 +36,7 @@ export async function getOrCreateStripeCustomerForUser(userId: string): Promise<
   });
   if (!user) throw new Error("User not found");
 
-  const stripe = paymentService.getStripeClient();
+  const stripe = getStripeClient();
   const customer = await stripe.customers.create({
     email: user.email,
     name: user.name ?? undefined,
@@ -68,7 +68,7 @@ export async function createCheckoutSession(
   }
 
   const customerId = await getOrCreateStripeCustomerForUser(userId);
-  const stripe = paymentService.getStripeClient();
+  const stripe = getStripeClient();
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -102,7 +102,7 @@ export async function createBillingPortalSession(
     throw new Error("No billing account found for this user");
   }
 
-  const stripe = paymentService.getStripeClient();
+  const stripe = getStripeClient();
   const session = await stripe.billingPortal.sessions.create({
     customer: subscription.stripeCustomerId,
     return_url: returnUrl,
@@ -213,11 +213,6 @@ async function syncSubscriptionFromStripe(
 export interface SubscriptionWebhookResult {
   success: boolean;
   error?: string;
-  // Not applicable to subscription events — present only so this shares a
-  // response shape with paymentService.processStripeWebhook's result at the
-  // single call site in app/api/webhooks/stripe/route.ts.
-  transactionId?: undefined;
-  newStatus?: undefined;
 }
 
 /** Handle the subscription-lifecycle Stripe events (checkout.session.completed, customer.subscription.*). */
@@ -236,7 +231,7 @@ export async function processSubscriptionWebhook(
         const userId = session.metadata?.userId;
         if (!userId) return { success: false, error: "Missing userId in session metadata" };
 
-        const stripe = paymentService.getStripeClient();
+        const stripe = getStripeClient();
         const subscriptionId =
           typeof session.subscription === "string" ? session.subscription : session.subscription.id;
         const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);

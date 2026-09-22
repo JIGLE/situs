@@ -1,9 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const { requireAuthMock, isDemoRequestMock, getCurrentPlanInfoMock } = vi.hoisted(() => ({
+const { requireAuthMock, getCurrentPlanInfoMock } = vi.hoisted(() => ({
   requireAuthMock: vi.fn(),
-  isDemoRequestMock: vi.fn(),
   getCurrentPlanInfoMock: vi.fn(),
 }));
 
@@ -15,10 +14,6 @@ vi.mock("@/lib/services/database/database", () => ({
   getPrismaClient: vi.fn(() => ({})),
 }));
 
-vi.mock("@/lib/demo/demo-mode", () => ({
-  isDemoRequest: isDemoRequestMock,
-}));
-
 vi.mock("@/lib/billing/subscription-service", () => ({
   getCurrentPlanInfo: getCurrentPlanInfoMock,
 }));
@@ -28,20 +23,7 @@ import { GET } from "./route";
 describe("GET /api/billing/subscription", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    isDemoRequestMock.mockReturnValue(false);
     requireAuthMock.mockResolvedValue({ userId: "user-123" });
-  });
-
-  it("returns a synthetic Free plan for demo requests without hitting Prisma", async () => {
-    isDemoRequestMock.mockReturnValue(true);
-
-    const response = await GET(new NextRequest("http://localhost:3000/api/billing/subscription"));
-    const body = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(body.data.plan).toBe("free");
-    expect(requireAuthMock).not.toHaveBeenCalled();
-    expect(getCurrentPlanInfoMock).not.toHaveBeenCalled();
   });
 
   it("returns the authenticated user's plan info", async () => {

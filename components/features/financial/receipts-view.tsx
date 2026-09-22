@@ -49,7 +49,6 @@ import { receiptSchema, type ReceiptFormData } from "@/lib/schemas/receipt.schem
 import { RECEIPT_TYPE_KEY } from "@/lib/utils/receipt-labels";
 import { useToast } from "@/lib/contexts/toast-context";
 import { useFormDialog } from "@/lib/hooks/use-form-dialog";
-import { usePortalAccess } from "@/lib/contexts/portal-context";
 import jsPDF from "jspdf";
 import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
@@ -81,7 +80,6 @@ export interface ReceiptsViewRef {
 export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
   function ReceiptsView(props, ref) {
     const { state, addReceipt, updateReceipt, deleteReceipt } = useApp();
-    const { isOwnerPortal } = usePortalAccess();
     const { receipts, tenants, properties, loading } = state;
     const { success, error: showError } = useToast();
     const t = useTranslations("financial.receipts");
@@ -174,9 +172,7 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
       ? t("descriptionTenant")
       : props.propertyId
         ? t("descriptionProperty")
-        : isOwnerPortal
-          ? t("descriptionOwner")
-          : t("descriptionPortal");
+        : t("descriptionOwner");
 
     const handleEdit = (receipt: Receipt) => {
       dialog.openEditDialog(receipt, (r) => ({
@@ -205,10 +201,44 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
       );
     };
 
+    /**
+     * Serve the archived PDF when the receipt has one, and render a fresh copy when it does not.
+     *
+     * The two are not interchangeable. The archive is written when a receipt reaches
+     * emitted/accepted and is the proof of a filing made at Finanças; the jsPDF render below is
+     * a convenience copy built from whatever this row currently holds. A receipt that has been
+     * emitted must hand over the former, so the archive is tried first and the render is the
+     * fallback for drafts and pre-lifecycle rows, which legitimately have no archive.
+     */
+    const downloadArchivedPdf = async (receipt: Receipt): Promise<boolean> => {
+      const res = await fetch(`/api/receipts/${receipt.id}/archive`, { credentials: "include" });
+      if (!res.ok) return false; // 404 is the ordinary "never emitted" answer.
+
+      const body = await res.json();
+      const documentId = (body?.data ?? body)?.documentId;
+      if (!documentId) return false;
+
+      const file = await fetch(`/api/documents/${documentId}/download`, {
+        credentials: "include",
+      });
+      if (!file.ok) return false;
+
+      const blob = await file.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `receipt-${receipt.id}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+      return true;
+    };
+
     const generatePDF = async (receipt: Receipt) => {
       setGeneratingPdf(receipt.id);
 
       try {
+        if (await downloadArchivedPdf(receipt)) return;
+
         const doc = new jsPDF();
 
         // Set up the PDF
@@ -265,7 +295,7 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
       return <Badge className={colors[type]}>{type.charAt(0).toUpperCase() + type.slice(1)}</Badge>;
     };
 
-    const addReceiptButton = isOwnerPortal && (
+    const addReceiptButton = (
       <Dialog open={dialog.isOpen} onOpenChange={(open) => !open && dialog.closeDialog()}>
         <DialogTrigger asChild>
           <Button onClick={dialog.openDialog} className="flex items-center gap-2">
@@ -428,10 +458,7 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
 
             <div className="grid gap-4">
               {filteredReceipts.length === 0 ? (
-                <EmptyStateIllustration
-                  type="receipts"
-                  onAction={isOwnerPortal ? dialog.openDialog : undefined}
-                />
+                <EmptyStateIllustration type="receipts" onAction={dialog.openDialog} />
               ) : (
                 filteredReceipts.map((receipt) => (
                   <Card
@@ -484,23 +511,21 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
                                 disabled={generatingPdf === receipt.id}
                               >
                                 <Download className="h-4 w-4 mr-2" />
-                                {generatingPdf === receipt.id ? "Generating..." : "Download PDF"}
+                                {generatingPdf === receipt.id
+                                  ? t("pdfGenerating")
+                                  : t("pdfDownload")}
                               </DropdownMenuItem>
-                              {isOwnerPortal && (
-                                <>
-                                  <DropdownMenuItem onClick={() => handleEdit(receipt)}>
-                                    <Edit className="h-4 w-4 mr-2" />
-                                    {t("edit")}
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-destructive"
-                                    onClick={() => handleDelete(receipt.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    {t("delete")}
-                                  </DropdownMenuItem>
-                                </>
-                              )}
+                              <DropdownMenuItem onClick={() => handleEdit(receipt)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                {t("edit")}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => handleDelete(receipt.id)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                {t("delete")}
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>

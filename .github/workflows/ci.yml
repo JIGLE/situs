@@ -369,12 +369,16 @@ jobs:
       # no rows cannot overflow. Every number this job produced before it was added described
       # empty screens. `--strict` ratchets against BASELINE in the harness.
       #
-      # This is a real gate now. CI reported `✓ Mobile audit exactly at baseline` on a seeded
-      # 52-surface run — pageOverflow 0, touchTargetFails 4, touchTargetWarns 4,
-      # clippedContainers 6, smallText 310 — matching three consecutive local runs against a
-      # production standalone build and a fresh database. `continue-on-error` was the only
-      # thing keeping an unmeasured baseline from blocking a PR, and the baseline is now
-      # measured, so it comes off.
+      # This is a real gate. `continue-on-error` was the only thing keeping an unmeasured
+      # baseline from blocking a PR, and the baseline was measured, so it came off: a seeded
+      # 52-surface-run sweep reporting `✓ Mobile audit exactly at baseline`, matching three
+      # consecutive local runs against a production standalone build and a fresh database.
+      #
+      # The sweep is 38 surface-runs since the scope cutdown removed seven surfaces. `smallText`
+      # is the only metric that scales with that count, and it was retightened from this job's
+      # own output rather than estimated: 192 on `dc2cdf2` and 192 again on `97e308d`. See the
+      # note on BASELINE in the harness for why its ceiling keeps one point of margin, and why
+      # `touchTargetFails` deliberately sits above what it measures.
       #
       # If this fails: read the numbers before touching BASELINE. It may only ever go down.
       - name: Run mobile audit harness

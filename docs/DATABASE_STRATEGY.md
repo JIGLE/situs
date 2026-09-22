@@ -35,13 +35,12 @@ Two concrete risks, both real today, neither urgent yet:
    the single SQLite file, which then has to move through every backup, every `.backup`
    copy, and every WAL checkpoint. It's the only BLOB field in the schema —
    `Document.storagePath` (used for everything else: insurance policies, certificates,
-   correspondence attachments) already does this correctly, storing a filesystem path or
+   document uploads) already does this correctly, storing a filesystem path or
    URL instead of bytes. `Lease.contractFile` predates that pattern and was never
    migrated to match it.
-2. **`lib/contexts/use-app-data.ts` loads ten full, unpaginated collections
+2. **`lib/contexts/use-app-data.ts` loads seven full, unpaginated collections
    (`/api/properties`, `/api/buildings`, `/api/tenants`, `/api/receipts`,
-   `/api/correspondence/templates`, `/api/correspondence`, `/api/owners`,
-   `/api/expenses`, `/api/maintenance`, `/api/leases`) in parallel on every app mount**,
+   `/api/owners`, `/api/expenses`, `/api/leases`) in parallel on every app mount**,
    regardless of portfolio size. `/api/properties` already supports `?page=`/`?limit=`
    (see `app/api/properties/route.ts`) but this caller doesn't use it — it always hits
    the "return everything" branch. This is a client-side/API-shape problem, not a
@@ -263,6 +262,4 @@ See `prisma/schema.prisma` for the full data model. Key models:
 - `Property` — property listings
 - `Tenant` — tenant records
 - `Lease` — lease agreements
-- `PaymentMethod` / `PaymentTransaction` — tenant rent-collection payments (Stripe)
 - `Subscription` — the app's own SaaS plan/billing state (see roadmap 3.4)
-- `Invoice` — generated invoices

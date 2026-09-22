@@ -7,7 +7,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 
 import { countryLabel } from "@/lib/design/country-themes";
 import { cn } from "@/lib/utils/utils";
-import type { Building, Lease, MaintenanceTicket, Property, Tenant } from "@/lib/types";
+import type { Building, Lease, Property, Tenant } from "@/lib/types";
 
 /** A lease is in its renewal window when it is active and ends within 60 days. */
 const RENEWAL_WINDOW_MS = 60 * 24 * 60 * 60 * 1000;
@@ -18,7 +18,7 @@ const RENEWAL_WINDOW_MS = 60 * 24 * 60 * 60 * 1000;
  * Hierarchy is derived from real data, not stored: country → cluster
  * (building, or city for standalone properties) → asset. Each asset carries
  * an attention strip of square status dots: danger = tenant payment overdue,
- * warning = open maintenance tickets, info = lease renewal due.
+ * info = lease renewal due.
  *
  * The tree lives in a narrow rail attached to the sidebar, so a row carries only what
  * identifies an asset and whether it needs attention — the address, the rent and every
@@ -29,7 +29,6 @@ interface PortfolioTreeProps {
   properties: Property[];
   buildings: Building[];
   tenants: Tenant[];
-  maintenance: MaintenanceTicket[];
   leases?: Lease[];
   onSelectProperty?: (propertyId: string) => void;
   highlightedPropertyId?: string;
@@ -38,7 +37,6 @@ interface PortfolioTreeProps {
 interface AssetNode {
   property: Property;
   overdue: boolean;
-  openTickets: number;
   renewalDue: boolean;
 }
 
@@ -59,7 +57,6 @@ export function PortfolioTree({
   properties,
   buildings,
   tenants,
-  maintenance,
   leases = [],
   onSelectProperty,
   highlightedPropertyId,
@@ -84,15 +81,6 @@ export function PortfolioTree({
         .filter((tn) => tn.paymentStatus === "overdue" && tn.propertyId)
         .map((tn) => tn.propertyId as string),
     );
-    const openTicketsByProperty = new Map<string, number>();
-    for (const ticket of maintenance) {
-      if (ticket.status === "open" || ticket.status === "in_progress") {
-        openTicketsByProperty.set(
-          ticket.propertyId,
-          (openTicketsByProperty.get(ticket.propertyId) ?? 0) + 1,
-        );
-      }
-    }
     // Info signal: an active lease entering its 60-day renewal window.
     const renewalDueByProperty = new Set<string>();
     const renewalCutoff = Date.now() + RENEWAL_WINDOW_MS;
@@ -126,7 +114,6 @@ export function PortfolioTree({
       cluster.assets.push({
         property,
         overdue: overdueByProperty.has(property.id),
-        openTickets: openTicketsByProperty.get(property.id) ?? 0,
         renewalDue: renewalDueByProperty.has(property.id),
       });
     }
@@ -147,7 +134,7 @@ export function PortfolioTree({
         };
       })
       .sort((a, b) => a.label.localeCompare(b.label));
-  }, [properties, buildings, tenants, maintenance, leases, t, locale]);
+  }, [properties, buildings, tenants, leases, t, locale]);
 
   if (properties.length === 0) {
     return (
@@ -217,7 +204,7 @@ export function PortfolioTree({
                     {/* Asset rows — label at 56px, one step past its cluster's label so the
                         hierarchy survives without a chevron of its own to mark the level. */}
                     {!clusterNodeCollapsed &&
-                      cluster.assets.map(({ property, overdue, openTickets, renewalDue }) => {
+                      cluster.assets.map(({ property, overdue, renewalDue }) => {
                         const highlighted = property.id === highlightedPropertyId;
                         return (
                           <button
@@ -241,13 +228,6 @@ export function PortfolioTree({
                                   className="status-dot status-dot-danger"
                                   title={t("dotOverdue")}
                                   aria-label={t("dotOverdue")}
-                                />
-                              )}
-                              {openTickets > 0 && (
-                                <span
-                                  className="status-dot status-dot-warn"
-                                  title={t("dotTickets")}
-                                  aria-label={t("dotTickets")}
                                 />
                               )}
                               {renewalDue && (

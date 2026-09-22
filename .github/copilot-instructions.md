@@ -16,7 +16,6 @@
 | Animations | framer-motion                                    |
 | Icons      | lucide-react                                     |
 | Email      | SMTP (`nodemailer`); Brevo by default            |
-| Payments   | Stripe                                           |
 | Unit tests | Vitest v4 + jsdom + Testing Library              |
 | E2E tests  | Playwright (Chromium + mobile Chrome)            |
 
@@ -28,7 +27,6 @@
 
 - All pages live under `app/[locale]/(main)/<feature>/page.tsx`.
 - API routes live under `app/api/<resource>/route.ts`; export named handlers `GET`, `POST`, `PUT`, `DELETE`, `OPTIONS`.
-- The tenant portal is a separate section under `app/tenant-portal/`.
 
 ### API Route Pattern
 
@@ -132,7 +130,7 @@ export const GET = withErrorHandler(withRateLimit(handleGet));
 - **Location**: `e2e/` directory.
 - **Browsers**: Desktop Chromium and mobile Chrome (Pixel 5 profile).
 - **Auth**: a dedicated `setup` project runs first and stores auth state; all other projects depend on it.
-- **Scope**: cover critical user journeys — CRUD for each entity, dashboard smoke, payment flows, tenant portal, lease/property/tenant workflows, compliance, and tax scenarios.
+- **Scope**: cover critical user journeys — CRUD for each entity, dashboard smoke, bank import and matching, lease/property/tenant workflows, compliance, and tax scenarios.
 - **CI behaviour**: tests are retried once on failure (`retries: 1` in CI).
 
 ### General Expectations
@@ -151,7 +149,6 @@ app/
     (main)/           # Authenticated app pages — add new feature pages here
     layout.tsx        # Locale-level layout
   api/                # Route handlers — one folder per resource
-  tenant-portal/      # Tenant-facing portal pages
 
 components/
   ui/                 # Generic, reusable primitives — no domain logic
@@ -172,8 +169,7 @@ lib/
   i18n/               # next-intl config and locale definitions
   compliance/         # Compliance logic
   tax/                # Tax calculation helpers
-  payment/            # Stripe integration
-  portal/             # Tenant portal helpers
+  portal/             # Owner navigation and route access
 
 prisma/               # Prisma schema and migrations
 types/                # Global TypeScript declaration files (*.d.ts)

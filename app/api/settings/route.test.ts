@@ -1,21 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const { requireAuthMock, isDemoRequestMock, isMockModeRef, findUniqueMock, upsertMock } =
-  vi.hoisted(() => ({
-    requireAuthMock: vi.fn(),
-    isDemoRequestMock: vi.fn(),
-    isMockModeRef: { value: false },
-    findUniqueMock: vi.fn(),
-    upsertMock: vi.fn(),
-  }));
+const { requireAuthMock, isMockModeRef, findUniqueMock, upsertMock } = vi.hoisted(() => ({
+  requireAuthMock: vi.fn(),
+  isMockModeRef: { value: false },
+  findUniqueMock: vi.fn(),
+  upsertMock: vi.fn(),
+}));
 
 vi.mock("@/lib/services/auth/auth-middleware", () => ({
   requireAuth: requireAuthMock,
-}));
-
-vi.mock("@/lib/demo/demo-mode", () => ({
-  isDemoRequest: isDemoRequestMock,
 }));
 
 vi.mock("@/lib/config/data-mode", () => ({
@@ -42,7 +36,6 @@ function postRequest(body: unknown) {
 describe("/api/settings — onboardingDismissedAt", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    isDemoRequestMock.mockReturnValue(false);
     isMockModeRef.value = false;
     requireAuthMock.mockResolvedValue({ userId: "user-123" });
   });
@@ -71,15 +64,5 @@ describe("/api/settings — onboardingDismissedAt", () => {
         create: expect.objectContaining({ onboardingDismissedAt: "2026-07-09T00:00:00.000Z" }),
       }),
     );
-  });
-
-  it("returns a default onboardingDismissedAt for demo requests", async () => {
-    isDemoRequestMock.mockReturnValue(true);
-
-    const response = await GET(new NextRequest("http://localhost:3000/api/settings"));
-    const body = await response.json();
-
-    expect(body.data.onboardingDismissedAt).toBeNull();
-    expect(findUniqueMock).not.toHaveBeenCalled();
   });
 });

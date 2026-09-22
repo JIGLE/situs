@@ -2,22 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { isMockMode } from "@/lib/config/data-mode";
-import { isDemoRequest } from "@/lib/demo/demo-mode";
 import { z } from "zod";
 
 const createNotificationSchema = z.object({
   type: z.enum([
-    "lease_expiring",
     "payment_due",
-    "payment_received",
     "payment_overdue",
-    "maintenance_created",
-    "maintenance_completed",
-    "document_uploaded",
     "rent_receipt_due",
-    "nrua_registration",
     "lease_renewal_reminder",
-    "inbound_message",
     "system",
     "other",
   ]),
@@ -30,14 +22,6 @@ const createNotificationSchema = z.object({
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    if (isDemoRequest(request)) {
-      return NextResponse.json({
-        notifications: [],
-        total: 0,
-        unreadCount: 0,
-      });
-    }
-
     if (isMockMode) {
       return NextResponse.json([]);
     }
@@ -83,31 +67,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    if (isDemoRequest(request)) {
-      const body = await request.json();
-      const parsed = createNotificationSchema.safeParse(body);
-
-      if (!parsed.success) {
-        return NextResponse.json(
-          { error: "Validation failed", details: parsed.error.flatten() },
-          { status: 400 },
-        );
-      }
-
-      const now = new Date().toISOString();
-      return NextResponse.json(
-        {
-          id: `demo-notification-${Date.now()}`,
-          userId: "demo-user",
-          read: false,
-          createdAt: now,
-          updatedAt: now,
-          ...parsed.data,
-        },
-        { status: 201 },
-      );
-    }
-
     const authResult = await requireAuth(request);
     if (authResult instanceof Response) return authResult as NextResponse;
     const { userId } = authResult;

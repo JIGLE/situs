@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { formatDate } from "@/lib/utils/format-date";
-import { AlertTriangle, CalendarClock, CheckCircle2, Wrench } from "lucide-react";
+import { AlertTriangle, CalendarClock, CheckCircle2 } from "lucide-react";
 
 import { useApp } from "@/lib/contexts/app-context";
 import { useCurrency } from "@/lib/contexts/currency-context";
@@ -63,7 +63,7 @@ export function PortfolioSummary({
   const { formatCurrency } = useCurrency();
   const t = useTranslations("portfolio");
   const locale = useLocale();
-  const { properties, leases, maintenance, receipts } = state;
+  const { properties, leases, receipts } = state;
 
   const occupied = properties.filter((p) => p.status === "occupied").length;
   const occupancyRate = properties.length ? Math.round((occupied / properties.length) * 100) : 0;
@@ -99,11 +99,6 @@ export function PortfolioSummary({
 
     return properties
       .map((property) => {
-        const openTickets = maintenance.filter(
-          (m) =>
-            m.propertyId === property.id && (m.status === "open" || m.status === "in_progress"),
-        ).length;
-
         const expiring = leases.find((l) => {
           if (l.propertyId !== property.id || l.status !== "active") return false;
           const end = new Date(l.endDate);
@@ -112,8 +107,8 @@ export function PortfolioSummary({
 
         const occupiedNoLease = property.status === "occupied" && !activeLeaseIds.has(property.id);
 
-        // Ordered by what costs most to ignore: a tenancy with no contract behind it, then a
-        // lease about to lapse, then work outstanding.
+        // Ordered by what costs most to ignore: a tenancy with no contract behind it, then
+        // a lease about to lapse.
         if (occupiedNoLease) {
           return {
             id: property.id,
@@ -134,19 +129,10 @@ export function PortfolioSummary({
             }),
           };
         }
-        if (openTickets > 0) {
-          return {
-            id: property.id,
-            name: property.name,
-            severity: "warning" as Severity,
-            Icon: Wrench,
-            reason: t("attention.openTickets", { count: openTickets }),
-          };
-        }
         return null;
       })
       .filter((row): row is NonNullable<typeof row> => row !== null);
-  }, [leases, maintenance, properties, t, locale]);
+  }, [leases, properties, t, locale]);
 
   const delta = monthlyRunRate - lastMonthTotal;
 

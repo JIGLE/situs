@@ -23,7 +23,7 @@ describe("normalising a portal path", () => {
       ["/en/portfolio", "/portfolio"],
       ["/pt/settings", "/settings"],
       ["/es/admin", "/admin"],
-      ["/it/operations", "/operations"],
+      ["/it/people", "/people"],
     ]) {
       expect(normalizePortalPath(prefixed)).toBe(normalizePortalPath(clean));
     }
@@ -55,35 +55,39 @@ describe("normalising a portal path", () => {
     // These predate the prefix change and must survive it — old deep links depend on them.
     expect(normalizePortalPath("/en/properties")).toBe("/portfolio");
     expect(normalizePortalPath("/properties")).toBe("/portfolio");
-    expect(normalizePortalPath("/reports")).toBe("/intelligence");
-    expect(normalizePortalPath("/maintenance")).toBe("/operations");
   });
 });
 
 describe("access derived from the normalised path", () => {
-  it("grants an owner the same pages under either URL shape", () => {
-    for (const path of ["/portfolio", "/settings", "/admin", "/operations"]) {
-      expect(canAccessPortalPath("owner", path)).toBe(true);
-      expect(canAccessPortalPath("owner", `/en${path}`)).toBe(true);
+  it("grants the nav pages under either URL shape", () => {
+    for (const path of [
+      "/portfolio",
+      "/settings",
+      "/admin",
+      "/people",
+      "/financials",
+      "/leases",
+      "/compliance/modelo179",
+    ]) {
+      expect(canAccessPortalPath(path)).toBe(true);
+      expect(canAccessPortalPath(`/en${path}`)).toBe(true);
     }
   });
 
-  it("keeps a tenant out of owner-only pages under either shape", () => {
-    // The regression that would matter most: if the clean shape resolved to something a tenant
-    // may reach, the prefix change would become a privilege escalation.
-    //
-    // These are owner-only. `/portfolio`, `/financials`, `/documents` and `/leases` are NOT —
-    // a tenant reaches their own view of each — which is why they are asserted below instead.
-    for (const path of ["/admin", "/admin/users", "/operations", "/intelligence", "/contacts"]) {
-      expect(canAccessPortalPath("tenant", path)).toBe(false);
-      expect(canAccessPortalPath("tenant", `/en${path}`)).toBe(false);
-    }
-  });
-
-  it("lets a tenant reach the pages that are theirs, under either shape", () => {
-    for (const path of ["/settings", "/portfolio", "/documents", "/leases"]) {
-      expect(canAccessPortalPath("tenant", path)).toBe(true);
-      expect(canAccessPortalPath("tenant", `/pt${path}`)).toBe(true);
+  /**
+   * This suite used to assert a tenant out of owner-only pages, because
+   * `canAccessPortalPath` took a role and a mis-normalised path would have been a privilege
+   * escalation. The scope cutdown removed tenant access, so there is one role and that
+   * assertion has nothing left to compare.
+   *
+   * What replaces it is the property that still has to hold: the function can say no. A
+   * version that returned true for everything would be indistinguishable from a working one
+   * at every call site, since `PortalAccessGuard` only ever asks about routes that exist.
+   */
+  it("still refuses a path that is not a nav destination, under either shape", () => {
+    for (const path of ["/nope", "/portfolios", "/admin-panel", "/settings-old"]) {
+      expect(canAccessPortalPath(path)).toBe(false);
+      expect(canAccessPortalPath(`/en${path}`)).toBe(false);
     }
   });
 });
@@ -126,10 +130,10 @@ describe("redirect-only routes survive the portal access guard", () => {
 
   it.each(stubs)("$route is reachable and forwards to $target", ({ route, target }) => {
     // Reachable: the guard must not bounce the route before the redirect runs. This is the whole
-    // bug. Note it is NOT required that the alias equal the target — `/contacts` is a nav
-    // destination in its own right whose page happens to forward to a view of People, and that is
+    // bug. Note it is NOT required that the alias equal the target — a stub may be a nav
+    // destination in its own right whose page happens to forward somewhere else, and that is
     // fine. What matters is only that the guard lets the route render at all.
-    expect(canAccessPortalPath("owner", route)).toBe(true);
+    expect(canAccessPortalPath(route)).toBe(true);
 
     // Canonical target: a relative path is never resolved by the client router, and a
     // locale-prefixed one earns a 308 from the proxy that the router does not survive.

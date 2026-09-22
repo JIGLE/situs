@@ -3,15 +3,11 @@ import { requireAuth, handleOptions } from "@/lib/services/auth/auth-middleware"
 import { getPrismaClient } from "@/lib/services/database/database";
 import { expenseSchema } from "@/lib/schemas/expense.schema";
 import { isMockMode } from "@/lib/config/data-mode";
-import { handleDemoGet, handleDemoMutation } from "@/lib/demo/demo-api-handler";
 import { createSuccessResponse, parseJsonBody, withErrorHandler } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { assertOwnsRelations } from "@/lib/services/database/assert-owned";
 
 async function handleGet(request: NextRequest): Promise<Response> {
-  const demo = handleDemoGet(request, "expenses");
-  if (demo.response) return demo.response;
-
   if (isMockMode) {
     return createSuccessResponse([]);
   }
@@ -42,9 +38,6 @@ async function handleGet(request: NextRequest): Promise<Response> {
 }
 
 async function handlePost(request: NextRequest): Promise<Response> {
-  const demo = await handleDemoMutation(request, "expenses");
-  if (demo.response) return demo.response;
-
   const authResult = await requireAuth(request);
   if (authResult instanceof Response) return authResult;
 

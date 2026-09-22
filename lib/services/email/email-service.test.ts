@@ -80,13 +80,13 @@ describe("EmailService", () => {
     inject(service, transport);
 
     await service.sendTemplatedEmail(
-      "maintenance_complete",
+      "lease_renewal",
       "test2@example.com",
       {
         tenantName: "Sam",
         propertyAddress: "2 Elm St",
-        workDescription: "Fix sink",
-        completionDate: "2025-12-01",
+        currentLeaseEnd: "2026-12-01",
+        renewalDeadline: "2026-11-01",
       },
       "user-2",
     );

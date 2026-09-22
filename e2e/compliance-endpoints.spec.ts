@@ -114,32 +114,6 @@ test.describe("Compliance: Lease Template Generation", () => {
   });
 });
 
-// ─── SEPA Mandates ────────────────────────────────────────────────────────────
-
-test.describe("Compliance: SEPA DD Mandates", () => {
-  test("GET /api/payments/sepa-mandates requires authentication", async ({ request }) => {
-    const response = await request.get("/api/payments/sepa-mandates");
-    expect([401, 403, 302].includes(response.status())).toBeTruthy();
-  });
-
-  test("POST /api/payments/sepa-mandates requires authentication", async ({ request }) => {
-    const response = await request.post("/api/payments/sepa-mandates", {
-      data: {
-        tenantId: "tenant_123",
-        iban: "PT50000201231234567890154",
-        accountHolder: "Maria Santos",
-        setupReturn: "https://app.situs.pt/return",
-      },
-    });
-    expect([401, 403, 302].includes(response.status())).toBeTruthy();
-  });
-
-  test("GET /api/payments/sepa-mandates endpoint exists (not 404)", async ({ request }) => {
-    const response = await request.get("/api/payments/sepa-mandates");
-    expect(response.status()).not.toBe(404);
-  });
-});
-
 // ─── Notification Cron ────────────────────────────────────────────────────────
 
 test.describe("Compliance: Notification Cron", () => {

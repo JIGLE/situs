@@ -6,9 +6,8 @@ rot in prose.
 
 **Scope.** This describes a single self-hosted Situs instance. There is one account; the
 operator is the controller and, in the ordinary case, also the only data subject with an
-account. The people whose data is processed are mostly _other_ people — tenants, owners,
-maintenance contacts, and the counterparties on bank movements — which is why this document
-exists at all.
+account. The people whose data is processed are mostly _other_ people — tenants, owners, and
+the counterparties on bank movements — which is why this document exists at all.
 
 **Status.** Kept current with the code. If something here disagrees with the code, the code is
 right and this is a bug. `docs:check` enforces that this file stays reachable, and
@@ -31,22 +30,20 @@ ever offered to other people.
 
 ## 2. Processing activities
 
-| Activity                            | Purpose                                     | Lawful basis                                             |
-| ----------------------------------- | ------------------------------------------- | -------------------------------------------------------- |
-| Property, unit and building records | Managing the portfolio                      | Legitimate interest (Art. 6(1)(f))                       |
-| Tenant and lease records            | Performing the tenancy agreement            | Contract (Art. 6(1)(b))                                  |
-| Rent ledger, receipts, allocations  | Recording rent due and paid                 | Contract; legal obligation for the fiscal parts          |
-| Bank movement ingestion (PSD2)      | Reconciling rent against bank credits       | Consent, given at the bank under PSD2 (Art. 6(1)(a))     |
-| Fiscal filing (PT AT, ES NRUA)      | Statutory rent-income reporting             | Legal obligation (Art. 6(1)(c))                          |
-| Maintenance tickets and contacts    | Managing repairs                            | Legitimate interest; contract where the tenant raised it |
-| Transactional email                 | Rent reminders, lease-expiry alerts         | Contract; legitimate interest                            |
-| Tenant portal                       | Giving a tenant access to their own records | Contract                                                 |
-| Audit log                           | Accountability (Art. 5(2)), fraud detection | Legal obligation; legitimate interest                    |
+| Activity                            | Purpose                                     | Lawful basis                                         |
+| ----------------------------------- | ------------------------------------------- | ---------------------------------------------------- |
+| Property, unit and building records | Managing the portfolio                      | Legitimate interest (Art. 6(1)(f))                   |
+| Tenant and lease records            | Performing the tenancy agreement            | Contract (Art. 6(1)(b))                              |
+| Rent ledger, receipts, allocations  | Recording rent due and paid                 | Contract; legal obligation for the fiscal parts      |
+| Bank movement ingestion (PSD2)      | Reconciling rent against bank credits       | Consent, given at the bank under PSD2 (Art. 6(1)(a)) |
+| Fiscal filing (PT AT, ES NRUA)      | Statutory rent-income reporting             | Legal obligation (Art. 6(1)(c))                      |
+| Transactional email                 | Rent reminders, lease-expiry alerts         | Contract; legitimate interest                        |
+| Audit log                           | Accountability (Art. 5(2)), fraud detection | Legal obligation; legitimate interest                |
 
 **No special-category data** (Art. 9) is processed by design. Nothing asks for health, beliefs,
-biometrics or the rest. Free-text fields — a maintenance ticket description, a bank remittance
-line — could contain anything a person typed, which is a reason to keep them no longer than
-needed rather than a reason to treat the app as processing Article 9 data.
+biometrics or the rest. Free-text fields — a bank remittance line, a receipt note — could
+contain anything a person typed, which is a reason to keep them no longer than needed rather
+than a reason to treat the app as processing Article 9 data.
 
 **No automated decision-making with legal effect** (Art. 22). Bank matching scores a movement
 against a lease and, above 0.85, creates a draft receipt; below that a human decides. Nothing
@@ -62,13 +59,12 @@ Fields marked **encrypted** are AES-256-GCM at rest (`lib/utils/pii-encryption.t
 where the client is built (`lib/services/database/database.ts`), so the encryption is
 transparent rather than per-call-site:
 
-| Model              | Encrypted fields                      |
-| ------------------ | ------------------------------------- |
-| `PaymentMethod`    | `iban`, `accountHolder`, `mbwayPhone` |
-| `Owner`            | `taxIdentificationNumber`, `phone`    |
-| `Tenant`           | `phone`                               |
-| `RentReceipt`      | `landlordNif`, `tenantNif`            |
-| `NRUARegistration` | `landlordNif`, `tenantNif`            |
+| Model              | Encrypted fields                   |
+| ------------------ | ---------------------------------- |
+| `Owner`            | `taxIdentificationNumber`, `phone` |
+| `Tenant`           | `phone`                            |
+| `RentReceipt`      | `landlordNif`, `tenantNif`         |
+| `NRUARegistration` | `landlordNif`, `tenantNif`         |
 
 ### Encrypted at the call site
 
@@ -85,16 +81,14 @@ make the debug endpoint start returning it in plaintext.
 
 Recorded here deliberately rather than left implicit:
 
-| Model                  | Field                                | Why                                                                                                                                                                                       |
-| ---------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Tenant`, `Owner`      | `name`, `email`                      | Needed for search, sorting and sending mail; encrypting would break every list view                                                                                                       |
-| `BankTransaction`      | `counterpartyName`                   | The matching engine reads it to score a movement against a lease                                                                                                                          |
-| `BankTransaction`      | `reference`                          | The remittance line. Read for reference-month parsing. **Free text: may contain anything the payer typed**                                                                                |
-| `BankAccount`          | `ibanLast4`                          | Four digits, displayed so a human can tell two accounts apart                                                                                                                             |
-| `Property`, `Building` | address fields                       | Personal data where a tenant lives there; core to the product                                                                                                                             |
-| `Document`             | uploaded files                       | Whatever the operator uploaded — leases, receipts, correspondence                                                                                                                         |
-| `InboundMessage`       | `subject`, `textBody`, `fromAddress` | Mail sent to us by third parties. **Unbounded free text: a sender may put any category of data in it, including Article 9 special categories, and we neither solicit nor can prevent it** |
-| `InboundAttachment`    | stored files                         | Whatever a sender attached. Restricted to PDF and images by magic-byte check, but the contents are theirs                                                                                 |
+| Model                  | Field              | Why                                                                                                        |
+| ---------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `Tenant`, `Owner`      | `name`, `email`    | Needed for search, sorting and sending mail; encrypting would break every list view                        |
+| `BankTransaction`      | `counterpartyName` | The matching engine reads it to score a movement against a lease                                           |
+| `BankTransaction`      | `reference`        | The remittance line. Read for reference-month parsing. **Free text: may contain anything the payer typed** |
+| `BankAccount`          | `ibanLast4`        | Four digits, displayed so a human can tell two accounts apart                                              |
+| `Property`, `Building` | address fields     | Personal data where a tenant lives there; core to the product                                              |
+| `Document`             | uploaded files     | Whatever the operator uploaded — leases, receipts, notices                                                 |
 
 `BankTransaction.rawData` preserves the imported row for re-matching, with the IBAN stripped
 before it is written (`redactRowForStorage`, `lib/services/bank/csv.ts`). It previously stored
@@ -105,13 +99,13 @@ clear here.
 
 A self-hosted instance shares data with a service only when that service is configured.
 
-| Recipient      | Receives                                                                                                                              | When                                                                           | Location     |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------ |
-| Enable Banking | Bank authorisation; returns account and transaction data                                                                              | Only where a bank is connected                                                 | EEA          |
-| Stripe         | Subscription billing details                                                                                                          | Only where billing is enabled                                                  | EEA          |
-| Brevo          | Outbound: recipient address and message body. Inbound: receives mail addressed to us and forwards it, sender and attachments included | Only where email is configured; inbound only where an MX record points at them | France (EEA) |
-| Portuguese AT  | Rent receipt filings                                                                                                                  | Only on submission                                                             | Portugal     |
-| Spanish AEAT   | NRUA / Modelo 179 filings                                                                                                             | Only on submission                                                             | Spain        |
+| Recipient      | Receives                                                         | When                           | Location     |
+| -------------- | ---------------------------------------------------------------- | ------------------------------ | ------------ |
+| Enable Banking | Bank authorisation; returns account and transaction data         | Only where a bank is connected | EEA          |
+| Stripe         | Subscription billing details                                     | Only where billing is enabled  | EEA          |
+| Brevo          | Recipient address and message body of transactional mail we send | Only where email is configured | France (EEA) |
+| Portuguese AT  | Rent receipt filings                                             | Only on submission             | Portugal     |
+| Spanish AEAT   | NRUA / Modelo 179 filings                                        | Only on submission             | Spain        |
 
 **Enable Banking is the licensed AISP**, which is why the instance needs no PSD2 licence and no
 eIDAS certificate. Access is read-only account information: account details and transactions.
@@ -147,11 +141,6 @@ Three rules that are not simply "delete old things":
   retention of the receipt it evidences.
 - **Consent reaping only touches connections holding no accounts.** Deleting a `BankConnection`
   cascades to `BankAccount` and `BankTransaction`, so the guard is on both status and emptiness.
-- **Inbound mail is only deleted once archived AND linked to nothing.** A message attached to a
-  tenant is correspondence evidence and follows that tenancy's records; unarchived mail is
-  untouched at any age, because nobody has read it yet and a retention job is not an inbox
-  cleaner. Deleting a message also removes its attachment files from disk, which the database
-  cascade alone would not do.
 
 **Nothing runs on a schedule until `CRON_SECRET` is set** and something calls
 `/api/cron/data-retention`; the endpoint returns 503 until then. An instance that has never set

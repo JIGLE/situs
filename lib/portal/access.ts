@@ -1,24 +1,32 @@
 import type { ComponentType } from "react";
 import {
-  BarChart2,
   Building2,
   Calculator,
-  FileBarChart,
-  FileBox,
   FileText,
-  HardHat,
   Home,
-  Mail,
-  Palette,
   Settings,
   ShieldCheck,
   UserCircle,
   Users,
   Wallet,
-  Wrench,
 } from "lucide-react";
 
-export type PortalRole = "owner" | "tenant";
+/**
+ * Whether a session may use the owner application at all.
+ *
+ * This replaced a two-member role union that every nav item carried a list of. The scope
+ * cutdown removed both tenant-facing surfaces — the token portal and role=USER access to
+ * this app — so every remaining route is an owner route and the per-item lists had
+ * collapsed to one value repeated ten times.
+ *
+ * It stays a real check rather than becoming `true`: `User.role` still defaults to USER in
+ * the schema, so a row can hold one even though the sign-in gate provisions ADMIN. A guard
+ * that cannot fail is the shape this repo keeps finding, so the predicate survives and the
+ * lists are what went.
+ */
+export function isOwnerSessionRole(role?: string | null): boolean {
+  return role !== "USER";
+}
 
 export interface PortalNavItem {
   key: string;
@@ -26,7 +34,6 @@ export interface PortalNavItem {
   label: string;
   labelKey: string;
   icon: ComponentType<{ className?: string }>;
-  roles: PortalRole[];
   mobilePrimary?: boolean;
   hidden?: boolean;
 }
@@ -58,7 +65,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "Home",
         labelKey: "navigation.home",
         icon: Home,
-        roles: ["owner", "tenant"],
         mobilePrimary: true,
       },
       {
@@ -67,7 +73,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "Portfolio",
         labelKey: "navigation.portfolio",
         icon: Building2,
-        roles: ["owner", "tenant"],
         mobilePrimary: true,
       },
       {
@@ -76,16 +81,7 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "Finance",
         labelKey: "navigation.finance",
         icon: Wallet,
-        roles: ["owner", "tenant"],
         mobilePrimary: true,
-      },
-      {
-        key: "maintenance",
-        href: "/operations",
-        label: "Operations",
-        labelKey: "navigation.operations",
-        icon: Wrench,
-        roles: ["owner"],
       },
       {
         key: "people",
@@ -93,25 +89,7 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "People",
         labelKey: "navigation.people",
         icon: Users,
-        roles: ["owner"],
         mobilePrimary: true,
-      },
-      {
-        key: "documents",
-        href: "/documents",
-        label: "Documents",
-        labelKey: "navigation.documents",
-        icon: FileBox,
-        roles: ["owner", "tenant"],
-        mobilePrimary: true,
-      },
-      {
-        key: "analytics",
-        href: "/intelligence",
-        label: "Intelligence",
-        labelKey: "navigation.intelligence",
-        icon: BarChart2,
-        roles: ["owner"],
       },
     ],
   },
@@ -120,15 +98,11 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
     groupLabelKey: "navigation.systemGroup",
     items: [
       {
-        // Both roles: Settings now hosts the Account section, which a tenant must be able to
-        // reach. The sections themselves are filtered by role inside `settings-view.tsx` — a
-        // tenant sees Account and Appearance, not tax rules or billing.
         key: "settings",
         href: "/settings",
         label: "Settings",
         labelKey: "navigation.settings",
         icon: Settings,
-        roles: ["owner", "tenant"],
       },
       {
         // Owner-only. `canAccessPortalPath` derives access from this list, so a page absent
@@ -143,7 +117,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "System status",
         labelKey: "navigation.admin",
         icon: ShieldCheck,
-        roles: ["owner"],
       },
     ],
   },
@@ -154,30 +127,11 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
     groupLabelKey: "navigation.systemGroup",
     items: [
       {
-        key: "reports",
-        href: "/intelligence",
-        label: "Reports",
-        labelKey: "navigation.reports",
-        icon: FileBarChart,
-        roles: ["owner"],
-        hidden: true,
-      },
-      {
-        key: "correspondence",
-        href: "/correspondence",
-        label: "Messages",
-        labelKey: "navigation.correspondence",
-        icon: Mail,
-        roles: ["owner"],
-        hidden: true,
-      },
-      {
         key: "compliance",
         href: "/compliance/modelo179",
         label: "Compliance",
         labelKey: "navigation.compliance",
         icon: ShieldCheck,
-        roles: ["owner"],
         hidden: true,
       },
       {
@@ -186,7 +140,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "Tax Filing",
         labelKey: "navigation.taxFiling",
         icon: Calculator,
-        roles: ["owner"],
         hidden: true,
       },
       {
@@ -195,66 +148,39 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "Leases",
         labelKey: "navigation.leases",
         icon: FileText,
-        roles: ["owner", "tenant"],
-        hidden: true,
-      },
-      {
-        key: "vendors",
-        href: "/contacts",
-        label: "Vendors",
-        labelKey: "navigation.vendors",
-        icon: HardHat,
-        roles: ["owner"],
         hidden: true,
       },
       {
         // Folded into Settings as its Account section; `/account` redirects there. Kept here
-        // so `canAccessPortalPath` still permits the old URL for both roles.
+        // so `canAccessPortalPath` still permits the old URL.
         key: "account",
         href: "/account",
         label: "Account",
         labelKey: "navigation.account",
         icon: UserCircle,
-        roles: ["owner", "tenant"],
-        hidden: true,
-      },
-      {
-        // Internal dev/admin reference only — the page itself 404s in
-        // production (NODE_ENV check). Never shown in the nav rail; this
-        // entry exists only so canAccessPortalPath permits the direct URL.
-        key: "brand",
-        href: "/brand",
-        label: "Brand",
-        labelKey: "navigation.brand",
-        icon: Palette,
-        roles: ["owner"],
         hidden: true,
       },
     ],
   },
 ];
 
-export function getPortalRoleFromSessionRole(role?: string | null): PortalRole {
-  return role === "USER" ? "tenant" : "owner";
-}
-
-export function getPortalNavigation(role: PortalRole): PortalNavGroup[] {
+export function getPortalNavigation(): PortalNavGroup[] {
   return PORTAL_NAV_GROUPS.map((group) => ({
     ...group,
-    items: group.items.filter((item) => item.roles.includes(role) && !item.hidden),
+    items: group.items.filter((item) => !item.hidden),
   })).filter((group) => group.items.length > 0);
 }
 
-export function getPrimaryMobileNavigation(role: PortalRole): PortalNavItem[] {
-  return getPortalNavigation(role)
+export function getPrimaryMobileNavigation(): PortalNavItem[] {
+  return getPortalNavigation()
     .flatMap((group) => group.items)
     .filter((item) => item.mobilePrimary)
     .slice(0, 5);
 }
 
-export function getSecondaryMobileNavigation(role: PortalRole): PortalNavItem[] {
-  const primaryKeys = new Set(getPrimaryMobileNavigation(role).map((item) => item.key));
-  return getPortalNavigation(role)
+export function getSecondaryMobileNavigation(): PortalNavItem[] {
+  const primaryKeys = new Set(getPrimaryMobileNavigation().map((item) => item.key));
+  return getPortalNavigation()
     .flatMap((group) => group.items)
     .filter((item) => !primaryKeys.has(item.key));
 }
@@ -283,7 +209,6 @@ export function normalizePortalPath(pathname: string): string {
   if (normalized === "/account") return "/settings";
   if (normalized === "/properties") return "/portfolio";
   if (normalized === "/tenants") return "/people";
-  if (normalized === "/vendors") return "/contacts";
   // Redirect-only stubs. A page absent from this table is unreachable no matter what it renders,
   // because `PortalAccessGuard` replaces the route with /dashboard before the stub's own
   // `redirect()` can run — the same trap /admin fell into (see the note on its nav entry). Both
@@ -291,18 +216,12 @@ export function normalizePortalPath(pathname: string): string {
   if (normalized === "/buildings") return "/portfolio";
   if (normalized === "/contracts") return "/leases";
   if (normalized === "/owners") return "/people";
-  if (normalized === "/maintenance") return "/operations";
-  if (normalized === "/analytics" || normalized === "/insights" || normalized === "/reports") {
-    return "/intelligence";
-  }
   return normalized;
 }
 
-export function canAccessPortalPath(role: PortalRole, pathname: string): boolean {
+export function canAccessPortalPath(pathname: string): boolean {
   const normalizedPath = normalizePortalPath(pathname);
-  const allowedItems = PORTAL_NAV_GROUPS.flatMap((group) =>
-    group.items.filter((item) => item.roles.includes(role)),
-  );
+  const allowedItems = PORTAL_NAV_GROUPS.flatMap((group) => group.items);
   // Match exact href OR check if the normalized path is a prefix of a nav item's href
   return allowedItems.some(
     (item) => item.href === normalizedPath || item.href.startsWith(normalizedPath + "/"),
