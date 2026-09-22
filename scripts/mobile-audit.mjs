@@ -118,10 +118,12 @@ const FULLPAGE = flag("fullpage");
  * already met on every surface, and unlike the other metrics it has no legitimate reason to
  * regress.
  *
- * `smallText` is close to its floor. Of the ~310 remaining, 264 are the bottom nav's own labels
- * at 11px — which is what native iOS/Android tab bars use, so they stay — and 44 are avatar
- * initials, a glyph sized to its circle rather than text to read. Do not chase this one to
- * zero; it would mean overriding two deliberate choices.
+ * `smallText` is close to its floor, and most of what remains is deliberate. On the 52-surface
+ * sweep the ~310 split into 264 bottom-nav labels at 11px — which is what native iOS/Android tab
+ * bars use, so they stay — and 44 avatar initials, a glyph sized to its circle rather than text
+ * to read. Both are per-surface chrome, which is why the total fell to 192 when the cutdown
+ * removed seven surfaces: the sources did not change, only the number of screens they are
+ * counted on. Do not chase this one to zero; it would mean overriding two deliberate choices.
  *
  * `touchTargetFails` is the landing footer's two text links, counted once per theme. They are
  * links in prose, which the doctrine's rule 2 exempts only with explicit design review — so this
@@ -135,6 +137,10 @@ const FULLPAGE = flag("fullpage");
  * between browser builds could put it back. Tightening to 2 would make the gate depend on how
  * one string happens to wrap.
  *
+ * The 38-surface sweep reads 2 as well. That is the same two links wrapping the same way, not
+ * evidence the ceiling can come down — the footer is on every surface, so removing seven of them
+ * could not have moved this metric, and it did not.
+ *
  * Two of these metrics are NOT deterministic, which was found by running the harness three times
  * back to back against one build and one database: `clippedContainers` gave 4, 6, 6 and
  * `smallText` gave 308, 308, 309. The spread is small but real — layout settles differently when
@@ -143,9 +149,9 @@ const FULLPAGE = flag("fullpage");
  * expect the true floor to sit a point or two above the best number you have seen.
  * `pageOverflow`, `viewportTallChildren` and `touchTargetFails` have been stable across runs.
  *
- * These come from a **seeded** run (`--seed --strict`, 52 surface-runs). An unseeded run walks
- * empty screens — a table with no rows cannot overflow — so its numbers are meaningless as a
- * baseline and `--strict` refuses to compare against them.
+ * These come from a **seeded** run (`--seed --strict`; 38 surface-runs now, 52 before the
+ * cutdown). An unseeded run walks empty screens — a table with no rows cannot overflow — so its
+ * numbers are meaningless as a baseline and `--strict` refuses to compare against them.
  *
  * Getting a trustworthy number here required fixing `lib/demo-seed.ts` first: it never deleted
  * documents or the bank graph, so each re-seed stacked another copy and the counts climbed on
@@ -158,17 +164,20 @@ const FULLPAGE = flag("fullpage");
  * `touchTargetFails: 27`, because a toast's dismiss glyph measured 9×26 and a toast can appear
  * over any screen (23 of 52 surface-runs). Every dev-server run had reported 2 and missed it.
  *
- * `surfaceRuns` must be 52. Anything lower means detail overlays were skipped for want of a
+ * `surfaceRuns` must be 38. Anything lower means detail overlays were skipped for want of a
  * record id, and the totals are not comparable to these.
  */
 /**
  * Ceilings, not targets. `--strict` fails when a metric exceeds one.
  *
- * These were measured on a seeded 52-surface-run sweep. The scope cutdown removed seven
- * surfaces whose pages no longer exist, so a clean run is now 38 surface-runs and every total
- * that scales with surface count is an UPPER BOUND rather than a measurement. The harness
- * prints the real figures as "within baseline — tighten it: …" on a passing run; tighten from
- * those, never from an estimate. It may only ever go down.
+ * Measured on a seeded sweep. The originals came from 52 surface-runs; the scope cutdown removed
+ * seven surfaces whose pages no longer exist, so the sweep is 38. `smallText` is the only metric
+ * that scales with surface count, and it was retightened once CI reprinted it on a green run.
+ *
+ * The harness names any remaining slack as "within baseline — tighten it: …" on a passing run.
+ * That line is a prompt to look, not an instruction to obey: `touchTargetFails` sits above its
+ * measurement on purpose, for the reason recorded above it. Tighten from printed numbers, never
+ * from an estimate, and never raise one to make a red run go green.
  */
 const BASELINE = {
   pageOverflow: 0,
@@ -185,7 +194,13 @@ const BASELINE = {
   // fixed at the source, so this measures a property of the layout rather than of the run.
   // Confirmed 0 on two consecutive full sweeps.
   clippedContainers: 0,
-  smallText: 310,
+  // 192 on the 38-surface sweep, against ~310 on 52. The drop is the seven removed surfaces
+  // taking their nav labels and avatar initials with them, not a legibility fix, so it is a
+  // real move rather than a lucky run. The ceiling sits three above the measurement because
+  // this is the non-deterministic metric described above — 308/308/309 across three identical
+  // runs — and there has been exactly one run at 38 surfaces. A second agreeing run is what
+  // would justify pinning it to 192.
+  smallText: 195,
 };
 
 /**
@@ -675,7 +690,7 @@ async function resolveIds(page) {
   // Every branch here used to return a bare `null`, so a 500 from an endpoint and an
   // empty-but-healthy list were indistinguishable — the run just reported "no propertyId" and
   // skipped the overlay. Say which of the two it was: they need opposite fixes, and a skipped
-  // surface silently shrinks `surfaceRuns` below the 52 the baseline was measured at.
+  // surface silently shrinks `surfaceRuns` below the 38 the baseline is measured at.
   const get = async (path, pick) => {
     try {
       const res = await page.request.get(`${BASE}${path}`);
