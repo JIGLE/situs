@@ -145,6 +145,30 @@ const RETIRED_CLAIMS = [
       "the /brand style-guide page and the ⌘K command palette were deleted as dev/cosmetic surface",
   },
   {
+    // The branch itself still exists and still holds two unmerged commits, so the NAME is not
+    // retired — the instruction "all changes go to it" is. Pin the instruction, not the ref.
+    pattern: /changes go to:?\s*\*{0,2}`?claude\/proman-design-polish-6zpz2f/i,
+    retired: "2026-09-22 (repository audit)",
+    because:
+      "that branch sat 47 commits behind main with two unmerged commits while every session " +
+      "worked somewhere else. Branching is per-change now — docs/REPOSITORY_PROCEDURES.md §1",
+  },
+  {
+    pattern: /head branch is auto-?deleted/i,
+    retired: "2026-09-22 (repository audit)",
+    because:
+      "the repository setting is off — release/v1.24.0 and release/v1.25.0 both outlived their " +
+      "merged PRs (#319, #362). Delete the head yourself, or run the sweep in §6",
+  },
+  {
+    // `feature/` only; `feat/` is the live convention and must not match.
+    pattern: /`?feature\/<[a-z-]+>`?/i,
+    retired: "2026-09-22 (repository audit)",
+    because:
+      "the prefix is `feat/`, not `feature/` — CONTRIBUTING and BRANCH_PROTECTION disagreed on " +
+      "this for months. See docs/REPOSITORY_PROCEDURES.md §1",
+  },
+  {
     pattern: /no provider ships/i,
     retired: "2026-08-28 (PR #352)",
     because:
@@ -160,7 +184,10 @@ const RETIRED_CLAIMS = [
   {
     pattern: /claude\/situs-design-polish-6zpz2f/,
     retired: "2026-08-17",
-    because: "that branch has never existed; the real one is claude/proman-design-polish-6zpz2f",
+    because:
+      'that branch has never existed — it was a "correction" of the proman-named one, which ' +
+      "is itself no longer a destination for anything. Branching is per-change now: " +
+      "docs/REPOSITORY_PROCEDURES.md §1",
   },
   {
     pattern: /GHSA-c96f-x56v-gq3h/,

@@ -270,13 +270,20 @@ first version passed `resourceIds={[]}`, which returns before fetching, so it as
 component that never made a request. Prove a new guard by restoring the defect it describes and
 watching it name the file and line.
 
-## Development Branch
+## Branching, PRs, Dependabot, releases
 
-All Claude Code changes go to: **`claude/proman-design-polish-6zpz2f`**
+**See `docs/REPOSITORY_PROCEDURES.md`.** It is authoritative; this file does not restate it.
 
-The name says `proman` because the branch predates the rename to Situs and renaming it now would
-orphan the open history. Do not "correct" it to `situs-…` — this line said that for a while and
-sent sessions looking for a branch that does not exist.
+Two rules from it are worth naming here because breaking either is expensive and both have been
+broken before:
+
+- **A branch is per-change, not per-session.** This section used to pin every session to one
+  long-lived branch, `claude/proman-design-polish-6zpz2f`. That branch drifted 47 commits behind
+  `main` and stranded two unmerged commits, while the actual work went somewhere else entirely —
+  so the instruction was not just stale, it was sending sessions to code nearly two months old.
+  Branch from current `origin/main`, do one change, open one PR.
+- **Never push onto a `dependabot/*` branch.** Dependabot can close the PR in response; see §4
+  there for the incident.
 
 ## Subagents (`.claude/agents/`)
 

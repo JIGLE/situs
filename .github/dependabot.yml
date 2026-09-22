@@ -11,7 +11,9 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "America/New_York"
-    open-pull-requests-limit: 2
+    # Raised from 2. A blocked group PR used to occupy one of only two slots and starve every
+    # other update behind it — see the typescript-toolchain note below.
+    open-pull-requests-limit: 5
     rebase-strategy: "auto"
     commit-message:
       prefix: "deps"
@@ -20,6 +22,27 @@ updates:
       - "dependencies"
       - "npm"
     groups:
+      # FIRST on purpose. Dependabot assigns a package to the first group it matches, so this
+      # has to precede dev-dependencies or TypeScript minors would land there instead.
+      #
+      # TypeScript and the linters that pin its range travel together, at every update type.
+      # PR #384 is why: `major-updates` was `patterns: ["*"]`, so one weekly PR carried every
+      # major bump at once. It moved TypeScript to 7.0.2 while @typescript-eslint/eslint-plugin
+      # declared `peer typescript@">=4.8.4 <6.1.0"`; `npm ci` failed with ERESOLVE and all five
+      # jobs died within ten seconds, taking nine unrelated and mergeable bumps with it.
+      #
+      # Grouping by what constrains what means a TypeScript bump arrives with the plugins that
+      # have to move with it, and everything else stays independently mergeable.
+      typescript-toolchain:
+        patterns:
+          - "typescript"
+          - "typescript-eslint"
+          - "@typescript-eslint/*"
+          - "eslint-config-next"
+        update-types:
+          - "major"
+          - "minor"
+          - "patch"
       # Group minor and patch updates for production dependencies
       production-minor:
         patterns:
@@ -40,15 +63,19 @@ updates:
           - "eslint*"
           - "vitest*"
           - "@testing-library/*"
-          - "typescript"
           - "prettier"
         update-types:
           - "minor"
           - "patch"
-      # Group major version updates separately for careful review
+      # Everything else major, minus the toolchain group above.
       major-updates:
         patterns:
           - "*"
+        exclude-patterns:
+          - "typescript"
+          - "typescript-eslint"
+          - "@typescript-eslint/*"
+          - "eslint-config-next"
         update-types:
           - "major"
 

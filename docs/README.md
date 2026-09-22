@@ -88,6 +88,8 @@ provider ships", which stopped being true when the Enable Banking adapter landed
 
 ## Contributing
 
+- [Repository procedures](REPOSITORY_PROCEDURES.md) — **authoritative** for branching, pull
+  requests, Dependabot, releases and the session start/finish routine
 - [Contributing guide](../CONTRIBUTING.md)
 - [Code of conduct](../CODE_OF_CONDUCT.md)
 - [Releases](../RELEASES.md) — historical ledger to v1.13.0; git tags and GitHub Releases are
