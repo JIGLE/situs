@@ -6,7 +6,6 @@ import {
   ReceiptType,
   ReceiptStatus,
   UnitStatus,
-  DocumentType,
   LeaseStatus,
 } from "@prisma/client";
 
@@ -633,66 +632,7 @@ export async function seedDemoData(userId: string): Promise<void> {
     });
   }
 
-  // 11. Create Documents (for OCR queue and document vault)
-  const documentsData = [
-    {
-      name: "Lease_Agreement_3A_2025.pdf",
-      propertyIndex: 0,
-      tenantIndex: 0,
-      type: "contract" as DocumentType,
-    },
-    {
-      name: "Rental_Receipt_Jan2026.pdf",
-      propertyIndex: 0,
-      tenantIndex: 0,
-      type: "receipt" as DocumentType,
-    },
-    {
-      name: "Property_Certificate_PT.pdf",
-      propertyIndex: 1,
-      tenantIndex: null,
-      type: "certificate" as DocumentType,
-    },
-    {
-      name: "Floor_Plan_Suite404.pdf",
-      propertyIndex: 5,
-      tenantIndex: 3,
-      type: "floor_plan" as DocumentType,
-    },
-    {
-      name: "Invoice_HVAC_Maintenance.pdf",
-      propertyIndex: 0,
-      tenantIndex: null,
-      type: "invoice" as DocumentType,
-    },
-    {
-      name: "Property_Photo_Exterior.jpg",
-      propertyIndex: 1,
-      tenantIndex: null,
-      type: "photo" as DocumentType,
-    },
-  ];
-
-  for (const doc of documentsData) {
-    const prop = dbProperties[doc.propertyIndex];
-    const tenant = doc.tenantIndex !== null ? dbTenants[doc.tenantIndex] : null;
-
-    await prisma.document.create({
-      data: {
-        userId,
-        name: doc.name,
-        description: `Document for property ${prop.name}`,
-        type: doc.type,
-        mimeType: doc.name.endsWith(".pdf") ? "application/pdf" : "image/jpeg",
-        storagePath: `/documents/${prop.id}/${doc.name}`,
-        fileSize: Math.floor(Math.random() * 5000000) + 100000, // 100KB - 5MB
-        propertyId: prop.id,
-        ...(tenant && { tenantId: tenant.id }),
-      },
-    });
-  }
-
-  // 12. Tax filings — one per year and status, so the list shows both `draft` and `final`.
+  // 11. Tax filings — one per year and status, so the list shows both `draft` and `final`.
   const propertyIdsJson = JSON.stringify(dbProperties.map((p) => p.id));
   for (const filing of [
     { year: 2025, regime: "STANDARD", gross: 42000, expenses: 9800, status: "final" },

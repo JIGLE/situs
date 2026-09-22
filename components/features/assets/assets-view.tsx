@@ -3,16 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import {
-  Building2,
-  CreditCard,
-  FileText,
-  Home,
-  Plus,
-  Receipt,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { Building2, CreditCard, Home, Plus, Receipt, ShieldCheck, Sparkles } from "lucide-react";
 import { PropertiesView, PropertiesViewRef } from "@/components/features/property/property-list";
 import { PortfolioSummary } from "@/components/features/property/portfolio-summary";
 import { ExportButton, ExportColumn } from "@/components/ui/export-button";
@@ -162,10 +153,6 @@ export function AssetsView(): React.ReactElement {
                 <Button variant="outline" onClick={() => router.push("/leases")}>
                   <Receipt className="mr-2 h-4 w-4" />
                   {t("tenant.myLease")}
-                </Button>
-                <Button variant="outline" onClick={() => router.push("/documents")}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  {t("tenant.myDocuments")}
                 </Button>
               </div>
             </div>

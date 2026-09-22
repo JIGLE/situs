@@ -13,7 +13,7 @@ against a shipped **1.24.0**; a number copied into prose has no reason to move w
 **Stage**: Production-ready. All Q3 sprints (1–5) complete. Mid-rebrand to **Situs // Sovereign
 Capital System** (PRs 1–12 of 13 shipped — see "Situs Rebrand" section below): Bauhaus-rectilinear
 brand, country-matched theming, portfolio tree, reference-month rent ledger, bank movement
-matching, receipt lifecycle + PT tax connector, mock OCR classification, generalized audit trail,
+matching, receipt lifecycle + PT tax connector, generalized audit trail,
 schema consolidation, and an a11y/e2e pass over the new surfaces are all live. Decision-driven UI,
 map view, fiscal compliance (PT/ES), building management, tenant
 owner-contact callout, and portfolio building grouping remain in place underneath the rebrand.
@@ -37,9 +37,10 @@ Removed so far:
 | 5     | Maintenance / Operations ticketing (`MaintenanceTicket`, `/operations`, work orders) |
 | 6     | Contacts / vendor registry (`MaintenanceContact`, `/contacts`, the People sub-tab)   |
 | 7     | Correspondence and inbound mail (templates, letter log, the mail Inbox)              |
+| 8     | Documents browser + OCR classifier — receipt archive kept, and now reachable         |
 
-Still to go: the documents browsing UI and OCR, the tenant-facing surfaces and their
-online-payment stack, ownership verification.
+Still to go: the tenant-facing surfaces and their online-payment stack, ownership
+verification.
 
 **The "Completed Features" list below predates this and is not narrowed phase by phase** — read
 it as a record of what was built, with this table as the correction. `lib/portal/access.ts` is

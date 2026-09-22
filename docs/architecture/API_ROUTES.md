@@ -1,11 +1,11 @@
 # API Routes
 
-Situs exposes **44 API domains** across **132 `route.ts` files** under `app/api/`, organised by
+Situs exposes **44 API domains** across **126 `route.ts` files** under `app/api/`, organised by
 domain per Next.js App Router convention.
 
 This document describes **22 of those domains in detail** — the ones whose contracts are not
 obvious from the handler. It is not, and does not try to be, an endpoint-by-endpoint reference
-for all 132: a hand-maintained one goes stale on the first PR that adds a route, and this file
+for all 126: a hand-maintained one goes stale on the first PR that adds a route, and this file
 spent a while claiming to cover "all" routes while omitting most of them. (The count was 26 for
 a while because it counted `###` headings, two of which are the response-format sections at the
 bottom rather than domains.)
@@ -36,7 +36,7 @@ a domain listing `GET POST` may still have some paths that only answer `GET`.
 | `/api/csrf-token`              | 1           | GET                       |
 | `/api/debug`                   | 6           | GET POST                  |
 | `/api/distributions`           | 2           | GET POST                  |
-| `/api/documents`               | 8           | GET POST PUT DELETE       |
+| `/api/documents`               | 1           | GET                       |
 | `/api/email`                   | 3           | GET POST PUT              |
 | `/api/events`                  | 1           | POST                      |
 | `/api/exchange`                | 1           | GET                       |
@@ -57,7 +57,7 @@ a domain listing `GET POST` may still have some paths that only answer `GET`.
 | `/api/properties`              | 3           | GET POST PUT DELETE       |
 | `/api/property-owners`         | 1           | POST DELETE               |
 | `/api/ready`                   | 1           | GET                       |
-| `/api/receipts`                | 4           | GET POST PUT DELETE       |
+| `/api/receipts`                | 5           | GET POST PUT DELETE       |
 | `/api/settings`                | 1           | GET POST                  |
 | `/api/tax`                     | 3           | GET POST                  |
 | `/api/tax-filings`             | 3           | GET POST DELETE           |
@@ -155,6 +155,11 @@ error endpoint; it was deleted in PR #352.
 
 ### Receipts
 
+- `GET /api/receipts/[id]/archive` - The id of this receipt's archived PDF, or 404. Resolution
+  only; the bytes come from `/api/documents/[id]/download`. A 404 is the ordinary answer for a
+  receipt that has not reached `emitted`, and the caller falls back to rendering a copy
+  client-side.
+
 - `GET /api/receipts` - List all receipts
 - `POST /api/receipts` - Create a new receipt
 - `GET /api/receipts/[id]` - Get receipt details
@@ -185,13 +190,11 @@ log the Brevo webhook updates.
 
 ### Documents
 
-- `GET /api/documents` - List all documents
-- `POST /api/documents` - Upload a document
-- `GET /api/documents/[id]` - Get document details
-- `DELETE /api/documents/[id]` - Delete document
-- `GET /api/documents/[id]/download` - Download document
-- `POST /api/documents/generate` - Generate PDF document
-- `GET /api/documents/stats` - Get document statistics
+The browsing UI and its routes went with the scope cutdown. What remains is the read path for a
+receipt's archived PDF — the proof of a filing made at Finanças — which the Receipts screen
+reaches through `/api/receipts/[id]/archive`.
+
+- `GET /api/documents/[id]/download` - Download an archived document
 
 ## Analytics & Reporting
 

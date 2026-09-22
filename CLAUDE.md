@@ -12,12 +12,13 @@ allocate → receipt → tax filing → audit trail.
 1.24.0, because a number copied into prose has no reason to move when the release does. Don't
 reintroduce it. | **Stage**: Production-ready core; the Situs rebrand is complete — all 13 PRs shipped
 (brand, nav, landing, portfolio tree, rent ledger, bank matching, receipt lifecycle + PT tax
-connector, OCR classification, audit trail/tax dashboard, schema consolidation, a11y/e2e pass).
+connector, audit trail/tax dashboard, schema consolidation, a11y/e2e pass).
 The IA consolidation (PR 10b) and the infra rename (PR 13) have since shipped too: `/people`
 is live with a redirect shim from the old path, and the package, Docker and env identifiers all
 read `situs` with Helm dropped for a single Docker path. A scope cutdown is in progress on top
-of all that — see the phase table in `ROADMAP.md`; ticketing, the vendor registry and
-correspondence (including the inbound mail Inbox) are among the surfaces it has removed.
+of all that — see the phase table in `ROADMAP.md`; ticketing, the vendor registry,
+correspondence (including the inbound mail Inbox) and the Documents browser with its OCR
+classifier are among the surfaces it has removed.
 
 ## Tech Stack
 
@@ -69,7 +70,6 @@ lib/
     bank/               # CSV import + fingerprint dedupe + matching pipeline
       providers/        # PSD2 provider contract + registry + Enable Banking adapter + test fake
     receipts/          # Receipt document-lifecycle state machine + orchestration
-    ocr/                # Mock document classification engine + orchestration
     tax/               # Tax connector find-or-create + submission-log service
   tax/connectors/      # Per-country TaxConnector implementations (pt-at.ts, es-nrua.ts)
   design/country-themes.ts  # PT/ES/EU theme table (Situs brand)
@@ -83,7 +83,7 @@ e2e/                # Playwright E2E tests
 ### Key Patterns
 
 - **4-zone modal pattern**: Status+Health / Primary Action / Issues Panel / Tabbed info — used by the Tenant edit modal (`tenant-detail-modal.tsx`). The Ticket detail modal was the other user of it and went with the maintenance cut, so the Tenant modal is the only one left. Property has no modal — `property-detail-view.tsx` renders in a `Sheet` from `/portfolio?modal=<id>`; Building has no modal either.
-- **AppContext**: All entities (properties, tenants, leases, receipts, expenses, tickets, buildings…) live in `AppState` via `lib/contexts/app-context.tsx` (composed from `use-app-data.ts` + `use-entity-actions.ts` + `create-entity-actions.ts`). Mutations go through typed actions (`addProperty`, `updateTenant`, etc.). Bank/tax/OCR domains (added in the Situs rebrand) are read via dedicated fetches in their own components instead — they don't live in `AppState`.
+- **AppContext**: All entities (properties, tenants, leases, receipts, expenses, tickets, buildings…) live in `AppState` via `lib/contexts/app-context.tsx` (composed from `use-app-data.ts` + `use-entity-actions.ts` + `create-entity-actions.ts`). Mutations go through typed actions (`addProperty`, `updateTenant`, etc.). Bank and tax domains (added in the Situs rebrand) are read via dedicated fetches in their own components instead — they don't live in `AppState`.
 - **API routes**: Each domain has its own folder under `app/api/`. Use `GET`/`POST`/`PUT`/`DELETE` handlers with Zod validation and NextAuth session checks.
 - **Compliance**: PT (`/api/compliance/rent-receipts`) and ES (`/api/compliance/nrua`) endpoints generate fiscal payloads. Tax logic lives in `app/api/tax/`.
 - **PII encryption**: AES-256-GCM on IBAN, NIF, phone fields via `lib/utils/pii-encryption.ts` (`encryptPII`/`decryptPII`, keyed off `PII_ENCRYPTION_KEY`). `PII_FIELDS` declares the fields the Prisma extension encrypts on write and decrypts on read — **not** the complete list of encrypted PII. `BankAccount.iban` is encrypted at the call site in `lib/services/bank/consent.ts` and never decrypted (matching uses `ibanHash`, display uses `ibanLast4`); adding it to `PII_FIELDS` would make `/api/debug/db` start returning it in plaintext. The extension is applied where the client is built (`lib/services/database/database.ts`), so the
@@ -93,7 +93,7 @@ e2e/                # Playwright E2E tests
 - **Live bank connection**: PSD2 account information (`lib/services/bank/providers/`, Enable Banking today). Enable Banking is the licensed AISP, so an instance needs no PSD2 licence or eIDAS certificate; their free _restricted production_ mode is limited to accounts you whitelist as your own. Auth is **not** a token exchange — every request carries a JWT the app signs itself with the application's RSA key. A previous adapter spoke to GoCardless Bank Account Data, which closed to new signups in July 2025 and was removed rather than left as a button that can only fail. A provider's only job is to return `BankCsvRow[]`; `importBankRows`' optional `target` points those rows at the right connection/account, so a synced movement inherits the entire pipeline above and behaves identically to an uploaded one. Consent lives in `consent.ts` — unguessable reference, scoped to the caller, single-use. `sync.ts` enforces the provider's daily read budget **before** spending a call (429 costs the rest of the day) and marks a connection `expired` on `ConsentExpiredError` rather than reporting a quiet zero. `BankConnection.provider` is `psd2_<key>` for a real bank and `manual`/`csv` otherwise; never offer a sync to the latter.
 - **Receipt lifecycle**: `Receipt.status` is the MONEY state (paid|pending); `Receipt.lifecycle` is the separate DOCUMENT state machine (`lib/services/receipts/lifecycle.ts`, pure) — draft→review→emitted→(PT)submitted→accepted/rejected, or →voided from any pre-terminal state. Reaching emitted/accepted archives a PDF `Document`; voiding soft-reverses live `PaymentAllocation` rows.
 - **Tax connectors**: one `TaxAuthorityConnector` row per user×country×connector key, `mode` locked to sandbox/review until explicitly promoted to live (no live AT/AEAT integration exists yet). Every call appends an immutable `TaxSubmissionLog` row — read via `GET /api/tax/connectors` (Finance › Tax Summary tab).
-- **OCR classification**: mock-only today (`lib/services/ocr/classifier.ts`, pure) — proposes a document type from filename/description keywords across all 4 locales and links to whatever entity the upload already carried. Runs best-effort on every document upload; ambiguous or unlinked results land in the Documents "Review Required" tab.
+- **Receipt archive, the one surviving use of `Document`**: reaching emitted/accepted writes a PDF `Document` whose `description` carries `situs-receipt-archive:<receiptId>` — a convention, not a foreign key, and the only link between a receipt and the proof of its filing. `findExistingArchive` (`lib/services/receipts/service.ts`) reads it back; `GET /api/receipts/[id]/archive` exposes it, and the Receipts dropdown serves that PDF in preference to the jsPDF copy it renders client-side. Resolve through that function rather than rebuilding the marker — two spellings of it would be two chances to orphan an archive.
 - **Generalized audit trail**: `components/shared/audit-trail.tsx` + `GET /api/audit-trail` — pass `resourceIds` to scope to specific records (property detail Audit tab) or omit for the account-wide trail (Account page). Backed by `AuditLog.resourceType`/`resourceId`, persisted on every workflow mutation.
 - **Screen density (declutter rules)**: established from a 2026-07 cross-page audit that found Finance/People/Operations stacking 6–9 chrome bands (duplicate headers, duplicate KPI rows, permanent filter pills) before any real content. Apply to every main list/detail screen:
   1. **One heading per screen.** If a container already renders a page title, the active tab's own view does not repeat it — the tab label is the heading.

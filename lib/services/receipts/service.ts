@@ -92,7 +92,19 @@ async function archiveReceipt(receipt: {
   return document.id;
 }
 
-async function findExistingArchive(userId: string, receiptId: string): Promise<string | null> {
+/**
+ * Resolve a receipt's archived PDF, if one was ever written.
+ *
+ * The link is a convention, not a foreign key: `archiveReceiptPdf` writes
+ * `${ARCHIVE_MARKER_PREFIX}${receipt.id}` into `Document.description`, and this reads it back.
+ * Exported so the API layer resolves it through the same constant rather than rebuilding the
+ * marker at a second call site — the marker is the only thing tying a receipt to its proof of
+ * emission, and two spellings of it would be two chances to lose that.
+ */
+export async function findExistingArchive(
+  userId: string,
+  receiptId: string,
+): Promise<string | null> {
   const prisma = getPrismaClient();
   const existing = await prisma.document.findFirst({
     where: { userId, type: "receipt", description: `${ARCHIVE_MARKER_PREFIX}${receiptId}` },

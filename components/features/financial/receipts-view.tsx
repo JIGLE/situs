@@ -205,10 +205,44 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
       );
     };
 
+    /**
+     * Serve the archived PDF when the receipt has one, and render a fresh copy when it does not.
+     *
+     * The two are not interchangeable. The archive is written when a receipt reaches
+     * emitted/accepted and is the proof of a filing made at Finanças; the jsPDF render below is
+     * a convenience copy built from whatever this row currently holds. A receipt that has been
+     * emitted must hand over the former, so the archive is tried first and the render is the
+     * fallback for drafts and pre-lifecycle rows, which legitimately have no archive.
+     */
+    const downloadArchivedPdf = async (receipt: Receipt): Promise<boolean> => {
+      const res = await fetch(`/api/receipts/${receipt.id}/archive`, { credentials: "include" });
+      if (!res.ok) return false; // 404 is the ordinary "never emitted" answer.
+
+      const body = await res.json();
+      const documentId = (body?.data ?? body)?.documentId;
+      if (!documentId) return false;
+
+      const file = await fetch(`/api/documents/${documentId}/download`, {
+        credentials: "include",
+      });
+      if (!file.ok) return false;
+
+      const blob = await file.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `receipt-${receipt.id}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+      return true;
+    };
+
     const generatePDF = async (receipt: Receipt) => {
       setGeneratingPdf(receipt.id);
 
       try {
+        if (await downloadArchivedPdf(receipt)) return;
+
         const doc = new jsPDF();
 
         // Set up the PDF
@@ -484,7 +518,9 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
                                 disabled={generatingPdf === receipt.id}
                               >
                                 <Download className="h-4 w-4 mr-2" />
-                                {generatingPdf === receipt.id ? "Generating..." : "Download PDF"}
+                                {generatingPdf === receipt.id
+                                  ? t("pdfGenerating")
+                                  : t("pdfDownload")}
                               </DropdownMenuItem>
                               {isOwnerPortal && (
                                 <>

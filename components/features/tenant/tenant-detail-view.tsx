@@ -143,13 +143,6 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
           >
             <DollarSign className="h-4 w-4 mr-1" /> {t("reviewPayments")}
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push(`/documents?search=${encodeURIComponent(tenant.name)}`)}
-          >
-            <FileText className="h-4 w-4 mr-1" /> {t("documents")}
-          </Button>
           <Button variant="outline" size="sm" onClick={handleCopyPortalLink}>
             <Link2 className="h-4 w-4 mr-1" /> {t("portalLink")}
           </Button>

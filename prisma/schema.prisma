@@ -66,7 +66,6 @@ model User {
   reconciliationRules     ReconciliationRule[]
   taxAuthorityConnectors  TaxAuthorityConnector[]
   taxSubmissionLogs       TaxSubmissionLog[]
-  documentExtractions     DocumentExtraction[]
 }
 
 model EmailLog {
@@ -761,40 +760,12 @@ model Document {
   owner              Owner?              @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   tenant             Tenant?             @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   expenses           Expense[] // Situs: deduction-evidence links (Expense.documentId)
-  extraction         DocumentExtraction?
 
   @@index([userId])
   @@index([propertyId])
   @@index([type])
   @@index([expiresAt])
   @@map("documents")
-}
-
-// Situs OCR sidecar (Migration D) — 1:1 with Document, leaves the hot
-// Document model untouched. "mock" is the only engine today (no live OCR
-// integration yet — same mock-first pattern as the bank/tax connector
-// layers); classification proposes a document type + a linked entity for a
-// human to confirm in the Review Required tab.
-model DocumentExtraction {
-  id               String    @id @default(cuid())
-  documentId       String    @unique
-  userId           String
-  status           String    @default("pending") // pending|processing|completed|failed|review_required
-  engine           String    @default("mock")
-  confidence       Float?
-  extractedFields  String? // JSON — engine-specific key/value proposals
-  suggestedType    String? // proposed DocumentType value
-  linkedEntityType String? // "tenant"|"property"|"lease"|"expense"
-  linkedEntityId   String?
-  reviewedAt       DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, status])
-  @@map("document_extractions")
 }
 
 model Invoice {

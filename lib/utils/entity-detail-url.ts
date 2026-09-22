@@ -1,6 +1,6 @@
 /**
  * Shared `?detail=<type>:<id>` query param convention for the unified entity
- * detail overlay (property/tenant/owner/lease/document). Pure string helpers
+ * detail overlay (property/tenant/owner/lease). Pure string helpers
  * so every click site preserves whatever other search params the current
  * page already has (e.g. `/people?view=owners`) instead of clobbering them.
  */

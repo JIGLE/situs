@@ -58,7 +58,6 @@ is _derived_ from this ledger, never hand-set.
 
 - **Properties, units, buildings, tenants, owners** — with a structural portfolio tree and role-based access
 - **Leases** — lifecycle, renewals, expiry alerts, bilingual PDF templates
-- **Documents + OCR** — upload and classification; ambiguous or unlinked results land in a review queue
 - **Tenant portal** — token-gated self-service access, no account required
 - **i18n** — Portuguese, English, Spanish, Italian (full parity, enforced by test — `npm run i18n:check:strict` counts them, so this line does not)
 
@@ -135,13 +134,12 @@ lib/
     matching/          → bank-movement→lease confidence scoring (pure)
     bank/              → CSV import, fingerprint dedupe, matching pipeline
     receipts/          → receipt document-lifecycle state machine (pure)
-    ocr/               → document classification engine (pure) + orchestration
     tax/               → connector find-or-create + submission log
   tax/connectors/      → per-country TaxConnector implementations
   contexts/            → global AppState, CSRF, toast, currency
   utils/               → PII encryption, API client, logger, env validation
 prisma/
-  schema.prisma        → 47 models, 33 enums (SQLite)
+  schema.prisma        → the schema; `grep -c '^model ' prisma/schema.prisma` counts it
 scripts/
   mobile-audit.mjs     → responsive measurement harness (see Quality gates)
 ```

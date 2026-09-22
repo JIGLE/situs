@@ -693,14 +693,6 @@ export function OverviewView({
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => navigate("/documents")}
-                  className="justify-between"
-                >
-                  {t("sharedDocuments")}
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
                   onClick={() => navigate("/portfolio")}
                   className="justify-between"
                 >

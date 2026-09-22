@@ -44,6 +44,17 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // Narrow on purpose: "review required" also means a PR review in CONTRIBUTING.md, and
+    // ROADMAP's sprint rows record what Migration D shipped, which is history rather than a
+    // claim about what exists. Pin the two artifacts instead.
+    pattern: /lib\/services\/ocr\/|Documents "Review Required" tab/i,
+    retired: "2026-09-22 (scope cutdown, phase 8)",
+    because:
+      "the mock OCR classifier and DocumentExtraction went with the Documents browsing UI. " +
+      "The Document model stays: receipt emission archives a PDF against it, and that copy is " +
+      "the proof of a filing made at Finanças",
+  },
+  {
     pattern: /Brevo Inbound Parsing/i,
     retired: "2026-09-21 (scope cutdown, phase 7)",
     because:

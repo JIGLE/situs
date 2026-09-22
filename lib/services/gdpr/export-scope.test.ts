@@ -54,7 +54,6 @@ describe("GDPR export scope", () => {
       "invoices",
       "taxFilings",
       "governmentVerifications",
-      "documentExtractions",
     ]) {
       expect(include, `${relation} missing from the GDPR export`).toHaveProperty(relation, true);
     }

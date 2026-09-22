@@ -52,13 +52,6 @@ test.describe("Situs surfaces — accessibility (WCAG2A/AA)", () => {
     expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
   });
 
-  test("Documents view has no critical/serious violations", async ({ page }) => {
-    await page.goto("/documents");
-    await settle(page);
-    const { blocking } = await scanForSeriousViolations(page);
-    expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
-  });
-
   test("Account page (audit trail) has no critical/serious violations", async ({ page }) => {
     await page.goto("/account");
     await settle(page);

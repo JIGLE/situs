@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock,
-  FileWarning,
   Flame,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,14 +84,6 @@ export function ActionPanel(): ReactElement {
   const t = useTranslations("dashboard");
 
   const { leases = [], receipts = [], properties = [] } = state;
-
-  const [docExpiry, setDocExpiry] = useState<{ critical: number; warning: number } | null>(null);
-  useEffect(() => {
-    fetch("/api/documents/expiring")
-      .then((r) => r.json())
-      .then((d) => setDocExpiry(d.data ?? d))
-      .catch(() => null);
-  }, []);
 
   const [streakMonths, setStreakMonths] = useState(0);
   useEffect(() => {
@@ -234,30 +225,8 @@ export function ActionPanel(): ReactElement {
       });
     }
 
-    // --- 5. Document expiry ---
-    if (docExpiry?.critical) {
-      results.push({
-        id: "doc-expiry-critical",
-        icon: FileWarning,
-        message: t("docExpiryCritical", { count: docExpiry.critical }),
-        count: docExpiry.critical,
-        href: "/documents",
-        severity: "critical",
-      });
-    }
-    if (docExpiry?.warning) {
-      results.push({
-        id: "doc-expiry-warning",
-        icon: FileWarning,
-        message: t("docExpiryWarning", { count: docExpiry.warning }),
-        count: docExpiry.warning,
-        href: "/documents",
-        severity: "warning",
-      });
-    }
-
     return results;
-  }, [leases, receipts, properties, t, docExpiry]);
+  }, [leases, receipts, properties, t]);
 
   return (
     <Card className="border-[var(--color-border)] bg-[var(--color-card)]">

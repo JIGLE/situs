@@ -251,30 +251,6 @@ export const pdfGenerator = {
       fileName: fileName.endsWith(".pdf") ? fileName : `${fileName}.pdf`,
     };
   },
-
-  /**
-   * Generate PDF from plain text
-   */
-  async generateFromText(text: string, fileName: string, title?: string): Promise<PDFResult> {
-    const pdfBuffer = createSimplePDF(text, title || fileName);
-
-    return {
-      buffer: pdfBuffer,
-      mimeType: "application/pdf",
-      fileName: fileName.endsWith(".pdf") ? fileName : `${fileName}.pdf`,
-    };
-  },
-
-  /**
-   * Get HTML content as-is (for browser-side PDF generation)
-   */
-  getHTML(html: string, fileName: string): PDFResult {
-    return {
-      buffer: Buffer.from(html, "utf8"),
-      mimeType: "text/html",
-      fileName: fileName.endsWith(".html") ? fileName : `${fileName}.html`,
-    };
-  },
 };
 
 // ============================================================================
@@ -282,48 +258,6 @@ export const pdfGenerator = {
 // ============================================================================
 
 export const documentExport = {
-  /**
-   * Generate a lease agreement PDF
-   */
-  async generateLeaseAgreementPDF(
-    leaseData: import("./document-service").LeaseTemplateData,
-    options?: PDFGenerationOptions,
-  ): Promise<PDFResult> {
-    const { templateGenerator } = await import("./document-service");
-    const html = templateGenerator.generateLeaseAgreement(leaseData);
-    const fileName = `Lease_Agreement_${leaseData.tenantName.replace(/\s+/g, "_")}_${leaseData.startDate}`;
-
-    return pdfGenerator.generateFromHTML(html, fileName, options);
-  },
-
-  /**
-   * Generate a rent receipt PDF
-   */
-  async generateRentReceiptPDF(
-    receiptData: import("./document-service").RentReceiptTemplateData,
-    options?: PDFGenerationOptions,
-  ): Promise<PDFResult> {
-    const { templateGenerator } = await import("./document-service");
-    const html = templateGenerator.generateRentReceipt(receiptData);
-    const fileName = `Rent_Receipt_${receiptData.receiptNumber}`;
-
-    return pdfGenerator.generateFromHTML(html, fileName, options);
-  },
-
-  /**
-   * Generate a notice PDF
-   */
-  async generateNoticePDF(
-    noticeData: import("./document-service").NoticeTemplateData,
-    options?: PDFGenerationOptions,
-  ): Promise<PDFResult> {
-    const { templateGenerator } = await import("./document-service");
-    const html = templateGenerator.generateNotice(noticeData);
-    const fileName = `Notice_${noticeData.noticeType}_${noticeData.issueDate}`;
-
-    return pdfGenerator.generateFromHTML(html, fileName, options);
-  },
-
   /**
    * Generate an Iberian lease agreement PDF (PT or ES)
    */

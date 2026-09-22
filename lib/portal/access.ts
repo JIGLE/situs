@@ -2,7 +2,6 @@ import type { ComponentType } from "react";
 import {
   Building2,
   Calculator,
-  FileBox,
   FileText,
   Home,
   Settings,
@@ -80,15 +79,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         labelKey: "navigation.people",
         icon: Users,
         roles: ["owner"],
-        mobilePrimary: true,
-      },
-      {
-        key: "documents",
-        href: "/documents",
-        label: "Documents",
-        labelKey: "navigation.documents",
-        icon: FileBox,
-        roles: ["owner", "tenant"],
         mobilePrimary: true,
       },
     ],

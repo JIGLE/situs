@@ -70,7 +70,7 @@ describe("access derived from the normalised path", () => {
     // The regression that would matter most: if the clean shape resolved to something a tenant
     // may reach, the prefix change would become a privilege escalation.
     //
-    // These are owner-only. `/portfolio`, `/financials`, `/documents` and `/leases` are NOT —
+    // These are owner-only. `/portfolio`, `/financials` and `/leases` are NOT —
     // a tenant reaches their own view of each — which is why they are asserted below instead.
     for (const path of ["/admin", "/admin/system-status", "/people", "/compliance/modelo179"]) {
       expect(canAccessPortalPath("tenant", path)).toBe(false);
@@ -79,7 +79,7 @@ describe("access derived from the normalised path", () => {
   });
 
   it("lets a tenant reach the pages that are theirs, under either shape", () => {
-    for (const path of ["/settings", "/portfolio", "/documents", "/leases"]) {
+    for (const path of ["/settings", "/portfolio", "/financials", "/leases"]) {
       expect(canAccessPortalPath("tenant", path)).toBe(true);
       expect(canAccessPortalPath("tenant", `/pt${path}`)).toBe(true);
     }
