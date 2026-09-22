@@ -350,12 +350,20 @@ jobs:
           name: nextjs-build
           path: .next/
 
+      # `disable-rate-limit` is not optional for this job, and its absence was a silent hole.
+      # The harness fans a whole sweep out from one address against a 100-request-per-minute
+      # limit, and says so itself: "a run against a server without E2E_DISABLE_RATE_LIMIT=true
+      # measures error panels from about surface fourteen onward". Without it the later
+      # surfaces measure the rate limiter's error panel rather than a page, and the totals are
+      # not comparable to BASELINE — the failure reads as a responsive-design regression and is
+      # not one. The e2e job has always passed it; this one never did.
       - uses: ./.github/actions/start-app
         with:
           database-url: file:${{ github.workspace }}/mobile-audit.db
           nextauth-secret: mobile-audit-secret-minimum-32-characters
           demo-mode: "true"
           demo-login: "true"
+          disable-rate-limit: "true"
 
       # `--seed` is not optional: without it the harness walks a bare database, and a table with
       # no rows cannot overflow. Every number this job produced before it was added described
