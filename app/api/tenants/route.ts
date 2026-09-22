@@ -37,7 +37,7 @@ async function handleGet(request: NextRequest): Promise<Response> {
   const authResult = await getAccessContext(request);
   if (authResult instanceof Response) return authResult;
 
-  const { scopeUserId, portalRole, tenantId } = authResult;
+  const { scopeUserId } = authResult;
 
   try {
     // Check if pagination is requested
@@ -51,19 +51,13 @@ async function handleGet(request: NextRequest): Promise<Response> {
 
       const [tenants, total] = await Promise.all([
         prisma.tenant.findMany({
-          where:
-            portalRole === "tenant" && tenantId
-              ? { userId: scopeUserId, id: tenantId }
-              : { userId: scopeUserId },
+          where: { userId: scopeUserId },
           skip: pagination.skip,
           take: pagination.limit,
           orderBy: { createdAt: "desc" },
         }),
         prisma.tenant.count({
-          where:
-            portalRole === "tenant" && tenantId
-              ? { userId: scopeUserId, id: tenantId }
-              : { userId: scopeUserId },
+          where: { userId: scopeUserId },
         }),
       ]);
 
@@ -71,11 +65,7 @@ async function handleGet(request: NextRequest): Promise<Response> {
     } else {
       // Legacy: Return all tenants (backward compatible)
       const tenants = await tenantService.getAll(scopeUserId);
-      return createSuccessResponse(
-        portalRole === "tenant" && tenantId
-          ? tenants.filter((tenant) => tenant.id === tenantId)
-          : tenants,
-      );
+      return createSuccessResponse(tenants);
     }
   } catch (error) {
     return createErrorResponse(error as Error, 500, request);

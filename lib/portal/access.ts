@@ -11,7 +11,22 @@ import {
   Wallet,
 } from "lucide-react";
 
-export type PortalRole = "owner" | "tenant";
+/**
+ * Whether a session may use the owner application at all.
+ *
+ * This replaced a two-member role union that every nav item carried a list of. The scope
+ * cutdown removed both tenant-facing surfaces — the token portal and role=USER access to
+ * this app — so every remaining route is an owner route and the per-item lists had
+ * collapsed to one value repeated ten times.
+ *
+ * It stays a real check rather than becoming `true`: `User.role` still defaults to USER in
+ * the schema, so a row can hold one even though the sign-in gate provisions ADMIN. A guard
+ * that cannot fail is the shape this repo keeps finding, so the predicate survives and the
+ * lists are what went.
+ */
+export function isOwnerSessionRole(role?: string | null): boolean {
+  return role !== "USER";
+}
 
 export interface PortalNavItem {
   key: string;
@@ -19,7 +34,6 @@ export interface PortalNavItem {
   label: string;
   labelKey: string;
   icon: ComponentType<{ className?: string }>;
-  roles: PortalRole[];
   mobilePrimary?: boolean;
   hidden?: boolean;
 }
@@ -51,7 +65,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "Home",
         labelKey: "navigation.home",
         icon: Home,
-        roles: ["owner", "tenant"],
         mobilePrimary: true,
       },
       {
@@ -60,7 +73,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "Portfolio",
         labelKey: "navigation.portfolio",
         icon: Building2,
-        roles: ["owner", "tenant"],
         mobilePrimary: true,
       },
       {
@@ -69,7 +81,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "Finance",
         labelKey: "navigation.finance",
         icon: Wallet,
-        roles: ["owner", "tenant"],
         mobilePrimary: true,
       },
       {
@@ -78,7 +89,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "People",
         labelKey: "navigation.people",
         icon: Users,
-        roles: ["owner"],
         mobilePrimary: true,
       },
     ],
@@ -88,15 +98,11 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
     groupLabelKey: "navigation.systemGroup",
     items: [
       {
-        // Both roles: Settings now hosts the Account section, which a tenant must be able to
-        // reach. The sections themselves are filtered by role inside `settings-view.tsx` — a
-        // tenant sees Account and Appearance, not tax rules or billing.
         key: "settings",
         href: "/settings",
         label: "Settings",
         labelKey: "navigation.settings",
         icon: Settings,
-        roles: ["owner", "tenant"],
       },
       {
         // Owner-only. `canAccessPortalPath` derives access from this list, so a page absent
@@ -111,7 +117,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "System status",
         labelKey: "navigation.admin",
         icon: ShieldCheck,
-        roles: ["owner"],
       },
     ],
   },
@@ -127,7 +132,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "Compliance",
         labelKey: "navigation.compliance",
         icon: ShieldCheck,
-        roles: ["owner"],
         hidden: true,
       },
       {
@@ -136,7 +140,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "Tax Filing",
         labelKey: "navigation.taxFiling",
         icon: Calculator,
-        roles: ["owner"],
         hidden: true,
       },
       {
@@ -145,45 +148,39 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "Leases",
         labelKey: "navigation.leases",
         icon: FileText,
-        roles: ["owner", "tenant"],
         hidden: true,
       },
       {
         // Folded into Settings as its Account section; `/account` redirects there. Kept here
-        // so `canAccessPortalPath` still permits the old URL for both roles.
+        // so `canAccessPortalPath` still permits the old URL.
         key: "account",
         href: "/account",
         label: "Account",
         labelKey: "navigation.account",
         icon: UserCircle,
-        roles: ["owner", "tenant"],
         hidden: true,
       },
     ],
   },
 ];
 
-export function getPortalRoleFromSessionRole(role?: string | null): PortalRole {
-  return role === "USER" ? "tenant" : "owner";
-}
-
-export function getPortalNavigation(role: PortalRole): PortalNavGroup[] {
+export function getPortalNavigation(): PortalNavGroup[] {
   return PORTAL_NAV_GROUPS.map((group) => ({
     ...group,
-    items: group.items.filter((item) => item.roles.includes(role) && !item.hidden),
+    items: group.items.filter((item) => !item.hidden),
   })).filter((group) => group.items.length > 0);
 }
 
-export function getPrimaryMobileNavigation(role: PortalRole): PortalNavItem[] {
-  return getPortalNavigation(role)
+export function getPrimaryMobileNavigation(): PortalNavItem[] {
+  return getPortalNavigation()
     .flatMap((group) => group.items)
     .filter((item) => item.mobilePrimary)
     .slice(0, 5);
 }
 
-export function getSecondaryMobileNavigation(role: PortalRole): PortalNavItem[] {
-  const primaryKeys = new Set(getPrimaryMobileNavigation(role).map((item) => item.key));
-  return getPortalNavigation(role)
+export function getSecondaryMobileNavigation(): PortalNavItem[] {
+  const primaryKeys = new Set(getPrimaryMobileNavigation().map((item) => item.key));
+  return getPortalNavigation()
     .flatMap((group) => group.items)
     .filter((item) => !primaryKeys.has(item.key));
 }
@@ -222,11 +219,9 @@ export function normalizePortalPath(pathname: string): string {
   return normalized;
 }
 
-export function canAccessPortalPath(role: PortalRole, pathname: string): boolean {
+export function canAccessPortalPath(pathname: string): boolean {
   const normalizedPath = normalizePortalPath(pathname);
-  const allowedItems = PORTAL_NAV_GROUPS.flatMap((group) =>
-    group.items.filter((item) => item.roles.includes(role)),
-  );
+  const allowedItems = PORTAL_NAV_GROUPS.flatMap((group) => group.items);
   // Match exact href OR check if the normalized path is a prefix of a nav item's href
   return allowedItems.some(
     (item) => item.href === normalizedPath || item.href.startsWith(normalizedPath + "/"),

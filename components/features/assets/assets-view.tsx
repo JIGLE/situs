@@ -1,19 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Building2, CreditCard, Home, Plus, Receipt, ShieldCheck, Sparkles } from "lucide-react";
+import { Building2, Home, Plus } from "lucide-react";
 import { PropertiesView, PropertiesViewRef } from "@/components/features/property/property-list";
 import { PortfolioSummary } from "@/components/features/property/portfolio-summary";
 import { ExportButton, ExportColumn } from "@/components/ui/export-button";
 import { useApp } from "@/lib/contexts/app-context";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { usePortalAccess } from "@/lib/contexts/portal-context";
-import { useCurrency } from "@/lib/contexts/currency-context";
-import { getActiveLease } from "@/lib/utils/lease-helpers";
 import {
   Dialog,
   DialogContent,
@@ -38,33 +33,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-function TenantStatCard({
-  label,
-  value,
-  detail,
-}: {
-  label: string;
-  value: string;
-  detail: string;
-}) {
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="text-sm text-muted-foreground">{label}</div>
-        <div className="mt-1 text-2xl font-semibold text-[var(--color-foreground)]">{value}</div>
-        <div className="mt-1 text-xs text-muted-foreground">{detail}</div>
-      </CardContent>
-    </Card>
-  );
-}
-
 export function AssetsView(): React.ReactElement {
   const { state, addBuilding } = useApp();
-  const { isOwnerPortal } = usePortalAccess();
-  const { formatCurrency } = useCurrency();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { properties, leases, receipts, tenants } = state;
+  const { properties } = state;
   const propertiesViewRef = useRef<PropertiesViewRef>(null);
   const t = useTranslations("portfolio");
 
@@ -118,98 +91,6 @@ export function AssetsView(): React.ReactElement {
     { key: "rent", label: "Rent" },
   ];
 
-  const tenantHome = useMemo(() => {
-    const tenant = tenants[0];
-    const activeLease = tenant ? getActiveLease(tenant.id, leases) : null;
-    const property = properties.find(
-      (item) => item.id === (activeLease?.propertyId ?? tenant?.propertyId),
-    );
-    const paidReceipts = receipts.filter((r) => r.status === "paid");
-    return { tenant, activeLease, property, paidReceipts };
-  }, [leases, properties, receipts, tenants]);
-
-  if (!isOwnerPortal) {
-    // ── Tenant view ─────────────────────────────────────────────────────────────
-    return (
-      <div className="space-y-6">
-        <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 shadow-sm">
-          <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-            <div className="space-y-4">
-              <Badge
-                variant="outline"
-                className="w-fit border-[var(--color-primary)]/20 bg-[var(--color-info-muted)] text-[var(--color-primary)]"
-              >
-                {t("tenant.badge")}
-              </Badge>
-              <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-                <Building2 className="h-8 w-8" />
-                {tenantHome.property?.name ?? t("tenant.myHome")}
-              </h1>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={() => router.push("/financials")}>
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  {t("tenant.payments")}
-                </Button>
-                <Button variant="outline" onClick={() => router.push("/leases")}>
-                  <Receipt className="mr-2 h-4 w-4" />
-                  {t("tenant.myLease")}
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <TenantStatCard
-                label={t("tenant.monthlyRent")}
-                value={formatCurrency(
-                  tenantHome.activeLease?.monthlyRent ?? tenantHome.property?.rent ?? 0,
-                )}
-                detail={
-                  tenantHome.activeLease
-                    ? t("tenant.leaseEnds", { date: tenantHome.activeLease.endDate })
-                    : t("tenant.noLease")
-                }
-              />
-              <TenantStatCard
-                label={t("tenant.receipts")}
-                value={`${tenantHome.paidReceipts.length}`}
-                detail={t("tenant.paidRecords")}
-              />
-              <Card className="md:col-span-2">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="h-5 w-5 text-[var(--color-primary)]" />
-                        <p className="font-medium text-[var(--color-foreground)]">
-                          {t("tenant.homeSummary")}
-                        </p>
-                      </div>
-                      <p className="mt-2 text-sm text-[var(--color-muted-foreground)]">
-                        {tenantHome.property?.address ?? t("tenant.addressUnavailable")}
-                      </p>
-                    </div>
-                    <Badge variant="outline" className="capitalize">
-                      {tenantHome.property?.status ?? "active"}
-                    </Badge>
-                  </div>
-                  <div className="mt-4 flex items-center gap-2 text-sm text-[var(--color-muted-foreground)]">
-                    <Sparkles className="h-4 w-4 text-[var(--color-primary)]" />
-                    {tenantHome.property?.latitude && tenantHome.property?.longitude
-                      ? t("tenant.mapAvailable")
-                      : t("tenant.mapUnavailable")}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        <PropertiesView ref={propertiesViewRef} density="compact" showPageHeader={false} />
-      </div>
-    );
-  }
-
-  // ── Owner portal view ──────────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
       {/* Compact page header */}

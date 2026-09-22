@@ -39,22 +39,18 @@ situs/
 │   │   ├── expenses/            # Expense tracking
 │   │   ├── health/              # Health checks
 │   │   ├── info/                # API metadata
-│   │   ├── invoices/            # Invoice management
 │   │   ├── leases/              # Lease API
 │   │   ├── metrics/             # Metrics
 │   │   ├── owners/              # Owner API
-│   │   ├── payments/            # Payment processing
 │   │   ├── properties/          # Property API
 │   │   ├── receipts/            # Receipt management
 │   │   ├── tax/                 # Tax compliance
-│   │   ├── tenant-portal/       # Tenant portal API
 │   │   ├── tenants/             # Tenant API
 │   │   ├── units/               # Unit API
 │   │   ├── user/                # User data (GDPR)
 │   │   ├── webhooks/            # External webhooks
 │   │   └── README.md            # API documentation
 │   ├── auth/                     # Auth pages
-│   ├── tenant-portal/           # Public tenant portal
 │   ├── globals.css              # Global styles
 │   ├── layout.tsx               # Root layout
 │   └── page.tsx                 # Homepage
@@ -68,7 +64,6 @@ situs/
 │   │   ├── financial/           # Financial features
 │   │   │   ├── financials-container.tsx
 │   │   │   ├── financials-view.tsx
-│   │   │   ├── invoices-view.tsx
 │   │   │   ├── payment-matrix-view.tsx
 │   │   │   ├── receipts-view.tsx
 │   │   │   ├── *.test.tsx       # Co-located tests
@@ -120,13 +115,11 @@ situs/
 │   │   ├── property.ts
 │   │   ├── tenant.ts
 │   │   ├── lease.ts
-│   │   ├── invoice.ts
 │   │   └── index.ts             # ✨ Barrel export
 │   ├── services/                # Business logic
 │   │   ├── auth/                # Authentication services
 │   │   │   ├── auth.ts
 │   │   │   ├── auth-middleware.ts
-│   │   │   ├── tenant-portal-auth.ts
 │   │   │   ├── *.test.ts        # Co-located tests
 │   │   │   └── index.ts         # ✨ Barrel export
 │   │   ├── database/            # Database utilities
@@ -141,7 +134,6 @@ situs/
 │   │   ├── address-verification.ts
 │   │   ├── audit-log.ts
 │   │   ├── document-service.ts
-│   │   ├── invoice-service.ts
 │   │   ├── pdf-generator.ts
 │   │   └── tax-calculator.ts
 │   ├── utils/                   # Utility functions (with barrel exports)
@@ -351,7 +343,8 @@ SMTP_USER=your-login
 SMTP_PASS=your-smtp-key
 FROM_EMAIL=noreply@example.com
 
-# Payment (Optional)
+# App subscription billing (Optional) — not rent collection, which arrives
+# as a bank movement and is matched against the ledger
 STRIPE_SECRET_KEY=your-stripe-secret
 STRIPE_WEBHOOK_SECRET=your-webhook-secret
 ```

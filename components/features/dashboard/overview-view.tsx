@@ -5,23 +5,8 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import {
-  AlertTriangle,
-  ArrowRight,
-  BadgeEuro,
-  Building2,
-  CalendarClock,
-  FileCheck2,
-  FileText,
-  Home,
-  Mail,
-  Phone,
-  ShieldCheck,
-  Sparkles,
-  UserRound,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { BadgeEuro, Building2, FileCheck2, FileText, Home, UserRound } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   OnboardingChecklist,
   type OnboardingChecklistStep,
@@ -30,7 +15,6 @@ import { cn } from "@/lib/utils/utils";
 import { ActionPanel } from "@/components/features/dashboard/action-panel";
 import { useApp } from "@/lib/contexts/app-context";
 import { useCurrency } from "@/lib/contexts/currency-context";
-import { usePortalAccess } from "@/lib/contexts/portal-context";
 import { getActiveLease } from "@/lib/utils/lease-helpers";
 
 // ─── Modelo 179 Alert ────────────────────────────────────────────────────────
@@ -137,49 +121,6 @@ function getNextPaymentDate(leaseStartDate?: string): Date | null {
   return candidate;
 }
 
-function MetricCard({
-  title,
-  value,
-  subtitle,
-  icon: Icon,
-  tone = "default",
-}: {
-  title: string;
-  value: string;
-  subtitle: string;
-  icon: ElementType;
-  tone?: "default" | "danger" | "success" | "info";
-}) {
-  const toneClasses = {
-    default: "border-[var(--color-border)] bg-[var(--color-card)]",
-    danger: "border-[var(--color-destructive)]/20 bg-[var(--color-error-muted)]",
-    success: "border-[var(--color-success)]/20 bg-[var(--color-success-muted)]",
-    info: "border-[var(--color-info)]/20 bg-[var(--color-info-muted)]",
-  };
-
-  return (
-    <Card className={cn("overflow-hidden", toneClasses[tone])}>
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm text-[var(--color-muted-foreground)]">{title}</p>
-            <p
-              className="mt-2 text-display-small text-[var(--color-foreground)]"
-              aria-live="polite"
-            >
-              {value}
-            </p>
-          </div>
-          <div className="rounded-lg bg-[var(--color-surface-hover)] p-3">
-            <Icon className="h-5 w-5 text-[var(--color-foreground)]" />
-          </div>
-        </div>
-        <p className="mt-3 text-xs text-[var(--color-muted-foreground)]">{subtitle}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
 function FeatureHighlightCard({
   icon: Icon,
   title,
@@ -210,7 +151,6 @@ export function OverviewView({
 }: OverviewViewProps = {}): ReactElement {
   const { state } = useApp();
   const { formatCurrency } = useCurrency();
-  const { isOwnerPortal } = usePortalAccess();
   const { data: session } = useSession();
   const router = useRouter();
   const t = useTranslations("dashboard");
@@ -225,22 +165,6 @@ export function OverviewView({
   const handleAddLease = () => onAddLease?.() ?? navigate("/leases");
   const handleRecordPayment = () =>
     onRecordPayment?.() ?? navigate("/financials?tab=receipts&action=record-payment");
-
-  const [ownerContact, setOwnerContact] = useState<{
-    name: string;
-    email: string;
-    phone?: string;
-  } | null>(null);
-
-  useEffect(() => {
-    if (isOwnerPortal) return;
-    fetch("/api/portal/owner-contact")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json) => {
-        if (json?.data) setOwnerContact(json.data);
-      })
-      .catch(() => {});
-  }, [isOwnerPortal]);
 
   const dashboardData = useMemo(() => {
     const currentMonth = new Date();
@@ -380,13 +304,13 @@ export function OverviewView({
     },
   ];
   const allStepsDone = onboardingSteps.every((s) => s.completed);
-  const showChecklist = isOwnerPortal && !allStepsDone;
+  const showChecklist = !allStepsDone;
 
   if (loading) {
     return <div className="h-40 animate-pulse bg-[var(--color-muted)]/30" />;
   }
 
-  if (properties.length === 0 && isOwnerPortal) {
+  if (properties.length === 0) {
     const richSteps: OnboardingChecklistStep[] = [
       {
         id: "property",
@@ -449,341 +373,95 @@ export function OverviewView({
     );
   }
 
-  if (isOwnerPortal) {
-    return (
-      <div className="space-y-5 motion-safe:animate-fade-in">
-        {/* Onboarding: top priority when setup is incomplete */}
-        {showChecklist && <OnboardingChecklist steps={onboardingSteps} />}
-
-        {/* Status hero — the first thing a landlord sees */}
-        <ActionPanel />
-
-        {/* Three key numbers — Situs metric panels: mono label, light numeral,
-            tabular figures. Collected income is the focal metric (country accent);
-            overdue lights up danger only when there is money at risk. */}
-        <div className="grid grid-cols-3 gap-3 motion-safe:animate-slide-up">
-          <div className="panel border-l-[3px] border-l-[var(--country-highlight-readable)] p-4">
-            <p className="mono-label">{t("collectedThisMonth")}</p>
-            <p
-              className="mt-2 text-xl font-light tabular-nums sm:text-2xl text-[var(--color-foreground)]"
-              aria-live="polite"
-            >
-              {formatCurrency(dashboardData.monthlyIncome)}
-            </p>
-          </div>
-          <div
-            className={cn(
-              "panel p-4",
-              dashboardData.overdueRent > 0 &&
-                "border-l-[3px] border-l-[var(--semantic-danger)] bg-[var(--semantic-danger-soft)]",
-            )}
-          >
-            <p className="mono-label">{t("overdueRentMetric")}</p>
-            <p
-              className={cn(
-                "mt-2 text-xl font-light tabular-nums sm:text-2xl",
-                dashboardData.overdueRent > 0
-                  ? "text-[var(--semantic-danger)]"
-                  : "text-[var(--color-foreground)]",
-              )}
-            >
-              {formatCurrency(dashboardData.overdueRent)}
-            </p>
-          </div>
-          <div className="panel p-4">
-            <p className="mono-label">{t("occupancyMetric")}</p>
-            <p className="mt-2 text-xl font-light tabular-nums sm:text-2xl text-[var(--color-foreground)]">
-              {dashboardData.occupancyRate.toFixed(0)}%
-            </p>
-          </div>
-        </div>
-
-        {/* Recent payments — compact rectilinear list */}
-        {dashboardData.recentPayments.length > 0 && (
-          <div className="panel">
-            {/* `px-4`, matching `Card`'s padding. This list is a bespoke `.panel` rather than a
-                `Card` — `.panel` is background and border only, padding is per-use — which is
-                why it kept its own `px-5` while every card in the app moved to `p-4`. Two
-                primitives disagreeing by 4px on every row is the kind of thing nobody can name
-                and everybody feels. */}
-            <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
-              <p className="mono-label">{t("recentPayments")}</p>
-              <button
-                onClick={() => navigate("/financials?tab=receipts")}
-                className="flex items-center justify-end text-sm text-[var(--color-primary)] hover:underline max-md:min-h-11 max-md:min-w-11"
-              >
-                {t("seeAll")}
-              </button>
-            </div>
-            {/* Rows are `py-3`, not `py-4`. Two short lines — a name and a date — were sitting
-                in a 67px row, roughly half of which was padding. */}
-            <div className="divide-y divide-[var(--color-border)]">
-              {dashboardData.recentPayments.map((receipt) => (
-                <div key={receipt.id} className="flex items-center justify-between px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-[var(--color-foreground)]">
-                      {receipt.tenantName}
-                    </p>
-                    <p className="truncate text-xs text-[var(--color-muted-foreground)]">
-                      {formatDate(receipt.date)}
-                    </p>
-                  </div>
-                  <p className="ml-4 shrink-0 text-sm font-medium tabular-nums text-[var(--color-foreground)]">
-                    {formatCurrency(receipt.amount)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Compliance alert — seasonal, Jan–Mar only */}
-        <Modelo179Alert />
-      </div>
-    );
-  }
-
-  const tenant = dashboardData.tenant;
-  const activeLease = dashboardData.activeLease;
-  const home = dashboardData.home;
-  const paidReceipts = dashboardData.paidReceipts;
-  const nextRent = activeLease?.monthlyRent ?? tenant?.rent ?? 0;
-  const paymentStatus = tenant?.paymentStatus ?? "pending";
-  const statusTone =
-    paymentStatus === "paid"
-      ? "border-[var(--color-success)]/20 bg-[var(--color-success-muted)] text-[var(--color-success)]"
-      : paymentStatus === "overdue"
-        ? "border-[var(--color-destructive)]/20 bg-[var(--color-error-muted)] text-[var(--color-destructive)]"
-        : "border-[var(--color-warning)]/20 bg-[var(--color-warning-muted)] text-[var(--color-warning)]";
-
   return (
-    <div className="space-y-6">
-      <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 shadow-[var(--shadow-card)]">
-        <div className="mb-6 space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-hover)] px-3 py-1 text-sm text-[var(--color-muted-foreground)]">
-            <ShieldCheck className="h-4 w-4" />
-            {t("tenantWorkspaceLabel")}
-          </div>
-          <h1 className="max-w-2xl text-heading-large text-[var(--color-foreground)]">
-            {t("tenantTitle")}
-          </h1>
-          <p className="max-w-2xl text-sm leading-6 text-[var(--color-muted-foreground)]">
-            {t("tenantSubtitle")}
+    <div className="space-y-5 motion-safe:animate-fade-in">
+      {/* Onboarding: top priority when setup is incomplete */}
+      {showChecklist && <OnboardingChecklist steps={onboardingSteps} />}
+
+      {/* Status hero — the first thing a landlord sees */}
+      <ActionPanel />
+
+      {/* Three key numbers — Situs metric panels: mono label, light numeral,
+          tabular figures. Collected income is the focal metric (country accent);
+          overdue lights up danger only when there is money at risk. */}
+      <div className="grid grid-cols-3 gap-3 motion-safe:animate-slide-up">
+        <div className="panel border-l-[3px] border-l-[var(--country-highlight-readable)] p-4">
+          <p className="mono-label">{t("collectedThisMonth")}</p>
+          <p
+            className="mt-2 text-xl font-light tabular-nums sm:text-2xl text-[var(--color-foreground)]"
+            aria-live="polite"
+          >
+            {formatCurrency(dashboardData.monthlyIncome)}
           </p>
         </div>
-
-        <div className="grid gap-4 sm:grid-cols-3">
-          <MetricCard
-            title={t("nextRent")}
-            value={formatCurrency(nextRent)}
-            subtitle={
-              dashboardData.nextPaymentDate
-                ? t("dueDateLabel", {
-                    date: formatDate(dashboardData.nextPaymentDate.toISOString()),
-                  })
-                : t("noActiveLease")
-            }
-            icon={BadgeEuro}
-            tone="info"
-          />
-          <Card className={cn(statusTone)}>
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm opacity-80">{t("paymentStatusLabel")}</p>
-                  <p className="mt-2 text-display-small capitalize">{paymentStatus}</p>
-                </div>
-                <div className="rounded-lg bg-black/10 p-3">
-                  <AlertTriangle className="h-5 w-5" />
-                </div>
-              </div>
-              <p className="mt-3 text-xs opacity-80">
-                {paymentStatus === "paid"
-                  ? t("paymentStatusPaid")
-                  : paymentStatus === "overdue"
-                    ? t("paymentStatusOverdue")
-                    : t("paymentStatusPending")}
-              </p>
-            </CardContent>
-          </Card>
-          <MetricCard
-            title={t("leaseEnds")}
-            value={activeLease ? formatDate(activeLease.endDate) : "—"}
-            subtitle={t("leaseEndsSubtitle")}
-            icon={CalendarClock}
-          />
-        </div>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <Card className="border-[var(--color-border)] bg-[var(--color-card)]">
-          <CardHeader>
-            <CardTitle>{t("myLease")}</CardTitle>
-            <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
-              {t("myLeaseSubtitle")}
-            </p>
-          </CardHeader>
-          <CardContent className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-hover)] p-5">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-[var(--color-secondary)] p-3">
-                  <Home className="h-5 w-5 text-[var(--color-foreground)]" />
-                </div>
-                <div>
-                  <p className="font-medium text-[var(--color-foreground)]">
-                    {home?.name ?? t("yourProperty")}
-                  </p>
-                  <p className="text-sm text-[var(--color-muted-foreground)]">
-                    {home?.address ?? t("addressUnavailable")}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-                    {t("monthlyRentLabel")}
-                  </p>
-                  <p className="mt-1 text-lg font-semibold text-[var(--color-foreground)]">
-                    {formatCurrency(nextRent)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-                    {t("leaseStatusLabel")}
-                  </p>
-                  <p className="mt-1 text-lg font-semibold capitalize text-[var(--color-foreground)]">
-                    {activeLease?.status ?? "Active"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-                    {t("startDateLabel")}
-                  </p>
-                  <p className="mt-1 text-sm font-medium text-[var(--color-foreground)]">
-                    {formatDate(activeLease?.startDate)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-                    {t("endDateLabel")}
-                  </p>
-                  <p className="mt-1 text-sm font-medium text-[var(--color-foreground)]">
-                    {formatDate(activeLease?.endDate)}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-hover)] p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-[var(--color-foreground)]">
-                    {t("whatYouCanDoNow")}
-                  </p>
-                  <p className="text-sm text-[var(--color-muted-foreground)]">
-                    {t("whatYouCanDoNowSubtitle")}
-                  </p>
-                </div>
-                <Sparkles className="h-5 w-5 text-[var(--color-primary)]" />
-              </div>
-              <div className="mt-4 grid gap-3">
-                <Button onClick={() => navigate("/financials")} className="justify-between">
-                  {t("paymentHistory")}
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/portfolio")}
-                  className="justify-between"
-                >
-                  {t("propertyOverview")}
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-[var(--color-border)] bg-[var(--color-card)]">
-          <CardHeader className="flex flex-row items-center justify-between gap-4">
-            <div>
-              <CardTitle>{t("recentReceipts")}</CardTitle>
-              <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
-                {t("recentReceiptsSubtitle")}
-              </p>
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/financials")}>
-              {t("openAll")}
-              <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {paidReceipts.length === 0 ? (
-              <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-hover)] p-4 text-sm text-[var(--color-muted-foreground)]">
-                {t("noReceiptsYet")}
-              </div>
-            ) : (
-              paidReceipts.slice(0, 4).map((receipt) => (
-                <div
-                  key={receipt.id}
-                  className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-hover)] p-4"
-                >
-                  <div>
-                    <p className="font-medium text-[var(--color-foreground)]">
-                      {receipt.propertyName}
-                    </p>
-                    <p className="text-sm text-[var(--color-muted-foreground)]">
-                      {formatDate(receipt.date)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-[var(--color-foreground)]">
-                      {formatCurrency(receipt.amount)}
-                    </p>
-                    <p className="text-xs capitalize text-[var(--color-muted-foreground)]">
-                      {receipt.type}
-                    </p>
-                  </div>
-                </div>
-              ))
+        <div
+          className={cn(
+            "panel p-4",
+            dashboardData.overdueRent > 0 &&
+              "border-l-[3px] border-l-[var(--semantic-danger)] bg-[var(--semantic-danger-soft)]",
+          )}
+        >
+          <p className="mono-label">{t("overdueRentMetric")}</p>
+          <p
+            className={cn(
+              "mt-2 text-xl font-light tabular-nums sm:text-2xl",
+              dashboardData.overdueRent > 0
+                ? "text-[var(--semantic-danger)]"
+                : "text-[var(--color-foreground)]",
             )}
+          >
+            {formatCurrency(dashboardData.overdueRent)}
+          </p>
+        </div>
+        <div className="panel p-4">
+          <p className="mono-label">{t("occupancyMetric")}</p>
+          <p className="mt-2 text-xl font-light tabular-nums sm:text-2xl text-[var(--color-foreground)]">
+            {dashboardData.occupancyRate.toFixed(0)}%
+          </p>
+        </div>
+      </div>
 
-            <div className="rounded-lg border border-[var(--color-info-muted)] bg-[var(--color-info-muted)] p-4">
-              <p className="text-sm font-medium text-[var(--color-primary)]">{t("needHelp")}</p>
-              {ownerContact ? (
-                <div className="mt-2 space-y-2">
-                  <p className="text-sm text-[var(--color-muted-foreground)]">
-                    {t("contactOwnerLabel")}
+      {/* Recent payments — compact rectilinear list */}
+      {dashboardData.recentPayments.length > 0 && (
+        <div className="panel">
+          {/* `px-4`, matching `Card`'s padding. This list is a bespoke `.panel` rather than a
+              `Card` — `.panel` is background and border only, padding is per-use — which is
+              why it kept its own `px-5` while every card in the app moved to `p-4`. Two
+              primitives disagreeing by 4px on every row is the kind of thing nobody can name
+              and everybody feels. */}
+          <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
+            <p className="mono-label">{t("recentPayments")}</p>
+            <button
+              onClick={() => navigate("/financials?tab=receipts")}
+              className="flex items-center justify-end text-sm text-[var(--color-primary)] hover:underline max-md:min-h-11 max-md:min-w-11"
+            >
+              {t("seeAll")}
+            </button>
+          </div>
+          {/* Rows are `py-3`, not `py-4`. Two short lines — a name and a date — were sitting
+              in a 67px row, roughly half of which was padding. */}
+          <div className="divide-y divide-[var(--color-border)]">
+            {dashboardData.recentPayments.map((receipt) => (
+              <div key={receipt.id} className="flex items-center justify-between px-4 py-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-[var(--color-foreground)]">
+                    {receipt.tenantName}
                   </p>
-                  <p className="text-sm font-medium text-[var(--color-foreground)]">
-                    {ownerContact.name}
+                  <p className="truncate text-xs text-[var(--color-muted-foreground)]">
+                    {formatDate(receipt.date)}
                   </p>
-                  <a
-                    href={`mailto:${ownerContact.email}`}
-                    className="flex items-center gap-2 text-sm text-[var(--color-primary)] hover:text-[var(--color-foreground)] transition-colors"
-                  >
-                    <Mail className="h-3.5 w-3.5 shrink-0" />
-                    {ownerContact.email}
-                  </a>
-                  {ownerContact.phone && (
-                    <a
-                      href={`tel:${ownerContact.phone}`}
-                      className="flex items-center gap-2 text-sm text-[var(--color-primary)] hover:text-[var(--color-foreground)] transition-colors"
-                    >
-                      <Phone className="h-3.5 w-3.5 shrink-0" />
-                      {ownerContact.phone}
-                    </a>
-                  )}
                 </div>
-              ) : (
-                <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
-                  {t("useLeaseHistory")}
+                <p className="ml-4 shrink-0 text-sm font-medium tabular-nums text-[var(--color-foreground)]">
+                  {formatCurrency(receipt.amount)}
                 </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </section>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Compliance alert — seasonal, Jan–Mar only */}
+      <Modelo179Alert />
     </div>
   );
 }

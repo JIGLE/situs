@@ -38,9 +38,11 @@ Removed so far:
 | 6     | Contacts / vendor registry (`MaintenanceContact`, `/contacts`, the People sub-tab)   |
 | 7     | Correspondence and inbound mail (templates, letter log, the mail Inbox)              |
 | 8     | Documents browser + OCR classifier — receipt archive kept, and now reachable         |
+| 9     | Both tenant-facing surfaces and the online rent-collection stack behind them. Three  |
+|       | of the four bell alerts were rewired onto the rent ledger rather than deleted with   |
+|       | it, and the SAF-T PT export onto the emitted recibos                                 |
 
-Still to go: the tenant-facing surfaces and their online-payment stack, ownership
-verification.
+Still to go: ownership verification.
 
 **The "Completed Features" list below predates this and is not narrowed phase by phase** — read
 it as a record of what was built, with this table as the correction. `lib/portal/access.ts` is
@@ -49,7 +51,7 @@ the authority on what is reachable today.
 ### Completed Features
 
 - **Authentication**: NextAuth v4 with Google OAuth + credentials provider, CSRF protection, session-based auth
-- **CRUD Operations**: Full create/read/update/delete for Properties, Units, Tenants, Leases, Receipts, Expenses, Owners, Documents, Invoices, Notifications, Buildings
+- **CRUD Operations**: Full create/read/update/delete for Properties, Units, Tenants, Leases, Receipts, Expenses, Owners, Documents, Invoices, Notifications, Buildings <!-- pre-cutdown list; see the phase table above -->
 - **Portfolio View**: Compact action-driven layout with IssueAlert zone, List/Map tabs, Next Action column, attention row highlights
 - **Property Detail Modal**: 4-zone decision-driven interface (Status+Health / Primary Action / Issues Panel / Tabbed info)
 - **Property Map**: Status-coded divIcon markers with legend, slide-in side panel, FitBoundsController, dynamic viewport height

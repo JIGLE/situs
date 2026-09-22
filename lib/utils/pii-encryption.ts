@@ -151,7 +151,6 @@ export function maskPII(value: string, visibleStart = 4, visibleEnd = 4): string
  * needs to come back". Anything encrypted at a call site belongs in this note instead.
  */
 export const PII_FIELDS: Record<string, string[]> = {
-  PaymentMethod: ["iban", "accountHolder", "mbwayPhone"],
   Owner: ["taxIdentificationNumber", "phone"],
   Tenant: ["phone"],
   RentReceipt: ["landlordNif", "tenantNif"],

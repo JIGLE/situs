@@ -51,7 +51,6 @@ describe("GDPR export scope", () => {
     for (const relation of [
       "rentPeriods",
       "paymentAllocations",
-      "invoices",
       "taxFilings",
       "governmentVerifications",
     ]) {

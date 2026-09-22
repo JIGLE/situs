@@ -29,14 +29,11 @@ async function handleGet(request: NextRequest): Promise<Response> {
   const authResult = await getAccessContext(request);
   if (authResult instanceof Response) return authResult;
 
-  const { scopeUserId, portalRole, tenantId } = authResult;
+  const { scopeUserId } = authResult;
   const prisma = getPrismaClient();
 
   const leases = await prisma.lease.findMany({
-    where:
-      portalRole === "tenant" && tenantId
-        ? { userId: scopeUserId, tenantId }
-        : { userId: scopeUserId },
+    where: { userId: scopeUserId },
     orderBy: { createdAt: "desc" },
     include: leaseInclude,
   });

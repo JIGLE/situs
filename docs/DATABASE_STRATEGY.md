@@ -262,6 +262,4 @@ See `prisma/schema.prisma` for the full data model. Key models:
 - `Property` — property listings
 - `Tenant` — tenant records
 - `Lease` — lease agreements
-- `PaymentMethod` / `PaymentTransaction` — tenant rent-collection payments (Stripe)
 - `Subscription` — the app's own SaaS plan/billing state (see roadmap 3.4)
-- `Invoice` — generated invoices

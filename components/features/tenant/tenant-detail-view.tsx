@@ -2,22 +2,10 @@
 
 import { useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import {
-  Users,
-  Mail,
-  Phone,
-  Calendar,
-  Edit,
-  ArrowLeft,
-  FileText,
-  DollarSign,
-  Link2,
-} from "lucide-react";
+import { Users, Mail, Phone, Calendar, Edit, ArrowLeft, FileText, DollarSign } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils/utils";
 import { useCurrency } from "@/lib/contexts/currency-context";
-import { useCsrf } from "@/lib/contexts/csrf-context";
-import { useToast } from "@/lib/contexts/toast-context";
 import { Tabs, TabsContent, TabsList, TabsMobileSelect, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,8 +36,6 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
   const locale = useLocale();
   const { state } = useApp();
   const { formatCurrency } = useCurrency();
-  const { token: csrfToken } = useCsrf();
-  const { success, error } = useToast();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -89,22 +75,6 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
   const totalPaid = relatedReceipts
     .filter((r) => r.status === "paid")
     .reduce((sum, r) => sum + r.amount, 0);
-  const handleCopyPortalLink = async () => {
-    try {
-      const res = await fetch(`/api/tenants/${tenantId}/portal-link`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-csrf-token": csrfToken ?? "" },
-        body: JSON.stringify({ sendEmail: false }),
-      });
-      if (!res.ok) throw new Error(t("portalLinkFailed"));
-      const { data } = await res.json();
-      await navigator.clipboard.writeText(data.portalLink);
-      success(t("portalLinkCopied"));
-    } catch {
-      error(t("portalLinkFailed"));
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -142,9 +112,6 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
             onClick={() => router.push(buildFinancialReviewPath({ tenantId: tenant.id }))}
           >
             <DollarSign className="h-4 w-4 mr-1" /> {t("reviewPayments")}
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleCopyPortalLink}>
-            <Link2 className="h-4 w-4 mr-1" /> {t("portalLink")}
           </Button>
           <Button
             variant="outline"

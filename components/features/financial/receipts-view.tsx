@@ -49,7 +49,6 @@ import { receiptSchema, type ReceiptFormData } from "@/lib/schemas/receipt.schem
 import { RECEIPT_TYPE_KEY } from "@/lib/utils/receipt-labels";
 import { useToast } from "@/lib/contexts/toast-context";
 import { useFormDialog } from "@/lib/hooks/use-form-dialog";
-import { usePortalAccess } from "@/lib/contexts/portal-context";
 import jsPDF from "jspdf";
 import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
@@ -81,7 +80,6 @@ export interface ReceiptsViewRef {
 export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
   function ReceiptsView(props, ref) {
     const { state, addReceipt, updateReceipt, deleteReceipt } = useApp();
-    const { isOwnerPortal } = usePortalAccess();
     const { receipts, tenants, properties, loading } = state;
     const { success, error: showError } = useToast();
     const t = useTranslations("financial.receipts");
@@ -174,9 +172,7 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
       ? t("descriptionTenant")
       : props.propertyId
         ? t("descriptionProperty")
-        : isOwnerPortal
-          ? t("descriptionOwner")
-          : t("descriptionPortal");
+        : t("descriptionOwner");
 
     const handleEdit = (receipt: Receipt) => {
       dialog.openEditDialog(receipt, (r) => ({
@@ -299,7 +295,7 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
       return <Badge className={colors[type]}>{type.charAt(0).toUpperCase() + type.slice(1)}</Badge>;
     };
 
-    const addReceiptButton = isOwnerPortal && (
+    const addReceiptButton = (
       <Dialog open={dialog.isOpen} onOpenChange={(open) => !open && dialog.closeDialog()}>
         <DialogTrigger asChild>
           <Button onClick={dialog.openDialog} className="flex items-center gap-2">
@@ -462,10 +458,7 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
 
             <div className="grid gap-4">
               {filteredReceipts.length === 0 ? (
-                <EmptyStateIllustration
-                  type="receipts"
-                  onAction={isOwnerPortal ? dialog.openDialog : undefined}
-                />
+                <EmptyStateIllustration type="receipts" onAction={dialog.openDialog} />
               ) : (
                 filteredReceipts.map((receipt) => (
                   <Card
@@ -522,21 +515,17 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
                                   ? t("pdfGenerating")
                                   : t("pdfDownload")}
                               </DropdownMenuItem>
-                              {isOwnerPortal && (
-                                <>
-                                  <DropdownMenuItem onClick={() => handleEdit(receipt)}>
-                                    <Edit className="h-4 w-4 mr-2" />
-                                    {t("edit")}
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-destructive"
-                                    onClick={() => handleDelete(receipt.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    {t("delete")}
-                                  </DropdownMenuItem>
-                                </>
-                              )}
+                              <DropdownMenuItem onClick={() => handleEdit(receipt)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                {t("edit")}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => handleDelete(receipt.id)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                {t("delete")}
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>

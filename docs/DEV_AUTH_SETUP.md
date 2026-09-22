@@ -48,7 +48,7 @@ console.log(session);
 // Should output: { user: { id: "dev-user", email: "dev@example.local", name: "Dev User", role: "ADMIN" }, ... }
 ```
 
-Navigate to any protected page (e.g., `/tenant-portal`) — you should be automatically logged in without the login page.
+Navigate to any protected page (e.g., `/dashboard`) — you should be automatically logged in without the login page.
 
 ## How It Works
 
@@ -76,7 +76,7 @@ Navigate to any protected page (e.g., `/tenant-portal`) — you should be automa
 
 ```bash
 npm run dev
-# Open http://localhost:3000/tenant-portal
+# Open http://localhost:3000/dashboard
 # Should show dashboard without login
 ```
 
@@ -87,7 +87,7 @@ Dev session is automatically available in E2E tests:
 ```typescript
 // e2e/example.spec.ts
 test("authenticated page loads", async ({ page }) => {
-  await page.goto("/tenant-portal");
+  await page.goto("/dashboard");
   // Pre-authenticated — no login required
   await expect(page.getByText("Dev User")).toBeVisible();
 });

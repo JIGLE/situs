@@ -79,6 +79,10 @@ describe("parseSchemaModels", () => {
 
     const tenants = real.find((m) => m.table === "tenants");
     expect(tenants, "Tenant model not found in the real schema").toBeTruthy();
-    expect(tenants!.columns).toContain("portalAccessRevokedAt");
+    // Was `portalAccessRevokedAt` until the tenant portal was cut. `email` replaces it because
+    // the app cannot lose it, so the assertion outlives the next round of subtraction.
+    // NOT `paymentStatus`, tempting as the ledger's own column is: `SCALAR_TYPES` excludes
+    // enums by design, so the parser never reports it and the assertion would fail.
+    expect(tenants!.columns).toContain("email");
   });
 });

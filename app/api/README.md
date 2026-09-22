@@ -4,34 +4,19 @@ This directory contains all API routes for the Situs application using Next.js 1
 
 ## Structure
 
+One directory per domain, each holding `route.ts` handlers.
+
+A hand-drawn tree used to live here. It listed 24 of the 40 domains that exist, and four of
+those — analytics, correspondence, maintenance, reports — had been deleted by the scope
+cutdown while the tree still advertised them. A second copy of the same list is not worth
+maintaining, so the list lives in one place and the filesystem settles it:
+
+```bash
+find app/api -name route.ts | sort
 ```
-api/
-├── admin/              # Admin operations (database management)
-├── analytics/          # Analytics and metrics
-├── auth/              # Authentication (NextAuth.js)
-├── correspondence/    # Communication and templates
-├── debug/             # Debug endpoints (dev only)
-├── documents/         # Document management
-├── email/             # Email operations
-├── expenses/          # Expense tracking
-├── health/            # Health check endpoints
-├── info/              # API metadata
-├── invoices/          # Invoice management
-├── leases/            # Lease management
-├── maintenance/       # Maintenance requests
-├── metrics/           # Application metrics
-├── owners/            # Property owner management
-├── payments/          # Payment processing
-├── properties/        # Property management
-├── receipts/          # Receipt management
-├── reports/           # Report generation
-├── tax/               # Tax compliance (SAF-T PT)
-├── tenant-portal/     # Public tenant portal
-├── tenants/           # Tenant management
-├── units/             # Unit management
-├── user/              # User data (GDPR)
-└── webhooks/          # External service webhooks
-```
+
+`docs/architecture/API_ROUTES.md` carries the per-domain table, its route counts and HTTP
+methods derived from those files, plus the contracts that are not obvious from the handler.
 
 ## Route Conventions
 
@@ -242,10 +227,10 @@ See [API Routes Documentation](../../docs/architecture/API_ROUTES.md) for comple
 
 Required environment variables for API routes:
 
-- `DATABASE_URL` - PostgreSQL connection string
+- `DATABASE_URL` - SQLite file path (e.g. `file:./dev.db`)
 - `NEXTAUTH_SECRET` - NextAuth.js secret
 - `NEXTAUTH_URL` - Application URL
 - `SMTP_HOST` - Email service (SMTP relay)
-- `STRIPE_SECRET_KEY` - Payment processing (optional)
+- `STRIPE_SECRET_KEY` - App subscription billing (optional; rent arrives as a bank movement)
 
 See `.env.example` for complete list.

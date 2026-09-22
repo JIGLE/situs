@@ -3,7 +3,7 @@
  *
  * The export used to carry a hand-written `include` of eleven relations. The User model has
  * thirty-five, so twenty-four were missing — among them every bank relation, the rent-period
- * ledger, payment allocations, invoices, tax filings and government verifications. Articles 15
+ * ledger, payment allocations, tax filings and government verifications. Articles 15
  * and 20 want all of a data subject's personal data, and bank transactions are the most
  * sensitive thing this app stores.
  *

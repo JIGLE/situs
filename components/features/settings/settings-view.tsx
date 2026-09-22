@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Save, Settings } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { getPortalRoleFromSessionRole, type PortalRole } from "@/lib/portal/access";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -31,26 +30,27 @@ import { defaultSettings, type BillingInfo, type UserSettings } from "./settings
 /**
  * Section ids only — labels resolve against `settings.nav` at render.
  *
- * `roles` gates the section, not the route: Settings is reachable by both roles because it now
- * hosts Account, but a tenant has no tax rules, integrations or billing to configure.
+ * Each entry used to carry a role list, because a tenant reached Settings for the Account
+ * section but had no tax rules, integrations or billing to configure. The scope cutdown
+ * removed tenant access, so every section is an owner section and only billing is still
+ * conditional — on the instance having billing enabled, not on who is looking.
  */
 const SECTIONS = [
   // Grouped by whose settings they are, which is the split every settings screen worth copying
   // uses: what belongs to YOU, what belongs to the BUSINESS you run in here, and what belongs to
   // the INSTANCE. Eight equal-weight entries in arrival order made a reader scan all eight to
   // find one; three short groups make most lookups stop at the heading.
-  { id: "account", group: "personal", roles: ["owner", "tenant"] },
-  { id: "security", group: "personal", roles: ["owner", "tenant"] },
-  { id: "appearance", group: "personal", roles: ["owner", "tenant"] },
-  { id: "notifications", group: "personal", roles: ["owner"] },
-  { id: "tax", group: "workspace", roles: ["owner"] },
-  { id: "billing", group: "workspace", roles: ["owner"] },
-  { id: "integrations", group: "system", roles: ["owner"] },
-  { id: "system", group: "system", roles: ["owner"] },
+  { id: "account", group: "personal" },
+  { id: "security", group: "personal" },
+  { id: "appearance", group: "personal" },
+  { id: "notifications", group: "personal" },
+  { id: "tax", group: "workspace" },
+  { id: "billing", group: "workspace" },
+  { id: "integrations", group: "system" },
+  { id: "system", group: "system" },
 ] as const satisfies readonly {
   id: string;
   group: SectionGroup;
-  roles: readonly PortalRole[];
 }[];
 
 /** Group order is the render order. A group with no visible sections renders nothing. */
@@ -81,13 +81,10 @@ export function SettingsView(): React.ReactElement {
   // (ENABLE_BILLING unset) so the account never sees subscription framing.
   const showBilling = billing?.billingEnabled === true;
 
-  const role = getPortalRoleFromSessionRole(session?.user?.role);
-  const visible = SECTIONS.filter(
-    (s) => (s.roles as readonly PortalRole[]).includes(role) && (s.id !== "billing" || showBilling),
-  );
+  const visible = SECTIONS.filter((s) => s.id !== "billing" || showBilling);
   const sections: readonly SectionValue[] = visible.map((s) => s.id);
-  // Groups that actually have something in them for this role. A tenant sees only "personal",
-  // and an empty heading is worse than no heading.
+  // Groups that actually have something in them — "workspace" empties out when billing is
+  // hidden, and an empty heading is worse than no heading.
   const groupedSections = GROUPS.map((group) => ({
     group,
     ids: visible.filter((s) => s.group === group).map((s) => s.id),

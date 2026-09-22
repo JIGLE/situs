@@ -6,12 +6,10 @@ import { usePathname } from "next/navigation";
 import { Building, Property, Tenant, Receipt, Owner, Expense, Lease } from "@/lib/types";
 import { useToast } from "./toast-context";
 import { useCsrf } from "./csrf-context";
-import { usePortalAccess } from "@/lib/contexts/portal-context";
 import { isPublicPagePath } from "@/lib/utils/public-route";
 import { appReducer, initialState, type AppAction, type AppState } from "./app-reducer";
 import { useAppData } from "./use-app-data";
 import { useEntityActions } from "./use-entity-actions";
-import { useScopedState } from "./use-scoped-state";
 
 export type { AppState, AppAction } from "./app-reducer";
 
@@ -55,7 +53,6 @@ export function AppProvider({ children }: { children: ReactNode }): React.ReactE
   const [state, dispatch] = React.useReducer(appReducer, initialState);
   const { data: session } = useSession();
   const pathname = usePathname();
-  const { portalRole, tenantEmail, tenantId: selectedTenantId } = usePortalAccess();
   const { error: showError, success: showSuccess } = useToast();
   const { token: csrfToken } = useCsrf();
   const userId = (session?.user as { id?: string } | undefined)?.id;
@@ -79,13 +76,11 @@ export function AppProvider({ children }: { children: ReactNode }): React.ReactE
     leaseActions,
   } = useEntityActions(state, dispatch, { csrfToken, userId, showError, showSuccess });
 
-  const scopedState = useScopedState(state, { portalRole, selectedTenantId, tenantEmail });
-
   // --- context value (backward-compatible shape) ---
 
   const contextValue: AppContextValue = useMemo(
     () => ({
-      state: scopedState,
+      state,
       dispatch,
       addBuilding: (d) => buildingActions.add(d) as unknown as Promise<void>,
       updateBuilding: (id, d) => buildingActions.update(id, d) as unknown as Promise<void>,
@@ -110,7 +105,7 @@ export function AppProvider({ children }: { children: ReactNode }): React.ReactE
       refreshData,
     }),
     [
-      scopedState,
+      state,
       dispatch,
       refreshData,
       buildingActions,

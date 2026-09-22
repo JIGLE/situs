@@ -82,10 +82,10 @@ Rate limiting is applied per route by the handlers themselves, and the limits ar
 code — there are no rate-limit environment variables. Two implementations are live, which is
 worth knowing before you add a third:
 
-| Module                         | Export                     | Used by                                               | Backing store                                  |
-| ------------------------------ | -------------------------- | ----------------------------------------------------- | ---------------------------------------------- |
-| `lib/utils/rate-limit.ts`      | `withRateLimit`            | ~48 routes (admin, bank, compliance, CRUD)            | in-process `Map`                               |
-| `lib/middleware/rate-limit.ts` | `rateLimit` + `RateLimits` | payments, the Stripe/SIBS/Bizum webhooks, TOTP verify | Redis when `REDIS_URL` is set, else in-process |
+| Module                         | Export                     | Used by                                    | Backing store                                  |
+| ------------------------------ | -------------------------- | ------------------------------------------ | ---------------------------------------------- |
+| `lib/utils/rate-limit.ts`      | `withRateLimit`            | ~48 routes (admin, bank, compliance, CRUD) | in-process `Map`                               |
+| `lib/middleware/rate-limit.ts` | `rateLimit` + `RateLimits` | the Stripe webhook, TOTP verify            | Redis when `REDIS_URL` is set, else in-process |
 
 `REDIS_URL` is optional and only changes where the second one keeps its counters. Without it
 both hold state in process: correct for a single self-hosted instance, but the counters reset

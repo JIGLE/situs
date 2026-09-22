@@ -1,11 +1,11 @@
 # API Routes
 
-Situs exposes **44 API domains** across **126 `route.ts` files** under `app/api/`, organised by
+Situs exposes **40 API domains** across **106 `route.ts` files** under `app/api/`, organised by
 domain per Next.js App Router convention.
 
-This document describes **22 of those domains in detail** — the ones whose contracts are not
+This document describes **19 of those domains in detail** — the ones whose contracts are not
 obvious from the handler. It is not, and does not try to be, an endpoint-by-endpoint reference
-for all 126: a hand-maintained one goes stale on the first PR that adds a route, and this file
+for all 106: a hand-maintained one goes stale on the first PR that adds a route, and this file
 spent a while claiming to cover "all" routes while omitting most of them. (The count was 26 for
 a while because it counted `###` headings, two of which are the response-format sections at the
 bottom rather than domains.)
@@ -21,52 +21,48 @@ find app/api -name route.ts | sort
 Generated from the route files. Methods are the HTTP verbs exported anywhere in the domain, so
 a domain listing `GET POST` may still have some paths that only answer `GET`.
 
-| Domain                         | Route files | Methods                   |
-| ------------------------------ | ----------- | ------------------------- |
-| `/api/activation`              | 1           | GET                       |
-| `/api/admin`                   | 5           | GET DELETE                |
-| `/api/audit-trail`             | 1           | GET                       |
-| `/api/auth`                    | 6           | GET POST DELETE           |
-| `/api/bank`                    | 8           | GET POST PUT              |
-| `/api/billing`                 | 3           | GET                       |
-| `/api/buildings`               | 2           | GET POST PUT DELETE       |
-| `/api/compliance`              | 4           | GET POST                  |
-| `/api/contracts`               | 1           | GET POST                  |
-| `/api/cron`                    | 3           | GET POST                  |
-| `/api/csrf-token`              | 1           | GET                       |
-| `/api/debug`                   | 6           | GET POST                  |
-| `/api/distributions`           | 2           | GET POST                  |
-| `/api/documents`               | 1           | GET                       |
-| `/api/email`                   | 3           | GET POST PUT              |
-| `/api/events`                  | 1           | POST                      |
-| `/api/exchange`                | 1           | GET                       |
-| `/api/expenses`                | 3           | GET POST PUT DELETE       |
-| `/api/finance`                 | 2           | GET                       |
-| `/api/fiscal`                  | 1           | GET POST                  |
-| `/api/health`                  | 3           | GET                       |
-| `/api/info`                    | 1           | GET                       |
-| `/api/invoices`                | 6           | GET POST PUT DELETE       |
-| `/api/leases`                  | 5           | GET POST PUT PATCH DELETE |
-| `/api/metrics`                 | 1           | GET                       |
-| `/api/monitoring`              | 5           | GET                       |
-| `/api/notifications`           | 3           | GET POST PUT DELETE       |
-| `/api/owners`                  | 1           | GET POST                  |
-| `/api/ownership-verifications` | 1           | GET POST                  |
-| `/api/payments`                | 4           | GET POST DELETE           |
-| `/api/portal`                  | 1           | GET                       |
-| `/api/properties`              | 3           | GET POST PUT DELETE       |
-| `/api/property-owners`         | 1           | POST DELETE               |
-| `/api/ready`                   | 1           | GET                       |
-| `/api/receipts`                | 5           | GET POST PUT DELETE       |
-| `/api/settings`                | 1           | GET POST                  |
-| `/api/tax`                     | 3           | GET POST                  |
-| `/api/tax-filings`             | 3           | GET POST DELETE           |
-| `/api/tax-rules`               | 2           | GET POST PUT DELETE       |
-| `/api/tenant-portal`           | 6           | GET POST PATCH            |
-| `/api/tenants`                 | 5           | GET POST PUT DELETE       |
-| `/api/units`                   | 2           | GET POST PUT DELETE       |
-| `/api/user`                    | 4           | GET POST                  |
-| `/api/webhooks`                | 4           | POST                      |
+| Domain                         | Route files | Methods               |
+| ------------------------------ | ----------- | --------------------- |
+| `/api/activation`              | 1           |                       |
+| `/api/admin`                   | 5           |                       |
+| `/api/audit-trail`             | 1           |                       |
+| `/api/auth`                    | 6           | GET POST DELETE       |
+| `/api/bank`                    | 8           |                       |
+| `/api/billing`                 | 3           | GET                   |
+| `/api/buildings`               | 2           |                       |
+| `/api/compliance`              | 4           | POST                  |
+| `/api/contracts`               | 1           | GET POST              |
+| `/api/cron`                    | 3           | GET POST              |
+| `/api/csrf-token`              | 1           | GET                   |
+| `/api/debug`                   | 6           | GET POST              |
+| `/api/distributions`           | 2           | GET POST              |
+| `/api/documents`               | 1           |                       |
+| `/api/email`                   | 3           | GET POST PUT          |
+| `/api/events`                  | 1           |                       |
+| `/api/exchange`                | 1           | GET                   |
+| `/api/expenses`                | 3           |                       |
+| `/api/finance`                 | 2           | GET                   |
+| `/api/fiscal`                  | 1           | GET POST              |
+| `/api/health`                  | 3           | GET                   |
+| `/api/info`                    | 1           | GET                   |
+| `/api/leases`                  | 5           | GET POST PATCH DELETE |
+| `/api/metrics`                 | 1           | GET                   |
+| `/api/monitoring`              | 5           | GET                   |
+| `/api/notifications`           | 3           | GET POST PUT DELETE   |
+| `/api/owners`                  | 1           |                       |
+| `/api/ownership-verifications` | 1           | GET POST              |
+| `/api/properties`              | 3           |                       |
+| `/api/property-owners`         | 1           |                       |
+| `/api/ready`                   | 1           | GET                   |
+| `/api/receipts`                | 5           |                       |
+| `/api/settings`                | 1           | GET POST              |
+| `/api/tax`                     | 3           | GET POST              |
+| `/api/tax-filings`             | 3           | GET POST DELETE       |
+| `/api/tax-rules`               | 2           | GET POST PUT DELETE   |
+| `/api/tenants`                 | 4           | GET POST DELETE       |
+| `/api/units`                   | 2           | GET PUT DELETE        |
+| `/api/user`                    | 4           | GET POST              |
+| `/api/webhooks`                | 2           | POST                  |
 
 ## Route Organization
 
@@ -131,27 +127,6 @@ error endpoint; it was deleted in PR #352.
 - `DELETE /api/leases/[id]` - Delete lease
 
 ## Financial
-
-### Invoices
-
-- `GET /api/invoices` - List all invoices
-- `POST /api/invoices` - Create a new invoice
-- `GET /api/invoices/[id]` - Get invoice details
-- `PUT /api/invoices/[id]` - Update invoice
-- `DELETE /api/invoices/[id]` - Delete invoice
-- `POST /api/invoices/[id]/pay` - Mark invoice as paid
-- `POST /api/invoices/[id]/initiate-payment` - Initialize payment process
-- `POST /api/invoices/batch` - Batch create invoices
-- `POST /api/invoices/late-fees` - Apply late fees to overdue invoices
-
-### Payments
-
-- `GET /api/payments` - List all payments
-- `POST /api/payments` - Record a new payment
-- `GET /api/payments/[id]` - Get payment details
-- `PUT /api/payments/[id]` - Update payment
-- `DELETE /api/payments/[id]` - Delete payment
-- `GET /api/payments/methods` - Get available payment methods
 
 ### Receipts
 
@@ -221,12 +196,8 @@ reaches through `/api/receipts/[id]/archive`.
 
 - `POST /api/webhooks/brevo` - Brevo delivery-event webhook. Requires `BREVO_WEBHOOK_SECRET`:
   Brevo does not sign its requests, so a shared secret is the only authentication.
-- `POST /api/webhooks/stripe` - Stripe webhook handler
-
-### Tenant Portal
-
-- `GET /api/tenant-portal/[token]` - Get tenant portal data
-- `POST /api/tenant-portal/[token]/pay` - Process tenant portal payment
+- `POST /api/webhooks/stripe` - Stripe webhook handler, subscription-billing events only;
+  anything else is acknowledged and dropped so Stripe does not retry it
 
 ## System
 

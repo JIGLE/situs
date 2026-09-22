@@ -19,8 +19,8 @@ const { stripeClientMock } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@/lib/payment/payment-service", () => ({
-  paymentService: { getStripeClient: () => stripeClientMock },
+vi.mock("./stripe-client", () => ({
+  getStripeClient: () => stripeClientMock,
 }));
 
 const mockPrismaClient = {

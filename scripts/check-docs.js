@@ -44,6 +44,34 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // The MODEL, not the word: `PaymentAllocation` and `Tenant.paymentStatus` are the live
+    // ledger and must not match. Backticked or as a Prisma relation field.
+    pattern:
+      /`(?:Invoice|PaymentMethod|PaymentTransaction)`|prisma\.(?:invoice|paymentMethod|paymentTransaction)\b/,
+    retired: "2026-09-22 (scope cutdown, phase 9)",
+    because:
+      "the tenant online-payment stack was removed; rent reaches the ledger as a matched bank " +
+      "movement. SAF-T PT now reads RentReceipt, and the payment alerts read RentPeriod",
+  },
+  {
+    // Targets the CAPABILITY claim, not the two words: `app/tenant-portal/` and the token auth
+    // are gone, so anything offering a tenant their own login is false.
+    pattern:
+      /token-gated (?:tenant )?self-service|tenant portal (?:token|link)s?\b|\/api\/tenant-portal/i,
+    retired: "2026-09-22 (scope cutdown, phase 9)",
+    because:
+      "both tenant-facing surfaces were removed — the token portal and role=USER access to the " +
+      "main app. There is no tenant login of any kind now",
+  },
+  {
+    // The payment METHODS, which only ever existed for tenant rent collection.
+    pattern: /\b(?:Multibanco|MB WAY|MBWay|Bizum)\b/i,
+    retired: "2026-09-22 (scope cutdown, phase 9)",
+    because:
+      "the SIBS and Bizum adapters and their webhooks went with the payment stack; Stripe " +
+      "survives for the app's own subscription billing only",
+  },
+  {
     // Narrow on purpose: "review required" also means a PR review in CONTRIBUTING.md, and
     // ROADMAP's sprint rows record what Migration D shipped, which is history rather than a
     // claim about what exists. Pin the two artifacts instead.
@@ -301,6 +329,11 @@ const CLAIM_ALLOWLIST = [
   /makes it (worse|~?2,272)/i,
   /RETIRED_CLAIMS/, // this file
   /retired:/,
+  // Two historical records, not claims about what exists. A changelog entry for a shipped
+  // version stays true about that version, and a dated Decisions Log row records what was
+  // decided on the day. Both name the payment methods phase 9 removed; neither offers them.
+  /Full payment integration for Portugal and Spain markets/,
+  /Keep MB WAY\/Bizum as documented placeholders/,
 ];
 
 const LINK = /\[[^\]]*\]\(([^)]+)\)/g;

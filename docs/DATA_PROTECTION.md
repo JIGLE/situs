@@ -38,7 +38,6 @@ ever offered to other people.
 | Bank movement ingestion (PSD2)      | Reconciling rent against bank credits       | Consent, given at the bank under PSD2 (Art. 6(1)(a)) |
 | Fiscal filing (PT AT, ES NRUA)      | Statutory rent-income reporting             | Legal obligation (Art. 6(1)(c))                      |
 | Transactional email                 | Rent reminders, lease-expiry alerts         | Contract; legitimate interest                        |
-| Tenant portal                       | Giving a tenant access to their own records | Contract                                             |
 | Audit log                           | Accountability (Art. 5(2)), fraud detection | Legal obligation; legitimate interest                |
 
 **No special-category data** (Art. 9) is processed by design. Nothing asks for health, beliefs,
@@ -60,13 +59,12 @@ Fields marked **encrypted** are AES-256-GCM at rest (`lib/utils/pii-encryption.t
 where the client is built (`lib/services/database/database.ts`), so the encryption is
 transparent rather than per-call-site:
 
-| Model              | Encrypted fields                      |
-| ------------------ | ------------------------------------- |
-| `PaymentMethod`    | `iban`, `accountHolder`, `mbwayPhone` |
-| `Owner`            | `taxIdentificationNumber`, `phone`    |
-| `Tenant`           | `phone`                               |
-| `RentReceipt`      | `landlordNif`, `tenantNif`            |
-| `NRUARegistration` | `landlordNif`, `tenantNif`            |
+| Model              | Encrypted fields                   |
+| ------------------ | ---------------------------------- |
+| `Owner`            | `taxIdentificationNumber`, `phone` |
+| `Tenant`           | `phone`                            |
+| `RentReceipt`      | `landlordNif`, `tenantNif`         |
+| `NRUARegistration` | `landlordNif`, `tenantNif`         |
 
 ### Encrypted at the call site
 

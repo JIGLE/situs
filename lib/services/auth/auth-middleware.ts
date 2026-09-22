@@ -3,7 +3,7 @@ import type { Session } from "next-auth";
 import { getAuthOptions } from "@/lib/services/auth/auth";
 import { isMockMode } from "@/lib/config/data-mode";
 import { isDevAuthEnabled } from "@/lib/services/auth/dev-session";
-import { getPortalRoleFromSessionRole, type PortalRole } from "@/lib/portal/access";
+import { isOwnerSessionRole } from "@/lib/portal/access";
 
 // Authentication middleware for API routes
 export async function requireAuth(_request: NextRequest): Promise<
@@ -174,11 +174,19 @@ export interface AccessContext {
   session: Session;
   userId: string;
   scopeUserId: string;
-  portalRole: PortalRole;
-  tenantId?: string;
-  propertyId?: string;
 }
 
+/**
+ * The signed-in owner, and the user id their data is scoped to.
+ *
+ * This used to fork: an owner got their own id, and a role=USER session was resolved to the
+ * Tenant row matching their email so `scopeUserId` became their LANDLORD's id, giving a
+ * tenant a narrow read of someone else's data. The scope cutdown removed tenant access to
+ * this app, so the fork is gone and `scopeUserId` is always the caller's own id — the
+ * routes that used to narrow their queries by `portalRole === "tenant"` no longer can.
+ *
+ * A USER-role session is refused rather than quietly promoted to owner.
+ */
 export async function getAccessContext(
   request: NextRequest,
 ): Promise<AccessContext | NextResponse> {
@@ -189,53 +197,14 @@ export async function getAccessContext(
 
   const { session, userId } = authResult;
 
-  const portalRole = getPortalRoleFromSessionRole(session.user.role);
-  if (portalRole === "owner") {
-    return {
-      session,
-      userId,
-      scopeUserId: userId,
-      portalRole,
-    };
-  }
-
-  if (!session.user.email) {
-    return new NextResponse(JSON.stringify({ error: "Tenant access requires an email address" }), {
+  if (!isOwnerSessionRole(session.user.role)) {
+    return new NextResponse(JSON.stringify({ error: "Forbidden: Owner access required" }), {
       status: 403,
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  try {
-    const { getPrismaClient } = await import("@/lib/services/database/database");
-    const prisma = getPrismaClient();
-    const tenant = await prisma.tenant.findFirst({
-      where: { email: session.user.email },
-      select: { id: true, userId: true, propertyId: true },
-    });
-
-    if (!tenant) {
-      return new NextResponse(JSON.stringify({ error: "Tenant access is not configured" }), {
-        status: 403,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    return {
-      session,
-      userId,
-      scopeUserId: tenant.userId,
-      portalRole,
-      tenantId: tenant.id,
-      propertyId: tenant.propertyId ?? undefined,
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to resolve tenant access";
-    return new NextResponse(JSON.stringify({ error: message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  return { session, userId, scopeUserId: userId };
 }
 
 // CORS headers for API responses
@@ -271,16 +240,11 @@ export async function requireAdmin(request: NextRequest) {
   return authResult;
 }
 
+/**
+ * Kept as the name call sites use. `getAccessContext` now refuses a non-owner itself, so
+ * this is an alias rather than a second gate — re-checking would be a branch that cannot
+ * be taken, which reads as a guard and is not one.
+ */
 export async function requireOwnerAccess(request: NextRequest) {
-  const accessContext = await getAccessContext(request);
-  if (accessContext instanceof NextResponse) {
-    return accessContext;
-  }
-  if (accessContext.portalRole !== "owner") {
-    return new NextResponse(JSON.stringify({ error: "Forbidden: Owner access required" }), {
-      status: 403,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-  return accessContext;
+  return getAccessContext(request);
 }

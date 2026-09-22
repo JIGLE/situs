@@ -17,23 +17,25 @@ The IA consolidation (PR 10b) and the infra rename (PR 13) have since shipped to
 is live with a redirect shim from the old path, and the package, Docker and env identifiers all
 read `situs` with Helm dropped for a single Docker path. A scope cutdown is in progress on top
 of all that — see the phase table in `ROADMAP.md`; ticketing, the vendor registry,
-correspondence (including the inbound mail Inbox) and the Documents browser with its OCR
-classifier are among the surfaces it has removed.
+correspondence (including the inbound mail Inbox), the Documents browser with its OCR
+classifier, and both tenant-facing surfaces with the online-payment stack behind them are among
+the surfaces it has removed. Stripe stays for the app's own subscription billing only — rent
+reaches the ledger as a matched bank movement, never as a card payment.
 
 ## Tech Stack
 
-| Layer      | Technology                                      |
-| ---------- | ----------------------------------------------- |
-| Framework  | Next.js 16 (App Router, TypeScript strict)      |
-| Database   | Prisma ORM + SQLite (via better-sqlite3)        |
-| Auth       | NextAuth.js v4 (Google OAuth + credentials)     |
-| UI         | shadcn/ui + Tailwind CSS v4 + Radix UI + Framer |
-| Validation | Zod v4                                          |
-| Email      | SMTP (Brevo by default; any provider)           |
-| Testing    | Vitest (unit/integration) + Playwright (E2E)    |
-| i18n       | next-intl (PT / EN / ES / IT)                   |
-| Payments   | Stripe (card + SEPA Direct Debit)               |
-| Deploy     | Docker / TrueNAS SCALE (Custom App)             |
+| Layer      | Technology                                            |
+| ---------- | ----------------------------------------------------- |
+| Framework  | Next.js 16 (App Router, TypeScript strict)            |
+| Database   | Prisma ORM + SQLite (via better-sqlite3)              |
+| Auth       | NextAuth.js v4 (Google OAuth + credentials)           |
+| UI         | shadcn/ui + Tailwind CSS v4 + Radix UI + Framer       |
+| Validation | Zod v4                                                |
+| Email      | SMTP (Brevo by default; any provider)                 |
+| Testing    | Vitest (unit/integration) + Playwright (E2E)          |
+| i18n       | next-intl (PT / EN / ES / IT)                         |
+| Billing    | Stripe (app subscriptions only; rent arrives by bank) |
+| Deploy     | Docker / TrueNAS SCALE (Custom App)                   |
 
 ## Key Commands
 
@@ -58,7 +60,6 @@ npx prisma studio      # Browse database in browser
 app/
   api/                    # Next.js API route handlers (one folder per domain)
   [locale]/(main)/        # Owner-facing app pages (locale-prefixed)
-  tenant-portal/          # Tenant self-service pages (token-based access)
 components/         # Shared React components
 lib/
   types.ts            # Canonical TypeScript types for all entities
@@ -94,6 +95,13 @@ e2e/                # Playwright E2E tests
 - **Receipt lifecycle**: `Receipt.status` is the MONEY state (paid|pending); `Receipt.lifecycle` is the separate DOCUMENT state machine (`lib/services/receipts/lifecycle.ts`, pure) — draft→review→emitted→(PT)submitted→accepted/rejected, or →voided from any pre-terminal state. Reaching emitted/accepted archives a PDF `Document`; voiding soft-reverses live `PaymentAllocation` rows.
 - **Tax connectors**: one `TaxAuthorityConnector` row per user×country×connector key, `mode` locked to sandbox/review until explicitly promoted to live (no live AT/AEAT integration exists yet). Every call appends an immutable `TaxSubmissionLog` row — read via `GET /api/tax/connectors` (Finance › Tax Summary tab).
 - **Receipt archive, the one surviving use of `Document`**: reaching emitted/accepted writes a PDF `Document` whose `description` carries `situs-receipt-archive:<receiptId>` — a convention, not a foreign key, and the only link between a receipt and the proof of its filing. `findExistingArchive` (`lib/services/receipts/service.ts`) reads it back; `GET /api/receipts/[id]/archive` exposes it, and the Receipts dropdown serves that PDF in preference to the jsPDF copy it renders client-side. Resolve through that function rather than rebuilding the marker — two spellings of it would be two chances to orphan an archive.
+- **Alert generation**: `lib/services/notifications/notification-automation.ts` reads the rent
+  ledger, not a payment stack. `payment_due` (D-5) and `payment_overdue` (D+1/D+7) come from
+  `RentPeriod` and quote the OUTSTANDING balance, so a part-paid month is still chased for its
+  balance; `rent_receipt_due` comes from a non-reversed `PaymentAllocation` and clears once the
+  period has a `RentReceipt` filing. `paid`/`paid_late`/`waived` periods are never chased —
+  `waived` is in the schema and rendered by the matrix but missing from the `RentPeriodStatus`
+  union, so it is listed explicitly rather than derived from that type.
 - **Generalized audit trail**: `components/shared/audit-trail.tsx` + `GET /api/audit-trail` — pass `resourceIds` to scope to specific records (property detail Audit tab) or omit for the account-wide trail (Account page). Backed by `AuditLog.resourceType`/`resourceId`, persisted on every workflow mutation.
 - **Screen density (declutter rules)**: established from a 2026-07 cross-page audit that found Finance/People/Operations stacking 6–9 chrome bands (duplicate headers, duplicate KPI rows, permanent filter pills) before any real content. Apply to every main list/detail screen:
   1. **One heading per screen.** If a container already renders a page title, the active tab's own view does not repeat it — the tab label is the heading.
@@ -114,7 +122,7 @@ Codified from the 2026-07 mobile audit (`scripts/mobile-audit.mjs`): a comprehen
    - **Card fallback** (record lists, small row counts): reformat each row as a card with labels + data in read-only field-row pairs. Typical pattern: property-selection dropdown at top, then an iterable card layout using the `RenderTable` card-mode primitive (see `components/ui/table.tsx`).
    - **Horizontal scroll with sticky identity** (matrices, high-cardinality cross-column comparison): keep the first column (tenant name, date, lease) sticky/pinned on the left; allow data columns to scroll right inside a `overflow-x-auto` container. Never render an unwrapped table on mobile.
 
-4. **Tab bars collapse to a select/popover on mobile when the labels don't fit.** This is a space test, not a count: the rule used to say "past ~4 items", and every 4-tab bar in the app failed it anyway — People overflowed by 346px, Contacts 290px, Operations 202px, each hiding 2 of its 4 tabs off-screen. The cause is label length, not tab count; Portuguese and Spanish labels run longer than the English ones the "~4" was eyeballed against, so a count threshold will always be wrong in some locale. Measure instead: if `scrollWidth > clientWidth` on the `[role=tablist]` at 390px in the **longest** locale, it collapses. Below `md`, hide the bar and substitute a `<select>` or `Popover` (Situs brand pattern: select when navigational tabs, popover when sub-view tabs). `TabsMobileSelect` (`components/ui/tabs.tsx`) is the select-fallback primitive — pair it with `max-md:hidden` on the existing `TabsList`, and place the select in the same flex row as any adjacent action button so the row doesn't gain a line. Labels and badge counts must sync across; the primitive renders a badge as `Label (3)`. A bar that genuinely fits (the tenant portal's single tab) keeps the bar at every width.
+4. **Tab bars collapse to a select/popover on mobile when the labels don't fit.** This is a space test, not a count: the rule used to say "past ~4 items", and every 4-tab bar in the app failed it anyway — People overflowed by 346px, Contacts 290px, Operations 202px, each hiding 2 of its 4 tabs off-screen. The cause is label length, not tab count; Portuguese and Spanish labels run longer than the English ones the "~4" was eyeballed against, so a count threshold will always be wrong in some locale. Measure instead: if `scrollWidth > clientWidth` on the `[role=tablist]` at 390px in the **longest** locale, it collapses. Below `md`, hide the bar and substitute a `<select>` or `Popover` (Situs brand pattern: select when navigational tabs, popover when sub-view tabs). `TabsMobileSelect` (`components/ui/tabs.tsx`) is the select-fallback primitive — pair it with `max-md:hidden` on the existing `TabsList`, and place the select in the same flex row as any adjacent action button so the row doesn't gain a line. Labels and badge counts must sync across; the primitive renders a badge as `Label (3)`. A bar that genuinely fits keeps the bar at every width.
 
 5. **Overlays (modals, sheets, popovers) are full-bleed below `md` and respect safe-area insets.** At `<md`:
    - Render as `Sheet` (bottom-sheet style) or full-screen overlay, not a centered modal dialog. Use `sheet-scroll-strategy: "content"` so the body scrolls independently and the primary action button stays pinned to the bottom (safe area included).

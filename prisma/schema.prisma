@@ -51,7 +51,6 @@ model User {
   emailLogs               EmailLog[]
   documents               Document[]
   notifications           Notification[]
-  invoices                Invoice[]
   rentReceipts            RentReceipt[]
   settings                UserSettings?
   governmentVerifications GovernmentVerification[]
@@ -113,7 +112,6 @@ model Owner {
   user                User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   properties          PropertyOwner[]
   documents           Document[]
-  invoices            Invoice[]
   incomeDistributions IncomeDistributionShare[]
 
   @@map("owners")
@@ -306,7 +304,6 @@ model Property {
   leases              Lease[]
   units               Unit[]
   documents           Document[]
-  invoices            Invoice[]
   incomeDistributions IncomeDistribution[]
   rentReceipts        RentReceipt[]
   nruaRegistrations   NRUARegistration[]
@@ -336,27 +333,15 @@ model Tenant {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  // Portal-link revocation epoch. Portal tokens are stateless signed JWTs, so before this there
-  // was no way to invalidate one — a link forwarded to the wrong address, or a tenant who moved
-  // out, stayed valid until it expired on its own up to 7 days later.
-  //
-  // Every token carries `iat`; verification rejects any token issued at or before this instant,
-  // which revokes ALL outstanding links for the tenant in one write. Generating a new link
-  // afterwards works normally, because its `iat` is later. Null means nothing was ever revoked.
-  portalAccessRevokedAt DateTime?
-
   // Relations
-  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property            Property?            @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  receipts            Receipt[]
-  leases              Lease[]
-  documents           Document[]
-  invoices            Invoice[]
-  paymentMethods      PaymentMethod[]
-  paymentTransactions PaymentTransaction[]
-  rentReceipts        RentReceipt[]
-  nruaRegistrations   NRUARegistration[]
-  rentPeriods         RentPeriod[]
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property          Property?          @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  receipts          Receipt[]
+  leases            Lease[]
+  documents         Document[]
+  rentReceipts      RentReceipt[]
+  nruaRegistrations NRUARegistration[]
+  rentPeriods       RentPeriod[]
 
   // Performance indexes
   @@index([userId])
@@ -754,51 +739,18 @@ model Document {
   updatedAt DateTime @updatedAt
 
   // Relations
-  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property           Property?           @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  unit               Unit?               @relation(fields: [unitId], references: [id], onDelete: SetNull)
-  owner              Owner?              @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  tenant             Tenant?             @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  expenses           Expense[] // Situs: deduction-evidence links (Expense.documentId)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  unit     Unit?     @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  owner    Owner?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  tenant   Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  expenses Expense[] // Situs: deduction-evidence links (Expense.documentId)
 
   @@index([userId])
   @@index([propertyId])
   @@index([type])
   @@index([expiresAt])
   @@map("documents")
-}
-
-model Invoice {
-  id          String        @id @default(cuid())
-  userId      String
-  number      String        @unique // Invoice number
-  amount      Float
-  dueDate     DateTime
-  paidDate    DateTime?
-  status      InvoiceStatus @default(pending)
-  description String?
-  metadata    String? // JSON for additional data
-
-  // Optional relations
-  propertyId String?
-  ownerId    String?
-  tenantId   String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  property            Property?            @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  owner               Owner?               @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  tenant              Tenant?              @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  paymentTransactions PaymentTransaction[]
-
-  @@index([userId])
-  @@index([status])
-  @@index([dueDate])
-  @@index([tenantId])
-  @@map("invoices")
 }
 
 model Notification {
@@ -824,108 +776,6 @@ model Notification {
 }
 
 // Payment System Models for Portugal/Spain
-model PaymentMethod {
-  id       String            @id @default(cuid())
-  tenantId String
-  type     PaymentMethodType
-  provider String // 'stripe', 'manual', 'bank_transfer'
-
-  // Stripe-specific fields
-  stripeCustomerId      String?
-  stripePaymentMethodId String?
-
-  // Bank account details (for SEPA/bank transfers)
-  bankName      String?
-  iban          String? // Masked IBAN for display
-  ibanLast4     String? // Last 4 digits
-  bic           String? // BIC/SWIFT code
-  accountHolder String?
-
-  // Regional payment method details
-  country String @default("PT") // PT, ES, etc.
-
-  // Multibanco reference (Portugal)
-  multibancoEntity    String? // 5-digit entity
-  multibancoReference String? // Reference number
-
-  // MB WAY (Portugal)
-  mbwayPhone String? // Phone number for MB WAY
-
-  isDefault Boolean @default(false)
-  isActive  Boolean @default(true)
-  metadata  String? // JSON for additional data
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  transactions PaymentTransaction[]
-
-  @@map("payment_methods")
-}
-
-model PaymentTransaction {
-  id              String  @id @default(cuid())
-  paymentMethodId String?
-  invoiceId       String?
-  tenantId        String
-
-  // Amount details
-  amount   Float // Amount in cents
-  currency String @default("EUR")
-
-  // Transaction status
-  status TransactionStatus @default(pending)
-
-  // Provider details
-  provider              String // 'stripe', 'multibanco', 'mbway', 'sepa', 'bank_transfer'
-  providerTransactionId String? // External transaction ID
-
-  // Stripe-specific
-  stripePaymentIntentId String?
-  stripeChargeId        String?
-
-  // Multibanco-specific (Portugal)
-  multibancoEntity    String?
-  multibancoReference String?
-  multibancoExpiresAt DateTime?
-
-  // MB WAY-specific (Portugal)
-  mbwayRequestId String?
-
-  // SEPA-specific
-  sepaMandateId String?
-  sepaDebitDate DateTime?
-
-  // Processing details
-  processedAt    DateTime?
-  failedAt       DateTime?
-  failureCode    String?
-  failureMessage String?
-
-  // Refund details
-  refundedAmount Float?
-  refundedAt     DateTime?
-  refundReason   String?
-
-  // Metadata
-  description String?
-  metadata    String? // JSON for webhooks, additional data
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  paymentMethod PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
-  invoice       Invoice?       @relation(fields: [invoiceId], references: [id])
-  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@index([invoiceId])
-  @@index([tenantId])
-  @@index([status])
-  @@map("payment_transactions")
-}
 
 // Enums
 enum PropertyType {
@@ -1034,13 +884,6 @@ enum DocumentType {
   other
 }
 
-enum InvoiceStatus {
-  pending
-  paid
-  overdue
-  cancelled
-}
-
 /// Only values something actually writes. Five were dropped in the scope cutdown: four
 /// (lease_expiring, payment_received, document_uploaded, nrua_registration) had no producer
 /// anywhere and never had; inbound_message went with the mail inbox. Every value below is
@@ -1057,26 +900,6 @@ enum NotificationType {
 }
 
 // Payment-specific enums
-enum PaymentMethodType {
-  card // Credit/debit card via Stripe
-  sepa_debit // SEPA Direct Debit
-  multibanco // Portugal: Multibanco reference
-  mbway // Portugal: MB WAY
-  bank_transfer // Manual bank transfer
-  cash // Cash payment
-  other
-}
-
-enum TransactionStatus {
-  pending // Transaction initiated
-  processing // Being processed by provider
-  requires_action // Needs customer action (3D Secure, MB WAY confirm)
-  succeeded // Payment successful
-  failed // Payment failed
-  cancelled // Cancelled by user/system
-  refunded // Fully refunded
-  partially_refunded // Partially refunded
-}
 
 // ========================================
 // New Models for Navigation Restructuring
@@ -1174,8 +997,8 @@ model ProductEvent {
   @@map("product_events")
 }
 
-/// SaaS subscription state for the app itself (distinct from the
-/// tenant-facing Stripe rent-collection flow in PaymentMethod/PaymentTransaction).
+/// SaaS subscription state for the app itself (distinct from rent collection,
+/// which reaches the ledger as a matched bank movement, not a card payment).
 /// No row for a user means Free — a row is only created once a Checkout
 /// Session completes (docs/PRODUCT_AUDIT_2026.md §2: pricing tiers were
 /// previously unbacked marketing copy).

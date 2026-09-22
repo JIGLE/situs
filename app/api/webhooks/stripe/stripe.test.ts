@@ -2,25 +2,17 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { NextRequest } from "next/server";
 
 const {
-  mockPaymentService,
   mockProcessSubscriptionWebhook,
   mockGetSecret,
   mockIsEnabled,
   mockRateLimit,
   mockStripeConstructEvent,
 } = vi.hoisted(() => ({
-  mockPaymentService: {
-    processStripeWebhook: vi.fn(),
-  },
   mockProcessSubscriptionWebhook: vi.fn(),
   mockGetSecret: vi.fn(),
   mockIsEnabled: vi.fn(),
   mockRateLimit: vi.fn(),
   mockStripeConstructEvent: vi.fn(),
-}));
-
-vi.mock("@/lib/payment/payment-service", () => ({
-  paymentService: mockPaymentService,
 }));
 
 vi.mock("@/lib/billing/subscription-service", () => ({
@@ -112,9 +104,6 @@ describe("Stripe Webhook Handler", () => {
       const event = { type: "charge.succeeded", id: "evt_123" };
       mockRequest.text = vi.fn().mockResolvedValue(JSON.stringify(event));
       mockStripeConstructEvent.mockReturnValue(event);
-      mockPaymentService.processStripeWebhook.mockResolvedValue({
-        success: true,
-      });
 
       expect(mockGetSecret).toBeDefined();
     });
@@ -130,16 +119,20 @@ describe("Stripe Webhook Handler", () => {
       mockRateLimit.mockResolvedValue(null);
     });
 
-    it("routes payment-intent events to paymentService", async () => {
+    /**
+     * Payment intents used to be routed to the rent-collection service. That went with the
+     * scope cutdown, and an unsubscribed event must now be acknowledged rather than handled —
+     * a non-2xx would make Stripe retry an event nothing will ever process.
+     */
+    it("acknowledges a payment-intent event without handling it", async () => {
       const event = { type: "payment_intent.succeeded", id: "evt_1" };
       mockRequest.text = vi.fn().mockResolvedValue(JSON.stringify(event));
       mockStripeConstructEvent.mockReturnValue(event);
-      mockPaymentService.processStripeWebhook.mockResolvedValue({ success: true });
 
       const response = await POST(mockRequest as any);
 
       expect(response.status).toBe(200);
-      expect(mockPaymentService.processStripeWebhook).toHaveBeenCalledWith(event);
+      expect(await response.json()).toEqual({ received: true, processed: false });
       expect(mockProcessSubscriptionWebhook).not.toHaveBeenCalled();
     });
 
@@ -153,7 +146,6 @@ describe("Stripe Webhook Handler", () => {
 
       expect(response.status).toBe(200);
       expect(mockProcessSubscriptionWebhook).toHaveBeenCalledWith(event);
-      expect(mockPaymentService.processStripeWebhook).not.toHaveBeenCalled();
     });
 
     it("routes customer.subscription.updated to the subscription service", async () => {
@@ -166,7 +158,6 @@ describe("Stripe Webhook Handler", () => {
 
       expect(response.status).toBe(200);
       expect(mockProcessSubscriptionWebhook).toHaveBeenCalledWith(event);
-      expect(mockPaymentService.processStripeWebhook).not.toHaveBeenCalled();
     });
   });
 });

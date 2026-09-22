@@ -18,7 +18,7 @@ async function handleGet(
   const authResult = await getAccessContext(request);
   if (authResult instanceof Response) return authResult;
 
-  const { scopeUserId, portalRole, tenantId, propertyId } = authResult;
+  const { scopeUserId } = authResult;
 
   // Handle both sync and async params
   const params = context?.params
@@ -33,15 +33,6 @@ async function handleGet(
   }
 
   try {
-    const document = await documentService.getById(scopeUserId, id);
-    if (
-      portalRole === "tenant" &&
-      (!document ||
-        (document.tenantId !== tenantId && (!propertyId || document.propertyId !== propertyId)))
-    ) {
-      return createErrorResponse(new Error("Document not found or file unavailable"), 404, request);
-    }
-
     const file = await documentService.getFileContent(scopeUserId, id);
 
     if (!file) {

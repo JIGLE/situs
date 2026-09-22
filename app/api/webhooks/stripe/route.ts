@@ -1,14 +1,17 @@
-// Stripe Webhook Handler - Process payment and subscription-billing events
+// Stripe Webhook Handler - Process subscription-billing events
 import { NextRequest, NextResponse } from "next/server";
-import { paymentService } from "@/lib/payment/payment-service";
 import { processSubscriptionWebhook } from "@/lib/billing/subscription-service";
+import { getStripeClient } from "@/lib/billing/stripe-client";
 import { getSecret, isEnabled } from "@/lib/utils/env";
 import { rateLimit, RateLimits } from "@/lib/middleware/rate-limit";
 import Stripe from "stripe";
-import { STRIPE_API_VERSION } from "@/lib/payment/stripe-api-version";
 
-// Event types owned by the app's own subscription billing (lib/billing/), as
-// opposed to tenant-to-landlord rent collection (lib/payment/).
+// The only Stripe events this app has anything to do with. It used to also route payment
+// intents and charges to lib/payment/ for tenant-to-landlord rent collection; the scope
+// cutdown removed that, and rent now arrives as a bank movement rather than a card
+// payment. An unrecognised event is acknowledged and dropped rather than treated as a
+// failure — Stripe retries a non-2xx, and a subscription account emits plenty of event
+// types nobody here subscribed to.
 const SUBSCRIPTION_EVENT_TYPES = new Set<string>([
   "checkout.session.completed",
   "customer.subscription.created",
@@ -16,25 +19,10 @@ const SUBSCRIPTION_EVENT_TYPES = new Set<string>([
   "customer.subscription.deleted",
 ]);
 
-// Lazy initialization of Stripe
-function getStripe(): Stripe {
-  const key = getSecret("STRIPE_SECRET_KEY");
-  if (!key) {
-    throw new Error("STRIPE_SECRET_KEY not configured");
-  }
-  return new Stripe(key, {
-    apiVersion: STRIPE_API_VERSION,
-  });
-}
-
 /**
  * POST /api/webhooks/stripe - Handle Stripe webhook events
  *
- * Supported events:
- * - payment_intent.succeeded
- * - payment_intent.payment_failed
- * - payment_intent.canceled
- * - charge.refunded
+ * Supported events: see SUBSCRIPTION_EVENT_TYPES above.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   // Respect feature flag: if Stripe is not enabled, return 404 to indicate webhook is disabled
@@ -66,7 +54,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     let event: Stripe.Event;
     try {
-      const stripe = getStripe();
+      const stripe = getStripeClient();
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Signature verification failed";
@@ -76,11 +64,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     console.debug(`[Stripe webhook] Received event: ${event.type}`, { id: event.id });
 
-    // Process the event — subscription-billing events go to lib/billing/,
-    // everything else (payment intents, charges) stays with lib/payment/.
-    const result = SUBSCRIPTION_EVENT_TYPES.has(event.type)
-      ? await processSubscriptionWebhook(event)
-      : await paymentService.processStripeWebhook(event);
+    if (!SUBSCRIPTION_EVENT_TYPES.has(event.type)) {
+      console.debug(`[Stripe webhook] Ignoring unsubscribed event ${event.type}`);
+      return NextResponse.json({ received: true, processed: false }, { status: 200 });
+    }
+
+    const result = await processSubscriptionWebhook(event);
 
     if (!result.success) {
       console.error(`[Stripe webhook] Processing failed for ${event.type}:`, result.error);
@@ -95,19 +84,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    console.debug(`[Stripe webhook] Processed ${event.type}`, {
-      transactionId: result.transactionId,
-      newStatus: result.newStatus,
-    });
+    console.debug(`[Stripe webhook] Processed ${event.type}`, { id: event.id });
 
-    return NextResponse.json(
-      {
-        received: true,
-        processed: true,
-        transactionId: result.transactionId,
-      },
-      { status: 200 },
-    );
+    return NextResponse.json({ received: true, processed: true }, { status: 200 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("[Stripe webhook] Unexpected error:", message);
