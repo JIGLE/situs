@@ -161,6 +161,15 @@ const FULLPAGE = flag("fullpage");
  * `surfaceRuns` must be 52. Anything lower means detail overlays were skipped for want of a
  * record id, and the totals are not comparable to these.
  */
+/**
+ * Ceilings, not targets. `--strict` fails when a metric exceeds one.
+ *
+ * These were measured on a seeded 52-surface-run sweep. The scope cutdown removed seven
+ * surfaces whose pages no longer exist, so a clean run is now 38 surface-runs and every total
+ * that scales with surface count is an UPPER BOUND rather than a measurement. The harness
+ * prints the real figures as "within baseline — tighten it: …" on a passing run; tighten from
+ * those, never from an estimate. It may only ever go down.
+ */
 const BASELINE = {
   pageOverflow: 0,
   // Elements sized to the full viewport that do not start at its top, so they force the
@@ -182,6 +191,13 @@ const BASELINE = {
 /**
  * Surfaces to audit. `modal` entries resolve a real record id at runtime (see resolveIds)
  * rather than hardcoding fixtures, so the overlay is measured with genuine content in it.
+ *
+ * A surface whose page no longer exists does not fail — it 404s, and a 404 page has no
+ * overflow, no undersized targets and no clipping, so it scores a clean `ok` and pads the
+ * denominator. Seven entries were doing exactly that once the scope cutdown removed their
+ * pages: operations, documents, detail-document, intelligence, correspondence, contacts and
+ * tenant-portal. Two also took the whole run down, because their ids could no longer resolve
+ * and `--strict` treats a skip as a failure. When a page goes, its entry goes with it.
  */
 const SURFACES = [
   { id: "landing", path: "/", auth: false },
@@ -196,15 +212,9 @@ const SURFACES = [
   { id: "financials", path: "/financials" },
   { id: "financials-bank", path: "/financials?tab=bank" },
   { id: "financials-tax", path: "/financials?tab=tax" },
-  { id: "operations", path: "/operations" },
   { id: "leases", path: "/leases" },
   { id: "detail-lease", path: "/leases?detail=lease:{leaseId}", overlay: true },
-  { id: "documents", path: "/documents" },
-  { id: "detail-document", path: "/documents?detail=document:{documentId}", overlay: true },
-  { id: "intelligence", path: "/intelligence" },
-  { id: "correspondence", path: "/correspondence" },
   { id: "buildings", path: "/buildings" },
-  { id: "contacts", path: "/contacts" },
   { id: "contracts", path: "/contracts" },
   { id: "settings", path: "/settings" },
   // Account is a Settings section now; measure it where it lives rather than through the
@@ -212,9 +222,6 @@ const SURFACES = [
   { id: "account", path: "/settings?tab=account" },
   { id: "compliance-tax-filing", path: "/compliance/tax-filing" },
   { id: "compliance-modelo179", path: "/compliance/modelo179" },
-  // Tenant portal: token-gated, so the whole path (not just an id) is substituted — the token
-  // is minted at runtime via the same "invite tenant" API the owner-facing UI calls.
-  { id: "tenant-portal", path: "{tenantPortalPath}", auth: false },
 ];
 
 /**
@@ -694,34 +701,10 @@ async function resolveIds(page) {
   };
   const tenantId = await get("/api/tenants", (t) => t.id);
 
-  // The tenant portal is reached via a signed token minted on demand (no stored value to GET),
-  // so mint one the same way the app's own "invite tenant" flow does: POST is CSRF-guarded.
-  let tenantPortalPath = null;
-  if (tenantId) {
-    try {
-      await page.request.get(`${BASE}/api/csrf-token`);
-      const cookies = await page.context().cookies();
-      const csrf = cookies.find((c) => c.name === "csrf-token")?.value;
-      const res = await page.request.post(`${BASE}/api/tenants/${tenantId}/portal-link`, {
-        headers: csrf ? { "x-csrf-token": csrf } : {},
-        data: {},
-      });
-      if (res.ok()) {
-        const body = await res.json();
-        const portalLink = body?.data?.portalLink;
-        if (portalLink) tenantPortalPath = new URL(portalLink).pathname;
-      }
-    } catch {
-      tenantPortalPath = null;
-    }
-  }
-
   return {
     propertyId: await get("/api/properties", (p) => p.id),
     tenantId,
     leaseId: await get("/api/leases", (l) => l.id),
-    documentId: await get("/api/documents", (d) => d.id),
-    tenantPortalPath,
   };
 }
 
@@ -1072,8 +1055,8 @@ async function main() {
   }
 
   // Resolve with a short poll rather than a blind sleep. The fixed 2500ms wait that used to sit
-  // after the seed was sometimes not enough: three consecutive local runs resolved `documentId`
-  // (fetched last) but not `tenantId`/`propertyId`/`leaseId` (fetched first), which is the
+  // after the seed was sometimes not enough: three consecutive local runs resolved the id
+  // fetched last but not the ones fetched first, which is the
   // signature of reading while the seed's deleteMany-then-recreate is still in flight. That
   // silently produced 44 surface-runs instead of 52 — a smaller, quietly incomparable run.
   // `--strict` does treat a skip as a failure, so this never corrupted a baseline, but it did

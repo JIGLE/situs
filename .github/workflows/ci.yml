@@ -350,23 +350,32 @@ jobs:
           name: nextjs-build
           path: .next/
 
+      # `disable-rate-limit` is not optional for this job, and its absence was a silent hole.
+      # The harness fans a whole sweep out from one address against a 100-request-per-minute
+      # limit, and says so itself: "a run against a server without E2E_DISABLE_RATE_LIMIT=true
+      # measures error panels from about surface fourteen onward". Without it the later
+      # surfaces measure the rate limiter's error panel rather than a page, and the totals are
+      # not comparable to BASELINE — the failure reads as a responsive-design regression and is
+      # not one. The e2e job has always passed it; this one never did.
       - uses: ./.github/actions/start-app
         with:
           database-url: file:${{ github.workspace }}/mobile-audit.db
           nextauth-secret: mobile-audit-secret-minimum-32-characters
           demo-mode: "true"
           demo-login: "true"
+          disable-rate-limit: "true"
 
       # `--seed` is not optional: without it the harness walks a bare database, and a table with
       # no rows cannot overflow. Every number this job produced before it was added described
       # empty screens. `--strict` ratchets against BASELINE in the harness.
       #
       # This is a real gate now. CI reported `✓ Mobile audit exactly at baseline` on a seeded
-      # 52-surface run — pageOverflow 0, touchTargetFails 4, touchTargetWarns 4,
-      # clippedContainers 6, smallText 310 — matching three consecutive local runs against a
-      # production standalone build and a fresh database. `continue-on-error` was the only
-      # thing keeping an unmeasured baseline from blocking a PR, and the baseline is now
-      # measured, so it comes off.
+      # 52-surface-run sweep, matching three consecutive local runs against a production
+      # standalone build and a fresh database. `continue-on-error` was the only thing keeping
+      # an unmeasured baseline from blocking a PR, and the baseline was measured, so it came
+      # off. The sweep is 38 surface-runs since the scope cutdown removed seven surfaces, so
+      # BASELINE is an upper bound until a green run reprints the real numbers — see the note
+      # on it in the harness.
       #
       # If this fails: read the numbers before touching BASELINE. It may only ever go down.
       - name: Run mobile audit harness
