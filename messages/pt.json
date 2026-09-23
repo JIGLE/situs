@@ -271,12 +271,6 @@
       "openAdmin": "Abrir administração"
     }
   },
-  "gdpr": {
-    "title": "Seus Direitos de Dados (GDPR)",
-    "description": "Sob o GDPR, você tem o direito de acessar, exportar ou excluir seus dados pessoais.",
-    "export": "Exportar Meus Dados",
-    "delete": "Excluir Meus Dados"
-  },
   "admin": {
     "title": "Estado do sistema",
     "subtitle": "A que esta instância está ligada, o que é simulado e o que precisa da sua atenção.",
@@ -531,12 +525,6 @@
     "oneItemNeedsAttention": "1 item precisa da sua atenção",
     "itemsNeedAttention": "{count} itens precisam da sua atenção",
     "setupComplete": "Configuração concluída"
-  },
-  "greeting": {
-    "morning": "Bom dia",
-    "afternoon": "Boa tarde",
-    "evening": "Boa noite",
-    "night": "Boa noite"
   },
   "onboarding": {
     "gettingStarted": "Primeiros Passos",
@@ -1168,14 +1156,6 @@
       "sat": "Sáb"
     }
   },
-  "charts": {
-    "revenueTrend": "Tendência de Receita",
-    "propertyDistribution": "Distribuição de Imóveis",
-    "revenue": "Receita",
-    "expenses": "Despesas",
-    "netIncome": "Rendimento Líquido",
-    "income": "Rendimento"
-  },
   "forms": {
     "fullName": "Nome Completo",
     "email": "Email",
@@ -1209,15 +1189,6 @@
     "all": "Todos",
     "occupied": "Ocupado",
     "vacant": "Vago"
-  },
-  "messages": {
-    "addedSuccess": "{item} adicionado com sucesso!",
-    "updatedSuccess": "{item} atualizado com sucesso!",
-    "deletedSuccess": "{count} {item}(s) eliminado(s) com sucesso",
-    "savedSuccess": "Configurações guardadas com sucesso",
-    "confirmDelete": "Tem a certeza que deseja eliminar {count} {item}(s)?",
-    "confirmDeleteDescription": "Esta ação não pode ser desfeita.",
-    "noResults": "Nenhum resultado encontrado"
   },
   "properties": {
     "addNew": "Adicionar Nova Propriedade",
@@ -1575,53 +1546,10 @@
     "deleteConfirmTitle": "Eliminar Unidade",
     "deleteConfirmDescription": "Esta unidade será removida permanentemente. Esta ação não pode ser anulada."
   },
-  "quickActions": {
-    "title": "Ações Rápidas",
-    "addProperty": "Adicionar Propriedade",
-    "addTenant": "Adicionar Inquilino",
-    "createLease": "Criar Contrato",
-    "recordPayment": "Registar Pagamento",
-    "generateInvoice": "Gerar Fatura",
-    "addPropertyDesc": "Registar uma nova propriedade no seu portfólio",
-    "addTenantDesc": "Registar um novo inquilino",
-    "recordPaymentDesc": "Registar um pagamento de renda ou despesa",
-    "createLeaseDesc": "Redigir um novo contrato de arrendamento"
-  },
-  "contracts": {
-    "title": "Contratos",
-    "status": {
-      "active": "Ativo",
-      "expiring": "A Expirar",
-      "expired": "Expirado",
-      "terminated": "Terminado"
-    }
-  },
-  "loading": {
-    "default": "A carregar...",
-    "application": "A carregar a aplicação...",
-    "signingIn": "A iniciar sessão...",
-    "pleaseWait": "Por favor aguarde..."
-  },
-  "rateLimit": {
-    "tooManyRequests": "Demasiados pedidos. Por favor tente novamente em {retryAfter} segundos."
-  },
   "footer": {
     "copyright": "© {year} Situs. Todos os direitos reservados.",
     "privacy": "Política de Privacidade",
     "terms": "Termos de Serviço"
-  },
-  "pageHeader": {
-    "filter": "Filtrar",
-    "export": "Exportar"
-  },
-  "property": {
-    "nextAction": {
-      "addLease": "Adicionar contrato",
-      "renewLease": "Renovar contrato",
-      "findTenant": "Encontrar inquilino",
-      "verifyAddress": "Verificar morada",
-      "allGood": "Tudo bem"
-    }
   },
   "taxFiling": {
     "title": "Declaração Fiscal Anual",
@@ -1925,32 +1853,6 @@
       "taxLog": "Registo fiscal"
     },
     "leaseExpiresInDays": "faltam {days}d"
-  },
-  "account": {
-    "title": "Conta",
-    "subtitle": "A sua conta",
-    "profile": "Perfil",
-    "profileDescription": "Como aparece no Situs.",
-    "security": "Segurança",
-    "securityDescription": "Palavra-passe e autenticação de dois fatores.",
-    "twoFactor": "Autenticação de dois fatores",
-    "manageInSettings": "Gerir nas definições",
-    "sessions": "Sessões",
-    "sessionsDescription": "Dispositivos com sessão iniciada na sua conta.",
-    "thisDevice": "Este dispositivo",
-    "currentSession": "Sessão atual",
-    "sessionsSoon": "O histórico completo de sessões e o encerramento remoto estão para breve.",
-    "apiTokens": "Tokens de API",
-    "apiTokensDescription": "Acesso programático aos seus dados Situs.",
-    "noTokens": "Ainda sem tokens de API.",
-    "activity": "Atividade da conta",
-    "portalUser": "Utilizador do portal",
-    "mfaManaged": "Gerida com uma aplicação autenticadora (TOTP).",
-    "mfaEnabled": "Ativada — são pedidos códigos ao iniciar sessão.",
-    "mfaDisabled": "Não ativada — adicione um segundo fator para proteger a sua conta.",
-    "on": "Ligada",
-    "off": "Desligada",
-    "auditEmpty": "Os inícios de sessão, exportações e alterações às definições da sua conta aparecerão aqui."
   },
   "pwa": {
     "install": "Instalar o Situs",
