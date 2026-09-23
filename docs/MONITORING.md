@@ -9,7 +9,8 @@ Situs is a single self-hosted instance; the operator is the person reading this.
 
 | Capability                 | State                                                                           |
 | -------------------------- | ------------------------------------------------------------------------------- |
-| Readiness endpoint         | **Live** — `/api/ready`, public                                                 |
+| Readiness endpoint         | **Live** — `/api/ready`, public, never touches the database                     |
+| Database probe             | **Live** — `/api/monitoring/health`, public, runs `SELECT 1`                    |
 | Health endpoints           | **Live** — `/api/health`, `/api/health/db`, `/api/health/email`, behind sign-in |
 | Prometheus-format metrics  | **Live** — `/api/metrics`, hand-rolled, no `prom-client` dependency             |
 | Structured JSON logging    | **Live** — `lib/utils/logger.ts`                                                |
@@ -18,10 +19,16 @@ Situs is a single self-hosted instance; the operator is the person reading this.
 | Sentry / Grafana / Datadog | **Not wired.** No SDK is installed                                              |
 
 Nothing polls these endpoints on your behalf. If you want to be told when the instance is down,
-point an external uptime checker at `/api/ready` — the one endpoint open without a session. It
-answers `200` as soon as the process serves requests and never touches the database, which is
-why the Docker `HEALTHCHECK` uses it too; so it tells you the app is up, not that the database
-works. For that, the health endpoints below need a signed-in session.
+point an external uptime checker at one of the two probes that need no session:
+
+- **`/api/ready`** answers `200` as soon as the process serves requests and never touches the
+  database, which is why the Docker `HEALTHCHECK` uses it. It tells you the app is up, not that
+  the database works.
+- **`/api/monitoring/health`** also runs `SELECT 1` through Prisma. It answers `200` with
+  `"database": "healthy"`, or `503` with `"status": "unhealthy"` when the query fails; CI's smoke
+  test uses it for exactly that. In production the error detail is reduced to `"database error"`.
+
+The health endpoints below report more, but need a signed-in session.
 
 ## Health endpoints
 
@@ -66,9 +73,9 @@ delivery works end to end. `/api/email/logs` holds the actual send history.
 and none is needed:
 
 ```
-# HELP http_requests_total Total HTTP requests
-# TYPE http_requests_total counter
-http_requests_total 1024
+# HELP email_sent_total Total emails sent successfully
+# TYPE email_sent_total counter
+email_sent_total 12
 
 # HELP process_uptime_seconds Process uptime in seconds
 # TYPE process_uptime_seconds gauge
@@ -79,15 +86,24 @@ Exposed series: `http_requests_total`, `http_errors_total`, `db_queries_total`,
 `email_sent_total`, `email_failed_total`, `process_uptime_seconds`, and
 `metrics_reset_timestamp_seconds`.
 
-Two properties worth knowing before you build anything on it:
+Three properties worth knowing before you build anything on it:
 
 - **A scraper cannot reach it today.** `/api/metrics` is not a public route, so the proxy wants a
   signed-in session before the route runs — and in production the route then also wants
   `Authorization: Bearer $INIT_SECRET`. A Prometheus scraper has no session, so it gets `401`.
   Read it from a signed-in browser in development.
+- **Three of the series never move.** Nothing increments `http_requests_total`,
+  `http_errors_total` or `db_queries_total`, so they read `0` for the life of the process. The two
+  email counters count only the automated reminder e-mails
+  (`lib/services/notifications/reminder-email.ts`), not every message the app sends.
 - **The counters live in process.** They reset on every restart and every redeploy, which is
   what `metrics_reset_timestamp_seconds` is for. Treat them as rates since last boot, not as
   lifetime totals.
+
+A second endpoint, `GET /api/monitoring/metrics`, is public in the proxy and wants the same
+bearer in production. It reads a different store, `lib/monitoring/metrics.ts`, which only the
+landing-page beacon (`/api/monitoring/track`) writes to — so it reports landing-page event
+counts, as JSON or, with `?format=prometheus`, as text.
 
 ## Structured logging
 

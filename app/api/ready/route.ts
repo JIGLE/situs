@@ -9,15 +9,15 @@ const HEADERS = {
 };
 
 /**
- * Lightweight readiness/startup probe endpoint.
+ * Lightweight readiness probe.
  *
- * Returns HTTP 200 as soon as the Node.js process can serve requests,
- * regardless of database initialization status.  This prevents Kubernetes
- * (and TrueNAS SCALE) from keeping the pod in "Deploying" state while
- * the prestart script is still running `prisma db push`.
+ * Returns HTTP 200 as soon as the Node.js process can serve requests and never touches the
+ * database. The Docker HEALTHCHECK polls it, so a healthy container means the server is up, not
+ * that the database answers.
  *
- * Use this for startupProbe and readinessProbe.
- * Use /api/health (which checks the DB) for livenessProbe.
+ * For a probe that includes the database, use /api/monitoring/health — it runs `SELECT 1` and,
+ * like this route, needs no session. /api/health also checks the database but answers only a
+ * signed-in owner, so a probe pointed at it always fails.
  */
 export async function GET(): Promise<NextResponse> {
   return NextResponse.json(
