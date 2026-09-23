@@ -41,6 +41,7 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
 import { useFormDialog } from "@/lib/hooks/use-form-dialog";
 import { csrfHeaders } from "@/lib/utils/api-client";
+import { httpError, useApiError } from "@/lib/utils/api-error";
 
 /**
  * Expense categories have had translated labels under `financial.categories` all along — this
@@ -68,10 +69,11 @@ const DEDUCTION_KEYS = [
 ] as const;
 
 export function FinancialsView(): React.ReactElement {
-  const { state, addExpense, addReceipt } = useApp();
+  const { state, addExpense, refreshData } = useApp();
   const { properties, receipts, expenses, loading } = state;
   const { formatCurrency, currencySymbol } = useCurrency();
   const { success: toastSuccess, error: toastError } = useToast();
+  const resolveError = useApiError();
   const t = useTranslations("financial");
   const tCategories = useTranslations("financial.categories");
   const tStatus = useTranslations("status");
@@ -285,22 +287,20 @@ export function FinancialsView(): React.ReactElement {
         body: JSON.stringify({ month }),
       });
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        const msg = (errData as { error?: string })?.error ?? res.statusText;
-        toastError(msg);
+        toastError(resolveError(httpError(res.status)));
         return;
       }
       const data = (await res.json()) as {
         data: { generated: import("@/lib/types").Receipt[]; skipped: number; errors: string[] };
       };
       const { generated, skipped } = data.data;
-      for (const receipt of generated) {
-        await addReceipt(receipt);
-      }
       if (generated.length === 0) {
         toastSuccess(t("bulkGenerateEmpty"));
       } else {
         toastSuccess(t("bulkGenerateSuccess", { count: generated.length, skipped }));
+        // The route has already written and allocated every one of them, so this only reloads.
+        // Handing each to `addReceipt` instead POSTed it to /api/receipts and wrote it again.
+        await refreshData();
       }
     } catch {
       toastError(t("bulkGenerateFailed"));
