@@ -72,6 +72,5 @@ Say plainly when you found nothing — a clean sweep is a result. Never pad the 
 ## Memory
 
 Keep a running note of this repo's ownership map — which models are user-scoped, which are
-reached through a parent, and which are system-owned (`CorrespondenceTemplate.userId` is
-nullable, and NULL means system-owned: readable by all, editable by none). Record every
-false positive you produce and why, so the next run does not repeat it.
+reached through a parent, and which are system-owned. Record every false positive you
+produce and why, so the next run does not repeat it.

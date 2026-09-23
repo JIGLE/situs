@@ -171,6 +171,16 @@ const RETIRED_CLAIMS = [
       "absolute has held — check the branch: docs/REPOSITORY_PROCEDURES.md §2",
   },
   {
+    // False since 2026-08-14, when deploy-ghcr.yml began publishing a development image on every
+    // push to main. Written into CLAUDE.md, CONTRIBUTING.md and an agent definition two days
+    // before that, and copied into REPOSITORY_PROCEDURES.md five weeks after it had gone false.
+    pattern: /nothing (?:publishes|deploys) (?:on merge|to GHCR except a tag)/i,
+    retired: "2026-09-23 (instructions cleanup)",
+    because:
+      "every non-docs merge to main publishes :main and :sha-<short>; only a v* tag writes " +
+      ":<version> and :latest — docs/REPOSITORY_PROCEDURES.md §5",
+  },
+  {
     // `feature/` only; `feat/` is the live convention and must not match.
     pattern: /`?feature\/<[a-z-]+>`?/i,
     retired: "2026-09-22 (repository audit)",

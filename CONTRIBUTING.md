@@ -33,18 +33,12 @@ its own:
 | **CI**             | `ci.yml`              | PRs to `main`; push to `main`        | Lint, type-check, unit tests, build, smoke, E2E smoke, mobile audit          |
 | **Security Scan**  | `security-scan.yml`   | PRs; push to `main`; daily 02:00 UTC | npm audit, custom scan, CodeQL, dependency review, TruffleHog                |
 | **Release**        | `release.yml`         | Manual dispatch; push to `main`      | Opens the version-bump PR; on merge tags, releases, checks version integrity |
-| **Deploy to GHCR** | `deploy-ghcr.yml`     | Git tag `v*`; manual dispatch        | Docker build, Trivy image scan, push to `ghcr.io/jigle/situs`, SBOM          |
+| **Deploy to GHCR** | `deploy-ghcr.yml`     | Push to `main`; tag `v*`; manual     | Docker build, Trivy image scan, push to `ghcr.io/jigle/situs`, SBOM          |
 | _(reusable)_       | `reusable-verify.yml` | `workflow_call` only                 | The lint/type-check/test trio CI calls                                       |
 
-There used to be a fifth, `production.yml` ("Production Gate"), running on push to `main`. It
-called the same `reusable-verify.yml` and ran a byte-identical build as `ci.yml` on the same
-event, so every merge paid for two of everything; its only unique content was a version-integrity
-check that raced the Release workflow it was supposed to be checking. Both checks now live in
-`release.yml`, where they run after the tag exists.
-
-**Nothing deploys on merge.** Publishing an image is deliberate: cut a release (which tags), and
-the tag push is what triggers Deploy to GHCR. A manual dispatch of Deploy to GHCR publishes a
-`sha-<short>` tag and never touches `:latest` — only a tag push may claim a version number.
+**What publishes.** Every merge to `main` that changes more than docs publishes a development
+image, `:main` and `:sha-<short>`. Only a release writes `:<version>` and `:latest` — see
+[`docs/REPOSITORY_PROCEDURES.md`](docs/REPOSITORY_PROCEDURES.md) §5.
 
 ## Design System
 
@@ -201,17 +195,18 @@ Releases are automated via GitHub Actions:
 1. **Actions** → **Release** → **Run workflow**
 2. Select bump type: `patch`, `minor`, or `major`
 3. Add optional release notes
-4. The workflow bumps `package.json`, tags the commit, creates a GitHub Release, and triggers the Docker build/push to GHCR
+4. The workflow opens a version-bump PR; merging it tags `vX.Y.Z` and creates the GitHub
+   Release. How the release image follows is in
+   [`docs/REPOSITORY_PROCEDURES.md`](docs/REPOSITORY_PROCEDURES.md) §5.
 
 Semantic versioning: **MAJOR** breaking, **MINOR** backward-compatible features, **PATCH** fixes.
-Nothing publishes on merge — see
-[`docs/REPOSITORY_PROCEDURES.md`](docs/REPOSITORY_PROCEDURES.md) §5 for the full chain.
 
 ### E2E tests are opt-in
 
 Playwright is heavy, so the `e2e` job in `ci.yml` is gated: add the **`run-e2e`** label to a pull
-request, or dispatch the `CI` workflow manually. `E2E Smoke` runs on every PR regardless, and is
-required.
+request, or dispatch the `CI` workflow manually. `E2E Smoke` runs on every PR regardless. The
+checks branch protection requires are listed in
+[`docs/REPOSITORY_PROCEDURES.md`](docs/REPOSITORY_PROCEDURES.md) §3.
 
 ---
 

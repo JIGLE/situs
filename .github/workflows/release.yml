@@ -76,11 +76,12 @@ jobs:
           cache: "npm"
 
       # This is the only job in the repo that WRITES package-lock.json, so it is the only one
-      # where the npm version matters. `packageManager` pins npm@11.19.0 precisely because npm 10
-      # rewrites the lockfile without the `libc` fields that only the four @next/swc-linux-*
-      # packages carry — but corepack honours that pin only once enabled, and no workflow enabled
-      # it. Node 22 ships npm 10, so every release so far silently stripped all 16 of them and
-      # flipped `devOptional` to `dev`; v1.25.0's bump commit did exactly that.
+      # where the npm version matters. `packageManager` pins npm 11 precisely because npm 10
+      # rewrites the lockfile without the `libc` fields that several families of prebuilt native
+      # binaries publish (`grep -c '"libc"' package-lock.json` counts them) — but corepack honours
+      # that pin only once enabled, and Node 22 ships npm 10. Before this step, every release
+      # silently stripped those fields and flipped `devOptional` to `dev`; v1.25.0's bump commit
+      # did exactly that.
       #
       # Note the `npm` argument: bare `corepack enable` shims pnpm and yarn but NOT npm, because
       # npm ships with Node. Verified — bare `enable` leaves `npm -v` at 10.x; `enable npm` moves

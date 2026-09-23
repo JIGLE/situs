@@ -19,10 +19,10 @@ stop and report that rather than guessing.
 
 ## Non-negotiables
 
-**Never bypass Prisma's AI-agent guard.** It blocks `npx prisma db push`. Two integration
-tests (`product-events.integration.test.ts`, `pii-extension.integration.test.ts`) fail
-locally because of it, on clean `main` too. That is expected. Do not work around it, and do
-not report those two as regressions.
+**Never bypass Prisma's AI-agent guard.** It blocks `npx prisma db push`, which every
+`*.integration.test.ts` suite runs against a scratch database, so those suites fail locally —
+on clean `main` too. That is expected. Do not work around it, and do not report them as
+regressions; they run in CI.
 
 **Never push to a `dependabot/*` branch.** Dependabot treats outside commits as
 interference and can close its own PR — this has happened (#276). If a bump needs a fix,
@@ -37,13 +37,13 @@ was removed on purpose: it tested a dependency tree nobody had reviewed.
 ## Verify before you commit
 
 ```bash
-npm run verify:ci      # type-check + lint --max-warnings=0 + tests
-npx prettier --check .
+npm run verify:ci      # type-check → lint → format:check → hygiene → security:audit → test
 ```
 
-Lint runs at zero warnings and coverage is a ratchet (`vitest.config.ts`) — you may raise
-the floor, never lower it. Expect `974 passed` plus the two guard-blocked files above; a
-different failure is yours.
+Read the exit code, not a grep of the output. `docs/REPOSITORY_PROCEDURES.md` §6 ("Finishing")
+lists the failures that are known and not yours; any other failure is yours. Lint runs at zero
+warnings and coverage is a ratchet (`vitest.config.ts`) — you may raise the floor, never lower
+it. Count tests from the run output; do not carry a figure over from an earlier run.
 
 **Prove the fix, don't assert it.** Revert your change and watch the new test fail, then
 restore it. A test that passes against the old code tests nothing. If you claim a count,
@@ -56,13 +56,11 @@ untouched _and_ the check reported success. Use `rg --hidden` and vary the metho
 ## Git
 
 Branch `feat/…`, `fix/…` or `chore/…` from the default branch (the worktree already does
-this). One PR, filled against `.github/PULL_REQUEST_TEMPLATE.md`. End commit messages with:
+this). One PR, filled against `.github/PULL_REQUEST_TEMPLATE.md`. End commit messages with the
+attribution trailer your session supplies; never type a model name from memory.
 
-```
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
-```
-
-Do not merge. Do not tag. Nothing publishes to GHCR except a tag push.
+Do not merge and do not tag. A merge to `main` publishes a development image and a tag
+publishes a release (`docs/REPOSITORY_PROCEDURES.md` §5); both are the owner's call.
 
 ## Report back
 
