@@ -22,7 +22,7 @@ const bulkEmailSchema = z.object({
   batchSize: z.number().min(1).max(50).default(10),
 });
 
-// GET /api/email/templates - Get available email templates
+// GET /api/email - List the available email templates
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     // Require authentication to list templates
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-// POST /api/email/send - Send a single email
+// POST /api/email - Send a single email
 export async function POST(request: NextRequest): Promise<Response | NextResponse> {
   const authResult = await requireAuth(request);
   if (authResult instanceof Response) return authResult;
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest): Promise<Response | NextRespons
   }
 }
 
-// PUT /api/email/bulk - Send bulk emails
+// PUT /api/email - Send bulk emails
 export async function PUT(request: NextRequest): Promise<Response | NextResponse> {
   const authResult = await requireAuth(request);
   if (authResult instanceof Response) return authResult;
