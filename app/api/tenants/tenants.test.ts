@@ -266,6 +266,31 @@ describe("Tenants API - POST /api/tenants", () => {
     expect([200, 201]).toContain(response.status);
   });
 
+  // Payment status is derived from the rent ledger. The update route has always refused it; the
+  // create route accepted it, so a tenant could be born "paid" with no money behind it.
+  it("never passes a client-supplied paymentStatus to the service", async () => {
+    const { tenantService } = await import("@/lib/services/database/tenant");
+    const create = vi.mocked(tenantService.create);
+    create.mockClear();
+
+    const request = new NextRequest("http://localhost:3000/api/tenants", {
+      method: "POST",
+      headers: new Headers({ Authorization: "Bearer valid-token" }),
+      body: JSON.stringify({
+        name: "Ana Costa",
+        email: "ana@example.com",
+        rent: 900,
+        paymentStatus: "paid",
+      }),
+    });
+
+    const response = await postTenants(request);
+
+    expect(response.status).toBe(201);
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(create.mock.calls[0][1]).not.toHaveProperty("paymentStatus");
+  });
+
   it("should return 201 on successful creation", async () => {
     const request = new NextRequest("http://localhost:3000/api/tenants", {
       method: "POST",

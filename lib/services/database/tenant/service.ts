@@ -42,7 +42,10 @@ export const tenantService = {
 
   async create(
     userId: string,
-    data: Omit<Tenant, "id" | "userId" | "createdAt" | "updatedAt" | "propertyName">,
+    data: Omit<
+      Tenant,
+      "id" | "userId" | "createdAt" | "updatedAt" | "propertyName" | "paymentStatus"
+    >,
   ): Promise<Tenant> {
     // `propertyId` arrives from the request body, and this create returns
     // `include: { property: true }` — the full property record, address and coordinates
@@ -69,7 +72,8 @@ export const tenantService = {
         rent: data.rent,
         leaseStart,
         leaseEnd,
-        paymentStatus: data.paymentStatus,
+        // paymentStatus is left to the column default: the RentPeriod ledger derives it
+        // (lib/services/allocation/service.ts), never the caller.
         lastPayment: data.lastPayment ? new Date(data.lastPayment) : null,
         notes: data.notes,
       },
