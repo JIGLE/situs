@@ -7,6 +7,7 @@
  */
 
 import { useCallback, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import type React from "react";
 import { Building, Property, Tenant, Receipt, Owner, Expense, Lease } from "@/lib/types";
 import { apiFetch } from "@/lib/utils/api-client";
@@ -38,6 +39,7 @@ export function useAppData({
   });
 
   const resolveError = useApiError();
+  const tApi = useTranslations("errors.api");
 
   const loadData = useCallback(
     async (force = false) => {
@@ -131,10 +133,9 @@ export function useAppData({
             "status" in err &&
             (err as { status?: number }).status === 403);
 
-        // For CSRF errors, suggest refresh
-        const displayMessage = isCsrfError
-          ? "Security token expired. Please refresh the page."
-          : errorMessage;
+        // For CSRF errors, suggest refresh. This one sentence was hardcoded English, and it reaches
+        // both a toast and the app-wide error panel.
+        const displayMessage = isCsrfError ? tApi("securityTokenExpired") : errorMessage;
 
         dispatch({ type: "SET_ERROR", payload: displayMessage });
         showError(displayMessage);
@@ -143,7 +144,7 @@ export function useAppData({
         loadControlRef.current.inFlight = false;
       }
     },
-    [userId, csrfToken, showError, isPublicPage, dispatch, resolveError],
+    [userId, csrfToken, showError, isPublicPage, dispatch, resolveError, tApi],
   );
 
   useEffect(() => {

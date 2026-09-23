@@ -17,7 +17,6 @@ interface EntityActionsContext {
   csrfToken: string | null;
   userId?: string;
   showError: (msg: string) => void;
-  showSuccess: (msg: string) => void;
 }
 
 export interface EntityActionsBundle {
@@ -35,7 +34,7 @@ export function useEntityActions(
   dispatch: React.Dispatch<AppAction>,
   ctx: EntityActionsContext,
 ): EntityActionsBundle {
-  const { csrfToken, userId, showError, showSuccess } = ctx;
+  const { csrfToken, userId, showError } = ctx;
   const resolveError = useApiError();
 
   const propertyActions = useMemo(
@@ -46,12 +45,10 @@ export function useEntityActions(
         setItems: (items) => dispatch({ type: "SET_PROPERTIES", payload: items }),
         showError,
         resolveError,
-        showSuccess,
         csrfToken,
         userId,
-        entityName: "property",
       }),
-    [csrfToken, userId, showError, resolveError, showSuccess, state.properties, dispatch],
+    [csrfToken, userId, showError, resolveError, state.properties, dispatch],
   );
 
   const buildingActions = useMemo(
@@ -62,12 +59,10 @@ export function useEntityActions(
         setItems: (items) => dispatch({ type: "SET_BUILDINGS", payload: items }),
         showError,
         resolveError,
-        showSuccess,
         csrfToken,
         userId,
-        entityName: "building",
       }),
-    [csrfToken, userId, showError, resolveError, showSuccess, state.buildings, dispatch],
+    [csrfToken, userId, showError, resolveError, state.buildings, dispatch],
   );
 
   const tenantActions = useMemo(
@@ -78,12 +73,10 @@ export function useEntityActions(
         setItems: (items) => dispatch({ type: "SET_TENANTS", payload: items }),
         showError,
         resolveError,
-        showSuccess,
         csrfToken,
         userId,
-        entityName: "tenant",
       }),
-    [csrfToken, userId, showError, resolveError, showSuccess, state.tenants, dispatch],
+    [csrfToken, userId, showError, resolveError, state.tenants, dispatch],
   );
 
   const receiptActions = useMemo(
@@ -94,12 +87,10 @@ export function useEntityActions(
         setItems: (items) => dispatch({ type: "SET_RECEIPTS", payload: items }),
         showError,
         resolveError,
-        showSuccess,
         csrfToken,
         userId,
-        entityName: "receipt",
       }),
-    [csrfToken, userId, showError, resolveError, showSuccess, state.receipts, dispatch],
+    [csrfToken, userId, showError, resolveError, state.receipts, dispatch],
   );
 
   const ownerActions = useMemo(
@@ -110,12 +101,10 @@ export function useEntityActions(
         setItems: (items) => dispatch({ type: "SET_OWNERS", payload: items }),
         showError,
         resolveError,
-        showSuccess,
         csrfToken,
         userId,
-        entityName: "owner",
       }),
-    [csrfToken, userId, showError, resolveError, showSuccess, state.owners, dispatch],
+    [csrfToken, userId, showError, resolveError, state.owners, dispatch],
   );
 
   const expenseActions = useMemo(
@@ -126,13 +115,11 @@ export function useEntityActions(
         setItems: (items) => dispatch({ type: "SET_EXPENSES", payload: items }),
         showError,
         resolveError,
-        showSuccess,
         csrfToken,
         userId,
-        entityName: "expense",
         prependNew: true,
       }),
-    [csrfToken, userId, showError, resolveError, showSuccess, state.expenses, dispatch],
+    [csrfToken, userId, showError, resolveError, state.expenses, dispatch],
   );
 
   const leaseActions = useMemo(
@@ -143,13 +130,11 @@ export function useEntityActions(
         setItems: (items) => dispatch({ type: "SET_LEASES", payload: items }),
         showError,
         resolveError,
-        showSuccess,
         csrfToken,
         userId,
-        entityName: "lease",
         prependNew: true,
       }),
-    [csrfToken, userId, showError, resolveError, showSuccess, state.leases, dispatch],
+    [csrfToken, userId, showError, resolveError, state.leases, dispatch],
   );
 
   return {

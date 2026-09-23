@@ -36,6 +36,7 @@ import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { EntityLink } from "@/components/shared/entity-link";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
 import { csrfHeaders } from "@/lib/utils/api-client";
+import { wasReported } from "@/lib/utils/api-error";
 
 interface LeaseDetailViewProps {
   leaseId: string;
@@ -163,8 +164,9 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
           await updateLease(lease.id, { status: "terminated" });
           success(t("toastTerminated"));
           router.push("/leases");
-        } catch {
-          error(t("toastTerminateFailed"));
+        } catch (err) {
+          // `updateLease` reports its own failures; saying so again would be a second toast.
+          if (!wasReported(err)) error(t("toastTerminateFailed"));
         }
       },
     );

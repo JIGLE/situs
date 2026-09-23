@@ -31,6 +31,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/lib/contexts/toast-context";
+import { httpError, useApiError } from "@/lib/utils/api-error";
 import { csrfHeaders } from "@/lib/utils/api-client";
 import { RenderTable } from "@/components/ui/table";
 
@@ -142,6 +143,7 @@ export function Modelo179View(): React.ReactElement {
   const t = useTranslations("compliance");
   const tActions = useTranslations("actions");
   const { success, error: showError } = useToast();
+  const resolveError = useApiError();
   const currentYear = new Date().getFullYear();
 
   const [year, setYear] = useState<number>(currentYear);
@@ -162,14 +164,14 @@ export function Modelo179View(): React.ReactElement {
         const json = await res.json();
         setLeases((json.data as LeaseRow[]) ?? []);
       } else {
-        showError("Failed to load Modelo 179 data");
+        showError(resolveError(httpError(res.status)));
       }
-    } catch {
-      showError("Failed to load Modelo 179 data");
+    } catch (err) {
+      showError(resolveError(err));
     } finally {
       setLoading(false);
     }
-  }, [year, showError]);
+  }, [year, showError, resolveError]);
 
   useEffect(() => {
     void loadData();
@@ -198,14 +200,14 @@ export function Modelo179View(): React.ReactElement {
         }),
       });
       if (res.ok) {
-        success("Modelo 179 marked as submitted");
+        success(t("modelo179ToastSubmitted"));
         setDialogOpen(false);
         await loadData();
       } else {
-        showError("Failed to update submission");
+        showError(resolveError(httpError(res.status)));
       }
-    } catch {
-      showError("Failed to update submission");
+    } catch (err) {
+      showError(resolveError(err));
     } finally {
       setSaving(false);
     }

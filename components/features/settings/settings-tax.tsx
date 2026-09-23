@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/lib/contexts/toast-context";
+import { httpError, useApiError } from "@/lib/utils/api-error";
 import { useCsrf } from "@/lib/contexts/csrf-context";
 import type { UserSettings } from "./settings-types";
 
@@ -50,6 +51,7 @@ export function SettingsTax({ settings, updateSetting }: SettingsTaxProps) {
   const t = useTranslations("settings.panel");
   const tSettings = useTranslations("settings");
   const { success, error: showError } = useToast();
+  const resolveError = useApiError();
   const { token: csrfToken } = useCsrf();
 
   const [fiscalProfile, setFiscalProfile] = useState<FiscalProfile>(defaultFiscalProfile);
@@ -112,11 +114,11 @@ export function SettingsTax({ settings, updateSetting }: SettingsTaxProps) {
         success(t("toastTaxSaved"));
         setFiscalHasChanges(false);
       } else {
-        const errBody = await response.json().catch(() => ({}));
-        showError((errBody as { error?: string }).error ?? "Failed to save tax profile");
+        // The route's `error` field is English written for a log, and the fallback was English too.
+        showError(resolveError(httpError(response.status)));
       }
-    } catch {
-      showError("Failed to save tax profile");
+    } catch (err) {
+      showError(resolveError(err));
     } finally {
       setFiscalSaving(false);
     }

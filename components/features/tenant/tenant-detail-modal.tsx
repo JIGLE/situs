@@ -36,6 +36,7 @@ import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { tenantSchema, type TenantFormData } from "@/lib/schemas/tenant.schema";
 import { getActiveLease } from "@/lib/utils/lease-helpers";
+import { useSaveFailureMessage } from "@/lib/utils/api-error";
 import { TenantRelationshipMap } from "@/components/features/tenant/tenant-relationship-map";
 
 interface TenantDetailModalProps {
@@ -57,6 +58,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
   const { properties, leases, receipts } = state;
   const tenant = state.tenants.find((t) => t.id === tenantId) ?? null;
   const { success, error } = useToast();
+  const saveFailure = useSaveFailureMessage();
   const t = useTranslations("tenants");
   const tForms = useTranslations("forms");
   const tActions = useTranslations("actions");
@@ -207,14 +209,17 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
     setIsEditing(false);
   }
 
+  // One toast per outcome. These said "Tenant updated" and "Failed to save tenant" in English, on
+  // top of the action's own toast: a failed save showed a translated error and then an English one.
   async function handleSave() {
     try {
       const data = tenantSchema.parse(formData);
       await updateTenant(tenant!.id, data);
-      success?.("Tenant updated");
+      success?.(t("toastUpdated"));
       setIsEditing(false);
-    } catch {
-      error?.("Failed to save tenant");
+    } catch (err) {
+      const message = saveFailure(err);
+      if (message) error?.(message);
     }
   }
 
@@ -222,17 +227,18 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
     confirmDialog.confirm(
       {
         title: t("deleteOne.title"),
-        description: `"${tenant!.name}" will be permanently removed. This action cannot be undone.`,
+        description: t("deleteOne.description", { name: tenant!.name }),
         confirmLabel: t("deleteOne.confirmLabel"),
         variant: "destructive",
       },
       async () => {
         try {
           await deleteTenant(tenant!.id);
-          success?.("Tenant deleted");
+          success?.(t("toastDeleted", { name: tenant!.name }));
           onClose();
-        } catch {
-          error?.("Failed to delete tenant");
+        } catch (err) {
+          const message = saveFailure(err);
+          if (message) error?.(message);
         }
       },
     );

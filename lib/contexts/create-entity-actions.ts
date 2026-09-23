@@ -6,6 +6,7 @@
  */
 
 import { apiFetch } from "@/lib/utils/api-client";
+import { markReported } from "@/lib/utils/api-error";
 
 export interface EntityActions<T extends { id: string }> {
   add: (data: Partial<T>) => Promise<T>;
@@ -29,14 +30,14 @@ interface EntityActionConfig<T extends { id: string }> {
   getItems: () => T[];
   /** Dispatch updated list to state */
   setItems: (items: T[]) => void;
-  /** Show error toast */
+  /**
+   * Show error toast. Failures are the only thing this factory reports: a success belongs to the
+   * form or screen that asked for it, which already says so in the user's language. The factory
+   * used to add an English "Owner added successfully" on top of that.
+   */
   showError: (msg: string) => void;
-  /** Show success toast */
-  showSuccess?: (msg: string) => void;
   /** CSRF token */
   csrfToken: string | null;
-  /** Human-readable entity name for error messages */
-  entityName: string;
   /** Whether to require userId check (default: true) */
   requireAuth?: boolean;
   /** Current userId for auth check */
@@ -62,61 +63,61 @@ export function createEntityActions<T extends { id: string }>(
     getItems,
     setItems,
     showError,
-    showSuccess,
     csrfToken,
-    entityName,
     requireAuth = true,
     userId,
     prependNew = false,
     resolveError,
   } = config;
 
-  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+  // Inside each `try`, so a signed-out attempt is reported like any other failure rather than
+  // rejecting with nothing on screen.
+  const assertSignedIn = () => {
+    if (requireAuth && !userId) throw new Error("User not authenticated");
+  };
 
   const add = async (data: Partial<T>): Promise<T> => {
-    if (requireAuth && !userId) throw new Error("User not authenticated");
     try {
+      assertSignedIn();
       const res = await apiFetch<T | { data: T }>(endpoint, csrfToken, "POST", data);
       const created = (res as { data: T }).data ?? (res as T);
       setItems(prependNew ? [created, ...getItems()] : [...getItems(), created]);
-      showSuccess?.(`${capitalize(entityName)} added successfully`);
       return created;
     } catch (err) {
       const msg = resolveError(err);
       showError(msg);
-      throw err;
+      // Marked, so the caller's own `catch` knows the user has already been told.
+      throw markReported(err);
     }
   };
 
   const update = async (id: string, data: Partial<T>): Promise<T> => {
-    if (requireAuth && !userId) throw new Error("User not authenticated");
     try {
+      assertSignedIn();
       const res = await apiFetch<T | { data: T }>(`${endpoint}/${id}`, csrfToken, "PUT", data);
       const updated = (res as { data: T }).data ?? (res as T);
       setItems(getItems().map((item) => (item.id === id ? updated : item)));
-      showSuccess?.(`${capitalize(entityName)} updated successfully`);
       return updated;
     } catch (err) {
       const msg = resolveError(err);
       showError(msg);
-      throw err;
+      throw markReported(err);
     }
   };
 
   const remove = async (id: string): Promise<void> => {
-    if (requireAuth && !userId) throw new Error("User not authenticated");
     const previous = getItems();
-    // Optimistic delete
-    setItems(previous.filter((item) => item.id !== id));
     try {
+      assertSignedIn();
+      // Optimistic delete
+      setItems(previous.filter((item) => item.id !== id));
       await apiFetch(`${endpoint}/${id}`, csrfToken, "DELETE");
-      showSuccess?.(`${capitalize(entityName)} deleted successfully`);
     } catch (err) {
       // Rollback on failure
       setItems(previous);
       const msg = resolveError(err);
       showError(msg);
-      throw err;
+      throw markReported(err);
     }
   };
 

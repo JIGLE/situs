@@ -4,6 +4,7 @@ import * as React from "react";
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { ZodError, ZodSchema } from "zod";
 import { useToast } from "@/lib/contexts/toast-context";
+import { useSaveFailureMessage } from "@/lib/utils/api-error";
 import { logger } from "@/lib/utils/logger";
 
 // ============================================
@@ -13,12 +14,20 @@ import { logger } from "@/lib/utils/logger";
 export interface UseFormDialogOptions<T> {
   schema: ZodSchema<T>;
   onSubmit: (data: T, isEdit: boolean) => Promise<void>;
+  /**
+   * Replaces the failure toast. Called with the translated sentence for the form's own validation
+   * failure, or for a failure nobody has reported — never for one the entity action already
+   * toasted, which is the case that used to show twice.
+   */
   onError?: (errorMessage: string) => void;
+  /**
+   * Toasted once `onSubmit` resolves. No default: a screen that reports its own success passes
+   * none and gets no second toast. The default used to be English — "Item created successfully!".
+   */
   successMessage?: {
     create: string;
     update: string;
   };
-  errorMessage?: string;
   initialData: T;
   // Auto-save options
   autoSave?: {
@@ -91,14 +100,14 @@ export function useFormDialog<T extends Record<string, unknown>, E = T>({
   schema,
   onSubmit,
   onError: onErrorCallback,
-  successMessage = { create: "Item created successfully!", update: "Item updated successfully!" },
-  errorMessage = "Failed to save. Please try again.",
+  successMessage,
   initialData,
   autoSave = { enabled: false, key: "form-autosave" },
   persistence = { enabled: false },
   validation = { validateOnChange: false, debounceValidation: 500, showFieldErrors: true },
 }: UseFormDialogOptions<T>): UseFormDialogReturn<T, E> {
   const { success, error } = useToast();
+  const failureMessage = useSaveFailureMessage();
 
   // ============================================
   // Core State
@@ -540,8 +549,9 @@ export function useFormDialog<T extends Record<string, unknown>, E = T>({
         // Call the onSubmit handler
         await onSubmit(validatedData, !!editingItem);
 
-        // Show success message
-        success(editingItem ? successMessage.update : successMessage.create);
+        if (successMessage) {
+          success(editingItem ? successMessage.update : successMessage.create);
+        }
 
         // Close dialog and reset
         closeDialog();
@@ -556,23 +566,21 @@ export function useFormDialog<T extends Record<string, unknown>, E = T>({
             }
           });
           setFormErrors(errors);
-          const errorMsg = "Please fix the form errors below.";
-          if (onErrorCallback) {
-            onErrorCallback(errorMsg);
-          } else {
-            error(errorMsg);
-          }
         } else {
-          const errorMsg = errorMessage;
-          if (onErrorCallback) {
-            onErrorCallback(errorMsg);
-          } else {
-            error(errorMsg);
-          }
           logger.error(
             "Form submission error",
             err instanceof Error ? err : new Error(String(err)),
           );
+        }
+
+        // Null when the entity action has already told the user; see `useSaveFailureMessage`.
+        const message = failureMessage(err);
+        if (message) {
+          if (onErrorCallback) {
+            onErrorCallback(message);
+          } else {
+            error(message);
+          }
         }
       } finally {
         setIsSubmitting(false);
@@ -585,7 +593,7 @@ export function useFormDialog<T extends Record<string, unknown>, E = T>({
       onErrorCallback,
       editingItem,
       successMessage,
-      errorMessage,
+      failureMessage,
       success,
       error,
       closeDialog,

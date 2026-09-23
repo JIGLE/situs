@@ -80,6 +80,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
   const [activeTab, setActiveTab] = useTabPersistence("property-detail", "overview");
   const t = useTranslations("propertyDetail");
   const tFin = useTranslations("financial");
+  const tTenants = useTranslations("tenants");
   const tTypes = useTranslations("properties.types");
   const tPeriod = useTranslations("rentPeriodStatus");
   const apiError = useApiError();
@@ -165,8 +166,10 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
     schema: expenseSchema,
     initialData: expenseInitialData,
     onSubmit: handleExpenseSubmit,
-    successMessage: { create: "Expense recorded!", update: "Expense updated!" },
-    errorMessage: "Failed to save expense.",
+    successMessage: {
+      create: tFin("expenseForm.toastCreated"),
+      update: tFin("expenseForm.toastUpdated"),
+    },
   });
 
   // Quick-add: Receipt / payment dialog (pre-filled with this property)
@@ -174,8 +177,10 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
     schema: receiptSchema,
     initialData: receiptInitialData,
     onSubmit: handleReceiptSubmit,
-    successMessage: { create: "Payment recorded!", update: "Payment updated!" },
-    errorMessage: "Failed to record payment.",
+    successMessage: {
+      create: tFin("receipts.toastCreated"),
+      update: tFin("receipts.toastUpdated"),
+    },
   });
 
   // Add tenant, in place. This used to deep-link to /people, which meant leaving the property
@@ -206,8 +211,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
     schema: tenantSchema,
     initialData: tenantInitialData,
     onSubmit: handleTenantSubmit,
-    successMessage: { create: "Tenant added!", update: "Tenant updated!" },
-    errorMessage: "Failed to add tenant.",
+    successMessage: { create: tTenants("toastCreated"), update: tTenants("toastUpdated") },
   });
 
   // Edit property: own instance of the same form/schema/updateProperty path

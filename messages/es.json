@@ -61,7 +61,8 @@
       "noActiveLease": "Ocupado, sin contrato activo",
       "noPriorMonth": "Sin recibos el mes anterior",
       "vsLastMonth": "vs mes anterior"
-    }
+    },
+    "toastBuildingCreated": "Edificio añadido"
   },
   "settings": {
     "title": "Configuración",
@@ -693,7 +694,8 @@
       "conflict": "Alguien ha modificado esto mientras editaba. Recargue e inténtelo de nuevo.",
       "planLimit": "Su plan no incluye esta función. Mejore su plan para continuar.",
       "tooMany": "Demasiadas solicitudes. Espere un momento e inténtelo de nuevo.",
-      "serverError": "El servidor ha tenido un problema. Inténtelo de nuevo en unos momentos."
+      "serverError": "El servidor ha tenido un problema. Inténtelo de nuevo en unos momentos.",
+      "securityTokenExpired": "Su token de seguridad ha caducado. Actualice la página e inténtelo de nuevo."
     }
   },
   "compliance": {
@@ -757,7 +759,8 @@
     "modelo179DialogTitle": "Marcar como presentado a la AT",
     "modelo179DialogDescription": "Introduzca la referencia de la AT para la presentación del Modelo 179 de {tenant} — {property} ({year}).",
     "modelo179ATRefPlaceholder": "p. ej. AT2025-XXXXXXXX",
-    "modelo179Saving": "Guardando…"
+    "modelo179Saving": "Guardando…",
+    "modelo179ToastSubmitted": "Modelo 179 marcado como presentado"
   },
   "tax": {
     "title": "Cálculo de Impuestos",
@@ -1121,7 +1124,6 @@
     "editOwner": "Editar propietario",
     "deleteOwner": "Eliminar propietario",
     "toastDeleted": "Propietario eliminado correctamente",
-    "toastUpdateFailed": "No se ha podido actualizar el propietario.",
     "deleteDescription": "Este propietario se eliminará de forma permanente. Esta acción no se puede deshacer."
   },
   "calendar": {
@@ -1248,7 +1250,9 @@
       "filterAssetsLabel": "Filtrar activos por nombre o dirección",
       "attentionOnly": "Mostrar solo activos que requieren atención",
       "selectAsset": "Selecciona un activo del árbol para abrir su espacio de trabajo."
-    }
+    },
+    "toastCreated": "Inmueble añadido",
+    "toastUpdated": "Inmueble actualizado"
   },
   "financial": {
     "title": "Finanzas",
@@ -1425,8 +1429,7 @@
       "selectFrequency": "Seleccionar periodicidad",
       "submit": "Crear gasto",
       "toastCreated": "Gasto registrado",
-      "toastUpdated": "Gasto actualizado",
-      "toastFailed": "No se ha podido guardar el gasto. Inténtalo de nuevo."
+      "toastUpdated": "Gasto actualizado"
     },
     "tax": {
       "heading": "Estimación fiscal — {country}",

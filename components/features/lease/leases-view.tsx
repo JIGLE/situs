@@ -62,6 +62,7 @@ import { Lease } from "@/lib/types";
 import { leaseSchema, type LeaseFormData } from "@/lib/schemas/lease.schema";
 import { useToast } from "@/lib/contexts/toast-context";
 import { useFormDialog } from "@/lib/hooks/use-form-dialog";
+import { wasReported } from "@/lib/utils/api-error";
 import { useMultiStepForm, StepConfig } from "@/lib/hooks/use-multi-step-form";
 import {
   MultiStepFormContainer,
@@ -351,8 +352,9 @@ export function LeasesView(): React.ReactElement {
       setBulkIncreaseOpen(false);
       setBulkPct("");
       setSelectedLeaseIds(new Set());
-    } catch {
-      error(t("toast.rentIncreaseFailed"));
+    } catch (err) {
+      // `updateLease` reports its own failures; saying so again would be a second toast.
+      if (!wasReported(err)) error(t("toast.rentIncreaseFailed"));
     } finally {
       setBulkApplying(false);
     }

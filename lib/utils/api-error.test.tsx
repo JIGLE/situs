@@ -11,7 +11,13 @@
  */
 import { describe, it, expect } from "vitest";
 import { renderWithProviders, screen } from "@/tests/helpers/render-with-providers";
-import { useApiError } from "@/lib/utils/api-error";
+import {
+  markReported,
+  useApiError,
+  useSaveFailureMessage,
+  wasReported,
+} from "@/lib/utils/api-error";
+import { z } from "zod";
 import ptMessages from "@/messages/pt.json";
 
 /** Shapes an error the way `apiFetch` does when a response comes back not-ok. */
@@ -82,5 +88,56 @@ describe("useApiError", () => {
 
   it("falls back to generic for a non-Error value", () => {
     expect(messageFor("just a string")).toBe(api.generic);
+  });
+});
+
+/**
+ * One toast per failed save. The entity actions toast every failure and rethrow, so the screen can
+ * still react; the screen's own `catch` used to toast the same failure a second time, generically
+ * and in English. The mark is how a `catch` downstream can tell.
+ */
+describe("markReported / wasReported", () => {
+  it("marks the error itself, so it still reaches the caller unchanged", () => {
+    const err = apiError("Internal server error", 500);
+
+    expect(markReported(err)).toBe(err);
+    expect(wasReported(err)).toBe(true);
+    expect((err as Error & { status?: number }).status).toBe(500);
+  });
+
+  it("does not treat an unmarked error, or a thrown non-object, as reported", () => {
+    expect(wasReported(new Error("x"))).toBe(false);
+    expect(wasReported("x")).toBe(false);
+    expect(wasReported(null)).toBe(false);
+  });
+});
+
+function FailureProbe({ err }: { err: unknown }) {
+  const failure = useSaveFailureMessage();
+  return <p data-testid="msg">{String(failure(err))}</p>;
+}
+
+function failureFor(err: unknown): string {
+  const { unmount } = renderWithProviders(<FailureProbe err={err} />, { initialLocale: "pt" });
+  const text = screen.getByTestId("msg").textContent ?? "";
+  unmount();
+  return text;
+}
+
+describe("useSaveFailureMessage", () => {
+  it("asks the user to check the form when the form's own schema refused it", () => {
+    const zodError = z.object({ name: z.string() }).safeParse({}).error;
+
+    expect(failureFor(zodError)).toBe(api.invalidInput);
+  });
+
+  it("says nothing more about a failure the action already reported", () => {
+    expect(failureFor(markReported(apiError("Internal server error", 500)))).toBe("null");
+  });
+
+  it("reports anything else once, in the user's language rather than the error's", () => {
+    const message = failureFor(new TypeError("contractFile.arrayBuffer is not a function"));
+
+    expect(message).toBe(api.generic);
   });
 });

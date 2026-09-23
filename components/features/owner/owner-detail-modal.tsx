@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useApp } from "@/lib/contexts/app-context";
 import { useToast } from "@/lib/contexts/toast-context";
+import { useSaveFailureMessage } from "@/lib/utils/api-error";
 import { ownerSchema, type OwnerFormData } from "@/lib/schemas/owner.schema";
 import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
@@ -23,6 +24,7 @@ export function OwnerDetailModal({ ownerId, onClose }: OwnerDetailModalProps) {
   const { state, updateOwner, deleteOwner } = useApp();
   const owner = state.owners.find((o) => o.id === ownerId) ?? null;
   const { success, error } = useToast();
+  const saveFailure = useSaveFailureMessage();
   const t = useTranslations("owners");
   const tForms = useTranslations("forms");
   const tActions = useTranslations("actions");
@@ -64,11 +66,11 @@ export function OwnerDetailModal({ ownerId, onClose }: OwnerDetailModalProps) {
       success(t("toastUpdated"));
       setIsEditing(false);
     } catch (err) {
-      if (err instanceof Error) {
-        error(err.message);
-      } else {
-        error(t("toastUpdateFailed"));
-      }
+      // This toasted `err.message`: Zod's English, or the server's, on top of the action's own
+      // translated toast. Now the form's validation says "check the form", and a failure the
+      // action already reported is not reported twice.
+      const message = saveFailure(err);
+      if (message) error(message);
     }
   };
 
