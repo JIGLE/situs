@@ -458,49 +458,6 @@ body {
   font-family: var(--font-display);
 }
 
-.text-display-medium {
-  font-family: var(--font-display);
-  font-size: 2.5rem;
-  font-weight: 400;
-  line-height: 0.95;
-  letter-spacing: -0.05em;
-}
-
-.text-display-small {
-  font-family: var(--font-display);
-  font-size: 2rem;
-  font-weight: 400;
-  line-height: 1.05;
-  letter-spacing: -0.04em;
-}
-
-.text-heading-medium {
-  font-size: 1.25rem;
-  font-weight: 500;
-  line-height: 1.4;
-}
-
-.text-heading-small {
-  font-size: 1.125rem;
-  font-weight: 500;
-  line-height: 1.5;
-}
-
-.text-body-small {
-  font-size: 0.75rem;
-  font-weight: 400;
-  line-height: 1.4;
-}
-
-.text-caption {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  font-weight: 400;
-  line-height: 1.3;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
 /* ============================================
    OVERLAY ENTER / EXIT
    ============================================
@@ -695,15 +652,6 @@ body {
 
 .focus-ring {
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
-}
-
-.hover-lift {
-  @apply transition-transform duration-200 ease-out hover:-translate-y-0.5;
-}
-
-.surface-elevated {
-  background-color: var(--color-surface-elevated);
-  border: 1px solid var(--color-border);
 }
 
 /* ============================================

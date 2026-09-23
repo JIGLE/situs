@@ -34,7 +34,6 @@ const ALLOWLIST = [
   "empty-state-illustrations",
   "scenario-runner",
   "opengraph-image",
-  "/charts/",
   // Marketing landing page — intentionally brand-tinted, not token-driven.
   path.join("app", "[locale]", "page.tsx"),
 ];
@@ -68,7 +67,10 @@ const ALLOWLIST = [
 // `from-zinc-700 via-zinc-600 to-zinc-700` on an element whose background was already being set
 // twice over — so the stops never rendered, making it dead code and a theme violation at once.
 // The other two were slack: the tree measured 558 against a ceiling of 560.
-const BASELINE = 556;
+// 556 → 331 on 2026-09-23. The scope cutdown deleted whole features and never lowered this, so the
+// tree measured 364 against 556; deleting seven unimported `components/ui` modules took it to 331.
+// The `/charts/` allowlist entry went too: it matched no file in the tree.
+const BASELINE = 331;
 
 function walk(dir, acc) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

@@ -1,3 +1,6 @@
+// Module augmentation for NextAuth's Session, User and JWT. Nothing imports this file: tsc picks
+// it up through tsconfig's `include`, so an import-graph sweep reports it as dead. Deleting it
+// untypes `session.user.id` and `.role` everywhere — `npm run type-check` is what notices.
 declare module "next-auth" {
   interface Session {
     expires: string;
