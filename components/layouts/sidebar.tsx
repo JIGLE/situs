@@ -92,8 +92,8 @@ function SidebarFooter({
           size="sm"
           onClick={() => signOut({ callbackUrl: "/" })}
           className="h-8 w-8 shrink-0 p-0 hover:bg-[var(--color-error-muted)] hover:text-[var(--color-destructive)]"
-          title="Sign Out"
-          aria-label="Sign Out"
+          title={tNav("signOut")}
+          aria-label={tNav("signOut")}
         >
           <LogOut className="h-4 w-4" />
         </Button>
@@ -177,8 +177,8 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
           <button
             onClick={handleToggleCollapsed}
             className="w-full flex items-center justify-center h-full"
-            title="Expand Sidebar"
-            aria-label="Expand Sidebar"
+            title={t("expandSidebar")}
+            aria-label={t("expandSidebar")}
           >
             <SitusPortalMark className="h-7 w-7" />
           </button>
@@ -196,8 +196,8 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
               size="sm"
               onClick={handleToggleCollapsed}
               className="h-8 w-8 p-0 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
-              title="Collapse Sidebar"
-              aria-label="Collapse Sidebar"
+              title={t("collapseSidebar")}
+              aria-label={t("collapseSidebar")}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -221,7 +221,7 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
       {/* Navigation */}
       <nav
         id="main-navigation"
-        aria-label="Main navigation"
+        aria-label={t("mainNavLabel")}
         className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-2 py-3"
       >
         {menuItems.map((group, groupIndex) => (

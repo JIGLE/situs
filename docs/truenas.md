@@ -71,8 +71,8 @@ write is almost always this.
 | `DATABASE_URL`       | `file:/app/data/situs.sqlite` | Path **inside** the container, on the mounted dataset.                    |
 | `PII_ENCRYPTION_KEY` | `openssl rand -hex 32`        | Exactly 64 hex chars. **Required in production** — see below.             |
 
-`PII_ENCRYPTION_KEY` encrypts IBAN, tax ID (NIF) and phone at rest. Without it the app stops with
-an error naming the variable. To run without encryption anyway — a throwaway staging box — set
+`PII_ENCRYPTION_KEY` encrypts IBAN, tax ID (NIF) and phone at rest. Without it the app refuses to
+start, with an error naming the variable. To run without encryption anyway — a throwaway staging box — set
 `ALLOW_UNENCRYPTED_PII=true`; those fields are then stored in plaintext, with a logged warning.
 
 If you set the key on a deployment that already has data, encrypt the rows written before it
@@ -453,8 +453,8 @@ container's own environment, and take `--dry-run`:
 
 ## Troubleshooting
 
-**The app stops with a `PII_ENCRYPTION_KEY` error.** A missing key is a deliberate hard stop, not a
-crash — set it (see [Environment variables](#environment-variables)).
+**The app will not start, and the log names `PII_ENCRYPTION_KEY`.** A missing key is a deliberate
+hard stop, not a crash — set it (see [Environment variables](#environment-variables)).
 
 **All API routes return 500 "Authentication failed".** The database has no tables. Confirm the
 `/app/data` mount is writable by 1001:1001, then restart so `prestart` can run, or initialise

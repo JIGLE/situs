@@ -24,9 +24,10 @@ function getEncryptionKey(): Buffer | null {
 }
 
 /**
- * Warn once per process when PII is being written unencrypted. `lib/utils/env.ts` refuses to boot
- * production without a key, but scripts and one-off tooling do not always go through it — and a
- * silent fallback to plaintext is exactly the failure that should never be quiet.
+ * Warn once per process when PII is being written unencrypted. The server refuses to boot
+ * production without a key (`instrumentation.ts` runs `lib/utils/env.ts` at startup), but scripts
+ * and one-off tooling do not go through it — and a silent fallback to plaintext is exactly the
+ * failure that should never be quiet.
  */
 let warnedAboutMissingKey = false;
 

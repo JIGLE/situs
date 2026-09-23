@@ -402,7 +402,14 @@
     "signOut": "Terminar sessão",
     "coreGroup": "Núcleo",
     "portfolio": "Portefólio",
-    "admin": "Administração"
+    "admin": "Administração",
+    "skipToContent": "Saltar para o conteúdo principal",
+    "skipToNavigation": "Saltar para a navegação",
+    "sidebarLabel": "Navegação lateral",
+    "mainNavLabel": "Navegação principal",
+    "mobileNavLabel": "Navegação móvel",
+    "expandSidebar": "Expandir barra lateral",
+    "collapseSidebar": "Recolher barra lateral"
   },
   "dashboard": {
     "welcome": "Bem-vindo ao seu painel de gestão de imóveis",

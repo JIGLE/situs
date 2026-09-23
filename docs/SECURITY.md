@@ -15,9 +15,10 @@ PII_ENCRYPTION_KEY=$(openssl rand -hex 32)
 ```
 
 `PII_ENCRYPTION_KEY` is not optional in production. Without it `encryptPII` stores IBAN, NIF and
-phone in plaintext, and `lib/utils/env.ts` stops the process with an error naming the variable
-when a module that imports it loads. `ALLOW_UNENCRYPTED_PII=true` overrides that for a throwaway
-instance.
+phone in plaintext, so the server refuses to start, with an error naming the variable:
+`instrumentation.ts` runs `lib/utils/env.ts` before the first request, and the image's `prestart`
+(`scripts/validate-env.js`) refuses before it touches the database. `ALLOW_UNENCRYPTED_PII=true`
+overrides both for a throwaway instance.
 
 One secret deliberately does **not** go in the environment. The Enable Banking RSA key is mounted
 as a file and pointed at by `ENABLE_BANKING_PRIVATE_KEY_FILE` — a PEM is ~1,700 characters, past
@@ -33,6 +34,9 @@ fallback. It runs `prisma db push` and `prisma generate`.
 - With `INIT_SECRET` set, a request needs a signed-in session and a CSRF token — `proxy.ts` checks
   both before the route runs — plus `Authorization: Bearer <INIT_SECRET>` or an HMAC signature in
   `X-Signature`.
+- The same secret is the production bearer for `/api/metrics` and `/api/monitoring/metrics`, which
+  need no session (see [MONITORING.md](MONITORING.md#metrics)). Setting it for a scraper therefore
+  also arms this endpoint — still behind the session and CSRF checks above.
 
 ## CSRF
 
@@ -43,7 +47,9 @@ among them — skip the check and authenticate by signature or shared secret ins
 
 ## Rate limiting
 
-Rate limits are declared in code; there are no rate-limit environment variables. Three
+Rate limits are declared in code; no environment variable sets one. Two change how they behave:
+`TRUSTED_PROXY_COUNT` (below), and `E2E_DISABLE_RATE_LIMIT=true`, which switches the first two off
+so a test run from one address is not throttled — never set it on a real instance. Three
 implementations are live, which is worth knowing before you add a fourth:
 
 | Where                            | Export                     | Used by                                            | Backing store                                  |
@@ -56,10 +62,10 @@ implementations are live, which is worth knowing before you add a fourth:
 second keeps its counters. Without it every limiter holds state in process: correct for a single
 self-hosted instance, but the counters reset on restart and are not shared across replicas.
 
-The first two resolve the client IP through `resolveClientIp` (`lib/utils/security.ts`), which
-counts `X-Forwarded-For` from the right. Reading it from the left lets a caller choose their own
-bucket per request and defeats the limit — and the init endpoint's limiter still does exactly
-that, which is tolerable only because the endpoint also demands a session and `INIT_SECRET`.
+All three resolve the client IP through `resolveClientIp` (`lib/utils/security.ts`), which
+counts `X-Forwarded-For` from the right, trusting as many hops as `TRUSTED_PROXY_COUNT` says
+(default 1). Reading it from the left would let a caller choose their own bucket per request and
+defeat the limit — or pick someone else's bucket and exhaust it.
 
 ## Security headers
 

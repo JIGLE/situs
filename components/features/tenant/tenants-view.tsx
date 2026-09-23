@@ -81,7 +81,6 @@ function TenantForm({
   const isEdit = !!dialog.editingItem;
   const t = useTranslations("tenants");
   const tForms = useTranslations("forms");
-  const tStatus = useTranslations("status");
   const tActions = useTranslations("actions");
 
   return (
@@ -227,31 +226,10 @@ function TenantForm({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="paymentStatus">{t("paymentStatus")}</Label>
-              {isEdit ? (
-                <p className="text-sm text-muted-foreground">{t("paymentStatusDerived")}</p>
-              ) : (
-                <Select
-                  value={dialog.formData.paymentStatus}
-                  onValueChange={(value: Tenant["paymentStatus"]) =>
-                    dialog.updateFormData({ paymentStatus: value })
-                  }
-                >
-                  <SelectTrigger
-                    className={dialog.formErrors.paymentStatus ? "border-red-500" : ""}
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="paid">{tStatus("paid")}</SelectItem>
-                    <SelectItem value="pending">{tStatus("pending")}</SelectItem>
-                    <SelectItem value="overdue">{tStatus("overdue")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-              {dialog.formErrors.paymentStatus && (
-                <p className="text-sm text-destructive">{dialog.formErrors.paymentStatus}</p>
-              )}
+              <Label>{t("paymentStatus")}</Label>
+              {/* Derived from the rent ledger in both modes: the API refuses it on create and on
+                  update, so offering a choice here would only be discarded. */}
+              <p className="text-sm text-muted-foreground">{t("paymentStatusDerived")}</p>
             </div>
           </div>
 

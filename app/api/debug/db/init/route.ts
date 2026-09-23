@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { isMockMode } from "@/lib/config/data-mode";
+import { resolveClientIp } from "@/lib/utils/security";
 
 export const runtime = "nodejs";
 
@@ -60,11 +61,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: "not available" }, { status: 403 });
   }
 
-  // Get client IP for rate limiting
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown";
+  // The client address the trusted proxy saw. The leftmost X-Forwarded-For entry is whatever the
+  // caller wrote, so keying on it handed every request a fresh bucket for the asking.
+  const ip = resolveClientIp(request);
 
   // Apply rate limiting
   if (isRateLimited(ip)) {

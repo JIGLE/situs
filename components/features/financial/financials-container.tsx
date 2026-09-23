@@ -128,7 +128,6 @@ export function FinancialsContainer() {
     { value: "rent-roll", label: t("tabs.rentRoll"), icon: BadgeEuro },
     { value: "tax", label: t("tabs.tax"), icon: FileText },
   ];
-  const collapseTabs = paymentTabs.length > 4;
 
   return (
     <div className="space-y-6">
@@ -240,27 +239,19 @@ export function FinancialsContainer() {
         onValueChange={(value) => setActiveTab(value as PaymentTab)}
         className="space-y-6"
       >
-        {/* One source for both renderings. Doctrine rule 4: past ~4 tabs the bar becomes a
-            select below `md` — six triggers overflowed their container by 444px at 390px, so
-            the last three were reachable only by discovering a horizontal scroll. The tenant
-            portal sees a single tab, so it keeps the bar at every width. */}
+        {/* One source for both renderings. Responsive rule 4 is a space test, and this bar fails
+            it: six triggers overflowed their container by 444px at 390px, so the last three were
+            reachable only by discovering a horizontal scroll. Below `md` it gives way to a
+            select. */}
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          {collapseTabs && (
-            <TabsMobileSelect
-              className="md:hidden"
-              value={activeTab}
-              onValueChange={(value) => setActiveTab(value as PaymentTab)}
-              items={paymentTabs.map(({ value, label }) => ({ value, label }))}
-              aria-label={t("title")}
-            />
-          )}
-          <TabsList
-            className={cn(
-              "w-full",
-              collapseTabs && "max-md:hidden",
-              "flex max-w-full justify-start gap-1 overflow-x-auto",
-            )}
-          >
+          <TabsMobileSelect
+            className="md:hidden"
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as PaymentTab)}
+            items={paymentTabs.map(({ value, label }) => ({ value, label }))}
+            aria-label={t("title")}
+          />
+          <TabsList className="flex w-full max-w-full justify-start gap-1 overflow-x-auto max-md:hidden">
             {paymentTabs.map(({ value, label, icon: Icon }) => (
               <TabsTrigger key={value} value={value} className="flex shrink-0 items-center gap-2">
                 <Icon className="h-4 w-4 shrink-0" />

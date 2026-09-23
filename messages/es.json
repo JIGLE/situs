@@ -402,7 +402,14 @@
     "signOut": "Cerrar sesión",
     "coreGroup": "Núcleo",
     "portfolio": "Portafolio",
-    "admin": "Administración"
+    "admin": "Administración",
+    "skipToContent": "Saltar al contenido principal",
+    "skipToNavigation": "Saltar a la navegación",
+    "sidebarLabel": "Navegación lateral",
+    "mainNavLabel": "Navegación principal",
+    "mobileNavLabel": "Navegación móvil",
+    "expandSidebar": "Expandir barra lateral",
+    "collapseSidebar": "Contraer barra lateral"
   },
   "dashboard": {
     "welcome": "Bienvenido a tu panel de gestión inmobiliaria",

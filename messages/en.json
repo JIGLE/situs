@@ -402,7 +402,14 @@
     "signOut": "Sign out",
     "coreGroup": "Core",
     "portfolio": "Portfolio",
-    "admin": "Administration"
+    "admin": "Administration",
+    "skipToContent": "Skip to main content",
+    "skipToNavigation": "Skip to navigation",
+    "sidebarLabel": "Sidebar navigation",
+    "mainNavLabel": "Main navigation",
+    "mobileNavLabel": "Mobile navigation",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar"
   },
   "dashboard": {
     "welcome": "Welcome to your property management dashboard",

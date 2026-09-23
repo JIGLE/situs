@@ -26,11 +26,11 @@ const createTenantSchema = z.object({
   rent: z.number().min(0).optional().default(0),
   leaseStart: z.string().optional().default(""),
   leaseEnd: z.string().optional().default(""),
-  paymentStatus: z.enum(["paid", "overdue", "pending"]).default("pending"),
+  // paymentStatus is derived from the RentPeriod ledger (lib/services/allocation/service.ts), so a
+  // new tenant takes the column default. Accepting it here let a tenant be created "paid" with no
+  // money behind it; the update route in ./[id] has always refused it for the same reason.
   notes: z.string().max(1000).optional(),
 });
-
-const _updateTenantSchema = createTenantSchema.partial();
 
 // GET /api/tenants - Get all tenants for the authenticated user (with pagination)
 async function handleGet(request: NextRequest): Promise<Response> {

@@ -73,7 +73,7 @@ delivery works end to end. `/api/email/logs` holds the actual send history.
 and none is needed:
 
 ```
-# HELP email_sent_total Total emails sent successfully
+# HELP email_sent_total Automated reminder emails sent successfully
 # TYPE email_sent_total counter
 email_sent_total 12
 
@@ -82,19 +82,17 @@ email_sent_total 12
 process_uptime_seconds 3600.5
 ```
 
-Exposed series: `http_requests_total`, `http_errors_total`, `db_queries_total`,
-`email_sent_total`, `email_failed_total`, `process_uptime_seconds`, and
-`metrics_reset_timestamp_seconds`.
+Exposed series: `email_sent_total`, `email_failed_total`, `process_uptime_seconds` and
+`metrics_reset_timestamp_seconds`. Add `Accept: application/json` for the same numbers as JSON.
 
 Three properties worth knowing before you build anything on it:
 
-- **A scraper cannot reach it today.** `/api/metrics` is not a public route, so the proxy wants a
-  signed-in session before the route runs — and in production the route then also wants
-  `Authorization: Bearer $INIT_SECRET`. A Prometheus scraper has no session, so it gets `401`.
-  Read it from a signed-in browser in development.
-- **Three of the series never move.** Nothing increments `http_requests_total`,
-  `http_errors_total` or `db_queries_total`, so they read `0` for the life of the process. The two
-  email counters count only the automated reminder e-mails
+- **Scraping it takes `INIT_SECRET`.** The proxy lets `/api/metrics` through without a session.
+  In production the route then answers `403` unless the request carries
+  `Authorization: Bearer $INIT_SECRET` — always `403` while `INIT_SECRET` is unset. In development
+  it answers anyone. The same secret opens `/api/debug/db/init` (which also wants a session and a
+  CSRF token), so a scrape config that holds it holds more than read access to counters.
+- **The email counters count only the automated reminder e-mails**
   (`lib/services/notifications/reminder-email.ts`), not every message the app sends.
 - **The counters live in process.** They reset on every restart and every redeploy, which is
   what `metrics_reset_timestamp_seconds` is for. Treat them as rates since last boot, not as

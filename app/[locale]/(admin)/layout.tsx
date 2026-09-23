@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { SkipLink } from "@/components/ui/accessibility";
 import { PortalAccessGuard } from "@/components/shared/portal-access-guard";
 import { AdminShellNav } from "@/components/features/admin/admin-shell-nav";
@@ -19,7 +20,8 @@ import { AdminShellNav } from "@/components/features/admin/admin-shell-nav";
  * is `requireAdmin` on every `/api/admin/*` route. A non-admin who reaches these pages sees empty
  * panels and a refusal, never instance detail.
  */
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const t = await getTranslations("navigation");
   return (
     <PortalAccessGuard>
       {/*
@@ -35,7 +37,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         the detail pages that kept the narrower measure set it themselves.
       */}
       <div className="flex min-h-screen flex-col bg-[var(--color-canvas)] lg:h-screen lg:min-h-0 lg:overflow-hidden">
-        <SkipLink href="#admin-content">Skip to main content</SkipLink>
+        <SkipLink href="#admin-content">{t("skipToContent")}</SkipLink>
         <AdminShellNav />
         <main
           id="admin-content"

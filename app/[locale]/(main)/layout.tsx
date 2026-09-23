@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { getTranslations } from "next-intl/server";
 import { Sidebar } from "@/components/layouts/sidebar";
 import { MobileBottomNav, MobileTopBar } from "@/components/ui/mobile-nav";
 import { SkipLink } from "@/components/ui/accessibility";
@@ -8,21 +9,22 @@ import { PortalAccessGuard } from "@/components/shared/portal-access-guard";
 import { EntityDetailRouteClient } from "@/components/shared/entity-detail-route-client";
 import { AppDataGate } from "@/components/shared/app-data-gate";
 
-export default function MainLayout({
+export default async function MainLayout({
   children,
   modal,
 }: {
   children: React.ReactNode;
   modal?: React.ReactNode;
 }) {
+  const t = await getTranslations("navigation");
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--color-background)]">
       {/* Skip Navigation Links for Accessibility */}
-      <SkipLink href="#main-content">Skip to main content</SkipLink>
-      <SkipLink href="#main-navigation">Skip to navigation</SkipLink>
+      <SkipLink href="#main-content">{t("skipToContent")}</SkipLink>
+      <SkipLink href="#main-navigation">{t("skipToNavigation")}</SkipLink>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex md:flex-shrink-0" aria-label="Sidebar navigation">
+      <aside className="hidden md:flex md:flex-shrink-0" aria-label={t("sidebarLabel")}>
         <Sidebar />
       </aside>
 
