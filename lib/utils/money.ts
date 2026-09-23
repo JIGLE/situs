@@ -2,10 +2,10 @@
  * Monetary helpers.
  *
  * Every money column in this schema is a Prisma `Float` — IEEE-754 binary floating point,
- * which cannot represent 0.1 or 0.01 exactly. That is a deliberate, recorded decision (see
- * docs/V1_READINESS.md §D3): the allocation engine defends itself, and migrating 33 fields to
- * integer minor units across every money-handling service on a live instance is a redesign,
- * not a fix.
+ * which cannot represent 0.1 or 0.01 exactly. That is a deliberate decision, recorded in the
+ * ROADMAP.md Decisions Log (2026-08-13): the allocation engine defends itself, and migrating every
+ * money column to integer minor units across every money-handling service on a live instance is
+ * a redesign, not a fix.
  *
  * The cost of that decision is that the discipline has to be applied by hand. Repeated
  * addition accumulates representation error — `0.1 + 0.2 === 0.30000000000000004` — so a

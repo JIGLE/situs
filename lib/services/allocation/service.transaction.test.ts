@@ -15,11 +15,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
  * status never moved, or a tenant marked paid on the strength of a write that rolled back.
  *
  * WHAT THIS DOES NOT DO. It does not exercise SQL. A real integration test needs a database,
- * and `npx prisma db push` is blocked by Prisma's AI-agent guard — which is exactly why
- * `product-events.integration.test.ts` and `pii-extension.integration.test.ts` fail locally.
- * Rather than write a test that cannot be run here, this asserts the boundary structurally:
- * every write lands on the `tx` handle, never the base client. The DB-level integration test
- * remains an open P1 in docs/V1_READINESS.md.
+ * and `npx prisma db push` is blocked by Prisma's AI-agent guard — which is exactly why every
+ * `*.integration.test.ts` suite fails locally. Rather than write a test that cannot be run here,
+ * this asserts the boundary structurally: every write lands on the `tx` handle, never the base
+ * client. A DB-level integration test of this boundary does not exist yet.
  */
 
 type Spy = ReturnType<typeof vi.fn>;

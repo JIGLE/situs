@@ -1,9 +1,9 @@
 /**
  * Activation and core-loop metrics, derived from existing tables.
  *
- * docs/PRODUCT_AUDIT_2026.md §8 proposes a North-Star — "on-time compliant
- * rent cycles closed per active landlord per month" — and §9 flags that
- * nothing today can measure it. Rather than instrument every creation
+ * The 2026 product audit proposed a North-Star — "on-time compliant rent
+ * cycles closed per active landlord per month" — and found that nothing
+ * could measure it. Rather than instrument every creation
  * endpoint with a new event (Property/Tenant/Lease/Receipt already record
  * `createdAt`, and it's the ground truth), this derives the activation
  * timeline and the core-loop input metrics directly from those tables. It

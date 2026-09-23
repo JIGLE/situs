@@ -888,8 +888,8 @@ model UserSettings {
   @@map("user_settings")
 }
 
-/// Lightweight product-analytics event sink (docs/PRODUCT_AUDIT_2026.md §9: the
-/// app had landing-page funnel tracking but no in-app product analytics).
+/// Lightweight product-analytics event sink (the app had landing-page funnel
+/// tracking but no in-app product analytics).
 /// Deliberately generic (name + JSON metadata) rather than a table per event
 /// type — most core-loop facts (first property/tenant/lease/receipt, rent
 /// marked paid, rent receipt issued) are already derivable retroactively from
@@ -913,8 +913,8 @@ model ProductEvent {
 /// SaaS subscription state for the app itself (distinct from rent collection,
 /// which reaches the ledger as a matched bank movement, not a card payment).
 /// No row for a user means Free — a row is only created once a Checkout
-/// Session completes (docs/PRODUCT_AUDIT_2026.md §2: pricing tiers were
-/// previously unbacked marketing copy).
+/// Session completes (the pricing tiers were previously unbacked marketing
+/// copy).
 model Subscription {
   id                   String             @id @default(cuid())
   userId               String             @unique
