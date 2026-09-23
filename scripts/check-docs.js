@@ -362,6 +362,16 @@ const RETIRED_CLAIMS = [
       "SendGrid signed events with ECDSA, Brevo signs nothing, so the new route requires a " +
       "shared secret instead of verifying a signature",
   },
+  {
+    // True until artillery, the load tester, was removed with its harness. The moderate csv-parse
+    // advisory reached the tree only through it, so `verify:ci` stopped at security:audit and never
+    // ran the tests after it — and the docs taught sessions to expect that.
+    pattern: /security:audit\W{0,4} exits non-zero|csv-parse\W{0,2} advisory/i,
+    retired: "2026-09-23 (stale docs and dead code)",
+    because:
+      "artillery was the only path to that advisory and is gone; npm audit reports 0 " +
+      "vulnerabilities, so a security:audit failure is now a finding to fix, not a known state",
+  },
 ];
 
 /** Lines allowed to mention a retired claim, because they are the record of its retirement. */

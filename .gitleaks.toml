@@ -5,7 +5,6 @@
     '''\.env\.local\.example$''',
     '''tests/''',
     '''e2e/''',
-    '''load-tests/test-data\.csv$''',
     '''prisma/migrations/''',
     '''\.gitleaks\.toml$''',
     '''package-lock\.json$''',

@@ -139,15 +139,14 @@ Run the full gate and **read the exit code**, not a grep of the output:
 npm run verify:ci    # type-check → lint → format:check → hygiene → security:audit → test
 ```
 
-Two results are known and expected. Neither is caused by your change, and neither should be
-re-diagnosed each session:
+One result is known and expected. It is not caused by your change and should not be
+re-diagnosed each session: **three DB-backed integration suites fail locally** — `pii-extension`,
+`bank-connection`, `product-events` — because Prisma's agent guard blocks `prisma db push` under an
+AI session. They run in CI. **Never set `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`.**
 
-- **`security:audit` exits non-zero** on a moderate `csv-parse` advisory reached through
-  `artillery`, a dev dependency. Confirmed present on clean `main`. Everything before it in the
-  chain having passed is the signal that matters.
-- **Three DB-backed integration suites fail locally** — `pii-extension`, `bank-connection`,
-  `product-events` — because Prisma's agent guard blocks `prisma db push` under an AI session.
-  They run in CI. **Never set `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`.**
+`security:audit` has no expected failure. If it reports an advisory, check whether clean `main`
+reports it too; either way it gets fixed rather than waived — through an `overrides` entry in
+`package.json` when no upgrade exists.
 
 Then commit, push with `git push -u origin <branch>`, and report what you verified rather than
 what you assumed. Count tests from the run output; a figure written from memory went into a
