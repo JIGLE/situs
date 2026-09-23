@@ -383,6 +383,15 @@ const RETIRED_CLAIMS = [
       "artillery was the only path to that advisory and is gone; npm audit reports 0 " +
       "vulnerabilities, so a security:audit failure is now a finding to fix, not a known state",
   },
+  {
+    // True while lib/utils/env.ts ran only when one of five routes first loaded it: a production
+    // server with no PII_ENCRYPTION_KEY booted and served until then.
+    pattern: /when a module (?:that imports|importing) it loads|keyless production server starts/i,
+    retired: "2026-09-23 (audit findings)",
+    because:
+      "instrumentation.ts runs lib/utils/env.ts at startup, so a production server without the " +
+      "key refuses to start and never answers a request",
+  },
 ];
 
 /** Lines allowed to mention a retired claim, because they are the record of its retirement. */

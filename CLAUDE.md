@@ -91,10 +91,10 @@ e2e/                    # Playwright E2E tests
   encrypted field. `BankAccount.iban` is encrypted at the call site (`lib/services/bank/consent.ts`)
   and never decrypted: matching uses `ibanHash`, display uses `ibanLast4`. Do not add it to
   `PII_FIELDS` — the extension would then decrypt it on every read. **Required in production**:
-  without the key `encryptPII` writes plaintext and only warns. The exit that guards against it
-  lives in `lib/utils/env.ts` and runs only when a module importing it loads — the billing routes,
-  `/api/properties`, the Stripe webhook — so a keyless production server starts and serves until
-  then. `ALLOW_UNENCRYPTED_PII=true` waives the exit and logs a warning instead.
+  without the key `encryptPII` writes plaintext and only warns, so the server refuses to start:
+  `instrumentation.ts` runs `lib/utils/env.ts` before the first request (skipped under
+  `NEXT_BUILD=true` and CI), and in the image prestart's `scripts/validate-env.js` refuses even
+  earlier. `ALLOW_UNENCRYPTED_PII=true` waives both and logs a warning instead.
 - **Reference-month rent ledger**: `RentPeriod` is one row per lease per reference month; its
   `status` is recomputed in the same transaction as every allocation write and never hand-set.
   Waterfall invariant: fill the oldest not-fully-allocated period first

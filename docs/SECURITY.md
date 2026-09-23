@@ -15,9 +15,10 @@ PII_ENCRYPTION_KEY=$(openssl rand -hex 32)
 ```
 
 `PII_ENCRYPTION_KEY` is not optional in production. Without it `encryptPII` stores IBAN, NIF and
-phone in plaintext, and `lib/utils/env.ts` stops the process with an error naming the variable
-when a module that imports it loads. `ALLOW_UNENCRYPTED_PII=true` overrides that for a throwaway
-instance.
+phone in plaintext, so the server refuses to start, with an error naming the variable:
+`instrumentation.ts` runs `lib/utils/env.ts` before the first request, and the image's `prestart`
+(`scripts/validate-env.js`) refuses before it touches the database. `ALLOW_UNENCRYPTED_PII=true`
+overrides both for a throwaway instance.
 
 One secret deliberately does **not** go in the environment. The Enable Banking RSA key is mounted
 as a file and pointed at by `ENABLE_BANKING_PRIVATE_KEY_FILE` — a PEM is ~1,700 characters, past

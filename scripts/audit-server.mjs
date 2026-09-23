@@ -14,17 +14,16 @@
  *                         harness dies at "sign-in form not found"
  *   ALLOW_DEMO_MODE       absent, /api/debug/db/seed answers 403 and every number
  *                         the run produces describes empty screens
- *   PII_ENCRYPTION_KEY    absent, the server boots, seeds, and *then* exits mid-run
- *                         (see below) — the failure lands nowhere near the cause
+ *   PII_ENCRYPTION_KEY    absent, the server refuses to start (see below)
  *   DATABASE_URL          absolute, and pointed somewhere disposable
  *
- * The PII one is the nastiest and is the reason this script always generates a key.
- * `lib/utils/env.ts` fails closed outside development: no key and no explicit waiver
- * means process.exit(1). It does that lazily, on the first request that touches an
- * encrypted field — so the boot succeeds, the seed succeeds, and the server dies on
- * the next API call with ECONNRESET at the harness. Setting a fresh key instead of
- * waiving with ALLOW_UNENCRYPTED_PII also means the encryption path is the one under
- * measurement, which is the point of having it.
+ * This script always generates a PII key. `lib/utils/env.ts` fails closed outside
+ * development — no key and no explicit waiver means process.exit(1) — and
+ * `instrumentation.ts` runs it at startup, so a keyless server never answers a request.
+ * (It used to run lazily, on the first request to a route that imported it, so the boot
+ * and the seed succeeded and the server died mid-run with ECONNRESET at the harness.)
+ * Setting a fresh key instead of waiving with ALLOW_UNENCRYPTED_PII also means the
+ * encryption path is the one under measurement, which is the point of having it.
  *
  * Note the same guard is skipped entirely under CI (`_isCI` covers GITHUB_ACTIONS), so
  * the CI audit job seeds plaintext PII into its throwaway database. Synthetic data on

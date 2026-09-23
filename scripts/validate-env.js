@@ -49,7 +49,7 @@ if (isProd) {
     "NEXTAUTH_SECRET",
     "Session signing secret (min 32 chars). Generate: openssl rand -base64 32",
   );
-  requireVar("DATABASE_URL", "Database connection string (e.g. file:/data/situs.sqlite)");
+  requireVar("DATABASE_URL", "Database connection string (e.g. file:/app/data/situs.sqlite)");
 }
 
 // NEXTAUTH_SECRET length check
@@ -73,23 +73,30 @@ requireVarIf(
   "Required when ENABLE_BILLING=true (create a Price in Stripe Dashboard)",
 );
 
-// Non-critical services
-warnVar("SENDGRID_API_KEY", "Email sending will be disabled");
+// Non-critical services. Mail goes out over SMTP (lib/services/email/transport.ts); without a host
+// the instance starts and simply does not send.
+warnVar("SMTP_HOST", "Email sending will be disabled");
 warnVar("FROM_EMAIL", "Defaults to noreply@situs.app");
 
-// CSRF secret recommended in production
-if (isProd) {
-  warnVar("CSRF_SECRET", "CSRF protection secret; falls back to NEXTAUTH_SECRET");
-}
-
 // PII field encryption (IBANs, NIFs, phone numbers) — see lib/utils/pii-encryption.ts.
-// Without a key, encryptPII() silently no-ops and PII is stored in plaintext.
+// Without a key, encryptPII() writes plaintext. The server refuses to start in that state
+// (instrumentation.ts runs lib/utils/env.ts at boot), so refuse here too, before prestart touches
+// the database — with the same explicit waiver.
 if (isProd) {
-  warnVar(
-    "PII_ENCRYPTION_KEY",
-    "PII (IBAN/NIF/phone) will be stored in PLAINTEXT without this. " +
-      "Generate: openssl rand -hex 32. Run scripts/backfill-pii-encryption.js after setting it.",
-  );
+  const keyConfigured =
+    !!process.env.PII_ENCRYPTION_KEY && process.env.PII_ENCRYPTION_KEY.length >= 64;
+  if (!keyConfigured && process.env.ALLOW_UNENCRYPTED_PII === "true") {
+    warnings.push(
+      "  ⚠ PII_ENCRYPTION_KEY — unset, and ALLOW_UNENCRYPTED_PII=true: IBAN, NIF and phone are " +
+        "stored in PLAINTEXT",
+    );
+  } else if (!keyConfigured) {
+    errors.push(
+      "  ✗ PII_ENCRYPTION_KEY — 64 hex characters, required in production. Generate one with " +
+        "openssl rand -hex 32; an instance that already holds data then runs " +
+        "scripts/backfill-pii-encryption.js. ALLOW_UNENCRYPTED_PII=true runs without it.",
+    );
+  }
 } else if (process.env.PII_ENCRYPTION_KEY && process.env.PII_ENCRYPTION_KEY.length < 64) {
   warnings.push(
     "  ⚠ PII_ENCRYPTION_KEY — must be 64 hex characters (32 bytes); shorter values are ignored",
