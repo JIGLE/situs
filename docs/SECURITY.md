@@ -47,7 +47,9 @@ among them — skip the check and authenticate by signature or shared secret ins
 
 ## Rate limiting
 
-Rate limits are declared in code; there are no rate-limit environment variables. Three
+Rate limits are declared in code; no environment variable sets one. Two change how they behave:
+`TRUSTED_PROXY_COUNT` (below), and `E2E_DISABLE_RATE_LIMIT=true`, which switches the first two off
+so a test run from one address is not throttled — never set it on a real instance. Three
 implementations are live, which is worth knowing before you add a fourth:
 
 | Where                            | Export                     | Used by                                            | Backing store                                  |
@@ -60,10 +62,10 @@ implementations are live, which is worth knowing before you add a fourth:
 second keeps its counters. Without it every limiter holds state in process: correct for a single
 self-hosted instance, but the counters reset on restart and are not shared across replicas.
 
-The first two resolve the client IP through `resolveClientIp` (`lib/utils/security.ts`), which
-counts `X-Forwarded-For` from the right. Reading it from the left lets a caller choose their own
-bucket per request and defeats the limit — and the init endpoint's limiter still does exactly
-that, which is tolerable only because the endpoint also demands a session and `INIT_SECRET`.
+All three resolve the client IP through `resolveClientIp` (`lib/utils/security.ts`), which
+counts `X-Forwarded-For` from the right, trusting as many hops as `TRUSTED_PROXY_COUNT` says
+(default 1). Reading it from the left would let a caller choose their own bucket per request and
+defeat the limit — or pick someone else's bucket and exhaust it.
 
 ## Security headers
 

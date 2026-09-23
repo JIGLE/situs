@@ -392,6 +392,20 @@ const RETIRED_CLAIMS = [
       "instrumentation.ts runs lib/utils/env.ts at startup, so a production server without the " +
       "key refuses to start and never answers a request",
   },
+  {
+    pattern: /limiter still does exactly/i,
+    retired: "2026-09-23 (audit findings)",
+    because:
+      "the init endpoint's limiter now resolves the client through resolveClientIp like the " +
+      "other two; none reads X-Forwarded-For from the left",
+  },
+  {
+    pattern: /no rate-limit environment variables/i,
+    retired: "2026-09-23 (audit findings)",
+    because:
+      "E2E_DISABLE_RATE_LIMIT=true switches two of the three limiters off, and " +
+      "TRUSTED_PROXY_COUNT decides how all three find the client",
+  },
 ];
 
 /** Lines allowed to mention a retired claim, because they are the record of its retirement. */

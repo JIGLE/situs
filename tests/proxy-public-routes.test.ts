@@ -39,4 +39,13 @@ describe("proxy: API routes without a session", { timeout: 30_000 }, () => {
     expect(res.status).toBe(401);
     expect(passedThrough(res)).toBe(false);
   });
+
+  // The tenant portal was deleted with the scope cutdown, but its prefix stayed on the list — so
+  // any route added under it later would have been born without auth or CSRF.
+  it("does not exempt the deleted tenant portal's prefix", async () => {
+    const res = await run("/api/tenant-portal/anything");
+
+    expect(res.status).toBe(401);
+    expect(passedThrough(res)).toBe(false);
+  });
 });

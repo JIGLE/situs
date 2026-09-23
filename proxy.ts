@@ -3,7 +3,8 @@
  * Handles:
  * - Auth guard: 401 for unauthenticated protected API requests; redirect portal pages to sign-in
  * - CSRF validation for state-changing API requests
- * - Locale prefix enforcement (always use /en, /pt, /es, or /it)
+ * - Locale routing: the address bar carries no locale. A bare path is rewritten to /{locale}/…
+ *   internally; a locale-prefixed one 308s back to the clean path
  * - Backward compatibility redirects from old tab-based URLs
  * - Security headers (CSP, HSTS, X-Frame-Options, etc.)
  */
@@ -60,17 +61,21 @@ function resolveLocale(request: NextRequest): string {
 }
 
 /**
- * Public API prefixes — these routes must never require a session.
+ * API routes the proxy passes through without a session or a CSRF check. Each authenticates some
+ * other way, or holds nothing worth protecting. A prefix here exempts every route ever added under
+ * it, so a prefix whose routes are gone comes off the list with them.
  * /api/auth/**           — NextAuth sign-in / callback endpoints
- * /api/health            — Liveness/readiness probe
- * /api/tenant-portal/**  — Token-based tenant self-service API
- * /api/csrf-token        — CSRF token endpoint (GET only, no auth needed)
- * /api/monitoring/**     — Health/metrics probes
+ * /api/health            — Checks its own session and answers only an owner (401/403 otherwise)
+ * /api/ready             — Readiness probe; never touches the database
+ * /api/info              — Version, commit and build time baked into the image
+ * /api/csrf-token        — Issues the CSRF cookie (GET only)
+ * /api/monitoring/**     — Database probe and landing beacon; its metrics and landing counters
+ *                          want `Bearer $INIT_SECRET` in production, and errors answers only in
+ *                          development
  * /api/metrics           — Prometheus scrape. A scraper has no session; the route checks
  *                          `Authorization: Bearer $INIT_SECRET` itself in production.
- * /api/webhooks/**       — External provider callbacks (Stripe, SIBS, Bizum,
- *                          SendGrid). Authenticated via provider signatures,
- *                          not a user session, so they bypass auth/CSRF.
+ * /api/webhooks/**       — Provider callbacks: Stripe verifies its signature, Brevo (which signs
+ *                          nothing) a shared secret
  * /api/billing/checkout  — Browser-navigable pricing CTA (GET). Self-guards:
  *                          redirects unauthenticated visitors to sign-in and
  *                          requires a session to create a Checkout Session, so
@@ -82,7 +87,6 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname === "/api/health" ||
     pathname === "/api/ready" ||
     pathname === "/api/info" ||
-    pathname.startsWith("/api/tenant-portal") ||
     pathname === "/api/csrf-token" ||
     pathname.startsWith("/api/monitoring") ||
     pathname === "/api/metrics" ||
@@ -363,13 +367,8 @@ export async function proxy(request: NextRequest) {
   const alreadyRewritten = request.headers.get(REWRITE_MARKER) !== null;
 
   // Routes that intentionally live outside the [locale] segment — prepending a
-  // locale would 404 them: the auth pages (app/auth/**) and the token-based
-  // tenant portal (app/tenant-portal/**).
-  const isLocaleExemptPath =
-    pathname === "/auth" ||
-    pathname.startsWith("/auth/") ||
-    pathname === "/tenant-portal" ||
-    pathname.startsWith("/tenant-portal/");
+  // locale would 404 them: the auth pages (app/auth/**).
+  const isLocaleExemptPath = pathname === "/auth" || pathname.startsWith("/auth/");
 
   let response: NextResponse;
 
