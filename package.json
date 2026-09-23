@@ -132,6 +132,7 @@
     "husky": "^9.1.7",
     "js-yaml": "^5.4.2",
     "jsdom": "^29.1.1",
+    "playwright": "^1.63.0",
     "prettier": "^3.9.8",
     "prisma": "^7.10.0",
     "react-i18next": "^17.0.13",
