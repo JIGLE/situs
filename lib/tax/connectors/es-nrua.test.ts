@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 /**
  * The point of this file is the first block: **Spain inherits Portugal's fail-closed guard.**
  *
- * D1 (docs/V1_READINESS.md) was that pt-at.ts's submit/poll ran their simulation regardless of
+ * The original defect was that pt-at.ts's submit/poll ran their simulation regardless of
  * `connector.mode`, so setting mode to "live" made Situs report receipts as accepted by a tax
  * authority that had received nothing. The guard now lives in ./mode-guard.ts specifically so a
  * second country cannot reintroduce it by re-deriving the rule slightly wrong.

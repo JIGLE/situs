@@ -1,8 +1,8 @@
 /**
  * Lightweight product-analytics event sink.
  *
- * docs/PRODUCT_AUDIT_2026.md §9: the app has a landing-page acquisition
- * funnel (components/shared/landing-analytics.tsx → /api/monitoring/track,
+ * Before this, the app had a landing-page acquisition funnel
+ * (components/shared/landing-analytics.tsx → /api/monitoring/track,
  * anonymous, in-memory) but no in-app product analytics — there was no way
  * to see whether the core loop (activation → rent collected → receipt
  * issued) was actually happening, or whether a reminder pulled anyone back

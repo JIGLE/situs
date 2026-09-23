@@ -1,21 +1,23 @@
 #!/usr/bin/env bash
 # scripts/db-backup — Create a safe backup of the SQLite database
 #
+# Runs on the host, not in the container: the image has neither bash nor sqlite3.
+#
 # Usage:
 #   bash scripts/db-backup.sh [db-path] [backup-dir] [retention-days]
 #
 # Examples:
 #   bash scripts/db-backup.sh                                     # defaults
-#   bash scripts/db-backup.sh /data/situs.sqlite ./backups 14    # custom
+#   bash scripts/db-backup.sh ./data/situs.sqlite ./backups 14   # custom
 #
 # Defaults:
-#   db-path:        /data/situs.sqlite (or $DATABASE_FILE)
+#   db-path:        ./data/situs.sqlite, where docker-compose.yml mounts /app/data (or $DATABASE_FILE)
 #   backup-dir:     ./backups
 #   retention-days: 7
 
 set -euo pipefail
 
-DB_PATH="${1:-${DATABASE_FILE:-/data/situs.sqlite}}"
+DB_PATH="${1:-${DATABASE_FILE:-./data/situs.sqlite}}"
 BACKUP_DIR="${2:-./backups}"
 RETENTION_DAYS="${3:-7}"
 TIMESTAMP=$(date +"%Y%m%d-%H%M%S")

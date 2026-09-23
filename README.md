@@ -32,27 +32,27 @@ flowchart LR
     E --> F[Audit trail]
 ```
 
-A CSV import or manual entry becomes a scored match against a lease; the allocation engine fills
+A bank movement — imported from CSV, entered by hand or synced from a live bank connection —
+becomes a scored match against a lease; the allocation engine fills
 the **oldest unpaid month first**; that writes a receipt, which drives a document lifecycle, which
 feeds the tax connector — and every step appends to an immutable audit log. Tenant payment status
 is _derived_ from this ledger, never hand-set.
 
-> Formerly ProMan. The rebrand is complete: the app, the repository and the container images all
-> read `situs`. For what shipped when, read the git tags and the GitHub Releases page — those are
-> written by `release.yml` and cannot drift. This line previously carried a hardcoded version.
+> Formerly ProMan. For what shipped when, read the git tags and the GitHub Releases page, which
+> `release.yml` writes.
 
 ## Features
 
 ### The rent ledger (the core loop)
 
-| Capability                 | What it does                                                                                                                                                                                                                |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Reference-month ledger** | One `RentPeriod` row per lease per month. Status is recomputed inside the same transaction as every allocation write — it can never drift from the money.                                                                   |
-| **Waterfall allocation**   | Always fills the oldest not-fully-allocated period first, so partial payments can't silently skip a month. Pure engine, independently tested.                                                                               |
-| **Bank matching**          | CSV/manual import → fingerprint dedupe (idempotent) → fuzzy-duplicate check → reconciliation rules → weighted confidence score. ≥ 0.85 auto-allocates; anything lower waits in the Bank Movements inbox for a human.        |
-| **Receipt lifecycle**      | Money state (`paid`/`pending`) is kept separate from the _document_ state machine: draft → review → emitted → submitted → accepted/rejected, or voided from any pre-terminal state. Voiding soft-reverses live allocations. |
-| **Tax connectors**         | One connector per user × country, locked to sandbox/review until explicitly promoted. Every call appends an immutable submission-log row.                                                                                   |
-| **Audit trail**            | Scoped per-record or account-wide, persisted on every workflow mutation.                                                                                                                                                    |
+| Capability                 | What it does                                                                                                                                                                                                                                                                               |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Reference-month ledger** | One `RentPeriod` row per lease per month. Status is recomputed inside the same transaction as every allocation write — it can never drift from the money.                                                                                                                                  |
+| **Waterfall allocation**   | Always fills the oldest not-fully-allocated period first, so partial payments can't silently skip a month. Pure engine, independently tested.                                                                                                                                              |
+| **Bank matching**          | CSV/manual import or a live PSD2 sync → fingerprint dedupe (idempotent) → fuzzy-duplicate check → reconciliation rules → weighted confidence score. ≥ 0.85 auto-allocates; anything lower waits in the Bank Movements inbox for a human.                                                   |
+| **Receipt lifecycle**      | Money state (`paid`/`pending`) is kept separate from the _document_ state machine: draft → review → emitted, then submitted → accepted/rejected in Portugal or exported in Spain. A receipt can be voided from draft, review, emitted or exported; voiding soft-reverses live allocations. |
+| **Tax connectors**         | One connector row per user and connector key, in sandbox or review mode: no live AT/AEAT integration exists, so live mode fails closed. Every call appends an immutable submission-log row.                                                                                                |
+| **Audit trail**            | Scoped per-record or account-wide, persisted on every workflow mutation.                                                                                                                                                                                                                   |
 
 ### Portfolio and operations
 
@@ -80,7 +80,7 @@ is _derived_ from this ledger, never hand-set.
 ## Quick start
 
 ```bash
-npm install
+npm ci
 cp .env.example .env      # DATABASE_URL + NEXTAUTH_SECRET are the only must-haves
 npm run dev
 ```
@@ -118,8 +118,8 @@ on top, so the money rules are testable without a database.
 ```
 app/
   [locale]/(main)/     → owner-facing pages (portfolio, financials, people,
-                         operations, leases, documents, settings…)
-  api/                 → 40 domain route folders (Zod-validated, session-checked)
+                         leases, compliance, settings…)
+  api/                 → one folder per domain (Zod-validated, session-checked)
 components/
   features/            → domain components, one folder per pillar
   ui/                  → shadcn/ui primitives + responsive primitives
@@ -152,12 +152,12 @@ Only three variables are required to boot:
 
 Recommended in production:
 
-| Variable             | Description                                                                                                                                                     |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PII_ENCRYPTION_KEY` | **Required in production** — 64-char hex key for AES-256-GCM PII encryption. The app refuses to start without it; set `ALLOW_UNENCRYPTED_PII=true` to override. |
-| `CRON_SECRET`        | Bearer token for `POST /api/cron/notifications`                                                                                                                 |
-| `INIT_SECRET`        | Protects DB init and debug endpoints                                                                                                                            |
-| `ENABLE_DEMO_LOGIN`  | Set `false` to disable demo login                                                                                                                               |
+| Variable             | Description                                                                                                                                                                       |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PII_ENCRYPTION_KEY` | **Required in production** — 64-char hex key for AES-256-GCM PII encryption. Without it the app stops with an error naming this variable; `ALLOW_UNENCRYPTED_PII=true` overrides. |
+| `CRON_SECRET`        | Bearer token for the three `/api/cron/*` endpoints (notifications, data retention, bank sync); each answers 503 while it is unset                                                 |
+| `INIT_SECRET`        | Protects DB init and debug endpoints                                                                                                                                              |
+| `ENABLE_DEMO_LOGIN`  | `true` enables demo credentials that grant **ADMIN** — leave it unset in production                                                                                               |
 
 Integrations are opt-in and off by default — `ENABLE_STRIPE`, `ENABLE_OAUTH`,
 and `ENABLE_BILLING` (plan limits; self-hosted stays unlimited unless you turn it on). Portugal
@@ -168,8 +168,8 @@ See [.env.example](.env.example) for the complete list.
 ## Quality gates
 
 ```bash
-npm run verify:ci      # type-check + lint + test (what CI runs)
-npm test               # Vitest — 94 files, 1,054 tests
+npm run verify:ci      # type-check, lint, format, hygiene, npm audit, tests
+npm test               # Vitest
 npm run test:coverage  # coverage report
 npm run test:e2e       # Playwright
 ```
@@ -178,11 +178,11 @@ Enforced on every PR:
 
 - **TypeScript** strict, `--noEmit` must pass
 - **ESLint** `--max-warnings=0` — zero warnings
-- **Vitest** with coverage floors of 70% statements / 70% lines / 60% branches / 60% functions
-- **Mobile audit** — `scripts/mobile-audit.mjs` walks 26 surfaces × 2 themes at 390×844 against
-  real seeded data, measuring horizontal overflow, touch targets, clipping and text legibility.
-  Currently **0 horizontal overflow and 0 touch-target violations across all 52 surface-runs**.
-  Advisory in CI today, ratcheting to blocking.
+- **Vitest** with a coverage ratchet in `vitest.config.ts` — a PR may not lower it
+- **Mobile audit** — `scripts/mobile-audit.mjs` walks every owner-facing surface in both themes at
+  390×844 against seeded data, measuring horizontal overflow, touch targets, clipping and text
+  legibility. A blocking `--strict` gate against the `BASELINE` in the harness; a 1440×900
+  Portuguese pass runs alongside it as advisory.
 
 The responsive rules the harness enforces are documented in [CLAUDE.md](CLAUDE.md) alongside the
 screen-density rules — both were derived from measured audits rather than taste.
@@ -201,33 +201,29 @@ Daily notifications (rent reminders, overdue notices, lease renewals, receipt de
 `POST /api/cron/notifications`, authenticated with `CRON_SECRET`. Schedule it with any cron runner
 that can make an authenticated HTTP request.
 
-Full instructions: [docs/deployment.md](docs/deployment.md).
-
 ## Database
 
-SQLite via Prisma with the `better-sqlite3` adapter.
+SQLite via Prisma with the `better-sqlite3` adapter. The container applies the schema itself on
+every start; in development:
 
 ```bash
-npx prisma migrate deploy   # apply pending migrations
+npx prisma db push          # apply schema changes
 npx prisma generate         # regenerate client after schema changes
 npx prisma studio           # browse
 ```
 
-See [Database Strategy](docs/DATABASE_STRATEGY.md) for migrations, backups and production
-guidance.
+See [Database Strategy](docs/DATABASE_STRATEGY.md) for how the schema reaches a database, backups
+and the scale plan.
 
 ## Documentation
 
 | Guide                                          | Description                             |
 | ---------------------------------------------- | --------------------------------------- |
 | [Documentation index](docs/README.md)          | All available guides                    |
-| [Deployment](docs/deployment.md)               | Production setup                        |
 | [TrueNAS SCALE](docs/truenas.md)               | Step-by-step NAS deployment             |
 | [Security](docs/SECURITY.md)                   | Security architecture                   |
 | [Database strategy](docs/DATABASE_STRATEGY.md) | Migrations, backups                     |
 | [Monitoring](docs/MONITORING.md)               | Observability                           |
-| [Troubleshooting](docs/troubleshooting.md)     | Common issues                           |
-| [Releases](RELEASES.md)                        | Version history                         |
 | [CLAUDE.md](CLAUDE.md)                         | Architecture patterns + design doctrine |
 
 ## Contributing

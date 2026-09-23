@@ -41,17 +41,17 @@ capped_delay = min(delay, maxDelayMs)
 
 ### Example Retry Delays (Default Config)
 
-| Attempt | Base Delay | With Jitter (±10%) | Actual Delay |
-| ------- | ---------- | ------------------ | ------------ |
-| 1       | 1000ms     | 900-1100ms         | ~1s          |
-| 2       | 2000ms     | 1800-2200ms        | ~2s          |
-| 3       | 4000ms     | 3600-4400ms        | ~4s          |
+| Attempt | Base Delay | With Jitter (0 to +10%) | Actual Delay |
+| ------- | ---------- | ----------------------- | ------------ |
+| 1       | 1000ms     | 1000-1100ms             | ~1s          |
+| 2       | 2000ms     | 2000-2200ms             | ~2s          |
+| 3       | 4000ms     | 4000-4400ms             | ~4s          |
 
 **Total retry time**: ~7 seconds before final failure
 
 ### Jitter
 
-A random jitter of ±10% is added to prevent thundering herd problems when multiple email requests fail simultaneously.
+A random jitter of 0 to +10% of the delay is added (`email-service.ts`, never negative) to prevent thundering-herd retries when several sends fail at once.
 
 ## Retryable Errors
 
@@ -232,12 +232,5 @@ With default config (3 retries):
 
 ### Recommendations
 
-- For user-facing sends (e.g., password resets): Consider `skipRetry` for faster failure
-- For background sends (e.g., bulk notifications): Use default retry config
-- For critical sends (e.g., payment confirmations): Increase `maxRetries` to 5
-
-## Version History
-
-- **v0.8.x**: Enhanced retry logic with jitter and improved error detection
-- **v0.7.x**: Initial exponential backoff implementation
-- **v0.6.x**: Basic retry (linear delay)
+- For a send a user is waiting on: consider `skipRetry` for faster failure
+- For background sends (the scheduled reminders): use the default retry config

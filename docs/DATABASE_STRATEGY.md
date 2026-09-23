@@ -1,11 +1,8 @@
 # Database Strategy
 
-This document covers Situs's database approach, migration workflow, backup/recovery
-procedures, and the storage/scale plan:
-what would actually force a move off SQLite, and what that move would look like.
-The two scale risks planned against here — contract-file BLOBs in the database, and
-client state that loads everything — were first flagged by the 2026 product audit, since
-deleted as a point-in-time record. This doc is where the plan for them lives.
+This document covers Situs's database approach, how the schema reaches a database, backup and
+recovery, and the storage/scale plan: what would actually force a move off SQLite, and what that
+move would look like.
 
 ## SQLite vs Server-based Database
 
@@ -34,10 +31,9 @@ Two concrete risks, both real today, neither urgent yet:
    database row** (`prisma/schema.prisma`, `Lease` model). Every contract upload grows
    the single SQLite file, which then has to move through every backup, every `.backup`
    copy, and every WAL checkpoint. It's the only BLOB field in the schema —
-   `Document.storagePath` (used for everything else: insurance policies, certificates,
-   document uploads) already does this correctly, storing a filesystem path or
-   URL instead of bytes. `Lease.contractFile` predates that pattern and was never
-   migrated to match it.
+   `Document.storagePath`, which the receipt archive uses, already does this correctly,
+   storing a filesystem path or URL instead of bytes. `Lease.contractFile` predates that
+   pattern and was never migrated to match it.
 2. **`lib/contexts/use-app-data.ts` loads seven full, unpaginated collections
    (`/api/properties`, `/api/buildings`, `/api/tenants`, `/api/receipts`,
    `/api/owners`, `/api/expenses`, `/api/leases`) in parallel on every app mount**,
@@ -56,7 +52,7 @@ for, not fixing reactively under load.
 
 Don't migrate speculatively. Move when any of these is true for a real deployment:
 
-- **A hosted/managed offering ships** (see roadmap 3.4's monetization work) — multiple
+- **A hosted/managed offering ships** — multiple
   landlords' data on one running instance means concurrent writes across tenants, which
   is exactly where SQLite's single-writer model starts to queue requests. Self-hosted
   single-tenant instances don't hit this; a shared hosted instance eventually will.
@@ -88,11 +84,10 @@ runs PostgreSQL) requires:
    already contains Postgres-only SQL (`DOUBLE PRECISION`, `pg_enum`/`DO $$` blocks for
    enum extension, `ADD CONSTRAINT IF NOT EXISTS`) — evidence the project ran on
    PostgreSQL at some point before settling on SQLite-by-default. That migration breaks
-   `prisma migrate deploy` replayed from empty on SQLite today (found during roadmap
-   milestone 1.3; tracked as a known, currently-unfixed issue, out of scope for this
-   plan). Actually adopting PostgreSQL means either fixing that migration for both
-   engines or, more realistically, generating a fresh baseline migration per engine from
-   the current schema rather than trying to replay the full mixed-syntax history.
+   `prisma migrate deploy` replayed from empty on SQLite today (a known, unfixed issue).
+   Actually adopting PostgreSQL means either fixing that migration for both engines or, more
+   realistically, generating a fresh baseline migration per engine from the current schema
+   rather than trying to replay the full mixed-syntax history.
 3. **Moving `Lease.contractFile` off BLOB storage first**, regardless of engine — same
    `storagePath` pattern as `Document`. This should happen before any Postgres migration,
    not as part of it: it's the change that actually shrinks the data being moved, and it
@@ -107,152 +102,45 @@ runs PostgreSQL) requires:
    support should be additive (an alternate `DATABASE_URL`), not a replacement — anything
    that makes self-hosting harder undermines the product's own positioning.
 
-### Development: `prisma db push`
+## How the schema reaches a database
 
-Use `prisma db push` during active development when the schema is changing frequently:
+The image applies `prisma/schema.prisma` itself, on every start: `prestart` runs
+`scripts/ensure-sqlite.js`, which pushes the schema into an empty file (`AUTO_DB_INIT`, default
+on) and then runs an additive `prisma db push` (`AUTO_DB_SCHEMA_SYNC`, default on). When the
+additive push cannot apply — the schema dropped or retyped a column — it copies the file to
+`<file>.bak-<timestamp>` and retries with `--accept-data-loss`, which drops what the schema no
+longer has. `AUTO_DB_SCHEMA_SYNC_FORCE=false` stops it before that step instead, leaving the app on
+a schema it cannot fully query. It proceeds with the forced push even if the copy fails, so keep
+your own backups (below) rather than relying on that copy.
 
-```bash
-npx prisma db push
-```
+In development, apply schema changes with `npx prisma db push`.
 
-This directly applies schema changes to the database **without creating migration files**. It may drop data if changes are destructive.
-
-### Production: `prisma migrate deploy`
-
-For production, use **tracked migrations** to ensure reproducible, auditable schema changes:
-
-```bash
-# 1. Create a migration (development)
-npx prisma migrate dev --name add_payment_status
-
-# 2. Review the generated SQL in prisma/migrations/<timestamp>_add_payment_status/
-
-# 3. Deploy migrations (production/CI)
-npx prisma migrate deploy
-```
-
-### Migration workflow
-
-```
-Development:
-  prisma migrate dev    →  Creates migration SQL files
-                        →  Applies to local DB
-                        →  Generates Prisma Client
-
-Production:
-  prisma migrate deploy →  Applies pending migrations
-                        →  Does NOT generate client (already in image)
-```
-
-### Transitioning from `db push` to migrations
-
-If you've been using `db push` and want to switch to migrations:
-
-```bash
-# 1. Baseline the current schema (creates initial migration without applying)
-npx prisma migrate dev --name baseline --create-only
-
-# 2. Mark the migration as applied (since the DB already has this schema)
-npx prisma migrate resolve --applied <migration-name>
-
-# 3. From now on, use `prisma migrate dev` for new changes
-```
-
-### CI/CD integration
-
-Run migrations on startup from the container entrypoint:
-
-```dockerfile
-# In Dockerfile CMD or entrypoint
-CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
-```
-
-> The Kubernetes init-container example that used to sit here has been removed along with the
-> Helm chart and `k8s/` manifests — see `truenas.md`. TrueNAS SCALE moved to Docker in Electric
-> Eel (24.10) and Custom App is the only supported deployment path, so the manifest could not
-> have run.
-
-Note that the shipped image does not use `migrate deploy` today: `scripts/ensure-sqlite.js`
-applies additive schema changes with `prisma db push` on start, gated by `AUTO_DB_SCHEMA_SYNC`
-(default on). The block above applies if you adopt the migrations workflow described earlier in
-this document.
+**`prisma/migrations/` is not applied by anything, and `prisma migrate deploy` is not a supported
+way to create or upgrade a Situs database.** The history cannot be replayed from empty on SQLite:
+`20260308000000_iberian_compliance` contains PostgreSQL-only SQL (see the migration path above).
 
 ## Backup & Recovery
 
-### SQLite backup
+A backup is a copy of one file: `situs.sqlite` on the data volume (`/app/data` inside the
+container). Health checks say nothing about it surviving.
 
-SQLite databases are single files, making backups straightforward.
+- **TrueNAS SCALE** — schedule periodic snapshots of the dataset mounted at `/app/data`
+  (**Data Protection → Periodic Snapshot Tasks**). A snapshot is atomic, so it is safe while the
+  app runs.
+- **Docker Compose** — `scripts/db-backup.sh` runs on the host, not in the container (the image
+  has neither `bash` nor `sqlite3`). From the repository checkout, where Compose mounts `./data`:
 
-**Using the backup script:**
+  ```bash
+  bash scripts/db-backup.sh ./data/situs.sqlite ./backups 14   # file, directory, days to keep
+  ```
 
-```bash
-bash scripts/db-backup.sh /data/situs.sqlite ./backups
-```
-
-**Manual backup:**
-
-```bash
-# Hot backup using sqlite3 .backup command (safe during writes)
-sqlite3 /data/situs.sqlite ".backup '/backups/situs-$(date +%Y%m%d-%H%M%S).sqlite'"
-
-# Simple file copy (only safe if app is stopped or using WAL mode)
-cp /data/situs.sqlite /backups/situs-backup.sqlite
-```
-
-### Automated backups (CronJob)
-
-```yaml
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: situs-backup
-spec:
-  schedule: "0 2 * * *" # Daily at 2 AM
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          containers:
-            - name: backup
-              image: alpine:latest
-              command:
-                - sh
-                - -c
-                - |
-                  apk add --no-cache sqlite
-                  BACKUP_FILE="/backups/situs-$(date +%Y%m%d-%H%M%S).sqlite"
-                  sqlite3 /data/situs.sqlite ".backup '${BACKUP_FILE}'"
-                  echo "Backup created: ${BACKUP_FILE}"
-                  # Keep only last 7 days of backups
-                  find /backups -name "situs-*.sqlite" -mtime +7 -delete
-              volumeMounts:
-                - name: situs-data
-                  mountPath: /data
-                  readOnly: true
-                - name: backups
-                  mountPath: /backups
-          restartPolicy: OnFailure
-          volumes:
-            - name: situs-data
-              persistentVolumeClaim:
-                claimName: situs-data
-            - name: backups
-              persistentVolumeClaim:
-                claimName: situs-backups
-```
+  It uses `sqlite3 .backup` when `sqlite3` is installed, which is safe during writes; without it,
+  it falls back to a file copy, which is safe only with the app stopped.
 
 ### Recovery
 
-```bash
-# Stop the application
-kubectl scale deployment situs --replicas=0
-
-# Restore from backup
-cp /backups/situs-20260208-020000.sqlite /data/situs.sqlite
-
-# Restart
-kubectl scale deployment situs --replicas=1
-```
+Stop the app, replace `situs.sqlite` on the data volume with the backup, and start it again. On
+start, `prestart` brings the restored file's schema up to date as described above.
 
 ## Schema Reference
 
@@ -262,4 +150,4 @@ See `prisma/schema.prisma` for the full data model. Key models:
 - `Property` — property listings
 - `Tenant` — tenant records
 - `Lease` — lease agreements
-- `Subscription` — the app's own SaaS plan/billing state (see roadmap 3.4)
+- `Subscription` — the app's own SaaS plan/billing state

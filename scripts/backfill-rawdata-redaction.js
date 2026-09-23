@@ -26,12 +26,25 @@
 
 require("dotenv").config();
 const { PrismaClient } = require("@prisma/client");
+const { PrismaBetterSqlite3 } = require("@prisma/adapter-better-sqlite3");
 
 const dryRun = process.argv.includes("--dry-run");
 const BATCH = 500;
 
+// Prisma 7 connects only through a driver adapter — a bare `new PrismaClient()` throws before doing
+// anything. This is the adapter lib/services/database/database.ts uses, without its PII extension.
+function databaseUrl() {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  if (process.env.NODE_ENV === "production") {
+    // Guessing a path here would open (and create) an empty file and report nothing to do.
+    console.error("DATABASE_URL is not set. In the container it is file:/app/data/situs.sqlite.");
+    process.exit(1);
+  }
+  return "file:./dev.db";
+}
+
 async function main() {
-  const prisma = new PrismaClient();
+  const prisma = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: databaseUrl() }) });
   let scanned = 0;
   let rewritten = 0;
   let unparseable = 0;

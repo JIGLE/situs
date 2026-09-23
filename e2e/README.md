@@ -1,6 +1,7 @@
 # Playwright E2E Tests
 
-This directory contains configuration and fixtures for Playwright end-to-end tests. Test files live in `../e2e/`.
+Playwright end-to-end tests live in this directory. The config is `../playwright.config.ts`; signed-in
+session state is written to `../playwright/.auth/` at run time and is not committed.
 
 ## Prerequisites
 
@@ -34,14 +35,14 @@ The Playwright config is at `../playwright.config.ts`. Key settings:
 
 | Setting     | Local          | CI             |
 | ----------- | -------------- | -------------- |
-| Retries     | 0              | 2              |
+| Retries     | 1              | 2              |
 | Workers     | auto           | 1              |
 | Trace       | on-first-retry | on-first-retry |
 | Screenshots | on-failure     | on-failure     |
 
 ## Writing Tests
 
-- Place test files in `../e2e/` with `.spec.ts` extension.
+- Name test files `*.spec.ts`, in this directory.
 - Use `auth.setup.ts` for shared authentication setup.
 - Keep tests isolated: each test should set up its own data.
 - Use `test.describe` to group related tests.
@@ -69,7 +70,5 @@ npx playwright show-trace trace.zip
 
 ## CI Behavior
 
-E2E tests do **not** run on every push. To trigger them:
-
-1. Manually dispatch the CI workflow with `run_e2e=true`, or
-2. Add the `run-e2e` label to a Pull Request.
+`E2E Smoke` runs on every pull request. The full `e2e` job is opt-in — add the `run-e2e` label to
+the pull request, or dispatch the CI workflow with `run_e2e=true`.

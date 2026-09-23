@@ -58,8 +58,7 @@ export function OnboardingChecklist({
     }
 
     // Dismissal is a server-side UserSettings field (was localStorage-only,
-    // so it didn't survive across browsers/devices and couldn't be measured
-    // — see docs/PRODUCT_AUDIT_2026.md §3).
+    // so it didn't survive across browsers/devices and couldn't be measured).
     let cancelled = false;
     fetch("/api/settings")
       .then((res) => (res.ok ? res.json() : null))

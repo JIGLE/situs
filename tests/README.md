@@ -27,30 +27,26 @@ This guide provides comprehensive documentation for writing, running, and mainta
 
 ### File Organization
 
-Tests are co-located with their source files:
+Unit tests sit next to their source files; `tests/` holds what spans the codebase:
 
 ```
-components/
-  features/
-    property/
-      property-list.tsx
-      property-list.test.tsx  ← Co-located test
-lib/
-  services/
-    email-service.ts
-    tests/
-      email-service.test.ts   ← Feature-level tests
+components/features/property/
+  properties-view.tsx
+  properties-view.test.tsx     ← co-located test
+lib/services/email/
+  email-service.ts
+  email-service.test.ts        ← co-located test
 tests/
-  helpers/                     ← Shared test utilities
-  setup/                       ← Test configuration
-  setup.ts                     ← Global test setup
+  *.test.ts(x)                 ← cross-cutting contract tests
+  helpers/                     ← shared test utilities
+  setup.ts                     ← global setup (vitest `setupFiles`)
+e2e/                           ← Playwright specs
 ```
 
 ### Configuration
 
-- **vitest.config.ts**: Test runner configuration with 10 path aliases
-- **tests/setup.ts**: Global test setup with Next.js and context mocks
-- **tests/setup/mocks.ts**: Reusable mock functions
+- **vitest.config.ts**: test runner configuration, including the coverage ratchet
+- **tests/setup.ts**: global setup — Next.js module mocks and the in-memory Prisma mock
 
 ---
 
@@ -88,12 +84,12 @@ Tests support all TypeScript path aliases:
 import { Button } from "@/ui/button"; // components/ui/button
 import { PropertyList } from "@/features/property"; // components/features/property
 import { emailService } from "@/services/email"; // lib/services/email
-import { useForm } from "@/hooks/use-form"; // lib/hooks/use-form
+import { useFormDialog } from "@/hooks/use-form-dialog"; // lib/hooks/use-form-dialog
 import { cn } from "@/utils/utils"; // lib/utils/utils
-import { propertySchema } from "@/schemas/property"; // lib/schemas/property
+import { propertySchema } from "@/schemas/property.schema"; // lib/schemas/property.schema
 import { ErrorBoundary } from "@/shared/error-boundary"; // components/shared/error-boundary
 import { Sidebar } from "@/layouts/sidebar"; // components/layouts/sidebar
-import type { Property } from "@/types"; // types/index
+import type { Property } from "@/lib/types"; // lib/types
 import { GET } from "@/api/properties/route"; // app/api/properties/route
 ```
 
@@ -238,7 +234,9 @@ render(<MyComponent />) // Has Intl, Theme, Currency, Toast providers
 Automatically applied to ALL tests:
 
 - `next/navigation` - Router hooks
-- `next-intl` - Translation hooks
+
+`next-intl` is deliberately **not** mocked: `renderWithProviders` passes the real catalogue, so a
+test asserts the copy a user reads — and can catch hardcoded English.
 
 ### Per-Test Mocks
 
@@ -255,18 +253,6 @@ vi.mock("@/lib/contexts/app-context", () => ({
     addProperty: vi.fn(),
   }),
 }));
-```
-
-### Shared Mock Functions (tests/setup/mocks.ts)
-
-Reusable mock generators:
-
-```typescript
-import { mockCurrencyContext, mockToastContext, mockAppContext } from '@/tests/setup/mocks'
-
-mockCurrencyContext()
-mockToastContext()
-mockAppContext({ properties: [...] })
 ```
 
 ---
@@ -286,21 +272,10 @@ mockAppContext({ properties: [...] })
 
 1. **Don't test third-party libraries**
 2. **Don't make tests depend on each other**
-3. **Don't use real database** (use Prisma mocks)
+3. **Don't touch a real database in a unit test** — use the Prisma mock; the `*.integration.test.ts` suites are the exception, each on its own scratch SQLite file
 4. **Don't test implementation details**
 5. **Don't forget to mock** Next.js and context hooks
 6. **Don't ignore TypeScript errors** in tests
-
----
-
-## Test Coverage Goals
-
-### Current Status
-
-- **Test Files**: 37 test files
-- **Tests**: 86 passing, 6 skipped
-- **Pass Rate**: 100%
-- **Coverage Target**: 80%+ for critical paths
 
 ---
 
@@ -310,8 +285,3 @@ mockAppContext({ properties: [...] })
 - [Testing Library](https://testing-library.com/)
 - [Playwright E2E](https://playwright.dev/)
 - [Next.js Testing](https://nextjs.org/docs/testing)
-
----
-
-**Last Updated:** 2026-03-11  
-**Version:** 1.4.0

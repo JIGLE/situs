@@ -86,7 +86,7 @@ reachable on a phone without a separate rule — see the responsive rules in `CL
 aria-live="assertive"`. Nothing to add.
 - **Modals** — Radix supplies `role="dialog"`, `aria-modal`, focus trapping and restore. Give
   every `DialogContent` a `DialogTitle`; that is what `aria-labelledby` points at.
-- **Skip link and `<main>` landmark** — already in the root layout.
+- **Skip link and `<main>` landmark** — already in the `(main)` and `(admin)` layouts.
 
 ## Colour contrast
 

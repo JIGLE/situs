@@ -13,17 +13,14 @@ Only the latest release on `main` receives security updates. We recommend always
 
 **Please do NOT report security vulnerabilities through public GitHub issues.**
 
-Instead, use one of the following methods:
+Instead, open a private advisory on the
+[Security Advisories](https://github.com/JIGLE/situs/security/advisories/new) tab, which lets us
+work on a fix together before public disclosure. Include:
 
-1. **GitHub Security Advisories (preferred):**
-   Navigate to the [Security Advisories](https://github.com/JIGLE/situs/security/advisories/new) tab and create a new private advisory. This allows us to collaborate on a fix before public disclosure.
-
-2. **Email:**
-   Send details to the repository owner listed in `package.json`. Include:
-   - Description of the vulnerability
-   - Steps to reproduce
-   - Affected versions
-   - Potential impact
+- Description of the vulnerability
+- Steps to reproduce
+- Affected versions
+- Potential impact
 
 ## Response Timeline
 
@@ -57,8 +54,8 @@ The following are **out of scope**:
 
 This project implements the following security controls:
 
-- **CI/CD**: Automated security scanning via CodeQL, TruffleHog, npm audit, and a custom security scanner (see `scripts/security-scan.js`)
-- **Dependencies**: Dependabot monitors for vulnerable dependencies with auto-merge for patches
+- **CI/CD**: Automated security scanning via CodeQL, TruffleHog, dependency review, npm audit, and a custom security scanner (see `scripts/security-scan.js`)
+- **Dependencies**: Dependabot opens update pull requests; nothing merges them automatically
 - **Runtime**: CSP headers with nonce-based script loading, CSRF protection, rate limiting
 - **Authentication**: NextAuth.js with short-lived JWT sessions
 

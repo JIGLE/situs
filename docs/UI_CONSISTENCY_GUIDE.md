@@ -6,49 +6,14 @@ This document defines the **non-negotiable rules** for all UI development in Sit
 
 ## Information Architecture
 
-> **Status (2026-07-09, roadmap 3.3):** this flat "Assets/People/Finance" grouping was
-> **not adopted**. Three IA proposals existed; only one was built. The canonical IA is the
-> Core / System grouping, and the authority for it is now the
-> code — `lib/portal/access.ts`, where the routes and their redirects live — rather than any
-> document. The two audits this note previously cited have been deleted as point-in-time
-> records. Kept here for history; do not use this structure as a reference for new nav work.
-
-### Top-Level Navigation (7 Items Max) — superseded, see status note above
-
-```
-Home         → Dashboard overview
-Assets       → Properties, Units, Owners, Map
-People       → Tenants, Leases
-Maintenance  → Tickets, Work orders
-Correspondence → Templates, Messages
-Finance      → Income, Expenses, Payment Matrix
-Insights     → Analytics, Reports
-Settings     → User preferences, Integrations
-```
+The navigation lives in code, not in this guide: `lib/portal/access.ts` holds the routes, the nav
+groups and the redirects from retired paths.
 
 **Rules:**
 
-- ❌ **NEVER** add a new top-level sidebar item without removing/merging another
-- ❌ **NEVER** create a sidebar item for a feature with <3 sub-pages
+- ❌ **NEVER** add a new top-level sidebar item without removing or merging another
+- ❌ **NEVER** exceed 3 levels of navigation depth — use a modal or drawer for anything deeper
 - ✅ New features must fit into existing sections
-
-### Navigation Depth
-
-| Section        | Max Depth | Example                    |
-| -------------- | --------- | -------------------------- |
-| Home           | 1         | Home                       |
-| Assets         | 3         | Assets → Property → Unit   |
-| People         | 3         | People → Tenant → Lease    |
-| Maintenance    | 2         | Maintenance → Ticket       |
-| Correspondence | 2         | Correspondence → Template  |
-| Finance        | 3         | Finance → Income → Receipt |
-| Insights       | 2         | Insights → Report          |
-| Settings       | 2         | Settings → Category        |
-
-**Rules:**
-
-- ❌ **NEVER** exceed 3 levels of navigation depth
-- ✅ If deeper access needed, use modals/drawers instead of new pages
 
 ---
 
@@ -61,7 +26,7 @@ Settings     → User preferences, Integrations
 **Required Sections:**
 
 - Header: Title + date range selector (if applicable)
-- KPI Row: 3-6 metric cards with trends
+- KPI Row: one row, 3–4 metrics at most (`CLAUDE.md`, screen density)
 - Attention Panel: Items requiring action
 - Quick Actions: Primary CTAs
 
@@ -152,31 +117,29 @@ Settings     → User preferences, Integrations
 ### Page Header
 
 ```tsx
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/shared/page-header";
 
-<PageHeader
-  title="Assets"
-  description="Manage your property portfolio"
-  breadcrumbs={[{ label: "Assets" }]}
-  primaryAction={{
-    label: "Add Property",
-    icon: <Plus className="h-4 w-4" />,
-    onClick: handleAdd,
-  }}
-  secondaryActions={[{ label: "Export", onClick: handleExport }]}
-/>;
+<PageHeader title={t("title")} description={t("description")}>
+  <Button onClick={handleAdd}>
+    <Plus className="h-4 w-4" />
+    {t("add")}
+  </Button>
+</PageHeader>;
 ```
+
+Actions go in `children`. One heading per screen: a tab's view does not repeat the page title
+(`CLAUDE.md`, screen density).
 
 ### Empty State
 
 ```tsx
-import { EmptyState } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/loading-state";
 
 <EmptyState
   icon={<Building2 className="h-12 w-12" />}
-  title="No properties yet"
-  description="Get started by adding your first property"
-  action={{ label: "Add Property", onClick: handleAdd }}
+  title={t("emptyTitle")}
+  description={t("emptyDescription")}
+  action={<Button onClick={handleAdd}>{t("add")}</Button>}
 />;
 ```
 
@@ -238,70 +201,10 @@ const wizard = useMultiStepForm<FormData>({
 
 ## Cross-Domain Navigation
 
-### Context Preservation
-
-When navigating between sections, use `returnTo` parameter:
-
-```tsx
-// Navigating from Property to Tenant
-router.push(`/people/${tenantId}?returnTo=/assets/${propertyId}`);
-
-// Back button reads returnTo
-const handleBack = () => {
-  const returnTo = searchParams.get("returnTo");
-  router.push(returnTo || "/assets");
-};
-```
-
-### Inline Entity Creation
-
-When creating related entities, use dialogs to prevent context loss:
-
-```tsx
-import { useInlineCreate, InlineCreateTrigger } from "@/lib/hooks/use-inline-create";
-
-// In your parent form component
-const inlineCreateTenant = useInlineCreate<TenantFormData, Tenant>({
-  schema: tenantSchema,
-  initialData: { name: "", email: "" },
-  onSubmit: async (data) => {
-    const tenant = await createTenant(data);
-    return tenant;
-  },
-  onCreated: (tenant) => {
-    // Auto-select the newly created tenant
-    setSelectedTenantId(tenant.id);
-  },
-  dialogTitle: "Create New Tenant",
-  renderForm: ({ formData, formErrors, updateFormData }) => (
-    <TenantFormFields data={formData} errors={formErrors} onChange={updateFormData} />
-  ),
-});
-
-// In the Select component
-<Select value={selectedTenantId}>
-  <SelectContent>
-    {tenants.map((t) => (
-      <SelectItem key={t.id} value={t.id}>
-        {t.name}
-      </SelectItem>
-    ))}
-    <InlineCreateTrigger label="Create New Tenant" onClick={inlineCreateTenant.open} />
-  </SelectContent>
-</Select>;
-
-{
-  /* Render the dialog */
-}
-{
-  inlineCreateTenant.dialog;
-}
-```
-
-**Rules:**
-
-- ✅ Max 2 levels of inline creation
-- ❌ Never navigate away from form without save/cancel
+- ✅ Open a related record in its detail overlay (`?detail=<type>:<id>`,
+  `components/shared/entity-detail-route-client.tsx`) rather than navigating away from the page
+- ✅ Create a related entity in a dialog (`useFormDialog`, above)
+- ❌ Never navigate away from a form without save/cancel
 
 ---
 

@@ -7,7 +7,7 @@ This directory contains small test helpers used by the project's vitest setup.
 To inject a custom Prisma mock in a particular test file:
 
 ```ts
-import { setPrismaClientForTests } from "@/lib/database";
+import { setPrismaClientForTests } from "@/lib/services/database/database";
 import customMock from "./helpers/prisma-mock";
 
 setPrismaClientForTests(customMock as any);

@@ -1,6 +1,6 @@
 // SaaS subscription billing for the app itself — Stripe Checkout + Billing
 // Portal + webhook sync, backing the Free/Pro/Business tiers on the landing
-// page (previously unbacked marketing copy, see docs/PRODUCT_AUDIT_2026.md §2).
+// page (previously unbacked marketing copy).
 // Distinct from rent collection, which arrives as a bank movement, not a card payment.
 
 import type Stripe from "stripe";
@@ -145,8 +145,8 @@ export async function getCurrentPlanInfo(
 /**
  * Whether this user may create one more property under their plan. Always
  * true unless ENABLE_BILLING=true — self-hosted instances are never limited
- * by default (see docs/PRODUCT_AUDIT_2026.md §2 and the landing page's own
- * "self-hosted is always free" disclaimer).
+ * by default, as the landing page's "self-hosted is always free" disclaimer
+ * promises.
  */
 export async function canCreateProperty(prisma: PrismaClient, userId: string): Promise<boolean> {
   if (!isEnabled("ENABLE_BILLING")) return true;

@@ -107,7 +107,6 @@ security-report.json
 # ===========================================
 .claude/worktrees/
 security-reports/
-load-tests/reports/
 
 # ===========================================
 # 11. Build Artifacts & Docker
