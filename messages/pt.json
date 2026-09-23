@@ -1519,33 +1519,6 @@
       "reachesFull": "O total passa a ser exatamente 100% ✓"
     }
   },
-  "Units": {
-    "addUnit": "Adicionar Unidade",
-    "editUnit": "Editar Unidade",
-    "deleteUnit": "Eliminar Unidade",
-    "unitNumber": "Número da Unidade",
-    "floor": "Piso",
-    "size": "Área (m²)",
-    "bedrooms": "Quartos",
-    "bathrooms": "Casas de Banho",
-    "status": "Estado",
-    "notes": "Notas",
-    "status_vacant": "Vago",
-    "status_occupied": "Ocupado",
-    "status_maintenance": "Em Manutenção",
-    "status_reserved": "Reservado",
-    "property": "Imóvel",
-    "tenant": "Inquilino",
-    "unit": "Unidade",
-    "noUnitsInProperty": "Este imóvel ainda não tem unidades.",
-    "noUnitsYet": "Ainda sem unidades",
-    "addFirstUnit": "Adicionar a Primeira Unidade",
-    "startByAdding": "Comece por adicionar unidades aos seus imóveis",
-    "unitNumberRequired": "O número da unidade é obrigatório",
-    "propertyRequired": "O imóvel é obrigatório",
-    "deleteConfirmTitle": "Eliminar Unidade",
-    "deleteConfirmDescription": "Esta unidade será removida permanentemente. Esta ação não pode ser anulada."
-  },
   "footer": {
     "copyright": "© {year} Situs. Todos os direitos reservados.",
     "privacy": "Política de Privacidade",

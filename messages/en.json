@@ -1519,33 +1519,6 @@
       "reachesFull": "Total will reach exactly 100% ✓"
     }
   },
-  "Units": {
-    "addUnit": "Add Unit",
-    "editUnit": "Edit Unit",
-    "deleteUnit": "Delete Unit",
-    "unitNumber": "Unit Number",
-    "floor": "Floor",
-    "size": "Size (m²)",
-    "bedrooms": "Bedrooms",
-    "bathrooms": "Bathrooms",
-    "status": "Status",
-    "notes": "Notes",
-    "status_vacant": "Vacant",
-    "status_occupied": "Occupied",
-    "status_maintenance": "Under Maintenance",
-    "status_reserved": "Reserved",
-    "property": "Property",
-    "tenant": "Tenant",
-    "unit": "Unit",
-    "noUnitsInProperty": "This property has no units added yet.",
-    "noUnitsYet": "No units yet",
-    "addFirstUnit": "Add Your First Unit",
-    "startByAdding": "Start by adding units to your properties",
-    "unitNumberRequired": "Unit number is required",
-    "propertyRequired": "Property is required",
-    "deleteConfirmTitle": "Delete Unit",
-    "deleteConfirmDescription": "This unit will be permanently removed. This action cannot be undone."
-  },
   "footer": {
     "copyright": "© {year} Situs. All rights reserved.",
     "privacy": "Privacy Policy",

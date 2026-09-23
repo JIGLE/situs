@@ -70,7 +70,9 @@ const ALLOWLIST = [
 // 556 → 331 on 2026-09-23. The scope cutdown deleted whole features and never lowered this, so the
 // tree measured 364 against 556; deleting seven unimported `components/ui` modules took it to 331.
 // The `/charts/` allowlist entry went too: it matched no file in the tree.
-const BASELINE = 331;
+// 331 → 235 the same day, when a reachability scan found modules only unused barrels imported —
+// `units-view.tsx` and four hooks among them — and they were deleted too.
+const BASELINE = 235;
 
 function walk(dir, acc) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

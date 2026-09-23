@@ -28,8 +28,8 @@ const TARGET = join(ROOT, "public", "version.json");
 const { version } = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
 const write = process.argv.includes("--write");
 
-// Kept to exactly the shape the three consumers read (`update-banner.tsx`, `version-badge.tsx`,
-// `settings-view.tsx` all take `.version`). Build metadata belongs to `/api/info`, which reads it
+// Kept to exactly the shape the two consumers read (`update-banner.tsx` and `settings-view.tsx`
+// both take `.version`). Build metadata belongs to `/api/info`, which reads it
 // from the environment the image was built with; duplicating it into a committed file would just
 // create a second thing to drift.
 const desired = `${JSON.stringify({ version }, null, 2)}\n`;

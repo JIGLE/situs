@@ -1519,33 +1519,6 @@
       "reachesFull": "Il totale arriverà esattamente al 100% ✓"
     }
   },
-  "Units": {
-    "addUnit": "Aggiungi unità",
-    "editUnit": "Modifica unità",
-    "deleteUnit": "Elimina unità",
-    "unitNumber": "Numero unità",
-    "floor": "Piano",
-    "size": "Dimensione (m²)",
-    "bedrooms": "Camere da letto",
-    "bathrooms": "Bagni",
-    "status": "Stato",
-    "notes": "Note",
-    "status_vacant": "Libero",
-    "status_occupied": "Occupato",
-    "status_maintenance": "In manutenzione",
-    "status_reserved": "Riservato",
-    "property": "Immobile",
-    "tenant": "Inquilino",
-    "unit": "Unità",
-    "noUnitsInProperty": "Questo immobile non ha ancora unità.",
-    "noUnitsYet": "Nessuna unità ancora",
-    "addFirstUnit": "Aggiungi la tua prima unità",
-    "startByAdding": "Inizia aggiungendo unità ai tuoi immobili",
-    "unitNumberRequired": "Il numero unità è obbligatorio",
-    "propertyRequired": "L'immobile è obbligatorio",
-    "deleteConfirmTitle": "Elimina unità",
-    "deleteConfirmDescription": "Questa unità verrà rimossa definitivamente. Questa azione non può essere annullata."
-  },
   "footer": {
     "copyright": "© {year} Situs. Tutti i diritti riservati.",
     "privacy": "Informativa sulla privacy",
