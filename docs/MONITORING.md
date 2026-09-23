@@ -3,30 +3,32 @@
 How to see what a running Situs instance is doing: the endpoints it exposes, the logger it
 writes through, and what it deliberately does not do.
 
-This replaces three earlier documents (`MONITORING_SETUP.md`, `MONITORING_QUICK_REFERENCE.md`,
-`METRICS_AND_MONITORING.md`) that described the same endpoints three times and, between them,
-specified a P1/P2/P3 on-call rotation, a PagerDuty schedule, a Slack alert channel, Grafana and
-Sentry dashboards, and an `ops-team@` address. None of that exists. Situs is a single
-self-hosted instance; the operator is the person reading this.
+Situs is a single self-hosted instance; the operator is the person reading this.
 
 ## What is actually wired
 
-| Capability                 | State                                                                 |
-| -------------------------- | --------------------------------------------------------------------- |
-| Health endpoints           | **Live** — `/api/health`, `/api/health/db`, `/api/health/email`       |
-| Prometheus-format metrics  | **Live** — `/api/metrics`, hand-rolled, no `prom-client` dependency   |
-| Structured JSON logging    | **Live** — `lib/utils/logger.ts`                                      |
-| In-process error tracking  | **Live** — `lib/monitoring/error-tracker.ts`, readable in development |
-| Alerting / paging          | **Not wired.** Nothing sends a notification when a check fails        |
-| Sentry / Grafana / Datadog | **Not wired.** No SDK is installed                                    |
+| Capability                 | State                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------- |
+| Readiness endpoint         | **Live** — `/api/ready`, public                                                 |
+| Health endpoints           | **Live** — `/api/health`, `/api/health/db`, `/api/health/email`, behind sign-in |
+| Prometheus-format metrics  | **Live** — `/api/metrics`, hand-rolled, no `prom-client` dependency             |
+| Structured JSON logging    | **Live** — `lib/utils/logger.ts`                                                |
+| In-process error tracking  | **Live** — `lib/monitoring/error-tracker.ts`, readable in development           |
+| Alerting / paging          | **Not wired.** Nothing sends a notification when a check fails                  |
+| Sentry / Grafana / Datadog | **Not wired.** No SDK is installed                                              |
 
 Nothing polls these endpoints on your behalf. If you want to be told when the instance is down,
-point an external uptime checker at `/api/health` — that is the integration point, and it is the
-only piece you have to supply.
+point an external uptime checker at `/api/ready` — the one endpoint open without a session. It
+answers `200` as soon as the process serves requests and never touches the database, which is
+why the Docker `HEALTHCHECK` uses it too; so it tells you the app is up, not that the database
+works. For that, the health endpoints below need a signed-in session.
 
 ## Health endpoints
 
-All three are unauthenticated and safe to expose to an uptime checker.
+`/api/health` answers only a signed-in owner (`401`/`403` otherwise). `/api/health/db` and
+`/api/health/email` are behind the proxy's session check like every non-public route. Check them
+from a signed-in browser, or open **`/admin`**, which reports the database, the schema and
+whether email is configured.
 
 ### `GET /api/health`
 
@@ -46,10 +48,6 @@ Combined check. Returns database and email status plus uptime and a response tim
   "response_time_ms": 15
 }
 ```
-
-A reasonable external check is every 30s, alerting on three consecutive failures or a response
-slower than 5s. Three consecutive rather than one: a single SQLite write lock can push one
-probe past its timeout without anything being wrong.
 
 ### `GET /api/health/db`
 
@@ -83,16 +81,13 @@ Exposed series: `http_requests_total`, `http_errors_total`, `db_queries_total`,
 
 Two properties worth knowing before you build anything on it:
 
-- **In production the endpoint requires a bearer token** — `Authorization: Bearer $INIT_SECRET`.
-  Outside production it is open. A scraper configured without the header will get `401` from a
-  production instance and nothing else will explain why.
+- **A scraper cannot reach it today.** `/api/metrics` is not a public route, so the proxy wants a
+  signed-in session before the route runs — and in production the route then also wants
+  `Authorization: Bearer $INIT_SECRET`. A Prometheus scraper has no session, so it gets `401`.
+  Read it from a signed-in browser in development.
 - **The counters live in process.** They reset on every restart and every redeploy, which is
   what `metrics_reset_timestamp_seconds` is for. Treat them as rates since last boot, not as
   lifetime totals.
-
-```bash
-curl -H "Authorization: Bearer $INIT_SECRET" https://your-instance/api/metrics
-```
 
 ## Structured logging
 
@@ -121,7 +116,7 @@ Production output is one JSON object per line, so `docker logs` piped through `j
 query tool without any log shipper:
 
 ```bash
-docker compose logs -f app | jq 'select(.level == "error")'
+docker compose logs -f situs-prod | jq 'select(.level == "error")'
 ```
 
 ## Error tracking
@@ -139,14 +134,13 @@ Like the metrics counters, this buffer is in-process and does not survive a rest
 
 Nothing here is automated; these are the things worth doing by hand.
 
-- **After a deploy** — `curl -fsS https://your-instance/api/health | jq .status` should print
-  `ok`. It is the one check that covers database and email together.
-- **When something looks wrong** — `/api/health/db` first (is the database the cause?), then
-  the error-level log lines above, then `/api/metrics` for whether `http_errors_total` is
-  climbing or flat.
-- **Backups** — health checks say nothing about your data surviving. `scripts/db-backup.sh` is
-  the relevant tool; a health endpoint returning `ok` on an instance with no backups is exactly
-  as green as one with them.
+- **After a deploy** — `curl -fsS https://your-instance/api/ready` should succeed, and `/admin`
+  (signed in) should show the database and schema as healthy.
+- **When something looks wrong** — `/admin` or `/api/health/db` first (is the database the
+  cause?), then the error-level log lines above.
+- **Backups** — health checks say nothing about your data surviving; see
+  [DATABASE_STRATEGY.md](DATABASE_STRATEGY.md#backup--recovery). A health endpoint returning `ok`
+  on an instance with no backups is exactly as green as one with them.
 
 ## What this deliberately leaves out
 

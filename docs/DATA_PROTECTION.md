@@ -150,13 +150,13 @@ Account deletion is immediate and complete. There is no grace period and no soft
 
 ## 6. Data subject rights
 
-| Right                                 | How                                          | Where                          |
-| ------------------------------------- | -------------------------------------------- | ------------------------------ |
-| Access (Art. 15)                      | JSON export of every relation on the account | `POST /api/user/export-data`   |
-| Portability (Art. 20)                 | Same export, machine-readable                | as above                       |
-| Erasure (Art. 17)                     | Immediate and complete, by cascade           | `DELETE /api/user/delete-data` |
-| Rectification (Art. 16)               | Edit in the app                              | —                              |
-| Restriction / objection (Art. 18, 21) | By arrangement with the operator             | —                              |
+| Right                                 | How                                          | Where                        |
+| ------------------------------------- | -------------------------------------------- | ---------------------------- |
+| Access (Art. 15)                      | JSON export of every relation on the account | `POST /api/user/export-data` |
+| Portability (Art. 20)                 | Same export, machine-readable                | as above                     |
+| Erasure (Art. 17)                     | Immediate and complete, by cascade           | `POST /api/user/delete-data` |
+| Rectification (Art. 16)               | Edit in the app                              | —                            |
+| Restriction / objection (Art. 18, 21) | By arrangement with the operator             | —                            |
 
 The export is **derived from the Prisma schema** (`lib/services/gdpr/export-scope.ts`), not from
 a hand-written list, so a relation added to `User` is exported the day it exists. It previously
@@ -167,35 +167,36 @@ hold NextAuth OAuth and session tokens. Those are login credentials rather than 
 about the subject, and a downloadable file containing them would be a security risk to the
 person who downloaded it.
 
-**A tenant is not an account holder.** Tenants reach their own records through a token-based
-portal and have no login. A subject access request from a tenant is handled by the operator by
-hand; there is no self-service export for them. That is a reasonable position for a single
+**A tenant is not an account holder.** Tenants have no login and no view of their own records. A
+subject access request from a tenant is handled by the operator by hand; there is no self-service
+export for them. That is a reasonable position for a single
 instance and would need revisiting if Situs were offered as a service.
 
 ## 7. Security measures
 
-| Measure                                                                       | Where                                                                                                                             |
-| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| AES-256-GCM at rest for the fields in §3                                      | `lib/utils/pii-encryption.ts`                                                                                                     |
-| Fails closed in production without `PII_ENCRYPTION_KEY`                       | `lib/utils/env.ts` — the app exits, because `encryptPII` silently returns plaintext without a key                                 |
-| Per-request CSP nonce, HSTS, frame/content-type/referrer/permissions policies | `proxy.ts`, on every response                                                                                                     |
-| `userId` scoping on API routes                                                | `requireAuth` / `requireOwnerAccess`                                                                                              |
-| Rate limiting                                                                 | `lib/utils/rate-limit.ts` (~48 routes) and `lib/middleware/rate-limit.ts` (payments, webhooks, TOTP)                              |
-| Registration closed by default                                                | `lib/services/auth/registration.ts` — the first account owns the instance; every other email is refused before any row is written |
-| Audit trail on workflow mutations                                             | `lib/services/audit-log.ts`, `AuditLog`                                                                                           |
-| Debug endpoints refused in production                                         | `/api/debug/db` returns 403 when `NODE_ENV=production`                                                                            |
-| Bank consent references                                                       | 256-bit random, user-scoped, constant-time compared, single-use, dropped once spent                                               |
-| Private key handling                                                          | Enable Banking RSA key mounted as a file (`ENABLE_BANKING_PRIVATE_KEY_FILE`), keeping it out of `/proc/<pid>/environ`             |
+| Measure                                                                       | Where                                                                                                                                 |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| AES-256-GCM at rest for the fields in §3                                      | `lib/utils/pii-encryption.ts`                                                                                                         |
+| Stops in production without `PII_ENCRYPTION_KEY`                              | `lib/utils/env.ts` — exits the process when a module that imports it loads, because `encryptPII` returns plaintext without a key      |
+| Per-request CSP nonce, HSTS, frame/content-type/referrer/permissions policies | `proxy.ts`, on every response                                                                                                         |
+| `userId` scoping on API routes                                                | `requireAuth` / `requireOwnerAccess`                                                                                                  |
+| Rate limiting                                                                 | `lib/utils/rate-limit.ts` (`withRateLimit`) and `lib/middleware/rate-limit.ts` (the Stripe webhook, TOTP verify) — `docs/SECURITY.md` |
+| Registration closed by default                                                | `lib/services/auth/registration.ts` — the first account owns the instance; every other email is refused before any row is written     |
+| Audit trail on workflow mutations                                             | `lib/services/audit-log.ts`, `AuditLog`                                                                                               |
+| Debug endpoints restricted in production                                      | `/api/debug/db` and `/api/debug/db/seed` return 403; `/api/debug/db/init` needs a session and `INIT_SECRET` (`docs/SECURITY.md`)      |
+| Bank consent references                                                       | 256-bit random, user-scoped, constant-time compared, single-use, dropped once spent                                                   |
+| Private key handling                                                          | Enable Banking RSA key mounted as a file (`ENABLE_BANKING_PRIVATE_KEY_FILE`), keeping it out of `/proc/<pid>/environ`                 |
 
-**Backups are the operator's responsibility.** `scripts/db-backup.sh` exists; nothing schedules
-it. Availability and restorability (Art. 32(1)(c)) are not provided by the application.
+**Backups are the operator's responsibility.** `docs/DATABASE_STRATEGY.md` describes them; nothing
+in the application schedules one. Availability and restorability (Art. 32(1)(c)) are not provided by the application.
 
 ## 8. Breach response
 
 No formal procedure is defined, which is honest rather than ideal for a single-operator
 instance. The 72-hour notification duty under Article 33 still applies. The material that would
 be needed is available: the audit trail records workflow mutations with actor and resource, and
-`/api/monitoring/errors` plus the structured JSON logs cover the application side.
+the structured JSON logs cover the application side (`/api/monitoring/errors` answers only in
+development).
 
 ---
 

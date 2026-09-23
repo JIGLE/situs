@@ -12,8 +12,11 @@ Active workflows (`.github/workflows/`):
 - `release.yml` — Two-phase release flow: `prepare` (manual dispatch) opens a version-bump PR;
   `publish` (push to `main`) tags and cuts the GitHub Release once a version bump lands, then
   verifies version integrity. On pushes that are not a version bump it reports release lag.
-- `deploy-ghcr.yml` — Builds the Docker image, scans it with Trivy, and pushes to GHCR (tag
-  push, manual dispatch, or `repository_dispatch`).
+- `deploy-ghcr.yml` — Builds the Docker image, scans it with Trivy, and pushes to GHCR. The ref
+  decides the tags: a `v*` tag writes `:<version>` and `:latest`, `main` writes `:main` and
+  `:sha-<short>`, anything else `:sha-<short>`. It runs on a `v*` tag push, on a push to `main`
+  that changes more than docs, on manual dispatch and on `repository_dispatch`;
+  `docs/REPOSITORY_PROCEDURES.md` §5 has the release chain.
 - `reusable-verify.yml` — **Reusable only** (`workflow_call`), never triggers on its own. Holds
   the lint/type-check/test trio called by `ci.yml`. Its job names (`Lint & Type Check`,
   `Unit Tests`) are required status checks in `.github/BRANCH_PROTECTION.md` — don't rename them
@@ -28,15 +31,8 @@ Composite actions (`.github/actions/`):
   them only helps where every caller inherits it.
 - `resolve-scan-base/` — Works out a valid git base commit for the diff-scoped secret scans.
 
-Retired:
-
-- `production.yml` ("Production Gate") — deleted. It duplicated `ci.yml`'s verify and build on
-  the same `push: main` event, and its version-integrity check raced `release.yml` for the tag
-  it was checking against. Both of its real checks moved into `release.yml`.
-- Superseded workflows are **deleted**, not parked. `docs/archived-workflows/` held
-  `publish-ghcr.yml`, `create-release.yml` and `dependabot-auto-merge.yml`; all three were removed
-  on 2026-08-17 because the current five had replaced them and they still described the Helm/Kubernetes
-  deployment path that no longer exists.
+Superseded workflows are **deleted**, not parked; `git log --diff-filter=D -- .github/workflows`
+finds them.
 
 Guidelines:
 

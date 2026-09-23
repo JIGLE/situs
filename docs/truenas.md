@@ -28,12 +28,13 @@ running code you did not expect.
 
 | Tag                  | Written by                         | Use it for               |
 | -------------------- | ---------------------------------- | ------------------------ |
-| `:latest`, `:1.25.0` | a release tag push only            | production               |
+| `:latest`, `:1.25.0` | a release tag only                 | production               |
 | `:main`              | every merge to `main`              | testing the newest code  |
 | `:sha-<short>`       | every merge, and manual dispatches | pinning one exact commit |
 
-**Only a release can claim `:latest` or a bare version number.** A build from `main` or a manual
-dispatch is never allowed to, which is what stops a test image quietly becoming production.
+**Only a release can claim `:latest` or a bare version number.** A build from `main`, or a manual
+dispatch on anything but a release tag, never can — which is what stops a test image quietly
+becoming production.
 
 **An image exists only if a workflow ran.** Naming a tag here does not build it — if the tag was
 never published, the pull fails and TrueNAS keeps serving whatever it already had, which looks
@@ -41,12 +42,11 @@ exactly like a deploy that did nothing. Check `Actions → Deploy to GHCR` if in
 `https://<your-host>/api/info` to see the version and commit baked into the image that is
 actually running.
 
-> `/api/info` reported `dev` / `unknown` on every correctly built image until the runner stage
-> carried the build args into the process — the ARGs reached the image labels but not the running
-> app. It reports honestly from that build onward. Two checks that do not depend on it:
-> `https://<your-host>/version.json`, a static file written at build time, and
+> Two checks that do not depend on `/api/info`: `https://<your-host>/version.json`, which carries
+> the version alone, and
 > `docker inspect ghcr.io/jigle/situs:main --format '{{index .Config.Labels "org.opencontainers.image.revision"}}'`.
-> A locally built image without `--build-arg` reports `unknown` for all three, which is correct.
+> A locally built image without `--build-arg` reports `unknown` in `/api/info` and in the label,
+> which is correct.
 
 > **Set the image pull policy to `Always` if you use `:main`.** It is a moving pointer, so with
 > `IfNotPresent` the node keeps serving the cached layer and the tag appears frozen. Pinning
@@ -64,20 +64,19 @@ write is almost always this.
 
 ### Required
 
-| Variable             | Example                       | Notes                                                                        |
-| -------------------- | ----------------------------- | ---------------------------------------------------------------------------- |
-| `NEXTAUTH_URL`       | `https://situs.example.com`   | Full external URL, no trailing slash. Must match how users reach the app.    |
-| `NEXTAUTH_SECRET`    | `openssl rand -base64 32`     | Minimum 32 characters. Signs sessions.                                       |
-| `DATABASE_URL`       | `file:/app/data/situs.sqlite` | Path **inside** the container, on the mounted dataset.                       |
-| `PII_ENCRYPTION_KEY` | `openssl rand -hex 32`        | Exactly 64 hex chars. **The app refuses to start in production without it.** |
+| Variable             | Example                       | Notes                                                                     |
+| -------------------- | ----------------------------- | ------------------------------------------------------------------------- |
+| `NEXTAUTH_URL`       | `https://situs.example.com`   | Full external URL, no trailing slash. Must match how users reach the app. |
+| `NEXTAUTH_SECRET`    | `openssl rand -base64 32`     | Minimum 32 characters. Signs sessions.                                    |
+| `DATABASE_URL`       | `file:/app/data/situs.sqlite` | Path **inside** the container, on the mounted dataset.                    |
+| `PII_ENCRYPTION_KEY` | `openssl rand -hex 32`        | Exactly 64 hex chars. **Required in production** — see below.             |
 
-`PII_ENCRYPTION_KEY` encrypts IBAN, tax ID (NIF) and phone at rest. Without it those fields were
-previously written in plaintext with no warning, which is why the app now exits instead. To run
-without encryption anyway — a throwaway staging box — set `ALLOW_UNENCRYPTED_PII=true` and accept
-a loud warning on every start.
+`PII_ENCRYPTION_KEY` encrypts IBAN, tax ID (NIF) and phone at rest. Without it the app stops with
+an error naming the variable. To run without encryption anyway — a throwaway staging box — set
+`ALLOW_UNENCRYPTED_PII=true`; those fields are then stored in plaintext, with a logged warning.
 
-If you set the key on a deployment that already has data, run
-`node scripts/backfill-pii-encryption.js` to encrypt the rows written before it existed.
+If you set the key on a deployment that already has data, encrypt the rows written before it
+existed — see [Upgrading an older instance](#upgrading-an-older-instance).
 
 ### Recommended
 
@@ -96,7 +95,7 @@ the header is ignored entirely. Getting it wrong lets a caller pick their own ra
 | `ENABLE_DEMO_LOGIN`                         | `true` enables demo credentials that grant **ADMIN**. Leave unset in production. |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Enables Google sign-in — see below                                               |
 | `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`       | Email delivery over SMTP (Brevo, Resend, SES — any provider)                     |
-| `STRIPE_SECRET_KEY`, `ENABLE_STRIPE`        | Card / SEPA payments                                                             |
+| `STRIPE_SECRET_KEY`, `ENABLE_STRIPE`        | Subscription billing for the app itself — never rent                             |
 | `AUTO_DB_INIT`, `AUTO_DB_SCHEMA_SYNC`       | Both default `true`; set `false` to manage schema yourself                       |
 
 > `NEXT_PUBLIC_ENABLE_DEMO_LOGIN` no longer exists. The sign-in form now resolves demo
@@ -335,13 +334,13 @@ delete the comments marking them as assumptions.
 Worth knowing before signing up for anything: almost every external service is optional, and a
 self-hosted instance collecting rent by bank transfer needs none of them.
 
-| Service        | Required? | What it is for                                                                                                                               |
-| -------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Enable Banking | optional  | live bank movements. Unset, CSV import covers it                                                                                             |
-| Stripe         | optional  | collecting rent by card/SEPA, and subscription billing. Unset, the payment routes answer "not configured" and plan limits are never enforced |
-| SMTP           | optional  | outbound email, any provider. Unset, email is simply not sent                                                                                |
-| Redis          | optional  | caching                                                                                                                                      |
-| Google OAuth   | optional  | sign-in. Credentials sign-in works without it                                                                                                |
+| Service        | Required? | What it is for                                                                                                                              |
+| -------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Enable Banking | optional  | live bank movements. Unset, CSV import covers it                                                                                            |
+| Stripe         | optional  | the app's own subscription billing — never rent. Unset, there is nothing to subscribe to; plan limits apply only with `ENABLE_BILLING=true` |
+| SMTP           | optional  | outbound email, any provider. Unset, email is simply not sent                                                                               |
+| Redis          | optional  | shared counters for one of the rate limiters (`docs/SECURITY.md`). Unset, every limiter counts in process                                   |
+| Google OAuth   | optional  | sign-in. Credentials sign-in works without it                                                                                               |
 
 Required in every case: `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, and
 `PII_ENCRYPTION_KEY` in production.
@@ -363,8 +362,8 @@ Consents expire — 90 days by default, and a bank can revoke one sooner. When t
 connection is marked expired, syncing stops rather than quietly returning nothing, and both
 Settings › Integrations and `/admin` say so with a **Reconnect** action.
 
-To verify the flow before pointing it at a real bank, connect to `SANDBOXFINANCE_SFIN0000` from
-the picker: it is a real API call against test data, not a mock.
+To exercise the flow without a real account, use a Sandbox application and its Mock ASPSP — see
+_Recording the transaction shape_ above.
 
 ## Google OAuth
 
@@ -380,41 +379,82 @@ over and remove the old one afterwards — otherwise sign-in fails with `redirec
 
 ## Publishing an image
 
-Nothing reaches GHCR just because code landed on `main`. Two paths put an image there:
+Three paths put an image on GHCR:
+
+**A merge to `main` (the development channel).** Every merge that changes more than docs builds
+automatically and publishes `:main` and `:sha-<short>`. Nothing to dispatch — this is the normal
+way to test merged code.
 
 **A release (what production should run).** Actions → **Release** → Run workflow → pick
 `patch`/`minor`/`major`. That opens a `release/vX.Y.Z` PR with the version bumps; merging it to
-`main` makes the workflow create the tag and the GitHub Release, and the tag push is what triggers
-**Deploy to GHCR**. So it is dispatch → merge → wait, not one button.
-
-**A merge to `main` (the development channel).** Every merge builds automatically and publishes
-`:main` and `:sha-<short>`. Nothing to dispatch — this is the normal way to test merged code.
+`main` makes the workflow create the tag and the GitHub Release. The tag starts **Deploy to GHCR**
+on its own only when the repository has a `RELEASE_TOKEN` secret — GitHub starts no workflow from
+a tag pushed with its default token. Without one, run **Deploy to GHCR** by hand against the tag.
+So it is dispatch → merge → deploy, not one button.
 
 **A one-off build (for a branch that has not been merged).** Actions → **Deploy to GHCR** → Run
 workflow, choosing the branch and optionally a `version` string containing a hyphen, e.g.
 `1.25.0-rc1`. A bare number like `1.25.0` is refused and falls back to `sha-<short>`, because bare
 version numbers belong to releases. `dry_run: true` proves the image builds without publishing.
 
-> This warning used to read "a one-off build still writes `:latest`". **That is no longer true**
-> and was left here after the workflow was hardened. Only a tag push can write `:latest` or a bare
-> version now — see [Which tag](#which-tag) — so testing a branch cannot move production. The
-> stale warning is called out rather than quietly deleted because it discouraged using the
-> dispatch path at all, which is the safe one.
-
 ## Updating
 
 1. Check <https://github.com/JIGLE/situs/releases>
 2. Change the image tag in the app's settings
-3. Redeploy — the container applies any additive schema changes on start
+3. Redeploy — the container brings the database schema up to date on start
 4. Verify: `curl https://<your-domain>/version.json`
+
+If the instance has run an older version for a while, read
+[Upgrading an older instance](#upgrading-an-older-instance) first.
 
 TrueNAS does not detect updates for a Custom App; there is no catalog metadata to compare against.
 Either check releases manually or run a container auto-updater alongside it.
 
+## Upgrading an older instance
+
+Changing the image tag is the whole upgrade ([Updating](#updating)), with two things to know when
+the instance is old.
+
+**The first start of a new version can drop data its schema no longer has.** `prestart` syncs the
+schema on every start. When the additive sync cannot apply — the new version removed or retyped a
+table or column, as the 2026-09 scope cutdown did — it copies `situs.sqlite` to
+`situs.sqlite.bak-<timestamp>` beside it and forces the sync, dropping what is gone. It goes ahead
+even if that copy fails, so snapshot the dataset before the first start. To look before anything is
+dropped, set `AUTO_DB_SCHEMA_SYNC_FORCE=false`: the app then keeps the old schema, and fails on
+whatever needs the new one, until you remove the variable.
+
+**Then run the backfills that apply**, in this order. Each is idempotent and safe to re-run. The
+first two run inside the container from the TrueNAS shell (`docker ps` shows its name), with the
+container's own environment, and take `--dry-run`:
+
+1. **Strip clear-text IBANs from imported bank movements.** Every release up to v1.25.0 stored the
+   counterparty IBAN in clear inside each imported movement's raw row. Needs no key:
+
+   ```bash
+   docker exec -it <container> node scripts/backfill-rawdata-redaction.js --dry-run
+   docker exec -it <container> node scripts/backfill-rawdata-redaction.js
+   ```
+
+2. **Encrypt PII written without a key** — if the instance ever ran without
+   `PII_ENCRYPTION_KEY`, or from before field encryption existed:
+
+   ```bash
+   docker exec -it <container> node scripts/backfill-pii-encryption.js --dry-run
+   docker exec -it <container> node scripts/backfill-pii-encryption.js
+   ```
+
+3. **Allocate receipts that predate the rent ledger.** If leases and receipts existed before the
+   reference-month ledger, their months read as unpaid until each receipt is allocated. This one
+   needs the source tree, which the image does not ship: stop the app, then from a checkout of the
+   same release on a machine that can reach the file run
+   `DATABASE_URL=file:/path/to/situs.sqlite PII_ENCRYPTION_KEY=… npx tsx scripts/backfill-rent-periods.ts`,
+   and start the app again. Receipts it cannot attribute to a single lease are left for review
+   rather than guessed.
+
 ## Troubleshooting
 
-**Container starts then exits immediately.** Check the logs for the `PII_ENCRYPTION_KEY` message —
-a missing key is a deliberate hard stop, not a crash.
+**The app stops with a `PII_ENCRYPTION_KEY` error.** A missing key is a deliberate hard stop, not a
+crash — set it (see [Environment variables](#environment-variables)).
 
 **All API routes return 500 "Authentication failed".** The database has no tables. Confirm the
 `/app/data` mount is writable by 1001:1001, then restart so `prestart` can run, or initialise
@@ -481,7 +521,7 @@ changes on start. If it is set to `false`, that is the cause.
 
 A second, rarer cause looks identical from the browser: `PII_ENCRYPTION_KEY` was changed on an
 instance that already had encrypted rows. That only breaks models with protected fields — tenants,
-owners, payment methods, rent receipts, NRUA registrations — so if properties and buildings load
+owners, rent receipts, NRUA registrations — so if properties and buildings load
 fine and those do not, suspect the key rather than the schema. Affected fields now read
 `[ENCRYPTED]` instead of failing the request, and the reason is logged. Recover with
 `node scripts/backfill-pii-encryption.js`, or restore the original key.
@@ -491,8 +531,6 @@ URL in the browser, or the Google redirect URI was not updated.
 
 **Rate limiting seems ineffective, or legitimate traffic gets 429s.** `TRUSTED_PROXY_COUNT` does
 not match your actual proxy depth.
-
-See [troubleshooting.md](troubleshooting.md) for issues not specific to TrueNAS.
 
 ## Removing
 
