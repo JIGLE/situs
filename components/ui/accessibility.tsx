@@ -9,15 +9,12 @@ import { cn } from "@/lib/utils/utils";
  */
 interface SkipLinkProps {
   href?: string;
-  children?: React.ReactNode;
+  /** The caller's translated copy. No default: an English fallback is how the layouts shipped one. */
+  children: React.ReactNode;
   className?: string;
 }
 
-export function SkipLink({
-  href = "#main-content",
-  children = "Skip to main content",
-  className,
-}: SkipLinkProps) {
+export function SkipLink({ href = "#main-content", children, className }: SkipLinkProps) {
   return (
     <a
       href={href}

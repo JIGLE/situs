@@ -82,14 +82,17 @@ describe("Sidebar", () => {
     let queryByText: (text: string) => HTMLElement | null;
     let getByLabelText: (text: string) => HTMLElement;
     await act(async () => {
-      ({ queryByText, getByLabelText } = render(<Sidebar activeTab="dashboard" />));
+      ({ queryByText, getByLabelText } = render(<Sidebar activeTab="dashboard" />, {
+        initialLocale: "pt",
+      }));
     });
 
     // Username should not be visible in collapsed mode
     expect(queryByText!("Alice")).toBeNull();
 
-    // Header collapse toggle should be present with Expand label
-    expect(getByLabelText!("Expand Sidebar")).toBeDefined();
+    // Header toggle carries the Expand label — in Portuguese, because a hardcoded English label
+    // would pass an English assertion.
+    expect(getByLabelText!("Expandir barra lateral")).toBeDefined();
 
     // Header text 'Situs' should be hidden when collapsed
     expect(queryByText!("Situs")).toBeNull();
@@ -100,11 +103,15 @@ describe("Sidebar", () => {
     let getByText: (text: string) => HTMLElement;
     let getByLabelText: (text: RegExp | string) => HTMLElement;
     await act(async () => {
-      ({ getByText, getByLabelText } = render(<Sidebar activeTab="dashboard" />));
+      ({ getByText, getByLabelText } = render(<Sidebar activeTab="dashboard" />, {
+        initialLocale: "pt",
+      }));
     });
     expect(getByText!("Alice")).toBeDefined();
 
-    // Header collapse toggle should be present with Collapse label
-    expect(getByLabelText!("Collapse Sidebar")).toBeDefined();
+    // Every label a screen reader announces here, in the app's language.
+    expect(getByLabelText!("Recolher barra lateral")).toBeDefined();
+    expect(getByLabelText!("Navegação principal")).toBeDefined();
+    expect(getByLabelText!("Terminar sessão")).toBeDefined();
   });
 });

@@ -91,7 +91,7 @@ export function MobileBottomNav({
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
       role="navigation"
-      aria-label="Mobile navigation"
+      aria-label={tNav("mobileNavLabel")}
     >
       <div className="bg-[var(--color-background)]/95 backdrop-blur-sm border-t border-[var(--color-border)]">
         {/* The nav's true height is the wrapper's 1px `border-t` + this `h-16` + the safe-area
@@ -247,7 +247,7 @@ export function MobileTopBar(): React.ReactElement {
     >
       <Link
         href={"/dashboard"}
-        aria-label="Situs — Home"
+        aria-label={`Situs — ${tNav("home")}`}
         className="flex shrink-0 items-center justify-center max-md:min-h-11 max-md:min-w-11"
       >
         <SitusPortalMark size="sm" className="h-6 w-6" />

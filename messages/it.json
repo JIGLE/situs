@@ -402,7 +402,14 @@
     "signOut": "Esci",
     "coreGroup": "Core",
     "portfolio": "Portafoglio",
-    "admin": "Amministrazione"
+    "admin": "Amministrazione",
+    "skipToContent": "Vai al contenuto principale",
+    "skipToNavigation": "Vai alla navigazione",
+    "sidebarLabel": "Navigazione laterale",
+    "mainNavLabel": "Navigazione principale",
+    "mobileNavLabel": "Navigazione mobile",
+    "expandSidebar": "Espandi barra laterale",
+    "collapseSidebar": "Comprimi barra laterale"
   },
   "dashboard": {
     "welcome": "Benvenuto nella tua dashboard di gestione immobiliare",
