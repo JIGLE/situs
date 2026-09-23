@@ -66,6 +66,8 @@ function resolveLocale(request: NextRequest): string {
  * /api/tenant-portal/**  — Token-based tenant self-service API
  * /api/csrf-token        — CSRF token endpoint (GET only, no auth needed)
  * /api/monitoring/**     — Health/metrics probes
+ * /api/metrics           — Prometheus scrape. A scraper has no session; the route checks
+ *                          `Authorization: Bearer $INIT_SECRET` itself in production.
  * /api/webhooks/**       — External provider callbacks (Stripe, SIBS, Bizum,
  *                          SendGrid). Authenticated via provider signatures,
  *                          not a user session, so they bypass auth/CSRF.
@@ -83,6 +85,7 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname.startsWith("/api/tenant-portal") ||
     pathname === "/api/csrf-token" ||
     pathname.startsWith("/api/monitoring") ||
+    pathname === "/api/metrics" ||
     pathname.startsWith("/api/webhooks") ||
     pathname === "/api/billing/checkout"
   );

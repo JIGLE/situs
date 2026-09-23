@@ -156,7 +156,7 @@ Recommended in production:
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PII_ENCRYPTION_KEY` | **Required in production** — 64-char hex key for AES-256-GCM PII encryption. Without it the app refuses to start, naming this variable; `ALLOW_UNENCRYPTED_PII=true` overrides. |
 | `CRON_SECRET`        | Bearer token for the three `/api/cron/*` endpoints (notifications, data retention, bank sync); each answers 503 while it is unset                                               |
-| `INIT_SECRET`        | Protects DB init and debug endpoints                                                                                                                                            |
+| `INIT_SECRET`        | Production bearer for the DB init endpoint and for `/api/metrics` scrapes; unset, both answer 403                                                                               |
 | `ENABLE_DEMO_LOGIN`  | `true` enables demo credentials that grant **ADMIN** — leave it unset in production                                                                                             |
 
 Integrations are opt-in and off by default — `ENABLE_STRIPE`, `ENABLE_OAUTH`,

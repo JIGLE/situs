@@ -3,11 +3,10 @@ import { getPrismaClient } from "@/lib/services/database/database";
 
 export const runtime = "nodejs";
 
-// In-memory metrics store
+// In-memory metrics store. Only series that something writes belong here: three more
+// (http_requests_total, http_errors_total, db_queries_total) had increment functions nothing
+// called, so they reported 0 for the life of every process.
 interface MetricsStore {
-  http_requests_total: number;
-  http_errors_total: number;
-  db_queries_total: number;
   email_sent_total: number;
   email_failed_total: number;
   last_reset: number;
@@ -15,9 +14,6 @@ interface MetricsStore {
 
 // Simple in-memory metrics (resets on restart - for production use Redis or proper metrics DB)
 const metrics: MetricsStore = {
-  http_requests_total: 0,
-  http_errors_total: 0,
-  db_queries_total: 0,
   email_sent_total: 0,
   email_failed_total: 0,
   last_reset: Date.now(),
@@ -27,27 +23,12 @@ const metrics: MetricsStore = {
 function formatPrometheusMetrics(): string {
   const lines: string[] = [];
 
-  lines.push("# HELP http_requests_total Total HTTP requests");
-  lines.push("# TYPE http_requests_total counter");
-  lines.push(`http_requests_total ${metrics.http_requests_total}`);
-  lines.push("");
-
-  lines.push("# HELP http_errors_total Total HTTP errors (4xx, 5xx)");
-  lines.push("# TYPE http_errors_total counter");
-  lines.push(`http_errors_total ${metrics.http_errors_total}`);
-  lines.push("");
-
-  lines.push("# HELP db_queries_total Total database queries");
-  lines.push("# TYPE db_queries_total counter");
-  lines.push(`db_queries_total ${metrics.db_queries_total}`);
-  lines.push("");
-
-  lines.push("# HELP email_sent_total Total emails sent successfully");
+  lines.push("# HELP email_sent_total Automated reminder emails sent successfully");
   lines.push("# TYPE email_sent_total counter");
   lines.push(`email_sent_total ${metrics.email_sent_total}`);
   lines.push("");
 
-  lines.push("# HELP email_failed_total Total emails failed to send");
+  lines.push("# HELP email_failed_total Automated reminder emails that failed to send");
   lines.push("# TYPE email_failed_total counter");
   lines.push(`email_failed_total ${metrics.email_failed_total}`);
   lines.push("");
@@ -91,9 +72,6 @@ export async function GET(request: Request): Promise<Response> {
       // Return JSON format
       return NextResponse.json({
         metrics: {
-          http_requests_total: metrics.http_requests_total,
-          http_errors_total: metrics.http_errors_total,
-          db_queries_total: metrics.db_queries_total,
           email_sent_total: metrics.email_sent_total,
           email_failed_total: metrics.email_failed_total,
           process_uptime_seconds: process.uptime(),
@@ -122,18 +100,6 @@ export async function GET(request: Request): Promise<Response> {
 }
 
 // Export metrics increment functions for use by other modules
-export function incrementHttpRequests(): void {
-  metrics.http_requests_total++;
-}
-
-export function incrementHttpErrors(): void {
-  metrics.http_errors_total++;
-}
-
-export function incrementDbQueries(): void {
-  metrics.db_queries_total++;
-}
-
 export function incrementEmailSent(): void {
   metrics.email_sent_total++;
 }

@@ -34,6 +34,9 @@ fallback. It runs `prisma db push` and `prisma generate`.
 - With `INIT_SECRET` set, a request needs a signed-in session and a CSRF token — `proxy.ts` checks
   both before the route runs — plus `Authorization: Bearer <INIT_SECRET>` or an HMAC signature in
   `X-Signature`.
+- The same secret is the production bearer for `/api/metrics` and `/api/monitoring/metrics`, which
+  need no session (see [MONITORING.md](MONITORING.md#metrics)). Setting it for a scraper therefore
+  also arms this endpoint — still behind the session and CSRF checks above.
 
 ## CSRF
 
