@@ -1,28 +1,16 @@
 # Situs — Claude Code Context
 
-## Project Overview
+## Project
 
-Situs — full name **Situs // Sovereign Capital System** — is a self-hosted
-property management SaaS for landlords and property managers in **Portugal and Spain**. It
-handles properties, units, tenants, leases, receipts, expenses
-and fiscal compliance, built around a reference-month rent ledger: bank movement → match →
-allocate → receipt → tax filing → audit trail.
+Situs — **Situs // Sovereign Capital System** — is self-hosted property management for landlords
+and property managers in **Portugal and Spain**. The product is one loop: bank movement → match →
+allocate → receipt → tax filing → audit trail. Around it sit the records the loop runs on
+(properties, units, buildings, owners, tenants, leases, expenses) and the compliance substrate (PII
+encryption, GDPR export and retention, the Article 30 record, the legal pages). Stripe serves the
+app's own subscription billing only; rent reaches the ledger as a matched bank movement, never as a
+card payment.
 
-**Current version**: see `package.json` — it was hardcoded here as 1.16.3 against a shipped
-1.24.0, because a number copied into prose has no reason to move when the release does. Don't
-reintroduce it. | **Stage**: Production-ready core; the Situs rebrand is complete — all 13 PRs shipped
-(brand, nav, landing, portfolio tree, rent ledger, bank matching, receipt lifecycle + PT tax
-connector, audit trail/tax dashboard, schema consolidation, a11y/e2e pass).
-The IA consolidation (PR 10b) and the infra rename (PR 13) have since shipped too: `/people`
-is live with a redirect shim from the old path, and the package, Docker and env identifiers all
-read `situs` with Helm dropped for a single Docker path. A ten-phase scope cutdown has since
-finished on top of all that — see the phase table in `ROADMAP.md` for what each one took.
-Ticketing, the vendor registry, correspondence (including the inbound mail Inbox), the Documents
-browser with its OCR classifier, both tenant-facing surfaces with the online-payment stack
-behind them, and the ownership-verification scaffold are all gone. What remains is the core
-loop, the portfolio and tenancy records it runs on, and the compliance substrate around it.
-Stripe stays for the app's own subscription billing only — rent reaches the ledger as a matched
-bank movement, never as a card payment.
+The version lives in `package.json`. Never copy it into prose.
 
 ## Tech Stack
 
@@ -43,15 +31,15 @@ bank movement, never as a card payment.
 
 ```bash
 npm run dev            # Start dev server on http://localhost:3000
-npm test               # Run Vitest unit/integration suite
+npm test               # Vitest unit/integration suite
 npm run lint           # ESLint with --max-warnings=0 (CI gate)
 npm run type-check     # tsc --noEmit
-npm run verify         # type-check + test
-npm run verify:ci      # type-check + lint + format:check + hygiene + test
+npm run hygiene        # docs, i18n, colour, currency, CSS, action, version and branch checks
+npm run verify:ci      # type-check + lint + format:check + hygiene + security:audit + test
+npm run audit:local    # mobile/desktop audit against a disposable app (see Responsive rules)
 
 npx prisma db push     # Push schema changes to SQLite
-npx prisma generate    # Regenerate Prisma client after schema changes
-npx prisma studio      # Browse database in browser
+npx prisma generate    # Regenerate the Prisma client after schema changes
 ```
 
 ## Architecture
@@ -60,234 +48,232 @@ npx prisma studio      # Browse database in browser
 
 ```
 app/
-  api/                    # Next.js API route handlers (one folder per domain)
-  [locale]/(main)/        # Owner-facing app pages (locale-prefixed)
-components/         # Shared React components
+  api/                  # Route handlers, one folder per domain — list: find app/api -name route.ts
+  [locale]/(main)/      # Owner-facing pages (locale-prefixed)
+components/             # Shared React components
 lib/
-  types.ts            # Canonical TypeScript types for all entities
-  contexts/app-context.tsx  # Global AppState + AppContext (React context)
-  prisma.ts            # Prisma client singleton
+  types.ts              # Core entity types; domain types sit beside their code
+                        #   (e.g. lib/services/allocation/types.ts, lib/tax/connectors/types.ts)
+  contexts/             # AppState (app-reducer.ts) and AppContext (app-context.tsx)
   services/
-    allocation/       # Pure reference-month waterfall engine + Prisma orchestration
-    matching/          # Pure bank-movement-to-lease confidence scoring engine
+    database/database.ts  # getPrismaClient() — the Prisma singleton, PII extension applied
+    allocation/         # Pure reference-month waterfall engine + Prisma orchestration
+    matching/           # Pure bank-movement-to-lease confidence scoring engine
     bank/               # CSV import + fingerprint dedupe + matching pipeline
       providers/        # PSD2 provider contract + registry + Enable Banking adapter + test fake
-    receipts/          # Receipt document-lifecycle state machine + orchestration
-    tax/               # Tax connector find-or-create + submission-log service
-  tax/connectors/      # Per-country TaxConnector implementations (pt-at.ts, es-nrua.ts)
-  design/country-themes.ts  # PT/ES/EU theme table (Situs brand)
-prisma/
-  schema.prisma     # Database schema — source of truth
-messages/           # i18n translation files (en.json, pt.json, es.json, it.json)
-tests/              # Vitest unit/integration tests
-e2e/                # Playwright E2E tests
+    receipts/           # Receipt document-lifecycle state machine + orchestration
+    tax/                # Tax connector find-or-create + submission-log service
+  tax/connectors/       # Per-country TaxConnector implementations (pt-at.ts, es-nrua.ts)
+  design/country-themes.ts  # PT/ES/EU theme table
+prisma/schema.prisma    # Database schema — source of truth
+messages/               # en.json, pt.json, es.json, it.json
+tests/                  # Cross-cutting contract tests; unit tests sit next to their source
+e2e/                    # Playwright E2E tests
 ```
 
 ### Key Patterns
 
-- **4-zone modal pattern**: Status+Health / Primary Action / Issues Panel / Tabbed info — used by the Tenant edit modal (`tenant-detail-modal.tsx`). The Ticket detail modal was the other user of it and went with the maintenance cut, so the Tenant modal is the only one left. Property has no modal — `property-detail-view.tsx` renders in a `Sheet` from `/portfolio?modal=<id>`; Building has no modal either.
-- **AppContext**: All entities (properties, tenants, leases, receipts, expenses, tickets, buildings…) live in `AppState` via `lib/contexts/app-context.tsx` (composed from `use-app-data.ts` + `use-entity-actions.ts` + `create-entity-actions.ts`). Mutations go through typed actions (`addProperty`, `updateTenant`, etc.). Bank and tax domains (added in the Situs rebrand) are read via dedicated fetches in their own components instead — they don't live in `AppState`.
-- **API routes**: Each domain has its own folder under `app/api/`. Use `GET`/`POST`/`PUT`/`DELETE` handlers with Zod validation and NextAuth session checks.
-- **Compliance**: PT (`/api/compliance/rent-receipts`) and ES (`/api/compliance/nrua`) endpoints generate fiscal payloads. Tax logic lives in `app/api/tax/`.
-- **PII encryption**: AES-256-GCM on IBAN, NIF, phone fields via `lib/utils/pii-encryption.ts` (`encryptPII`/`decryptPII`, keyed off `PII_ENCRYPTION_KEY`). `PII_FIELDS` declares the fields the Prisma extension encrypts on write and decrypts on read — **not** the complete list of encrypted PII. `BankAccount.iban` is encrypted at the call site in `lib/services/bank/consent.ts` and never decrypted (matching uses `ibanHash`, display uses `ibanLast4`); adding it to `PII_FIELDS` would make `/api/debug/db` start returning it in plaintext. The extension is applied where the client is built (`lib/services/database/database.ts`), so the
-  encryption is transparent rather than per-call-site. **Fails closed in production**: `lib/utils/env.ts` exits if `PII_ENCRYPTION_KEY` is absent, because `encryptPII` silently returns plaintext without it. `ALLOW_UNENCRYPTED_PII=true` waives the check and warns loudly on every start.
-- **Reference-month rent ledger** (Situs): `RentPeriod` is the persisted-derived spine — one row per lease per reference month, `status` recomputed in the same transaction as every allocation write (never hand-set). The waterfall invariant: always fill the oldest not-fully-allocated period first (`lib/services/allocation/engine.ts`, pure). `Tenant.paymentStatus` is fully derived from this ledger — the API layer refuses manual overrides.
-- **Bank matching**: CSV/manual import **or a live provider sync** → fingerprint dedupe (idempotent) → fuzzy-duplicate check → reconciliation rules → weighted confidence scoring (`lib/services/matching/engine.ts`, pure). ≥0.85 auto-allocates via a draft `Receipt` (`source: "automation"`); below that, the row waits in the Bank Movements inbox (Finance tab) for a human to confirm/reassign/ignore.
-- **Live bank connection**: PSD2 account information (`lib/services/bank/providers/`, Enable Banking today). Enable Banking is the licensed AISP, so an instance needs no PSD2 licence or eIDAS certificate; their free _restricted production_ mode is limited to accounts you whitelist as your own. Auth is **not** a token exchange — every request carries a JWT the app signs itself with the application's RSA key. A previous adapter spoke to GoCardless Bank Account Data, which closed to new signups in July 2025 and was removed rather than left as a button that can only fail. A provider's only job is to return `BankCsvRow[]`; `importBankRows`' optional `target` points those rows at the right connection/account, so a synced movement inherits the entire pipeline above and behaves identically to an uploaded one. Consent lives in `consent.ts` — unguessable reference, scoped to the caller, single-use. `sync.ts` enforces the provider's daily read budget **before** spending a call (429 costs the rest of the day) and marks a connection `expired` on `ConsentExpiredError` rather than reporting a quiet zero. `BankConnection.provider` is `psd2_<key>` for a real bank and `manual`/`csv` otherwise; never offer a sync to the latter.
-- **Receipt lifecycle**: `Receipt.status` is the MONEY state (paid|pending); `Receipt.lifecycle` is the separate DOCUMENT state machine (`lib/services/receipts/lifecycle.ts`, pure) — draft→review→emitted→(PT)submitted→accepted/rejected, or →voided from any pre-terminal state. Reaching emitted/accepted archives a PDF `Document`; voiding soft-reverses live `PaymentAllocation` rows.
-- **Tax connectors**: one `TaxAuthorityConnector` row per user×country×connector key, `mode` locked to sandbox/review until explicitly promoted to live (no live AT/AEAT integration exists yet). Every call appends an immutable `TaxSubmissionLog` row — read via `GET /api/tax/connectors` (Finance › Tax Summary tab).
-- **Receipt archive, the one surviving use of `Document`**: reaching emitted/accepted writes a PDF `Document` whose `description` carries `situs-receipt-archive:<receiptId>` — a convention, not a foreign key, and the only link between a receipt and the proof of its filing. `findExistingArchive` (`lib/services/receipts/service.ts`) reads it back; `GET /api/receipts/[id]/archive` exposes it, and the Receipts dropdown serves that PDF in preference to the jsPDF copy it renders client-side. Resolve through that function rather than rebuilding the marker — two spellings of it would be two chances to orphan an archive.
+- **Tenant modal**: the 4-zone pattern — Status+Health / Primary Action / Issues Panel / Tabbed
+  info (`tenant-detail-modal.tsx`). Property and Building have no modal: detail overlays open from
+  any page with `?detail=<type>:<id>` (`components/shared/entity-detail-route-client.tsx`).
+- **AppState**: `lib/contexts/app-reducer.ts` holds buildings, properties, tenants, receipts,
+  owners, expenses and leases; `app-context.tsx` composes it with `use-app-data.ts`,
+  `use-entity-actions.ts` and `create-entity-actions.ts`. Mutate through the typed actions
+  (`addProperty`, `updateTenant`, …). Bank, tax and ledger data are fetched by their own
+  components and never live in AppState.
+- **API routes**: one folder per domain under `app/api/`. Validate with Zod, check the NextAuth
+  session before touching the database.
+- **Compliance**: PT `/api/compliance/rent-receipts`, ES `/api/compliance/nrua`. Tax logic lives in
+  `lib/tax/`, `lib/services/tax/connector-service.ts` and `lib/services/tax-calculator.ts`.
+- **PII encryption**: AES-256-GCM via `lib/utils/pii-encryption.ts`, keyed off
+  `PII_ENCRYPTION_KEY`. `PII_FIELDS` lists the fields the Prisma extension (applied in
+  `lib/services/database/database.ts`) encrypts on write and decrypts on read — **not** every
+  encrypted field. `BankAccount.iban` is encrypted at the call site (`lib/services/bank/consent.ts`)
+  and never decrypted: matching uses `ibanHash`, display uses `ibanLast4`. Do not add it to
+  `PII_FIELDS` — the extension would then decrypt it on every read. **Required in production**:
+  without the key `encryptPII` writes plaintext and only warns. The exit that guards against it
+  lives in `lib/utils/env.ts` and runs only when a module importing it loads — the billing routes,
+  `/api/properties`, the Stripe webhook — so a keyless production server starts and serves until
+  then. `ALLOW_UNENCRYPTED_PII=true` waives the exit and logs a warning instead.
+- **Reference-month rent ledger**: `RentPeriod` is one row per lease per reference month; its
+  `status` is recomputed in the same transaction as every allocation write and never hand-set.
+  Waterfall invariant: fill the oldest not-fully-allocated period first
+  (`lib/services/allocation/engine.ts`, pure). `Tenant.paymentStatus` is derived from the ledger —
+  never write it from an API route.
+- **Bank matching**: CSV/manual import or a live provider sync → fingerprint dedupe (idempotent) →
+  fuzzy-duplicate check → reconciliation rules → weighted confidence scoring
+  (`lib/services/matching/engine.ts`, pure). ≥0.85 auto-allocates via a draft `Receipt`
+  (`source: "automation"`); anything lower waits in the Bank Movements inbox (Finance tab) for a
+  human to confirm, reassign or ignore.
+- **Live bank connection**: PSD2 account information through Enable Banking
+  (`lib/services/bank/providers/`). Enable Banking is the licensed AISP, so an instance needs no
+  PSD2 licence or eIDAS certificate; its free _restricted production_ mode covers accounts you
+  whitelist as your own. Every request carries a JWT the app signs with the application's RSA key.
+  A provider only returns `BankCsvRow[]`; `importBankRows`' `target` routes them to the right
+  connection and account, so a synced movement behaves exactly like an uploaded one. Consent
+  (`consent.ts`) is an unguessable reference, scoped to the caller, single-use. `sync.ts` checks
+  the provider's daily read budget **before** spending a call (a 429 costs the rest of the day) and
+  marks a connection `expired` on `ConsentExpiredError`. `BankConnection.provider` is `psd2_<key>`
+  for a real bank and `manual`/`csv` otherwise — never offer a sync to the latter.
+- **Receipt lifecycle**: `Receipt.status` is the money state (paid|pending); `Receipt.lifecycle` is
+  the document state machine (`lib/services/receipts/lifecycle.ts`, pure): draft → review →
+  emitted, then PT emitted → submitted → accepted/rejected (rejected → review) and ES emitted →
+  exported. Voiding is allowed from draft, review, emitted and exported only. Reaching
+  emitted/accepted archives a PDF `Document`; voiding soft-reverses live `PaymentAllocation` rows.
+- **Receipt archive**, the one surviving use of `Document`: the archive's `description` carries
+  `situs-receipt-archive:<receiptId>` — a convention, not a foreign key, and the only link between
+  a receipt and the proof of its filing. Resolve it through `findExistingArchive`
+  (`lib/services/receipts/service.ts`), never by rebuilding the marker.
+  `GET /api/receipts/[id]/archive` exposes it; the Receipts dropdown serves that PDF before the
+  client-side jsPDF copy.
+- **Tax connectors**: one `TaxAuthorityConnector` row per `[userId, connectorKey]`; `mode` is
+  sandbox, review or live. No live AT/AEAT integration exists, and `lib/tax/connectors/mode-guard.ts`
+  makes `live` fail closed, so going live is a code change, not a row edit. Every call appends an
+  immutable `TaxSubmissionLog` row (`GET /api/tax/connectors`, Finance › Tax Summary).
 - **Alert generation**: `lib/services/notifications/notification-automation.ts` reads the rent
-  ledger, not a payment stack. `payment_due` (D-5) and `payment_overdue` (D+1/D+7) come from
-  `RentPeriod` and quote the OUTSTANDING balance, so a part-paid month is still chased for its
-  balance; `rent_receipt_due` comes from a non-reversed `PaymentAllocation` and clears once the
-  period has a `RentReceipt` filing. `paid`/`paid_late`/`waived` periods are never chased —
-  `waived` is in the schema and rendered by the matrix but missing from the `RentPeriodStatus`
-  union, so it is listed explicitly rather than derived from that type.
-- **Generalized audit trail**: `components/shared/audit-trail.tsx` + `GET /api/audit-trail` — pass `resourceIds` to scope to specific records (property detail Audit tab) or omit for the account-wide trail (Account page). Backed by `AuditLog.resourceType`/`resourceId`, persisted on every workflow mutation.
-- **Screen density (declutter rules)**: established from a 2026-07 cross-page audit that found Finance/People/Operations stacking 6–9 chrome bands (duplicate headers, duplicate KPI rows, permanent filter pills) before any real content. Apply to every main list/detail screen:
-  1. **One heading per screen.** If a container already renders a page title, the active tab's own view does not repeat it — the tab label is the heading.
-  2. **One stat row, capped at 3–4 metrics.** Never stack two KPI/status rows on one screen; merge them. A metric nobody acts on belongs in a subtitle line, not a bordered panel.
-  3. **Filters collapse behind one control past two — where they don't fit.** A search box plus one dropdown is a utility row; a search box plus a dropdown plus a wall of pills is not — fold pills into the dropdown or a single "Filters" popover. This is a space rule, not a count rule: above `lg` there is room to show three or four dropdowns inline, and visible filters beat a popover you have to open to see what is filtered, so `SearchFilter` (`components/ui/search-filter.tsx`) only collapses below `lg`. Collapse by state rather than `lg:hidden` so the DOM holds one of each control, not two.
-  4. **Counts as text before counts as boxes.** Prefer an inline subtitle (e.g. `"12 units · 9 occupied (75%) · €14,100/mo"`, the Portfolio pattern) over separate stat panels when the counts aren't independently actionable.
-  5. **Every sub-view heading goes through i18n or gets deleted.** A hardcoded-English heading sitting under a translated tab label is a sign it was never load-bearing.
+  ledger. `payment_due` (D-5) and `payment_overdue` (D+1/D+7) come from `RentPeriod` and quote the
+  OUTSTANDING balance, so a part-paid month is chased for its balance; `rent_receipt_due` comes
+  from a non-reversed `PaymentAllocation` and clears once the period has a `RentReceipt` filing.
+  `paid`/`paid_late`/`waived` periods are never chased — `waived` is missing from the
+  `RentPeriodStatus` union, so it is listed explicitly rather than derived from that type.
+- **Audit trail**: `components/shared/audit-trail.tsx` + `GET /api/audit-trail` — pass
+  `resourceIds` to scope to records (property detail Audit tab) or omit it for the account-wide
+  trail. Backed by `AuditLog.resourceType`/`resourceId`, written on every workflow mutation.
+- **Screen density** — apply to every main list/detail screen:
+  1. **One heading per screen.** If a container renders a page title, the active tab's view does
+     not repeat it — the tab label is the heading.
+  2. **One stat row, 3–4 metrics at most.** Never stack two KPI rows; a metric nobody acts on
+     belongs in a subtitle line, not a bordered panel.
+  3. **Filters collapse behind one control only where they don't fit.** A search box plus one
+     dropdown is a utility row; fold a wall of pills into a dropdown or one "Filters" popover.
+     Above `lg` there is room for three or four inline dropdowns, so `SearchFilter`
+     (`components/ui/search-filter.tsx`) collapses only below `lg` — by state, not `lg:hidden`,
+     so the DOM holds one of each control.
+  4. **Counts as text before counts as boxes** — e.g. the Portfolio subtitle,
+     `"12 units · 9 occupied (75%) · €14,100/mo"`.
+  5. **Every sub-view heading goes through i18n or is deleted.**
 
-## Responsive design (mobile-first rules)
+## Responsive rules (mobile-first)
 
-Codified from the 2026-07 mobile audit (`scripts/mobile-audit.mjs`): a comprehensive measurement harness that walks every owner-facing page and modal at 390×844 (Pixel 5) and 393×851 (standard phone), in light + dark themes, to measure horizontal overflow, touch targets, text legibility, and clipping. The harness reports per-surface violations, ranked by severity. Apply these rules as the baseline; per-surface judgement refines dense-data layouts within them.
+`scripts/mobile-audit.mjs` measures these on every owner-facing page and overlay, in light and dark
+themes.
 
-1. **Nothing scrolls horizontally at viewport width.** The page body and all its first-level children must fit within the viewport. Wide content (tables, grids, code blocks) scrolls _inside its own_ `overflow-x-auto` container with a sticky identity column or first element (e.g. a table's leading column stays pinned while data columns scroll right). Measured: `document.scrollingElement.scrollWidth > clientWidth` triggers a violation; offending elements are reported by depth.
+1. **Nothing scrolls horizontally at viewport width.** Wide content (tables, grids, code) scrolls
+   inside its own `overflow-x-auto` container with a sticky identity column. The audit flags
+   `document.scrollingElement.scrollWidth > clientWidth`.
+2. **Touch targets are ≥44px on the primary tap path.** This is the house rule; WCAG 2.2 AA's
+   minimum is 24×24, and the audit fails below 24 and warns below 44. `Button`
+   (`components/ui/button.tsx`) enforces it: every size below `xl` carries `max-md:min-h-11` /
+   `max-md:min-w-11`, so icon buttons get a 44×44 hit area below `md` without growing on desktop.
+   Text links in prose and small control-bar icons are exempt only with explicit design review.
+3. **Tables declare a mobile strategy below `md`**: a card fallback for record lists (the
+   `RenderTable` card mode, `components/ui/table.tsx`), or horizontal scroll with a sticky first
+   column for matrices. Never an unwrapped table.
+4. **Tab bars collapse only when their labels don't fit** — a space test, never a count. Measure
+   `scrollWidth > clientWidth` on the `[role=tablist]` at 390px in the longest locale (Portuguese
+   and Spanish labels run longest). Below `md`, hide the bar (`max-md:hidden` on `TabsList`) and
+   use `TabsMobileSelect` (`components/ui/tabs.tsx`) in the same flex row as any adjacent action;
+   it renders a badge as `Label (3)`. A bar that fits keeps the bar at every width.
+5. **Overlays are full-bleed below `md`** and respect `env(safe-area-inset-*)`: a `Sheet` or
+   full-screen overlay whose body scrolls while header, footer and primary action stay visible.
+   From `md` up, a side panel or centred dialog.
+6. **Multi-column forms are single-column below `md`.**
 
-2. **Touch targets are ≥44px CSS on the primary tap path.** Button, link, and interactive-element hit areas must be at least 44×44px (WCAG 2.2 AA recommendation, aligned with the audit's target floor). `Button` (`components/ui/button.tsx`) enforces this itself: every size variant below `xl` carries a `max-md:min-h-11`/`max-md:min-w-11` floor, so icon-only buttons (`icon`/`icon-sm`/`icon-lg`) get a padded 44×44 hit area below `md` without changing their smaller desktop footprint. Text links in prose and small control bars (e.g. close icon in a modal header) can be exempt only with explicit design review; measure via `getBoundingClientRect()` in the audit harness.
-
-3. **Tables declare a mobile fallback strategy explicitly.** At `<md` breakpoint:
-   - **Card fallback** (record lists, small row counts): reformat each row as a card with labels + data in read-only field-row pairs. Typical pattern: property-selection dropdown at top, then an iterable card layout using the `RenderTable` card-mode primitive (see `components/ui/table.tsx`).
-   - **Horizontal scroll with sticky identity** (matrices, high-cardinality cross-column comparison): keep the first column (tenant name, date, lease) sticky/pinned on the left; allow data columns to scroll right inside a `overflow-x-auto` container. Never render an unwrapped table on mobile.
-
-4. **Tab bars collapse to a select/popover on mobile when the labels don't fit.** This is a space test, not a count: the rule used to say "past ~4 items", and every 4-tab bar in the app failed it anyway — People overflowed by 346px, Contacts 290px, Operations 202px, each hiding 2 of its 4 tabs off-screen. The cause is label length, not tab count; Portuguese and Spanish labels run longer than the English ones the "~4" was eyeballed against, so a count threshold will always be wrong in some locale. Measure instead: if `scrollWidth > clientWidth` on the `[role=tablist]` at 390px in the **longest** locale, it collapses. Below `md`, hide the bar and substitute a `<select>` or `Popover` (Situs brand pattern: select when navigational tabs, popover when sub-view tabs). `TabsMobileSelect` (`components/ui/tabs.tsx`) is the select-fallback primitive — pair it with `max-md:hidden` on the existing `TabsList`, and place the select in the same flex row as any adjacent action button so the row doesn't gain a line. Labels and badge counts must sync across; the primitive renders a badge as `Label (3)`. A bar that genuinely fits keeps the bar at every width.
-
-5. **Overlays (modals, sheets, popovers) are full-bleed below `md` and respect safe-area insets.** At `<md`:
-   - Render as `Sheet` (bottom-sheet style) or full-screen overlay, not a centered modal dialog. Use `sheet-scroll-strategy: "content"` so the body scrolls independently and the primary action button stays pinned to the bottom (safe area included).
-   - Apply `env(safe-area-inset-*)` padding to avoid notch/home-indicator overlap on iPhone.
-   - Header and footer remain visible; scrollable body in the middle. Never let the primary CTA scroll out of reach.
-   - At `≥md`, switch to a side panel or centered dialog as the design specifies.
-
-6. **Multi-column forms are single-column below `md`.** When a form has 2+ columns, stack them into one column at `<md`. Use CSS Grid with `grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))` or explicit `md:` breakpoint rewrites — a form field should be full-width on small screens.
-
-**Run it with `npm run audit:local`**, never by starting a server by hand. `scripts/audit-server.mjs`
-boots a disposable app and drives both viewport passes off one server and one seed. Doing it by hand
-means rediscovering five env variables one failed boot at a time — `NEXTAUTH_URL`, `ENABLE_DEMO_LOGIN`,
-`ALLOW_DEMO_MODE`, `PII_ENCRYPTION_KEY`, an absolute disposable `DATABASE_URL` — each of which fails at
-a different step and none of which names itself; the PII one boots and seeds fine and kills the server
-several requests later. The script also refuses to start when something already answers on the port,
-because a stale server answers every readiness check correctly and then the whole run measures the
-wrong build while looking entirely normal. It runs `.next/standalone/server.js`, the same entrypoint
-as `.github/actions/start-app` and the Dockerfile — `next start` does not drive a standalone build and
-does not reproduce its routing.
-
-All surfaces are measured in the mobile audit (`scripts/mobile-audit.mjs`) on every PR that touches UI; violations are reported in the job summary (advisory, not blocking, per the current ratchet policy). As violations are fixed, re-run the harness to confirm zero horizontal overflow, touch-target and clipping metrics strictly decreasing.
+**Run the audit with `npm run audit:local`**, never against a server started by hand.
+`scripts/audit-server.mjs` boots a disposable standalone app (`.next/standalone/server.js`, the
+entrypoint CI and the Dockerfile use) with the environment it needs, and refuses to start when
+something already answers on the port — a stale server passes every readiness check and measures
+the wrong build. In CI the 390×844 pass is a blocking `--strict` gate against `BASELINE` in the
+harness on every PR; a 1440×900 Portuguese pass is advisory. `scripts/build-gallery.mjs` turns a run
+into one HTML page of screenshots and figures.
 
 ## CI Gates
 
-Four workflows: `ci.yml` (PRs + push to main), `security-scan.yml`, `release.yml`,
-`deploy-ghcr.yml`, plus `reusable-verify.yml` which only runs via `workflow_call`. There is no
-`production.yml` — it duplicated `ci.yml`'s verify and build on the same event. See
-`docs/workflow-naming.md` for the conventions, including four that were learned the hard way:
-install with a bare `npm ci` (never a fallback that regenerates the lockfile), set
-`cancel-in-progress` only for `pull_request`, a step that judges a report must fail when the
-report is missing, and jobs that boot the app use `.github/actions/start-app`.
+Workflows: `ci.yml` (PRs + push to main), `security-scan.yml`, `release.yml`, `deploy-ghcr.yml`,
+and `reusable-verify.yml`, which runs only via `workflow_call`. `docs/workflow-naming.md` holds the
+conventions: install with a bare `npm ci`, set `cancel-in-progress` only for `pull_request`, make a
+step that judges a report fail when the report is missing, boot the app with
+`.github/actions/start-app`.
 
-**Nothing publishes on merge.** A release is: dispatch `release.yml` → merge the version-bump
-PR → `publish` tags → the tag push triggers `deploy-ghcr.yml`. Only a tag push may write
-`:latest` or a bare `:<version>`; a manual deploy dispatch publishes `sha-<short>`.
+**Publishing.** Every merge to `main` that changes more than docs publishes a development image,
+`ghcr.io/jigle/situs:main` and `:sha-<short>`. Only a release writes `:<version>` and `:latest`:
+dispatch `release.yml` → merge its version-bump PR → `publish` tags `vX.Y.Z` → the tag starts
+`deploy-ghcr.yml`. The tag starts it only when the `RELEASE_TOKEN` secret is set; otherwise
+dispatch `deploy-ghcr.yml` against the tag ref. Full chain: `docs/REPOSITORY_PROCEDURES.md` §5.
 
-- ESLint: `--max-warnings=0` — zero warnings allowed
-- Vitest: ~54% line coverage, enforced as a **ratchet** in `vitest.config.ts` (statements 52 /
-  branches 39 / functions 38 / lines 54) — a PR may not lower it. Raise the floor when real
-  tests land. Note the threshold keys must stay flat: Vitest reads a nested key under
-  `thresholds` as a glob pattern, so the old `global: { ... }` wrapper matched nothing and
-  enforced nothing.
-- TypeScript: strict mode, `noEmit` check must pass
+- ESLint: `--max-warnings=0`.
+- Vitest coverage is a **ratchet** in `vitest.config.ts` — statements 52 / branches 39 /
+  functions 38 / lines 54. A PR may not lower it; raise it when real tests land. Keep the threshold
+  keys flat: Vitest reads a nested key under `thresholds` as a glob pattern and enforces nothing.
+- TypeScript: strict; `tsc --noEmit` must pass.
 
 ## Repo hygiene
 
-Four rules, each of which the repo has already broken. `npm run hygiene` enforces them and runs
-inside `verify:ci`, so CI, the `situs-implementer` agent and any local run all pick it up.
+`npm run hygiene` enforces these, in CI and inside `verify:ci`.
 
-1. **Point-in-time records are deleted, not archived.** Git history is the archive. `docs/archive/`
-   held 27 files and was removed; do not recreate it. `git log --diff-filter=D --name-only` finds
-   anything you need.
-2. **Every file under `docs/` is reachable from `docs/README.md`.** Adding a doc means adding the
-   link in the same commit. 24 were reachable from nothing before this was checked — and three of
-   those documented live code, so "unreferenced" never means "safe to delete" on its own.
-3. **A document that states a fact about what exists is a claim with an expiry.** "There is no live
-   bank connection", "nothing publishes on merge", a version number, a branch name. The commit that
-   makes one false is the commit that rewrites it. When you retire one, add it to `RETIRED_CLAIMS`
-   in `scripts/check-docs.js` so it cannot come back. Prefer deriving a status from state over
-   asserting it in prose — `bankCheck` in `lib/services/admin/system-status.ts` is the pattern.
-4. **A checker nothing runs is not a checker.** `scripts/check-*` belongs in `npm run hygiene` or
-   it does not belong in the repo. Nine existed and CI ran two; the other seven passed or failed
-   into the void for months. Two are deliberately **not** gates and must stay out:
-   `check-hostport.js` (a prestart runtime check, skips unless `PRESTART_CHECK_HOSTPORT=true`) and
-   `i18n-leak-scan.mjs` (a dev tool taking path arguments). Wiring either would produce a gate that
-   passes because it skipped.
+1. **Point-in-time records are deleted, not archived.** Git history is the archive:
+   `git log --diff-filter=D --name-only` finds anything.
+2. **Every file under `docs/` is reachable from `docs/README.md`.** Add the link in the same
+   commit. "Unreferenced" never means "safe to delete" on its own.
+3. **A document that states a fact about what exists is a claim with an expiry.** The commit that
+   makes one false rewrites it and adds the old wording to `RETIRED_CLAIMS` in
+   `scripts/check-docs.js`. Prefer deriving a status from state over asserting it in prose —
+   `bankCheck` in `lib/services/admin/system-status.ts` is the pattern.
+4. **A checker nothing runs is not a checker.** A gate script belongs in `npm run hygiene`. Two
+   scripts are deliberately not gates: `check-hostport.js` (a prestart runtime check that skips
+   unless `PRESTART_CHECK_HOSTPORT=true`) and `i18n-leak-scan.mjs` (a dev tool taking paths, with
+   its companion `i18n-extract.mjs`). Wiring either would make a gate that passes because it
+   skipped.
 
-**Tailwind drops an unknown utility silently**, which is how six overlay primitives (dialog,
-alert-dialog, dropdown-menu, select, sheet, notification-center) shipped `animate-in`,
-`fade-in-0`, `zoom-in-95` and `slide-in-from-*` while animating nothing: those classes live in
-`tailwindcss-animate`, a Tailwind **3** plugin that was never installed here. A class that does
-nothing looks exactly like a class that works, in review and in the diff — the first repair even
-added `slide-in-from-left-1` against markup that says `slide-in-from-left-1/2`, and nothing
-noticed for another whole commit. `npm run css:check` (`scripts/check-class-contract.mjs`) closes
-that in both directions: **used but not defined** is blocking at zero, **defined but not used** is
-a ratchet over `app/globals.css`. Tailwind itself is the oracle — candidates go through the real
-compiler via `@source inline(...)` and the generated selectors are read back — so the checker
-needs no hand-maintained list of valid utilities and survives Tailwind upgrades untouched. Add a
-v4 `@utility`, never a v3 plugin.
+**Tailwind drops an unknown utility silently.** Add a v4 `@utility`, never a v3 plugin.
+`npm run css:check` (`scripts/check-class-contract.mjs`) runs every candidate through the real
+Tailwind compiler and fails at zero in both directions: a class used but not defined, and a rule in
+`app/globals.css` defined but not used.
 
-**Regenerating `package-lock.json` takes npm 11**, which `packageManager` in `package.json` pins.
-npm 10 rewrites the lockfile without the `libc` fields, which several families of prebuilt native
-binaries publish in their manifests: `@img/sharp-*` (16 entries), `@rolldown/*` and `@swc/*` (6
-each) and `@next/swc-linux-*` (4). Losing them costs npm the glibc/musl filter on all of them, so
-both variants get considered instead of the right one. Nothing breaks; the diff is just noise that
-reappears every time an npm 10 user installs.
+**Regenerate `package-lock.json` only with npm 11**, the `packageManager` pin. npm 10 drops the
+`libc` fields that prebuilt native packages publish (`@img/sharp-*`, `@rolldown/*`, `@swc/*`,
+`@next/swc-linux-*`), so npm can no longer choose between the glibc and musl builds. Count them with
+`grep -c '"libc"' package-lock.json` and read the diff; zero after a regeneration means npm 10 ran.
+Corepack honours the pin only after `corepack enable npm` (a bare `corepack enable` leaves npm
+alone) — or run `npx npm@11 install`. CI writes the lockfile in exactly one place, the `prepare`
+job in `release.yml`, which pins npm first; every other workflow runs a bare `npm ci`.
 
-Count them with `grep -c '"libc"' package-lock.json` rather than trusting a number written here —
-it moves whenever a dependency adds or drops a prebuilt binary, and it did: the `@img/sharp-*`
-family arrived with the sharp bump that closed GHSA-rgj7-g3m4-5g8c, taking the total from 16 to 32. A regeneration that drops it to zero is the npm 10 failure; any other change is a real
-dependency change, so read the diff rather than the total.
+## Three ways a screen lies
 
-Corepack only honours the pin once `corepack enable` has run, so on a machine without it `npm`
-is still whatever Node bundled. Check with `npm -v` before regenerating, or use `npx npm@11 install`
-and skip the question. CI never regenerates — every workflow runs a bare `npm ci` — so this is a
-local concern only.
+Each of these passed type-check, lint and the mobile audit while the running app was wrong.
 
-## Three ways a screen lies, and the contracts that catch them
+1. **`apiFetch` unwraps the envelope — do not unwrap it again.** Routes reply
+   `createSuccessResponse(x)`, i.e. `{ data: x }`, and `apiFetch` returns `body.data`. Annotating
+   `apiFetch<{ data: T }>` and reading `.data` yields `undefined`; a type argument asserts a shape
+   rather than producing one. Defensive forms (`res.data ?? res`) are fine.
+   `tests/api-envelope-contract.test.ts`.
+2. **Nothing the server wrote in English reaches the screen.** Show errors through
+   `useApiError()` (`lib/utils/api-error.ts`), which maps the HTTP status `apiFetch` attaches. A raw
+   `fetch` throws `httpError(res.status)` rather than baking the status into a string. English under
+   `app/api/**` is correct — it is a log. `tests/error-copy-contract.test.ts`.
+3. **Dates take the app's locale, never the browser's.** Use `lib/utils/format-date.ts`, where
+   `locale` is required. No contract test covers this rule yet.
 
-The 2026-08 cross-surface audit found three defect classes that share one shape: **the code
-asserted something the runtime had already made false, and every gate agreed.** Type-check
-passed, lint passed, the mobile harness scored the surfaces `ok`. Each was found by looking at
-the running app, and each is now a contract test under `tests/` that `npm test` runs — so the
-reasoning is here and the enforcement is there.
+**A stored enum is not a label** — `capitalize` and `replace(/_/g, " ")` are not a translation.
+When two components render one enum, extract the map (`lib/utils/receipt-labels.ts`).
+**`i18n:check:strict` cannot see an unreachable key**: it compares the four catalogues with each
+other, never with what a component asks for. `tests/i18n-no-hardcoded-copy.test.tsx` asserts
+Portuguese because asserting English cannot catch hardcoded English.
 
-1. **`apiFetch` unwraps the envelope. Do not unwrap it again.** Routes reply
-   `createSuccessResponse(x)` — `{ data: x }` — and `apiFetch` returns `body.data` when it is
-   present. Three call sites annotated the call `apiFetch<{ data: T }>` and then read `.data`
-   off the result, so they received `undefined`: the document detail panel showed
-   "Document not found" for every document that exists, and the bank picker listed zero
-   institutions, which hid the connect button being broken one line below it. A type argument
-   asserts a shape rather than producing one, which is why nothing disagreed. Defensive forms
-   (`res.data ?? res`) stay legal. `tests/api-envelope-contract.test.ts`.
-
-2. **Nothing the server wrote in English reaches the screen.** `createErrorResponse` puts an
-   English sentence in the envelope; twenty-seven components rendered `err.message` into a
-   banner or toast, so the failure path was the last English left in a Portuguese app. Use
-   `useApiError()` (`lib/utils/api-error.ts`), which maps the HTTP status `apiFetch` already
-   attaches. A raw `fetch` must throw `httpError(res.status)` rather than baking the status into
-   a string, or the resolver cannot tell a 500 from a dropped connection. English under
-   `app/api/**` is correct and deliberately exempt — that is a log for whoever reads stderr.
-   `tests/error-copy-contract.test.ts`.
-
-3. **Dates take the app's locale, never the browser's.** `toLocaleDateString()` with no argument
-   follows the browser, which is not the language the user chose — twenty-two sites did this,
-   four through near-identical private helpers. Use `lib/utils/format-date.ts`, where `locale`
-   is required rather than defaulted, because a default is how the argument goes missing again.
-
-Two related habits worth keeping, both learned the same way. **A stored enum is not a label**:
-`capitalize` and `replace(/_/g, " ")` are formatting rules standing in for a translation, and
-they shipped `partially_paid` and "Rent" into Portuguese screens. When two components render one
-enum, extract the map (`lib/utils/receipt-labels.ts`) rather
-than copying it — copying is what let them drift. And **`i18n:check:strict` cannot see this**: it
-compares the four catalogues to each other, never to what a component asks for, so a key can be
-complete in four languages and unreachable from the UI. `tests/i18n-no-hardcoded-copy.test.tsx`
-asserts Portuguese for exactly that reason — asserting English cannot catch a component that
-hardcodes English, because the hardcoded string is the expected string.
-
-**A guard that is too narrow is worse than none**, because it reports clean. The envelope
-contract first understood only `const x = await apiFetch(…)` and would have passed
-`document-detail-panel.tsx` while it rendered an apology for every document; the i18n tripwire's
-first version passed `resourceIds={[]}`, which returns before fetching, so it asserted against a
-component that never made a request. Prove a new guard by restoring the defect it describes and
-watching it name the file and line.
+**A guard that is too narrow is worse than none**, because it reports clean. Prove a new guard by
+restoring the defect it describes and watching it name the file and line.
 
 ## Branching, PRs, Dependabot, releases
 
-**See `docs/REPOSITORY_PROCEDURES.md`.** It is authoritative; this file does not restate it.
+**`docs/REPOSITORY_PROCEDURES.md` is authoritative.** The two rules that cost the most when broken:
 
-Two rules from it are worth naming here because breaking either is expensive and both have been
-broken before:
-
-- **A branch is per-change, not per-session.** This section used to pin every session to one
-  long-lived branch, `claude/proman-design-polish-6zpz2f`. That branch drifted 47 commits behind
-  `main` and stranded two unmerged commits, while the actual work went somewhere else entirely —
-  so the instruction was not just stale, it was sending sessions to code nearly two months old.
-  Branch from current `origin/main`, do one change, open one PR.
-- **Never push onto a `dependabot/*` branch.** Dependabot can close the PR in response; see §4
-  there for the incident.
+- **One change per PR.** Branch from current `origin/main` (`feat/`, `fix/`, `chore/`, `hotfix/`),
+  or use the `claude/<id>` branch the session tool assigns. When a branch's PR merges, restart it
+  from `origin/main` rather than stacking new work on it.
+- **Never push onto a `dependabot/*` branch** — Dependabot can close the PR in response. Recreate
+  the bumps plus the fix on `chore/deps-<group>` instead (procedures §4).
 
 ## Subagents (`.claude/agents/`)
-
-Three project agents, auto-delegated when the task matches their `description`:
 
 | Agent               | Use when                                                           | Writes? |
 | ------------------- | ------------------------------------------------------------------ | ------- |
@@ -295,74 +281,50 @@ Three project agents, auto-delegated when the task matches their `description`:
 | `ci-gate-auditor`   | A workflow, composite action, threshold or scan script changes     | No      |
 | `situs-implementer` | One self-contained change, in its own worktree, ending in one PR   | Yes     |
 
-**Delegate** broad read-only sweeps — the agent reads 40 files and returns 15 lines, instead of
-40 files landing in the main context. That is the whole token argument, and it is the reason the
-auditors are `tools: Read, Grep, Glob`-only and run on `sonnet` rather than opus.
+**Delegate** broad read-only sweeps: the agent reads 40 files and returns 15 lines. The two
+auditors report and never edit, and run on `sonnet`. **Don't delegate** the CI/release interlocks
+(required-check names, the tag→deploy chain), work that needs this session's context, or an edit
+small enough to just make. Both auditors declare `memory: project`; if memory files appear under
+`.claude/agent-memory/`, review them like source before committing — a wrong lesson there spreads.
 
-**Don't delegate** anything spanning the CI/release interlocks (required-check name matching,
-the tag→deploy chain, the false-green history), anything needing the current session's
-accumulated context, or edits small enough to just do — a spawn costs more than a two-line fix.
-A cold agent handed "fix the CI workflows" writes plausible YAML and misses all three interlocks.
-
-Both auditors carry `memory: project`, so what they learn lands in `.claude/agent-memory/<name>/`
-and is committed. That is what stops the cold start from being paid twice. Review those files
-like any other source — a wrong lesson recorded there propagates.
-
-At most **3 concurrent worktrees**: `node_modules` is 1.7 GB and each worktree needs its own
-`npm ci`. Worktrees branch from the default branch, not the parent's HEAD, so let dependent work
-merge first rather than running it in parallel.
-
-## Dependabot PRs
-
-**Never push commits directly onto a `dependabot/*` branch to fix an issue the bump introduced.**
-Dependabot treats external commits on its own branches as interference and can abandon/close the
-PR in response (observed firsthand: pushing a fix to `dependabot/npm_and_yarn/production-minor-*`
-got PR #276 silently closed, its branch desynced from GitHub's own PR/CI view even though the
-git ref itself was correct — wasted a long back-and-forth before the closure was noticed). If a
-Dependabot bump needs a fix (a lockfile conflict, a genuine break like a duplicate transitive
-dependency), don't touch its branch — recreate the same version bumps plus the fix on a fresh
-branch of your own (e.g. `chore/deps-<group-name>`), verify, and open a new PR instead. Let the
-original Dependabot PR close on its own once superseded.
+At most **3 concurrent worktrees** (each needs its own ~1.7 GB `npm ci`). Worktrees branch from the
+default branch, so let dependent work merge first.
 
 ## Roadmap
 
-See `ROADMAP.md` for full task history. All Q3 sprints (Phases 0–7) are complete. The `ROADMAP.md` Decisions Log records architectural choices and their rationale.
+`ROADMAP.md` holds shipped work and the Decisions Log, which records architectural choices and
+their rationale.
 
 ## Environment
 
-Copy `.env.example` to `.env` before first run. Required vars:
+Copy `.env.example` to `.env`.
 
-- `DATABASE_URL` — SQLite file path (e.g. `file:./dev.db`)
-- `NEXTAUTH_SECRET` — random secret for session signing
-- `NEXTAUTH_URL` — base URL (e.g. `http://localhost:3000`)
-
-Required in production: `PII_ENCRYPTION_KEY` (64-char hex; the app exits without it)
+- `NEXTAUTH_URL` — base URL (e.g. `http://localhost:3000`).
+- `DATABASE_URL` — SQLite file (e.g. `file:./dev.db`); optional in development, required in
+  production.
+- `NEXTAUTH_SECRET` — session-signing secret, at least 32 characters.
+- `PII_ENCRYPTION_KEY` — 64-char hex; required in production (see PII encryption above).
 
 **Registration is closed by default.** The first account ever created owns the instance and is
-provisioned `ADMIN`; every other email is refused at the `signIn` callback, before any row is
-written (`lib/services/auth/registration.ts`). `AUTH_ALLOWED_EMAILS` is the additive escape hatch
-for a deliberate second user. This exists because the OAuth `signIn` callback used to `return true`
-unconditionally while the JWT callback hardcoded `role: "ADMIN"` — so any Google account that
-signed in to a publicly reachable instance became an administrator, and a live bank connection
-_requires_ public reachability for the consent callback. The gate fails closed: a database it
-cannot read refuses the sign-in rather than admitting it.
+provisioned `ADMIN`; every other email is refused at the `signIn` callback before any row is
+written (`lib/services/auth/registration.ts`). `AUTH_ALLOWED_EMAILS` admits a deliberate second
+user. The gate fails closed: a database it cannot read refuses the sign-in. It exists because a
+public instance otherwise made any Google account an administrator — and a live bank connection
+requires public reachability.
 
-Optional: `SMTP_HOST` (plus `SMTP_PORT`/`SMTP_USER`/`SMTP_PASS`), `STRIPE_SECRET_KEY`, `REDIS_URL`
+Optional:
 
-Optional (live bank connection — PSD2 account information via Enable Banking):
-`ENABLE_BANKING_APPLICATION_ID`, plus the RSA key — `ENABLE_BANKING_PRIVATE_KEY_FILE` pointing at a
-mounted `.pem` for any real deployment, or `ENABLE_BANKING_PRIVATE_KEY` inline for a local run. The
-file wins when both are set. **Do not base64 the key to fit a config field**: a PEM is ~1,700 chars
-and base64 makes it ~2,272, against TrueNAS' 1,000-char cap, so no encoding fits — mounting is the
-only route, and it keeps the key out of `/proc/<pid>/environ` besides. Absent, the app is
-CSV-import-only and renders no connect button.
-`CRON_SECRET` gates all three `/api/cron/*` endpoints (notifications, data retention, bank sync);
-each returns 503 while it is unset, so nothing runs on a schedule until it is set.
-
-Optional (app subscription billing — Free/Pro/Business landing-page tiers, distinct from
-tenant rent collection): `STRIPE_PRICE_ID_PRO`, `STRIPE_PRICE_ID_BUSINESS`,
-`STRIPE_TRIAL_DAYS_PRO`, `ENABLE_BILLING` (plan-limit enforcement; off by default, so
-self-hosted instances are always unlimited).
+- `SMTP_HOST` (+ `SMTP_PORT`/`SMTP_USER`/`SMTP_PASS`), `STRIPE_SECRET_KEY`, `REDIS_URL`.
+- Live bank connection: `ENABLE_BANKING_APPLICATION_ID` plus the RSA key —
+  `ENABLE_BANKING_PRIVATE_KEY_FILE` pointing at a mounted `.pem` for a real deployment, or
+  `ENABLE_BANKING_PRIVATE_KEY` inline locally; the file wins when both are set. Never base64 the
+  key into a config field: a PEM is ~1,700 chars, ~2,272 as base64, over TrueNAS' 1,000-char cap.
+  Without these the app is CSV-import-only and shows no connect button.
+- `CRON_SECRET` gates the three `/api/cron/*` endpoints (notifications, data retention, bank sync);
+  each returns 503 while it is unset.
+- Subscription billing (Free/Pro/Business tiers): `STRIPE_PRICE_ID_PRO`,
+  `STRIPE_PRICE_ID_BUSINESS`, `STRIPE_TRIAL_DAYS_PRO`, `ENABLE_BILLING` (plan limits; off by
+  default, so self-hosted instances are unlimited).
 
 <!-- BEGIN:nextjs-agent-rules -->
 

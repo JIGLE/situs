@@ -51,6 +51,11 @@ If you later enable `enforce_admins: true`, the release workflow will need eithe
 - A **fine-grained PAT** (stored as `RELEASE_TOKEN` secret) with bypass rights, or
 - A **GitHub App** with branch protection bypass configured.
 
+`RELEASE_TOKEN` matters even with the current config: GitHub starts no workflow from a tag pushed
+with the default `GITHUB_TOKEN`, so without it the release tag does not start `deploy-ghcr.yml`
+and the deploy has to be dispatched against the tag ref
+([`docs/REPOSITORY_PROCEDURES.md`](../docs/REPOSITORY_PROCEDURES.md) §5).
+
 To verify current protection status:
 
 ```bash
@@ -66,7 +71,5 @@ gh api repos/JIGLE/situs/branches/main/protection | jq '{
 
 ## Verify protection is active
 
-```bash
-# Should return 403 when trying to push directly to main
-git push origin main --dry-run
-```
+Use the `gh api` query above. `git push --dry-run` does not send the ref update, so it never
+reaches the server-side protection check and cannot show whether protection is on.

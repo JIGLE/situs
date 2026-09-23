@@ -14,8 +14,10 @@ Do **not** bump the version by hand or push the tag by hand — see the note at 
       should all carry the new version, and CI should be green on it.
 - [ ] Merge the bump PR.
 - [ ] Confirm `release.yml`'s **Publish Release** job created tag `vX.Y.Z` and the GitHub Release.
-- [ ] Confirm the tag push triggered **Deploy to GHCR**, and that it succeeded — the Trivy scan
-      blocks publication on a CRITICAL finding in the base image, which is a genuine stopper.
+- [ ] Confirm **Deploy to GHCR** ran for the tag and succeeded — the Trivy scan blocks
+      publication on a CRITICAL finding in the base image, which is a genuine stopper. The tag
+      starts it on its own only when the `RELEASE_TOKEN` secret is set; otherwise run it by hand:
+      `Actions → Deploy to GHCR → Run workflow`, choosing tag `vX.Y.Z`.
 - [ ] Verify `ghcr.io/jigle/situs:X.Y.Z` exists, and that `:latest` now points at it.
 - [ ] Deploy to a staging environment and smoke-test sign-in and the rent → receipt flow.
 - [ ] Check `/admin` on the deployed instance: schema in sync, no unexpected errors.
