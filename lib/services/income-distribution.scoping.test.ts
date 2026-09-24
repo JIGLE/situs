@@ -80,34 +80,18 @@ describe("distribution reads are scoped to the caller", () => {
 });
 
 describe("saveDistribution refuses foreign ids", () => {
-  const distribution = {
+  const distribution: Parameters<typeof saveDistribution>[0] = {
     propertyId: OTHER_PROPERTY,
     periodStart: new Date("2026-01-01"),
     periodEnd: new Date("2026-01-31"),
     totalIncome: 1000,
     totalExpenses: 0,
     netIncome: 1000,
-    taxMode: "pre-tax" as const,
-    shares: [
-      {
-        ownerId: "owner-of-bob",
-        ownerName: "Bob",
-        percentage: 100,
-        grossShare: 1000,
-        taxableIncome: 1000,
-        taxAmount: 0,
-        netShare: 1000,
-        taxCountry: "Portugal",
-        effectiveRate: 0,
-        taxDetails: {},
-      },
-    ],
-    totalTax: 0,
-    totalNetDistributed: 1000,
+    shares: [{ ownerId: "owner-of-bob", ownerName: "Bob", percentage: 100, grossShare: 1000 }],
     version: 1,
     calculatedAt: new Date(),
     calculatedByUserId: USER,
-  } as unknown as Parameters<typeof saveDistribution>[0];
+  };
 
   it("throws when the property belongs to someone else, and writes nothing", async () => {
     prismaMock.property.findFirst.mockResolvedValue(null);

@@ -12,7 +12,7 @@
  */
 
 import { getPrismaClient } from "@/lib/services/database/database";
-import { validateNIF } from "@/lib/tax/saft-pt";
+import { validatePortugueseNIF } from "@/lib/utils/tax-id-validation";
 
 // ─── Receipt numbering ─────────────────────────────────────────────────
 // Format: RR/YYYY/NNNNNN (e.g. RR/2026/000001)
@@ -130,12 +130,12 @@ export async function createRentReceipt(input: RentReceiptInput): Promise<RentRe
   const errors: string[] = [];
 
   // Validate landlord NIF
-  if (!validateNIF(input.landlordNif)) {
+  if (!validatePortugueseNIF(input.landlordNif)) {
     errors.push("NIF do senhorio inválido (invalid landlord NIF)");
   }
 
   // Validate tenant NIF if provided
-  if (input.tenantNif && !validateNIF(input.tenantNif)) {
+  if (input.tenantNif && !validatePortugueseNIF(input.tenantNif)) {
     errors.push("NIF do inquilino inválido (invalid tenant NIF)");
   }
 

@@ -46,6 +46,26 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // The removed ARTIFACTS, never the words. "Tax filing" is the core loop's receipt filing at
+    // Finanças, which the PT connector still does, and the ROADMAP rows that record this removal
+    // name the features in prose.
+    pattern:
+      /tax-calculator\.ts|\bTaxCalculator\b|\b(?:IRS|IRPF) brackets\b|lib\/fiscal\/|\/(?:compliance\/tax-filing|settings\/tax-rules)\b|\/api\/(?:tax-filings|tax-rules|fiscal|user\/fiscal-profile)\b/,
+    retired: "2026-09-24 (simplification, step 1)",
+    because:
+      "the IRS summaries were removed — the tax-filing wizard, the tax rules store, the fiscal " +
+      "profile and both tax calculators. The income split keeps each owner's share, without " +
+      "a tax estimate",
+  },
+  {
+    pattern:
+      /saft-pt|SAFT_[A-Z_]+|SAF-T PT export\*{0,2} —|rent-cap validation|\/api\/compliance\/rent-cap/,
+    retired: "2026-09-24 (simplification, step 1)",
+    because:
+      "the SAF-T PT export went with the IRS summaries, and Spain's rent-cap check with the " +
+      "calculator it ran on",
+  },
+  {
     // The MODELS and the endpoint, not the word "verification" — NIF validation, the tax
     // connectors and `timingSafeEqualString` all legitimately verify things.
     pattern:
@@ -63,7 +83,7 @@ const RETIRED_CLAIMS = [
     retired: "2026-09-22 (scope cutdown, phase 9)",
     because:
       "the tenant online-payment stack was removed; rent reaches the ledger as a matched bank " +
-      "movement. SAF-T PT now reads RentReceipt, and the payment alerts read RentPeriod",
+      "movement, and the payment alerts read RentPeriod",
   },
   {
     // Targets the CAPABILITY claim, not the two words: `app/tenant-portal/` and the token auth

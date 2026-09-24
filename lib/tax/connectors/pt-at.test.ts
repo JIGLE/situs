@@ -34,7 +34,7 @@ vi.mock("@/lib/services/tax/connector-service", () => ({
   ensureConnector: ensureConnectorMock,
   logSubmission: logSubmissionMock,
 }));
-vi.mock("@/lib/tax/saft-pt", () => ({ validateNIF: () => true }));
+vi.mock("@/lib/utils/tax-id-validation", () => ({ validatePortugueseNIF: () => true }));
 
 import { ptAtConnector } from "./pt-at";
 

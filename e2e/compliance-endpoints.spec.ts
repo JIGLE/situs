@@ -57,31 +57,6 @@ test.describe("Compliance: NRUA Registration (ES)", () => {
   });
 });
 
-// ─── Ley de Vivienda Rent Cap ─────────────────────────────────────────────────
-
-test.describe("Compliance: Rent Cap Validation (ES)", () => {
-  test("POST /api/compliance/rent-cap requires authentication", async ({ request }) => {
-    const response = await request.post("/api/compliance/rent-cap", {
-      data: {
-        propertyId: "prop_123",
-        proposedRent: 1200,
-        priorContractRent: 1000,
-        isZonaTensionada: true,
-        landlordTotalUnits: 6,
-        stressedZoneUnits: 5,
-      },
-    });
-    expect([401, 403, 302].includes(response.status())).toBeTruthy();
-  });
-
-  test("POST /api/compliance/rent-cap endpoint exists (not 404)", async ({ request }) => {
-    const response = await request.post("/api/compliance/rent-cap", {
-      data: {},
-    });
-    expect(response.status()).not.toBe(404);
-  });
-});
-
 // ─── Lease Template Generation ────────────────────────────────────────────────
 
 test.describe("Compliance: Lease Template Generation", () => {

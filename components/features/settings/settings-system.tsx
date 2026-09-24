@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { Landmark, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -15,8 +15,8 @@ import { Button } from "@/components/ui/button";
  * disagree and the one a non-admin saw was the less accurate of them.
  *
  * Instance health now lives in the admin area, which has its own shell precisely because it is
- * not part of the app. What remains here is what genuinely belongs to a user's settings: the tax
- * rules store, plus a way across for anyone who came looking for the status they remember.
+ * not part of the app. What remains here is a way across for anyone who came looking for the
+ * status they remember.
  */
 export function SettingsSystem() {
   const t = useTranslations("settings.panel");
@@ -24,23 +24,6 @@ export function SettingsSystem() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Landmark className="h-5 w-5" />
-            {t("taxRulesStore")}
-          </CardTitle>
-          <CardDescription>{t("taxRulesStoreHelp")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-3">{t("taxRulesIntro")}</p>
-          <Button variant="outline" size="sm" onClick={() => router.push("/settings/tax-rules")}>
-            <Landmark className="h-4 w-4 mr-1.5" />
-            {t("openTaxRules")}
-          </Button>
-        </CardContent>
-      </Card>
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

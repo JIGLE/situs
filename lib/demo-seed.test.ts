@@ -124,8 +124,12 @@ describe("seed cleanup covers everything the seed creates", () => {
   const CASCADES_FROM_PROPERTY = new Set(["unit", "lease", "rentPeriod"]);
 
   it("finds both sets (an empty sweep would pass vacuously)", () => {
-    expect(created.size).toBeGreaterThan(10);
-    expect(cleaned.size).toBeGreaterThan(10);
+    // Anchored on records every seed has, not on a count: the floor was 10 when the seed cleaned
+    // 15 models, and each removal since has walked it down to whatever the seed had left.
+    for (const model of ["property", "tenant", "receipt"]) {
+      expect(created.has(model), `${model} not found among the seed's creates`).toBe(true);
+      expect(cleaned.has(model), `${model} not found among the seed's cleanups`).toBe(true);
+    }
   });
 
   it.each([...created].filter((m) => !CASCADES_FROM_PROPERTY.has(m)))(
@@ -140,9 +144,7 @@ describe("seed cleanup covers everything the seed creates", () => {
     },
   );
 
-  it("seeds the domains whose absence was read as a layout defect", () => {
-    for (const model of ["taxFiling", "bankTransaction"]) {
-      expect(created.has(model)).toBe(true);
-    }
+  it("seeds the domain whose absence was read as a layout defect", () => {
+    expect(created.has("bankTransaction")).toBe(true);
   });
 });

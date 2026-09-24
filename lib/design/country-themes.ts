@@ -289,8 +289,8 @@ export function isCountryCode(value: string): value is CountryCode {
  *
  * The table's `name` stays as the fallback for a code the platform does not recognise.
  *
- * Lives here rather than beside its first caller because it has a second one: the portfolio tree
- * names the country of a cluster, and the Finances tax estimate names the country of a regime.
+ * Lives here, beside the table it falls back to. The portfolio tree uses it to name the country
+ * of a cluster.
  */
 export function countryLabel(code: string, locale: string): string {
   try {

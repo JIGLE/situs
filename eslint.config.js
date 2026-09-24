@@ -71,8 +71,8 @@ module.exports = [
   // notification mark-read, onboarding and demo init at once, because nothing flagged it.
   //
   // The selector deliberately keys off "has a `method` that is not a GET/HEAD/OPTIONS literal"
-  // rather than matching mutating literals directly: `tax-rules-view.tsx` passed its method as
-  // a variable (`method,`) and a literal-only search missed it entirely.
+  // rather than matching mutating literals directly: a view that passed its method as a
+  // variable (`method,`) was missed entirely by a literal-only search.
   {
     files: ["components/**/*.{ts,tsx}", "app/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
     ignores: [

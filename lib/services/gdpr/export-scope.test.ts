@@ -46,9 +46,9 @@ describe("GDPR export scope", () => {
     }
   });
 
-  it("includes the ledger and fiscal relations the old list also missed", () => {
+  it("includes the ledger relations the old list also missed", () => {
     const include = buildExportInclude();
-    for (const relation of ["rentPeriods", "paymentAllocations", "taxFilings"]) {
+    for (const relation of ["rentPeriods", "paymentAllocations"]) {
       expect(include, `${relation} missing from the GDPR export`).toHaveProperty(relation, true);
     }
   });

@@ -18,7 +18,7 @@
  */
 
 import { getPrismaClient } from "@/lib/services/database/database";
-import { validateNIF } from "@/lib/tax/saft-pt";
+import { validatePortugueseNIF } from "@/lib/utils/tax-id-validation";
 import { ensureConnector, logSubmission } from "@/lib/services/tax/connector-service";
 import type { TaxConnector, TaxConnectorResult } from "./types";
 import { refuseUnsupportedMode } from "./mode-guard";
@@ -34,8 +34,9 @@ async function validate(rentReceiptId: string): Promise<{ valid: boolean; errors
   if (!receipt) return { valid: false, errors: ["Rent receipt not found"] };
 
   const errors: string[] = [];
-  if (!validateNIF(receipt.landlordNif)) errors.push("Invalid landlord NIF");
-  if (receipt.tenantNif && !validateNIF(receipt.tenantNif)) errors.push("Invalid tenant NIF");
+  if (!validatePortugueseNIF(receipt.landlordNif)) errors.push("Invalid landlord NIF");
+  if (receipt.tenantNif && !validatePortugueseNIF(receipt.tenantNif))
+    errors.push("Invalid tenant NIF");
   if (!receipt.xmlPayload) errors.push("Missing Modelo 44 XML payload");
   if (receipt.status !== "draft" && receipt.status !== "rejected") {
     errors.push(`Cannot submit a receipt in AT status "${receipt.status}"`);

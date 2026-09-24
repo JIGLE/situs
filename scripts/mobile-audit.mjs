@@ -149,9 +149,9 @@ const FULLPAGE = flag("fullpage");
  * expect the true floor to sit a point or two above the best number you have seen.
  * `pageOverflow`, `viewportTallChildren` and `touchTargetFails` have been stable across runs.
  *
- * These come from a **seeded** run (`--seed --strict`; 38 surface-runs now, 52 before the
- * cutdown). An unseeded run walks empty screens — a table with no rows cannot overflow — so its
- * numbers are meaningless as a baseline and `--strict` refuses to compare against them.
+ * These come from a **seeded** run (`--seed --strict`; 52 surface-runs before the cutdown). An
+ * unseeded run walks empty screens — a table with no rows cannot overflow — so its numbers are
+ * meaningless as a baseline and `--strict` refuses to compare against them.
  *
  * Getting a trustworthy number here required fixing `lib/demo-seed.ts` first: it never deleted
  * documents or the bank graph, so each re-seed stacked another copy and the counts climbed on
@@ -164,15 +164,17 @@ const FULLPAGE = flag("fullpage");
  * `touchTargetFails: 27`, because a toast's dismiss glyph measured 9×26 and a toast can appear
  * over any screen (23 of 52 surface-runs). Every dev-server run had reported 2 and missed it.
  *
- * `surfaceRuns` must be 38. Anything lower means detail overlays were skipped for want of a
- * record id, and the totals are not comparable to these.
+ * `surfaceRuns` must be every surface in every theme: `SURFACES.length × THEMES.length`, not a
+ * number written here, which went stale each time a page was removed. Anything lower means detail
+ * overlays were skipped for want of a record id, and the totals are not comparable to these.
  */
 /**
  * Ceilings, not targets. `--strict` fails when a metric exceeds one.
  *
  * Measured on a seeded sweep. The originals came from 52 surface-runs; the scope cutdown removed
- * seven surfaces whose pages no longer exist, so the sweep is 38. `smallText` is the only metric
- * that scales with surface count, and it was retightened once CI reprinted it on a green run.
+ * seven surfaces whose pages no longer exist, and these ceilings were measured on the 38 that
+ * left. Every page removed since shrinks the sweep again. `smallText` is the only metric that
+ * scales with surface count, and it was retightened once CI reprinted it on a green run.
  *
  * The harness names any remaining slack as "within baseline — tighten it: …" on a passing run.
  * That line is a prompt to look, not an instruction to obey: `touchTargetFails` sits above its
@@ -236,7 +238,6 @@ const SURFACES = [
   // Account is a Settings section now; measure it where it lives rather than through the
   // /account redirect, so the surface id matches the URL that renders.
   { id: "account", path: "/settings?tab=account" },
-  { id: "compliance-tax-filing", path: "/compliance/tax-filing" },
   { id: "compliance-modelo179", path: "/compliance/modelo179" },
 ];
 
@@ -691,7 +692,7 @@ async function resolveIds(page) {
   // Every branch here used to return a bare `null`, so a 500 from an endpoint and an
   // empty-but-healthy list were indistinguishable — the run just reported "no propertyId" and
   // skipped the overlay. Say which of the two it was: they need opposite fixes, and a skipped
-  // surface silently shrinks `surfaceRuns` below the 38 the baseline is measured at.
+  // surface silently shrinks `surfaceRuns`, so its totals no longer compare with the baseline.
   const get = async (path, pick) => {
     try {
       const res = await page.request.get(`${BASE}${path}`);

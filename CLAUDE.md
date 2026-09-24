@@ -84,7 +84,7 @@ e2e/                    # Playwright E2E tests
 - **API routes**: one folder per domain under `app/api/`. Validate with Zod, check the NextAuth
   session before touching the database.
 - **Compliance**: PT `/api/compliance/rent-receipts`, ES `/api/compliance/nrua`. Tax logic lives in
-  `lib/tax/`, `lib/services/tax/connector-service.ts` and `lib/services/tax-calculator.ts`.
+  `lib/tax/` and `lib/services/tax/connector-service.ts`.
 - **PII encryption**: AES-256-GCM via `lib/utils/pii-encryption.ts`, keyed off
   `PII_ENCRYPTION_KEY`. `PII_FIELDS` lists the fields the Prisma extension (applied in
   `lib/services/database/database.ts`) encrypts on write and decrypts on read — **not** every
