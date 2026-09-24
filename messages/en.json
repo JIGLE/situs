@@ -581,7 +581,8 @@
     "continue": "Continue",
     "processing": "Processing…",
     "exportCsv": "Export as CSV",
-    "exportJson": "Export as JSON"
+    "exportJson": "Export as JSON",
+    "discard": "Discard"
   },
   "errors": {
     "notFound": {
@@ -944,7 +945,8 @@
     "allProperties": "All Properties",
     "saving": "Saving...",
     "selectProperty": "Select Property",
-    "selectTenant": "Select Tenant"
+    "selectTenant": "Select Tenant",
+    "draftFound": "You have an unsaved draft. Would you like to continue?"
   },
   "status": {
     "active": "Active",
@@ -1002,7 +1004,11 @@
       "selectAsset": "Select an asset from the tree to open its command workspace."
     },
     "toastCreated": "Property added",
-    "toastUpdated": "Property updated"
+    "toastUpdated": "Property updated",
+    "editManually": "Edit manually",
+    "hideFields": "Hide fields",
+    "addDetails": "Add details (bedrooms, bathrooms, description)",
+    "hideDetails": "Hide details"
   },
   "financial": {
     "title": "Financials",
@@ -1618,5 +1624,66 @@
     "idDocument": "Identity document",
     "idDocumentHint": "For someone without a Portuguese NIF: passport or ID card number.",
     "invalidNif": "This NIF is not valid: its check digit does not match."
+  },
+  "auditActions": {
+    "login": "Signed in",
+    "logout": "Signed out",
+    "passwordChange": "Password changed",
+    "viewPersonalData": "Personal data viewed",
+    "exportPersonalData": "Personal data exported",
+    "deletePersonalData": "Personal data deleted",
+    "createProperty": "Property created",
+    "updateProperty": "Property updated",
+    "deleteProperty": "Property deleted",
+    "createTenant": "Tenant created",
+    "updateTenant": "Tenant updated",
+    "deleteTenant": "Tenant deleted",
+    "revokePortalAccess": "Portal access revoked",
+    "createLease": "Lease created",
+    "updateLease": "Lease updated",
+    "deleteLease": "Lease deleted",
+    "uploadLeaseContract": "Contract PDF uploaded",
+    "downloadLeaseContract": "Contract PDF downloaded",
+    "deleteLeaseContract": "Contract PDF deleted",
+    "createUnit": "Unit created",
+    "updateUnit": "Unit updated",
+    "deleteUnit": "Unit deleted",
+    "createReceipt": "Receipt created",
+    "updateReceipt": "Receipt updated",
+    "deleteReceipt": "Receipt deleted",
+    "createExpense": "Expense created",
+    "updateExpense": "Expense updated",
+    "deleteExpense": "Expense deleted",
+    "sendEmail": "Email sent",
+    "viewRentReceipts": "Rent receipts viewed",
+    "createRentReceipt": "Rent receipt recorded",
+    "viewOwnershipVerifications": "Ownership checks viewed",
+    "createOwnershipVerification": "Ownership check created",
+    "databaseAccess": "Database accessed",
+    "databaseExport": "Database exported",
+    "settingsChange": "Settings changed",
+    "generateRentPeriods": "Rent months generated",
+    "allocatePayment": "Payment allocated",
+    "reverseAllocation": "Allocation reversed",
+    "importBankTransactions": "Bank movements imported",
+    "matchPayment": "Payment matched",
+    "confirmMatch": "Match confirmed",
+    "overrideMatch": "Match reassigned",
+    "ignoreTransaction": "Movement ignored",
+    "applyReconciliationRule": "Reconciliation rule applied",
+    "bankConnectionCreated": "Bank connected",
+    "bankConnectionDeleted": "Test bank connection deleted",
+    "bankConsentGranted": "Bank consent granted",
+    "bankConsentExpired": "Bank consent expired",
+    "emitReceipt": "Receipt issued",
+    "submitReceipt": "Receipt submitted",
+    "archiveReceipt": "Receipt archived",
+    "voidReceipt": "Receipt voided",
+    "transitionReceiptLifecycle": "Receipt status changed",
+    "ocrClassifyDocument": "Document classified",
+    "ocrExtractionReviewed": "Document reading reviewed",
+    "linkExpenseDocument": "Document linked to an expense",
+    "assignPropertyOwner": "Owner assigned",
+    "removePropertyOwner": "Owner removed"
   }
 }

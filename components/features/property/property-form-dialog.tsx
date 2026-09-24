@@ -165,10 +165,10 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
         <DialogContent className="bg-[var(--color-card-solid)] border-[var(--color-border)] max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
           <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
             <DialogTitle className="text-[var(--color-foreground)]">
-              {dialog.editingItem ? "Edit Property" : "Add New Property"}
+              {dialog.editingItem ? t("editProperty") : t("addNew")}
             </DialogTitle>
             <DialogDescription>
-              {dialog.editingItem ? "Update property details" : "Enter property information"}
+              {dialog.editingItem ? t("updateDetails") : t("enterInfo")}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={dialog.handleSubmit} className="flex flex-col flex-1 min-h-0">
@@ -219,18 +219,18 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
               <div className="space-y-3">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="address">Address *</Label>
+                    <Label htmlFor="address">{tForms("address")} *</Label>
                     {dialog.formData.addressVerified && (
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-[var(--color-success)] flex items-center gap-1">
-                          ✓ Verified
+                          ✓ {t("fields.verified")}
                         </span>
                         <button
                           type="button"
                           onClick={() => setShowManualFields((v) => !v)}
                           className="text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] underline underline-offset-2 min-h-[32px] px-1"
                         >
-                          {showManualFields ? "Hide fields" : "Edit manually"}
+                          {showManualFields ? t("hideFields") : t("editManually")}
                         </button>
                       </div>
                     )}
@@ -388,7 +388,9 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="rent">Monthly Rent ({currencySymbol})</Label>
+                  <Label htmlFor="rent">
+                    {t("fields.monthlyRent")} ({currencySymbol})
+                  </Label>
                   <Input
                     id="rent"
                     type="number"
@@ -452,7 +454,7 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                       showDetails && "rotate-180",
                     )}
                   />
-                  {showDetails ? "Hide details" : "Add details (bedrooms, bathrooms, description)"}
+                  {showDetails ? t("hideDetails") : t("addDetails")}
                 </button>
 
                 {showDetails && (

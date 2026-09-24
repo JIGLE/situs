@@ -51,4 +51,33 @@ describe("PropertyFormDialog", () => {
     expect(toast.success).toHaveBeenCalledWith(ptMessages.properties.toastCreated);
     expect(toast.error).not.toHaveBeenCalled();
   });
+
+  it("labels the whole form in the app's language", async () => {
+    // The title, the address label and its verified badge, the manual-edit toggle, the rent label
+    // and the details toggle were English literals in a Portuguese form.
+    const ref = createRef<PropertyFormDialogRef>();
+    renderWithProviders(<PropertyFormDialog ref={ref} />, { initialLocale: "pt" });
+
+    act(() => {
+      ref.current!.openDialog({
+        name: "Rua Augusta 12",
+        address: "Rua Augusta 12, 1100-048 Lisboa",
+        addressVerified: true,
+      });
+    });
+
+    const pt = ptMessages.properties;
+    expect(await screen.findByText(pt.addNew)).toBeInTheDocument();
+    expect(screen.getByText(pt.enterInfo)).toBeInTheDocument();
+    expect(screen.getByText(`${ptMessages.forms.address} *`)).toBeInTheDocument();
+    expect(screen.getByText(`✓ ${pt.fields.verified}`)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: pt.editManually })).toBeInTheDocument();
+    expect(screen.getByText(`${pt.fields.monthlyRent} (€)`)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: pt.addDetails })).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        /Add New Property|Address \*|Verified|Edit manually|Monthly Rent|Add details/,
+      ),
+    ).not.toBeInTheDocument();
+  });
 });

@@ -108,4 +108,13 @@ describe("LeaseDetailView in Portuguese", () => {
     expect(screen.getByRole("button", { name: pt.detail.withdrawOffer })).toBeInTheDocument();
     expect(screen.queryByText(/Withdraw Offer/)).not.toBeInTheDocument();
   });
+
+  it("writes the lease's dates the Portuguese way, not as stored", () => {
+    app.leases = [{ ...lease, renewalStatus: null }];
+    renderWithProviders(<LeaseDetailView leaseId="lease-1" />, { initialLocale: "pt" });
+
+    expect(screen.getByText("01/01/2026 — 31/12/2026")).toBeInTheDocument();
+    expect(screen.getByText("31/12/2026")).toBeInTheDocument();
+    expect(screen.queryByText(/2026-01-01|2026-12-31/)).not.toBeInTheDocument();
+  });
 });

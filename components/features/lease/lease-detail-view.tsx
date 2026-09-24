@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RECEIPT_TYPE_KEY } from "@/lib/utils/receipt-labels";
+import { formatDate } from "@/lib/utils/format-date";
 import {
   Dialog,
   DialogContent,
@@ -188,7 +189,7 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
             <div className="flex items-center gap-2 mt-1 text-sm text-[var(--color-muted-foreground)]">
               <Calendar className="h-4 w-4" />
               <span>
-                {lease.startDate} — {lease.endDate}
+                {formatDate(lease.startDate, locale)} — {formatDate(lease.endDate, locale)}
               </span>
             </div>
             <div className="flex items-center gap-3 mt-2 flex-wrap">
@@ -310,13 +311,13 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
               <span className="text-[var(--color-muted-foreground)]">
                 {tLease("field.startDate")}
               </span>
-              <p className="text-lg font-semibold mt-1">{lease.startDate}</p>
+              <p className="text-lg font-semibold mt-1">{formatDate(lease.startDate, locale)}</p>
             </div>
             <div>
               <span className="text-[var(--color-muted-foreground)]">
                 {tLease("field.endDate")}
               </span>
-              <p className="text-lg font-semibold mt-1">{lease.endDate}</p>
+              <p className="text-lg font-semibold mt-1">{formatDate(lease.endDate, locale)}</p>
             </div>
             <div>
               <span className="text-[var(--color-muted-foreground)]">{t("autoRenewBadge")}</span>
