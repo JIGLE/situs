@@ -235,7 +235,6 @@ model Property {
   owners              PropertyOwner[]
   expenses            Expense[]
   leases              Lease[]
-  units               Unit[]
   documents           Document[]
   incomeDistributions IncomeDistribution[]
   rentReceipts        RentReceipt[]
@@ -527,7 +526,6 @@ model Expense {
   id              String    @id @default(cuid())
   userId          String
   propertyId      String
-  unitId          String? // Optional: scope expense to a specific unit
   leaseId         String? // Optional: link expense to a lease period
   amount          Float
   date            DateTime
@@ -553,7 +551,6 @@ model Expense {
   // Relations
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit          Unit?     @relation(fields: [unitId], references: [id], onDelete: SetNull)
   lease         Lease?    @relation(fields: [leaseId], references: [id], onDelete: SetNull)
   parentExpense Expense?  @relation("RecurringExpenses", fields: [parentExpenseId], references: [id], onDelete: SetNull)
   childExpenses Expense[] @relation("RecurringExpenses")
@@ -562,7 +559,6 @@ model Expense {
   // Performance indexes
   @@index([userId])
   @@index([propertyId])
-  @@index([unitId])
   @@index([leaseId])
   @@index([date])
   @@index([category])
@@ -577,7 +573,6 @@ model Lease {
   userId              String
   propertyId          String
   tenantId            String
-  unitId              String?
   startDate           DateTime
   endDate             DateTime
   monthlyRent         Float
@@ -606,7 +601,6 @@ model Lease {
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   property    Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  unit        Unit?        @relation(fields: [unitId], references: [id], onDelete: SetNull)
   expenses    Expense[]
   rentPeriods RentPeriod[]
 
@@ -616,29 +610,6 @@ model Lease {
   @@index([status])
   @@index([userId, status])
   @@map("leases")
-}
-
-model Unit {
-  id         String     @id @default(cuid())
-  propertyId String
-  number     String // Unit/apartment number
-  floor      Int?
-  sizeSqM    Float?
-  bedrooms   Int?
-  bathrooms  Int?
-  status     UnitStatus @default(vacant)
-  notes      String?
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-
-  // Relations
-  property  Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  leases    Lease[]
-  documents Document[]
-  expenses  Expense[]
-
-  @@unique([propertyId, number])
-  @@map("units")
 }
 
 model Document {
@@ -653,7 +624,6 @@ model Document {
 
   // Polymorphic relations (nullable FKs)
   propertyId String?
-  unitId     String?
   ownerId    String?
   tenantId   String?
 
@@ -665,7 +635,6 @@ model Document {
   // Relations
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   property Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  unit     Unit?     @relation(fields: [unitId], references: [id], onDelete: SetNull)
   owner    Owner?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   tenant   Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   expenses Expense[] // Situs: deduction-evidence links (Expense.documentId)
@@ -752,13 +721,6 @@ enum LeaseStatus {
   terminated
   pending
   draft
-}
-
-enum UnitStatus {
-  vacant
-  occupied
-  maintenance
-  reserved
 }
 
 enum DocumentType {

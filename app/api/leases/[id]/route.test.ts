@@ -16,7 +16,6 @@ const { prismaMock } = vi.hoisted(() => ({
     lease: { update: vi.fn(), delete: vi.fn() },
     property: { findFirst: vi.fn() },
     tenant: { findFirst: vi.fn() },
-    unit: { findFirst: vi.fn() },
   },
 }));
 
@@ -47,7 +46,6 @@ describe("PUT /api/leases/[id]", () => {
     prismaMock.lease.update.mockImplementation(async ({ data }) => ({ id: "lease-1", ...data }));
     prismaMock.property.findFirst.mockResolvedValue({ id: "prop-1" });
     prismaMock.tenant.findFirst.mockResolvedValue({ id: "tenant-1" });
-    prismaMock.unit.findFirst.mockResolvedValue({ id: "unit-1" });
   });
 
   it("never moves the lease into another account", async () => {
@@ -76,23 +74,16 @@ describe("PUT /api/leases/[id]", () => {
     expect(prismaMock.lease.update).not.toHaveBeenCalled();
   });
 
-  it("refuses a unit the caller does not own", async () => {
-    prismaMock.unit.findFirst.mockResolvedValue(null);
-
-    const res = await put({ unitId: "someone-elses-unit" });
-
-    expect(res.status).toBe(404);
-    expect(prismaMock.lease.update).not.toHaveBeenCalled();
-  });
-
   // The renewal screen PUT back the lease it had just been sent: relation objects, its id, the
   // renewal columns. Only the lease's own terms may be written, and only the ones in the request.
   // `toEqual` also pins the trap in the obvious fix: Zod 4 still applies a `.default()` inside
   // `.partial()`, so an update schema built that way adds `status: "draft"` to this rent change.
+  // `unitId` is a column that no longer exists; passed through, Prisma would refuse the update.
   it("writes only the terms it was sent", async () => {
     await put({
       monthlyRent: 800,
       id: "lease-1",
+      unitId: "unit-1",
       property: { name: "Rua Augusta 12", address: "Lisboa" },
       tenant: { name: "Ana Costa", email: "ana@example.com" },
       renewalStatus: "accepted",

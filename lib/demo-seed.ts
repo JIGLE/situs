@@ -5,7 +5,6 @@ import {
   PaymentStatus,
   ReceiptType,
   ReceiptStatus,
-  UnitStatus,
   LeaseStatus,
 } from "@prisma/client";
 
@@ -446,88 +445,7 @@ export async function seedDemoData(userId: string): Promise<void> {
     });
   }
 
-  // 7. Create Units
-  const unitsData = [
-    // Apartment 3A has 1 unit
-    {
-      propertyIndex: 0,
-      number: "3A",
-      floor: 3,
-      sizeSqM: 85,
-      bedrooms: 2,
-      bathrooms: 1,
-      status: "occupied" as UnitStatus,
-    },
-    // Penthouse B has 1 unit
-    {
-      propertyIndex: 1,
-      number: "PH",
-      floor: 10,
-      sizeSqM: 180,
-      bedrooms: 3,
-      bathrooms: 2,
-      status: "occupied" as UnitStatus,
-    },
-    // Apt 1B has 1 unit
-    {
-      propertyIndex: 2,
-      number: "1B",
-      floor: 1,
-      sizeSqM: 55,
-      bedrooms: 1,
-      bathrooms: 1,
-      status: "vacant" as UnitStatus,
-    },
-    // Ground Floor Retail has 1 unit
-    {
-      propertyIndex: 3,
-      number: "G",
-      floor: 0,
-      sizeSqM: 120,
-      bedrooms: 0,
-      bathrooms: 1,
-      status: "occupied" as UnitStatus,
-    },
-    // Studio 201 has 1 unit
-    {
-      propertyIndex: 4,
-      number: "201",
-      floor: 2,
-      sizeSqM: 40,
-      bedrooms: 1,
-      bathrooms: 1,
-      status: "maintenance" as UnitStatus,
-    },
-    // Suite 404 has 1 unit
-    {
-      propertyIndex: 5,
-      number: "404",
-      floor: 4,
-      sizeSqM: 110,
-      bedrooms: 2,
-      bathrooms: 2,
-      status: "occupied" as UnitStatus,
-    },
-  ];
-
-  const dbUnits = [];
-  for (const u of unitsData) {
-    const prop = dbProperties[u.propertyIndex];
-    const unit = await prisma.unit.create({
-      data: {
-        propertyId: prop.id,
-        number: u.number,
-        floor: u.floor,
-        sizeSqM: u.sizeSqM,
-        bedrooms: u.bedrooms,
-        bathrooms: u.bathrooms,
-        status: u.status,
-      },
-    });
-    dbUnits.push(unit);
-  }
-
-  // 8. Create RentPeriods (for Jan-May 2026, all paid; June 2026 due/overdue)
+  // 7. Create RentPeriods (for Jan-May 2026, all paid; June 2026 due/overdue)
   for (const tenant of dbTenants) {
     // Find the lease for this tenant
     const lease = await prisma.lease.findFirst({
@@ -560,7 +478,7 @@ export async function seedDemoData(userId: string): Promise<void> {
     }
   }
 
-  // 9. Create BankConnection and BankAccount
+  // 8. Create BankConnection and BankAccount
   const bankConnection = await prisma.bankConnection.create({
     data: {
       userId,
@@ -584,7 +502,7 @@ export async function seedDemoData(userId: string): Promise<void> {
     },
   });
 
-  // 10. Create BankTransactions (movements matching the receipts)
+  // 9. Create BankTransactions (movements matching the receipts)
   const bankTransactionsData = [
     // João Silva rent payments
     { amount: 1500, date: "2026-01-05", counterparty: "João Silva", ref: "JAN2026-APT3A" },

@@ -20,8 +20,7 @@
       "occupied": "{count} occupied",
       "occupancy": "Occupancy",
       "vacancySlots": "{count} vacancy slots",
-      "runRate": "Monthly revenue",
-      "onMap": "{mapped}/{total} on map"
+      "runRate": "Monthly revenue"
     },
     "attention": {
       "label": "Attention",
@@ -561,11 +560,6 @@
       "description": "Upload documents to keep property records, contracts, and correspondence organized.",
       "action": "Upload Document"
     },
-    "units": {
-      "title": "No units yet",
-      "description": "Add units to this property to track individual spaces, tenants, and leases.",
-      "action": "Add Unit"
-    },
     "noResults": {
       "title": "No results found",
       "description": "Try adjusting your search or filters."
@@ -636,7 +630,6 @@
     "colDate": "Date",
     "colStatus": "Status",
     "tabs": {
-      "queue": "Due & overdue",
       "receipts": "Receipts",
       "rentMatrix": "Rent matrix",
       "bank": "Bank movements",
@@ -909,45 +902,6 @@
     "toastDeleted": "Owner deleted successfully",
     "deleteDescription": "This owner will be permanently removed. This action cannot be undone."
   },
-  "calendar": {
-    "months": {
-      "jan": "Jan",
-      "feb": "Feb",
-      "mar": "Mar",
-      "apr": "Apr",
-      "may": "May",
-      "jun": "Jun",
-      "jul": "Jul",
-      "aug": "Aug",
-      "sep": "Sep",
-      "oct": "Oct",
-      "nov": "Nov",
-      "dec": "Dec"
-    },
-    "monthsFull": {
-      "january": "January",
-      "february": "February",
-      "march": "March",
-      "april": "April",
-      "may": "May",
-      "june": "June",
-      "july": "July",
-      "august": "August",
-      "september": "September",
-      "october": "October",
-      "november": "November",
-      "december": "December"
-    },
-    "weekdays": {
-      "sun": "Sun",
-      "mon": "Mon",
-      "tue": "Tue",
-      "wed": "Wed",
-      "thu": "Thu",
-      "fri": "Fri",
-      "sat": "Sat"
-    }
-  },
   "forms": {
     "fullName": "Full Name",
     "email": "Email",
@@ -958,7 +912,6 @@
     "description": "Description",
     "property": "Property",
     "tenant": "Tenant",
-    "unit": "Unit",
     "type": "Type",
     "status": "Status",
     "rent": "Rent",
@@ -1016,14 +969,6 @@
     "postalCode": "Postal code",
     "commercial": "Commercial",
     "addressSearchFailed": "Address search failed.",
-    "map": {
-      "mapped": "Mapped properties",
-      "missingCoords": "Missing coordinates",
-      "source": "Map source",
-      "empty": "No properties with coordinates",
-      "emptyHelp": "Verify the property address, or save a latitude and longitude to place it on the map.",
-      "openDetails": "Open details"
-    },
     "portfolio": {
       "subtitle": "Manage your properties, occupancy and rent coverage.",
       "filterAssets": "Filter assets…",
@@ -1214,7 +1159,6 @@
     "tabs": {
       "overview": "Overview",
       "money": "Money",
-      "units": "Units",
       "audit": "Audit"
     },
     "stats": {
@@ -1284,37 +1228,6 @@
       "remove": "Remove owner",
       "reachesFull": "Total will reach exactly 100% ✓"
     }
-  },
-  "paymentMatrix": {
-    "title": "Payment Tracking Matrix",
-    "subtitle": "Monthly payment status overview for all tenants",
-    "detailed": "Detailed",
-    "heatmap": "Heatmap",
-    "allStatus": "All Status",
-    "paid": "Paid",
-    "pending": "Pending",
-    "overdue": "Overdue",
-    "export": "Export",
-    "totalExpected": "Total Expected",
-    "forYear": "For {year}",
-    "totalReceived": "Total Received",
-    "paidAmounts": "Paid amounts",
-    "outstanding": "Outstanding",
-    "pendingPayments": "Pending payments",
-    "collectionRate": "Collection Rate",
-    "paymentSuccessRate": "Payment success rate",
-    "matrixTitle": "Payment Matrix - {year}",
-    "legend": "Green: Paid • Yellow: Pending • Red: Overdue • Gray: No payment due",
-    "tenant": "Tenant",
-    "total": "Total",
-    "perMonth": "/mo",
-    "ofExpected": "of {amount}",
-    "cellTooltip": "{status} on {date} — {amount}",
-    "overdueTooltip": "Overdue payment",
-    "noPaymentTooltip": "No payment",
-    "noPaymentDue": "No payment due",
-    "noTenantsYet": "No Tenants Yet",
-    "addTenantsToTrack": "Add tenants to start tracking payments"
   },
   "notificationCenter": {
     "title": "Notifications",
@@ -1645,7 +1558,7 @@
       "acceptanceTitle": "Acceptance",
       "acceptanceBody": "By creating an account or using this Situs instance you agree to these terms. If you do not agree, do not use it.",
       "serviceTitle": "What the service is",
-      "serviceBody": "Situs is property-management software for landlords and property managers in Portugal: properties, units, tenants, leases, receipts, expenses, maintenance and fiscal compliance. It is provided as is. It assists with fiscal obligations; it does not discharge them, and it is not a substitute for an accountant.",
+      "serviceBody": "Situs is property-management software for landlords and property managers in Portugal: properties, tenants, leases, receipts, expenses, maintenance and fiscal compliance. It is provided as is. It assists with fiscal obligations; it does not discharge them, and it is not a substitute for an accountant.",
       "accountsTitle": "Accounts",
       "accounts1": "Registration information must be accurate.",
       "accounts2": "You are responsible for keeping your credentials confidential.",

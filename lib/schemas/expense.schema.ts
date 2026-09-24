@@ -87,7 +87,6 @@ export type RecurrenceRule = (typeof RECURRENCE_RULES)[number];
 
 export const expenseSchema = z.object({
   propertyId: z.string().min(1, "Property is required"),
-  unitId: z.string().cuid().optional().nullable(),
   leaseId: z.string().cuid().optional().nullable(),
   amount: z.number().min(0.01, "Amount must be greater than 0"),
   date: z.string().refine((date) => !isNaN(Date.parse(date)), "Invalid date"),

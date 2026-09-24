@@ -112,7 +112,6 @@ async function handlePost(request: NextRequest): Promise<Response> {
       data: {
         userId,
         propertyId: template.propertyId,
-        unitId: template.unitId ?? undefined,
         leaseId: template.leaseId ?? undefined,
         amount: template.amount,
         date: expenseDate,

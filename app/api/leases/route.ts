@@ -58,7 +58,6 @@ async function handlePost(request: NextRequest): Promise<Response> {
     await assertOwnsRelations(scopeUserId, {
       propertyId: body.propertyId,
       tenantId: body.tenantId,
-      unitId: body.unitId,
     });
 
     let contractFile: Buffer | undefined;

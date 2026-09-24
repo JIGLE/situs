@@ -130,8 +130,6 @@ export interface Lease {
     name: string;
     email: string;
   };
-  unitId?: string;
-  unitName?: string;
   startDate: string;
   endDate: string;
   monthlyRent: number;

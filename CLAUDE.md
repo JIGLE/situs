@@ -5,7 +5,7 @@
 Situs — **Situs // Sovereign Capital System** — is self-hosted property management for landlords
 and property managers in **Portugal**. The product is one loop: bank movement → match →
 allocate → receipt → tax filing → audit trail. Around it sit the records the loop runs on
-(properties, units, buildings, owners, tenants, leases, expenses) and the compliance substrate (PII
+(properties, buildings, owners, tenants, leases, expenses) and the compliance substrate (PII
 encryption, GDPR export and retention, the Article 30 record, the legal pages). It is one owner's
 instance, shared with co-owners, not a product to sell: there is no billing and no landing page, and
 rent reaches the ledger as a matched bank movement, never as a card payment.

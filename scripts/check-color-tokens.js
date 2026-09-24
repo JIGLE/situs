@@ -70,7 +70,9 @@ const ALLOWLIST = ["empty-state-illustrations", "scenario-runner", "opengraph-im
 // fiscal-profile card; the other 8 were slack, since main already measured 227.
 // 211 → 199 the same day: the Modelo 179 view took 12 when Spain's compliance went.
 // 199 → 186: the landing's language chooser took 12 and the billing panel 1.
-const BASELINE = 186;
+// 186 → 148: the property map took all 38, in the raw grays of its legend and popups. The
+// receipt-based payment matrix, removed with it, already drew with tokens.
+const BASELINE = 148;
 
 function walk(dir, acc) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

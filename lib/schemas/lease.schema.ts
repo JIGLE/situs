@@ -17,7 +17,6 @@ const dateOrderError = { message: "End date must be after start date", path: ["e
 const leaseFields = z.object({
   tenantId: z.string().min(1, "Tenant is required"),
   propertyId: z.string().min(1, "Property is required"),
-  unitId: z.string().optional(),
   startDate: z.string().refine((date) => !isNaN(Date.parse(date)), "Invalid start date"),
   endDate: z.string().refine((date) => !isNaN(Date.parse(date)), "Invalid end date"),
   monthlyRent: z.number().positive("Rent must be positive"),
