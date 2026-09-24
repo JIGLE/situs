@@ -51,7 +51,7 @@ const SCHEMA = join(process.cwd(), "prisma", "schema.prisma");
 // Public by design (the proxy.ts allowlist) — authenticated by token or provider signature
 // rather than by session, so caller scoping does not apply in the same way.
 const PUBLIC =
-  /^(auth|health|ready|info|tenant-portal|csrf-token|monitoring|webhooks|billing\/checkout|debug|cron|exchange|metrics)\//;
+  /^(auth|health|ready|info|tenant-portal|csrf-token|monitoring|webhooks|billing\/checkout|debug|cron|metrics)\//;
 
 /**
  * Models carrying their own `userId` column. Parsed per model body — a naive grep with a fixed
