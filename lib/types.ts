@@ -151,7 +151,7 @@ export interface Lease {
   contractFile?: Buffer;
   contractFileName?: string;
   contractFileSize?: number;
-  taxRegime?: string;
+  taxRegime?: string | null;
   status: "active" | "expiring" | "expired" | "terminated" | "pending" | "draft";
   autoRenew: boolean;
   renewalNoticeDays: number;

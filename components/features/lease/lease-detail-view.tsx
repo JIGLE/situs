@@ -49,7 +49,7 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive"> = 
 };
 
 export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
-  const { state, updateLease } = useApp();
+  const { state, updateLease, refreshData } = useApp();
   const { formatCurrency } = useCurrency();
   const { success, error } = useToast();
   const t = useTranslations("leases.detail");
@@ -123,8 +123,9 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
         }),
       });
       if (!res.ok) throw new Error("Failed");
-      const updated = await res.json();
-      await updateLease(lease.id, updated);
+      // The renewal route has saved the offer; this only reloads it. Handing its reply to
+      // `updateLease` PUT the whole lease back — relation objects included — as a second write.
+      await refreshData();
       success(t("toastRenewalSent"));
       setRenewalOpen(false);
     } catch {
@@ -142,8 +143,7 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
         headers: csrfHeaders(),
       });
       if (!res.ok) throw new Error("Failed");
-      const updated = await res.json();
-      await updateLease(lease.id, updated);
+      await refreshData();
       success(t("toastRenewalWithdrawn"));
     } catch {
       error(t("toastWithdrawFailed"));
