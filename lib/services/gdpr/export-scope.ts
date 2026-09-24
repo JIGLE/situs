@@ -15,6 +15,8 @@
  */
 
 import { Prisma } from "@prisma/client";
+import { decryptResult } from "@/lib/services/database/pii-extension";
+import { PII_FIELDS } from "@/lib/utils/pii-encryption";
 
 /**
  * Relations deliberately excluded, each with the reason.
@@ -32,8 +34,8 @@ export const EXPORT_DENY_LIST: Record<string, string> = {
   sessions: "NextAuth session tokens — live credentials, not personal data about the subject",
 };
 
-/** Every relation on `User`, from Prisma's model metadata. */
-function userRelations(): string[] {
+/** Every relation on `User` and the model it holds (`tenants` → `Tenant`), from Prisma's metadata. */
+function userRelationModels(): Map<string, string> {
   const user = Prisma.dmmf.datamodel.models.find((m) => m.name === "User");
   if (!user) {
     throw new Error(
@@ -41,7 +43,12 @@ function userRelations(): string[] {
         "Refusing rather than exporting a partial file that looks complete.",
     );
   }
-  return user.fields.filter((f) => f.kind === "object").map((f) => f.name);
+  return new Map(user.fields.filter((f) => f.kind === "object").map((f) => [f.name, f.type]));
+}
+
+/** Every relation on `User`, from Prisma's model metadata. */
+function userRelations(): string[] {
+  return [...userRelationModels().keys()];
 }
 
 /**
@@ -71,4 +78,26 @@ export function buildExportInclude(): Record<string, true> {
 /** Relation names this export omits, for the manifest the export carries. */
 export function excludedRelations(): string[] {
   return userRelations().filter((name) => name in EXPORT_DENY_LIST);
+}
+
+/**
+ * The export with its personal data readable.
+ *
+ * The export reads every relation nested under the user, and the PII extension transforms only the
+ * fields of the model a query names: `User`, which has none. So every NIF and phone number in the
+ * file came out as `enc:…`, an Article 15 export its subject could not read. Each relation is
+ * decrypted with the `PII_FIELDS` of the model it holds, read from the same metadata as the
+ * include, so a model added to `PII_FIELDS` is decrypted here the day it is.
+ *
+ * The IBANs encrypted at the call site stay as stored, as they do everywhere else in the app
+ * (docs/DATA_PROTECTION.md §3).
+ */
+export function decryptExportedRelations<T extends object>(user: T): T {
+  const exported: Record<string, unknown> = { ...(user as Record<string, unknown>) };
+  for (const [relation, model] of userRelationModels()) {
+    const fields = PII_FIELDS[model];
+    if (!fields?.length || exported[relation] == null) continue;
+    exported[relation] = decryptResult(exported[relation], fields);
+  }
+  return exported as T;
 }

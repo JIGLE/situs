@@ -192,13 +192,29 @@ describe("PII encryption — real Prisma client + real SQLite file", () => {
     expect(Buffer.from(selected?.contractFile ?? []).toString()).toBe("%PDF-1.7 contract");
 
     // The GDPR export reads leases as a nested include of the user; the omit holds there too.
-    const { buildExportInclude } = await import("@/lib/services/gdpr/export-scope");
+    const { buildExportInclude, decryptExportedRelations } =
+      await import("@/lib/services/gdpr/export-scope");
+    type Exported = {
+      leases?: object[];
+      tenants?: Array<{ taxId: string | null }>;
+      leaseParties?: Array<{ taxId: string | null; idDocument: string | null }>;
+    };
     const exported = (await prisma.user.findUnique({
       where: { id: user.id },
       include: buildExportInclude(),
-    })) as { leases?: object[] } | null;
+    })) as Exported | null;
     expect(exported?.leases).toHaveLength(1);
     expect(exported?.leases?.[0]).not.toHaveProperty("contractFile");
+
+    // The extension decrypts only the top-level model, so the nested rows arrive as stored, and
+    // the export decrypts them itself.
+    expect(exported?.tenants?.[0].taxId).toMatch(/^enc:/);
+    const readable = decryptExportedRelations(exported ?? {}) as Exported;
+    expect(readable.tenants?.[0].taxId).toBe(tenantNif);
+    expect(readable.leaseParties?.[0]).toMatchObject({
+      taxId: partyTaxId,
+      idDocument: partyDocument,
+    });
 
     await prisma.$disconnect();
 
