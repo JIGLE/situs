@@ -44,3 +44,54 @@ describe("useMultiStepForm persistence", () => {
     expect(result.current.formData).toEqual({ name: "Rua Augusta", parties: [] });
   });
 });
+
+// Callers build `initialData` afresh on every render, so an array in it is a new array each time.
+// Compared by reference, the lease wizard's untouched `parties: []` read as an edit: any write
+// that changed nothing, and every reset, saved a draft and put a phantom "unsaved draft" banner
+// on the next Add lease.
+describe("useMultiStepForm draft detection", () => {
+  // No `omit`: the comparison itself is under test. A new object, and a new array, every render.
+  const fresh = () => ({
+    ...options,
+    initialData: { name: "", parties: [] } as Form,
+    persistence: { key: KEY },
+  });
+
+  it("saves no draft when an update leaves every value as it was", () => {
+    const { result, rerender } = renderHook(() => useMultiStepForm<Form>(fresh()));
+    rerender();
+
+    act(() => result.current.updateFormData({ name: "" }));
+
+    expect(localStorage.getItem(KEY)).toBeNull();
+    expect(result.current.hasDraft).toBe(false);
+  });
+
+  it("saves no draft when the form is reset", () => {
+    const { result, rerender } = renderHook(() => useMultiStepForm<Form>(fresh()));
+    rerender();
+
+    act(() => result.current.resetForm());
+
+    expect(localStorage.getItem(KEY)).toBeNull();
+    expect(result.current.hasDraft).toBe(false);
+  });
+
+  it("saves a draft when an array's contents change", () => {
+    const { result, rerender } = renderHook(() => useMultiStepForm<Form>(fresh()));
+    rerender();
+
+    act(() => result.current.updateFormData({ parties: ["123456789"] }));
+
+    expect(JSON.parse(localStorage.getItem(KEY) ?? "{}").data?.parties).toEqual(["123456789"]);
+  });
+
+  it("saves no draft when only an omitted field changed", () => {
+    const { result } = renderHook(() => useMultiStepForm<Form>(options));
+
+    act(() => result.current.updateFormData({ parties: ["123456789"] }));
+
+    expect(localStorage.getItem(KEY)).toBeNull();
+    expect(result.current.hasDraft).toBe(false);
+  });
+});

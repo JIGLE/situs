@@ -96,6 +96,14 @@ export interface UseMultiStepFormReturn<T extends Record<string, unknown>> {
 }
 
 /**
+ * Equal by value. Callers build `initialData` afresh on every render, so an array or object in it
+ * is a new reference each time, and a reference comparison reads it as an edit.
+ */
+function sameValue(a: unknown, b: unknown): boolean {
+  return Object.is(a, b) || JSON.stringify(a) === JSON.stringify(b);
+}
+
+/**
  * Hook for managing multi-step forms with validation and persistence
  */
 export function useMultiStepForm<T extends Record<string, unknown>>(
@@ -182,12 +190,14 @@ export function useMultiStepForm<T extends Record<string, unknown>>(
   useEffect(() => {
     if (!persistence) return;
     const initial = initialDataRef.current;
-    const changed = Object.keys(formData).some(
-      (k) => formData[k as keyof T] !== initial[k as keyof T],
+    const omitted = new Set<keyof T>(persistence.omit ?? []);
+    // By value, and only over the fields the draft keeps: a draft holding nothing new is not one.
+    const changed = (Object.keys(formData) as (keyof T)[]).some(
+      (k) => !omitted.has(k) && !sameValue(formData[k], initial[k]),
     );
     if (changed) {
       const draft: Partial<T> = { ...formData };
-      for (const field of persistence.omit ?? []) delete draft[field];
+      for (const field of omitted) delete draft[field];
       localStorage.setItem(
         persistence.key,
         JSON.stringify({
