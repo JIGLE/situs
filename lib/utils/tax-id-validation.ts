@@ -10,9 +10,11 @@ export function validatePortugueseNIF(nif: string): boolean {
 
   if (clean.length !== 9) return false;
 
-  // First digit must be 1, 2, 3, 5, 6, 7, 8, or 9
+  // First digit must be 1, 2, 3, 5, 6, 7, 8, or 9, or the number must start with 45: AT's range
+  // for non-resident individuals, and the only NIFs that begin with 4.
   const firstDigit = parseInt(clean[0]);
-  if (![1, 2, 3, 5, 6, 7, 8, 9].includes(firstDigit)) return false;
+  const nonResident = clean.startsWith("45");
+  if (![1, 2, 3, 5, 6, 7, 8, 9].includes(firstDigit) && !nonResident) return false;
 
   // Calculate check digit (mod 11 algorithm)
   let sum = 0;
