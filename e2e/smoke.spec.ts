@@ -124,16 +124,24 @@ test.describe("Bank consent callback", () => {
 
 test.describe("Localization", () => {
   for (const locale of ["en", "pt"] as const) {
-    test(`/${locale} redirects to the unprefixed URL and remembers the locale`, async ({
+    // The prefix goes (a 308 to `/` that writes the locale cookie), and `/` sends a signed-out
+    // visitor on to sign-in (a 307 from the proxy). This used to assert the chain stopped at `/`,
+    // which held only while `/` rendered a page — and only because that page's redirect was a
+    // client-side meta refresh that had not fired yet when the URL was read.
+    test(`/${locale} drops the prefix, remembers the locale and reaches sign-in`, async ({
       page,
     }) => {
       const response = await page.goto(`/${locale}`);
 
-      expect(new URL(page.url()).pathname).toBe("/");
+      expect(new URL(page.url()).pathname).toBe("/auth/signin");
       expect(response?.ok()).toBe(true);
 
       const cookie = (await page.context().cookies()).find((c) => c.name === "situs-locale");
       expect(cookie?.value, `/${locale} should record the locale it named`).toBe(locale);
+
+      // The cookie is read, not just written: `<html lang>` comes from it. Portuguese is also the
+      // default, so it is the `/en` case that would catch a cookie nobody reads.
+      await expect(page.locator("html")).toHaveAttribute("lang", locale);
     });
   }
 });
