@@ -605,7 +605,7 @@
     "exportJson": "Exportar como JSON"
   },
   "landing": {
-    "eyebrow": "Operaciones de alquiler para Portugal y España",
+    "eyebrow": "Operaciones de alquiler en Portugal",
     "signIn": "Iniciar sesión",
     "hero2": "Ingresos, recibos y prueba fiscal bajo control.",
     "subtitle2": "Situs ayuda a los propietarios a seguir los pagos de alquiler, asignar transferencias atrasadas al mes de referencia correcto, emitir recibos, archivar documentos, gestionar gastos y preparar prueba lista para impuestos en carteras de inmuebles de la UE.",
@@ -622,8 +622,7 @@
       "jumpAria": "Saltar al final de la secuencia"
     },
     "countries": {
-      "pt": "Portugal",
-      "es": "España"
+      "pt": "Portugal"
     }
   },
   "errors": {
@@ -662,7 +661,7 @@
   },
   "payments": {
     "title": "Pagos",
-    "desc": "Controla las rentas pendientes, registra pagos, emite recibos y revisa los totales fiscales PT/ES.",
+    "desc": "Controla las rentas pendientes, registra pagos, emite recibos y revisa los totales fiscales.",
     "descTenantScope": "Revisar historial de pagos, recibos y próximos pasos de cobro de {name}.",
     "descPropertyScope": "Revisar estado de rentas, recibos y resultados fiscales de {name}.",
     "theSelectedTenant": "el inquilino seleccionado",
@@ -1309,7 +1308,7 @@
       "allocated": "Imputado",
       "comingSoon": "Próximamente",
       "linkBankMovement": "Vincular un movimiento bancario",
-      "issueTaxReceipt": "Emitir recibo de alquiler a la AEAT"
+      "issueTaxReceipt": "Emitir recibo de alquiler a la AT"
     },
     "tenantName": "Nombre del inquilino",
     "email": "Correo electrónico",
@@ -1448,7 +1447,7 @@
     "signin": {
       "eyebrow": "Bienvenido de nuevo",
       "heading": "Inicia sesión en Situs",
-      "subheading": "Retoma la gestión de tus alquileres donde la dejaste — rentas, recibos y obligaciones fiscales en Portugal y España.",
+      "subheading": "Retoma la gestión de tus alquileres donde la dejaste — rentas, recibos y obligaciones fiscales en Portugal.",
       "primary": "Continuar con Google",
       "switchText": "¿Nuevo en Situs?",
       "switchAction": "Crear una cuenta"
@@ -1464,12 +1463,12 @@
     "brand": {
       "system": "Sovereign Capital System",
       "tagline": "Ingresos, recibos y prueba fiscal bajo control.",
-      "footer": "Autoalojado y alineado con el RGPD · Portugal y España",
+      "footer": "Autoalojado y alineado con el RGPD · Portugal",
       "proof": {
         "bankLabel": "Banco → conciliar → imputar",
         "bankNote": "Cada pago conciliado con su mes",
         "receiptLabel": "Recibo → emitir → archivar",
-        "receiptNote": "Documentos fiscales PT y ES, a tiempo",
+        "receiptNote": "Recibos de alquiler de la AT, a tiempo",
         "auditLabel": "Registro de auditoría siempre activo",
         "auditNote": "Cada paso del proceso queda registrado"
       }
@@ -1653,9 +1652,9 @@
       "useTitle": "Cómo los utilizamos",
       "use1": "Para prestar el servicio: registro de inmuebles, contratos, inquilinos y alquileres.",
       "use2": "Para conciliar alquileres con movimientos bancarios, que es la finalidad de una cuenta conectada.",
-      "use3": "Para generar documentos fiscales — recibos de alquiler de la AT portuguesa y declaraciones NRUA — a partir de los datos que haya introducido.",
+      "use3": "Para generar documentos fiscales — recibos de alquiler de la AT portuguesa — a partir de los datos que haya introducido.",
       "use4": "Para enviar el correo transaccional que haya configurado, como avisos de alquiler y alertas de vencimiento de contrato.",
-      "use5": "Para cumplir obligaciones legales conforme al derecho portugués y español.",
+      "use5": "Para cumplir obligaciones legales conforme al derecho portugués.",
       "bankTitle": "Acceso a la cuenta bancaria",
       "bankBody": "La conexión con un banco utiliza el acceso a información de cuenta previsto en la PSD2, a través de Enable Banking, proveedor autorizado de servicios de información sobre cuentas. El acceso es de solo lectura: esta instancia puede leer datos de la cuenta y movimientos, y nunca puede mover dinero. La autorización se concede en su propio banco, no aquí, y caduca — 90 días, salvo que su banco fije un plazo menor — tras lo cual debe otorgarse de nuevo.",
       "bankStorage": "Los IBAN se cifran en reposo con AES-256-GCM. La conciliación y la detección de duplicados funcionan con un hash unidireccional y no con el valor almacenado, de modo que el IBAN nunca necesita descifrarse para prestar el servicio. Solo se muestran los cuatro últimos dígitos.",
@@ -1687,7 +1686,7 @@
       "processorStripeBody": "Facturación de suscripciones, centro de datos en la UE. Solo si la facturación está activada.",
       "processorEmail": "Brevo",
       "processorEmailBody": "Entrega el correo transaccional y, por tanto, ve la dirección del destinatario y el mensaje. Con sede en la UE (Francia). Solo si el correo está configurado.",
-      "processorTax": "Autoridades fiscales española y portuguesa",
+      "processorTax": "Autoridad Tributaria portuguesa (AT)",
       "processorTaxBody": "Reciben las declaraciones fiscales que usted decida presentar.",
       "contactTitle": "Contacto",
       "contactBody": "Para consultas sobre protección de datos, o para ejercer cualquiera de los derechos anteriores, escriba a:"
@@ -1696,7 +1695,7 @@
       "acceptanceTitle": "Aceptación",
       "acceptanceBody": "Al crear una cuenta o utilizar esta instancia de Situs, acepta estos términos. Si no está de acuerdo, no la utilice.",
       "serviceTitle": "Qué es el servicio",
-      "serviceBody": "Situs es software de gestión inmobiliaria para arrendadores y administradores en Portugal y España: inmuebles, unidades, inquilinos, contratos, recibos, gastos, mantenimiento y cumplimiento fiscal. Se presta tal cual. Ayuda con las obligaciones fiscales; no las sustituye, ni reemplaza a un asesor fiscal.",
+      "serviceBody": "Situs es software de gestión inmobiliaria para arrendadores y administradores en Portugal: inmuebles, unidades, inquilinos, contratos, recibos, gastos, mantenimiento y cumplimiento fiscal. Se presta tal cual. Ayuda con las obligaciones fiscales; no las sustituye, ni reemplaza a un asesor fiscal.",
       "accountsTitle": "Cuentas",
       "accounts1": "Los datos de registro deben ser exactos.",
       "accounts2": "Usted es responsable de mantener la confidencialidad de sus credenciales.",

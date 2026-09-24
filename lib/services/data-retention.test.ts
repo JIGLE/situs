@@ -38,8 +38,8 @@ beforeEach(() => {
 describe("bank movement retention", () => {
   /**
    * The safety property of the whole rule. A movement that became a Receipt is that receipt's
-   * evidence — where the money came from — and PT/ES fiscal records outlive two years. Deleting
-   * it on this schedule would leave receipts whose origin cannot be shown.
+   * evidence — where the money came from — and Portuguese fiscal records outlive two years.
+   * Deleting it on this schedule would leave receipts whose origin cannot be shown.
    */
   it("only deletes movements with no receipt link", async () => {
     await runDataRetention();

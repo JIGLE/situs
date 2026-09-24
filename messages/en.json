@@ -605,7 +605,7 @@
     "exportJson": "Export as JSON"
   },
   "landing": {
-    "eyebrow": "Portugal & Spain rental operations",
+    "eyebrow": "Rental operations in Portugal",
     "signIn": "Sign in",
     "hero2": "Property income, receipts and tax evidence under control.",
     "subtitle2": "Situs helps owners track rent payments, allocate late transfers to the correct reference month, emit receipts, archive documents, manage expenses and prepare tax-ready evidence across EU property portfolios.",
@@ -622,8 +622,7 @@
       "jumpAria": "Jump to the end of the sequence"
     },
     "countries": {
-      "pt": "Portugal",
-      "es": "Spain"
+      "pt": "Portugal"
     }
   },
   "errors": {
@@ -662,7 +661,7 @@
   },
   "payments": {
     "title": "Payments",
-    "desc": "Track due rent, record payments, issue receipts, and review PT/ES tax-ready totals.",
+    "desc": "Track due rent, record payments, issue receipts, and review tax-ready totals.",
     "descTenantScope": "Review payment history, receipt output, and next collection steps for {name}.",
     "descPropertyScope": "Review rent status, receipts, and tax-ready outputs for {name}.",
     "theSelectedTenant": "the selected tenant",
@@ -1448,7 +1447,7 @@
     "signin": {
       "eyebrow": "Welcome back",
       "heading": "Sign in to Situs",
-      "subheading": "Pick up your rental compliance where you left off — rent, receipts, and fiscal filings for Portugal & Spain.",
+      "subheading": "Pick up your rental compliance where you left off — rent, receipts, and fiscal filings in Portugal.",
       "primary": "Continue with Google",
       "switchText": "New to Situs?",
       "switchAction": "Create an account"
@@ -1464,12 +1463,12 @@
     "brand": {
       "system": "Sovereign Capital System",
       "tagline": "Property income, receipts and tax evidence under control.",
-      "footer": "Self-hosted & GDPR-aligned · Portugal & Spain",
+      "footer": "Self-hosted & GDPR-aligned · Portugal",
       "proof": {
         "bankLabel": "Bank → match → allocate",
         "bankNote": "Every payment reconciled to its month",
         "receiptLabel": "Receipt → emit → archive",
-        "receiptNote": "PT & ES fiscal documents, on time",
+        "receiptNote": "AT rent receipts, on time",
         "auditLabel": "Audit trail, always on",
         "auditNote": "Every workflow step recorded"
       }
@@ -1653,9 +1652,9 @@
       "useTitle": "How we use it",
       "use1": "To run the service: recording properties, leases, tenants and rent.",
       "use2": "To reconcile rent against bank movements, which is what a connected bank account is for.",
-      "use3": "To produce fiscal documents — Portuguese AT rent receipts and Spanish NRUA filings — from data you have entered.",
+      "use3": "To produce fiscal documents — Portuguese AT rent receipts — from data you have entered.",
       "use4": "To send the transactional email you have configured, such as rent reminders and lease-expiry alerts.",
-      "use5": "To meet legal obligations under Portuguese and Spanish law.",
+      "use5": "To meet legal obligations under Portuguese law.",
       "bankTitle": "Bank account access",
       "bankBody": "Connecting a bank uses PSD2 account information access through Enable Banking, a licensed account information service provider. Access is read-only: this instance can read account details and transactions, and can never move money. You authorise the access at your own bank, not here, and the authorisation expires — 90 days unless your bank sets a shorter period — after which it must be granted again.",
       "bankStorage": "IBANs are encrypted at rest with AES-256-GCM. Matching and duplicate detection work from a one-way hash rather than the stored value, so the IBAN never needs to be decrypted to run the service. Only the last four digits are ever displayed.",
@@ -1687,7 +1686,7 @@
       "processorStripeBody": "Subscription billing, EU data centre. Only where billing is enabled.",
       "processorEmail": "Brevo",
       "processorEmailBody": "Delivers transactional email, and therefore sees the recipient address and the message. EU-based (France). Only where email is configured.",
-      "processorTax": "Portuguese and Spanish tax authorities",
+      "processorTax": "Portuguese Tax Authority (AT)",
       "processorTaxBody": "Receive the fiscal filings you choose to submit.",
       "contactTitle": "Contact",
       "contactBody": "For data protection enquiries, or to exercise any of the rights above, write to:"
@@ -1696,7 +1695,7 @@
       "acceptanceTitle": "Acceptance",
       "acceptanceBody": "By creating an account or using this Situs instance you agree to these terms. If you do not agree, do not use it.",
       "serviceTitle": "What the service is",
-      "serviceBody": "Situs is property-management software for landlords and property managers in Portugal and Spain: properties, units, tenants, leases, receipts, expenses, maintenance and fiscal compliance. It is provided as is. It assists with fiscal obligations; it does not discharge them, and it is not a substitute for an accountant.",
+      "serviceBody": "Situs is property-management software for landlords and property managers in Portugal: properties, units, tenants, leases, receipts, expenses, maintenance and fiscal compliance. It is provided as is. It assists with fiscal obligations; it does not discharge them, and it is not a substitute for an accountant.",
       "accountsTitle": "Accounts",
       "accounts1": "Registration information must be accurate.",
       "accounts2": "You are responsible for keeping your credentials confidential.",

@@ -605,7 +605,7 @@
     "exportJson": "Exportar como JSON"
   },
   "landing": {
-    "eyebrow": "Operações de arrendamento para Portugal e Espanha",
+    "eyebrow": "Operações de arrendamento em Portugal",
     "signIn": "Entrar",
     "hero2": "Rendimentos, recibos e prova fiscal sob controlo.",
     "subtitle2": "O Situs ajuda proprietários a acompanhar pagamentos de renda, alocar transferências em atraso ao mês de referência correto, emitir recibos, arquivar documentos, gerir despesas e preparar prova pronta para impostos em carteiras de imóveis da UE.",
@@ -622,8 +622,7 @@
       "jumpAria": "Saltar para o fim da sequência"
     },
     "countries": {
-      "pt": "Portugal",
-      "es": "Espanha"
+      "pt": "Portugal"
     }
   },
   "errors": {
@@ -662,7 +661,7 @@
   },
   "payments": {
     "title": "Pagamentos",
-    "desc": "Acompanhe rendas em dívida, registe pagamentos, emita recibos e reveja totais fiscais PT/ES.",
+    "desc": "Acompanhe rendas em dívida, registe pagamentos, emita recibos e reveja totais fiscais.",
     "descTenantScope": "Rever histórico de pagamentos, recibos e próximos passos de cobrança de {name}.",
     "descPropertyScope": "Rever estado das rendas, recibos e resultados fiscais de {name}.",
     "theSelectedTenant": "o inquilino selecionado",
@@ -1448,7 +1447,7 @@
     "signin": {
       "eyebrow": "Bem-vindo de volta",
       "heading": "Entrar no Situs",
-      "subheading": "Retome a gestão dos seus arrendamentos onde a deixou — rendas, recibos e obrigações fiscais em Portugal e Espanha.",
+      "subheading": "Retome a gestão dos seus arrendamentos onde a deixou — rendas, recibos e obrigações fiscais em Portugal.",
       "primary": "Continuar com Google",
       "switchText": "Novo no Situs?",
       "switchAction": "Criar uma conta"
@@ -1464,12 +1463,12 @@
     "brand": {
       "system": "Sovereign Capital System",
       "tagline": "Rendimentos, recibos e prova fiscal sob controlo.",
-      "footer": "Auto-hospedado e alinhado com o RGPD · Portugal e Espanha",
+      "footer": "Auto-hospedado e alinhado com o RGPD · Portugal",
       "proof": {
         "bankLabel": "Banco → conciliar → imputar",
         "bankNote": "Cada pagamento associado ao seu mês",
         "receiptLabel": "Recibo → emitir → arquivar",
-        "receiptNote": "Documentos fiscais PT e ES, dentro do prazo",
+        "receiptNote": "Recibos de renda da AT, dentro do prazo",
         "auditLabel": "Trilho de auditoria sempre ativo",
         "auditNote": "Cada passo do processo é registado"
       }
@@ -1653,9 +1652,9 @@
       "useTitle": "Como os utilizamos",
       "use1": "Para prestar o serviço: registo de imóveis, contratos, inquilinos e rendas.",
       "use2": "Para reconciliar rendas com movimentos bancários, que é a razão de ser de uma conta ligada.",
-      "use3": "Para produzir documentos fiscais — recibos de renda da AT e declarações NRUA espanholas — a partir dos dados que introduziu.",
+      "use3": "Para produzir documentos fiscais — recibos de renda da AT — a partir dos dados que introduziu.",
       "use4": "Para enviar o email transacional que tenha configurado, como avisos de renda e alertas de fim de contrato.",
-      "use5": "Para cumprir obrigações legais ao abrigo do direito português e espanhol.",
+      "use5": "Para cumprir obrigações legais ao abrigo do direito português.",
       "bankTitle": "Acesso à conta bancária",
       "bankBody": "A ligação a um banco utiliza o acesso a informação de conta previsto na DSP2, através da Enable Banking, prestador licenciado de serviços de informação sobre contas. O acesso é apenas de leitura: esta instância lê dados da conta e movimentos e nunca pode movimentar dinheiro. A autorização é dada no seu próprio banco, não aqui, e caduca — 90 dias, salvo prazo mais curto definido pelo banco — tendo depois de ser concedida de novo.",
       "bankStorage": "Os IBAN são cifrados em repouso com AES-256-GCM. A correspondência e a deteção de duplicados funcionam a partir de um hash unidirecional e não do valor armazenado, pelo que o IBAN nunca precisa de ser decifrado para o serviço funcionar. Apenas os últimos quatro dígitos são apresentados.",
@@ -1687,7 +1686,7 @@
       "processorStripeBody": "Faturação de subscrições, centro de dados na UE. Apenas se a faturação estiver ativa.",
       "processorEmail": "Brevo",
       "processorEmailBody": "Entrega o email transacional e, por isso, vê o endereço do destinatário e a mensagem. Sediada na UE (França). Apenas se o email estiver configurado.",
-      "processorTax": "Autoridades fiscais portuguesa e espanhola",
+      "processorTax": "Autoridade Tributária e Aduaneira (AT)",
       "processorTaxBody": "Recebem as declarações fiscais que decidir submeter.",
       "contactTitle": "Contacto",
       "contactBody": "Para questões de proteção de dados, ou para exercer qualquer um dos direitos acima, escreva para:"
@@ -1696,7 +1695,7 @@
       "acceptanceTitle": "Aceitação",
       "acceptanceBody": "Ao criar uma conta ou utilizar esta instância do Situs, aceita estes termos. Se não concordar, não a utilize.",
       "serviceTitle": "O que é o serviço",
-      "serviceBody": "O Situs é software de gestão imobiliária para senhorios e gestores em Portugal e Espanha: imóveis, frações, inquilinos, contratos, recibos, despesas, manutenção e cumprimento fiscal. É fornecido no estado em que se encontra. Auxilia no cumprimento de obrigações fiscais; não as dispensa, nem substitui um contabilista.",
+      "serviceBody": "O Situs é software de gestão imobiliária para senhorios e gestores em Portugal: imóveis, frações, inquilinos, contratos, recibos, despesas, manutenção e cumprimento fiscal. É fornecido no estado em que se encontra. Auxilia no cumprimento de obrigações fiscais; não as dispensa, nem substitui um contabilista.",
       "accountsTitle": "Contas",
       "accounts1": "Os dados de registo devem ser exatos.",
       "accounts2": "É responsável por manter as suas credenciais confidenciais.",
