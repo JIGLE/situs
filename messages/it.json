@@ -1028,6 +1028,7 @@
       "terminateWarning": "La risoluzione di un contratto è definitiva e non può essere annullata. Il contratto sarà contrassegnato come risolto e l'inquilino non avrà più un contratto attivo.",
       "terminate": "Risolvi contratto",
       "renewalTitle": "Proponi il rinnovo del contratto",
+      "withdrawOffer": "Ritira proposta",
       "proposedRent": "Canone mensile proposto",
       "newStartDate": "Nuova data di inizio",
       "newEndDate": "Nuova data di fine",

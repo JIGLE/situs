@@ -1028,6 +1028,7 @@
       "terminateWarning": "Terminating a lease is permanent and cannot be undone. The lease will be marked as terminated and the tenant will no longer have an active lease.",
       "terminate": "Terminate Lease",
       "renewalTitle": "Offer Lease Renewal",
+      "withdrawOffer": "Withdraw Offer",
       "proposedRent": "Proposed monthly rent",
       "newStartDate": "New start date",
       "newEndDate": "New end date",

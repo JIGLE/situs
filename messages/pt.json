@@ -1028,6 +1028,7 @@
       "terminateWarning": "A cessação de um contrato é permanente e não pode ser anulada. O contrato ficará marcado como cessado e o inquilino deixará de ter um contrato ativo.",
       "terminate": "Cessar contrato",
       "renewalTitle": "Propor renovação do contrato",
+      "withdrawOffer": "Retirar Proposta",
       "proposedRent": "Renda mensal proposta",
       "newStartDate": "Nova data de início",
       "newEndDate": "Nova data de fim",

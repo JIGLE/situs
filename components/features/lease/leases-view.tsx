@@ -77,6 +77,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { withEntityDetail } from "@/lib/utils/entity-detail-url";
+import { TAX_REGIME_KEY, taxRegimeKey } from "@/lib/utils/lease-labels";
 
 export type LeasesViewProps = Record<string, never>;
 
@@ -679,7 +680,14 @@ export function LeasesView(): React.ReactElement {
                 format: (value) => formatCurrency(value as number),
               },
               { key: "status", label: t("field.status") },
-              { key: "taxRegime", label: t("field.taxRegime") },
+              {
+                key: "taxRegime",
+                label: t("field.taxRegime"),
+                format: (value) => {
+                  const key = taxRegimeKey(value as string | null);
+                  return key ? t(key) : String(value ?? "");
+                },
+              },
             ]}
           />
 
@@ -955,8 +963,11 @@ export function LeasesView(): React.ReactElement {
                             <SelectValue placeholder={t("taxRegimePlaceholder")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="portugal_rendimentos">{t("taxRegimePt")}</SelectItem>
-                            <SelectItem value="spain_inmuebles">{t("taxRegimeEs")}</SelectItem>
+                            {Object.entries(TAX_REGIME_KEY).map(([regime, key]) => (
+                              <SelectItem key={regime} value={regime}>
+                                {t(key)}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -1055,16 +1066,17 @@ export function LeasesView(): React.ReactElement {
             {
               key: "taxRegime",
               label: t("field.taxRegime"),
-              // The values a lease can actually hold, which is what the wizard's own regime
-              // Select writes (`portugal_rendimentos` / `spain_inmuebles`, and what the demo
-              // seed stores). This offered `article9` / `article53` — an IVA-exemption pair
-              // from an earlier shape of the field — so both options filtered to nothing, on
-              // every account, always. Same labels as the wizard, so the filter and the form
-              // name the regime identically.
+              // The values a lease can actually hold: `TAX_REGIME_KEY`, the map the wizard's own
+              // regime Select is built from, typed by the lease schema. This once offered
+              // `article9` / `article53` — an IVA-exemption pair from an earlier shape of the
+              // field — so both options filtered to nothing, on every account, always. One map
+              // means the filter and the form name the regime identically.
               options: [
                 { label: t("filter.allRegimes"), value: "all" },
-                { label: t("taxRegimePt"), value: "portugal_rendimentos" },
-                { label: t("taxRegimeEs"), value: "spain_inmuebles" },
+                ...Object.entries(TAX_REGIME_KEY).map(([regime, key]) => ({
+                  label: t(key),
+                  value: regime,
+                })),
               ],
               defaultValue: "all",
             },
