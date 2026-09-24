@@ -58,7 +58,7 @@ export function useAppData({
       loadControlRef.current.inFlight = true;
       loadControlRef.current.lastKey = loadKey;
 
-      // Do not preload protected dashboard data on public routes (landing/auth).
+      // Do not preload protected dashboard data on public routes (the root redirect, sign-in).
       if (isPublicPage) {
         dispatch({ type: "SET_LOADING", payload: false });
         loadControlRef.current.inFlight = false;

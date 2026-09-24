@@ -30,13 +30,7 @@ const UTILITY = "bg|text|border|ring|from|to|via|fill|stroke|shadow|divide|outli
 const PATTERN = new RegExp(`\\b(?:${UTILITY})-(?:${COLOR_FAMILIES})-[0-9]{2,3}\\b`, "g");
 
 // Files where multi-color literals are intentional (illustrations, dev tooling).
-const ALLOWLIST = [
-  "empty-state-illustrations",
-  "scenario-runner",
-  "opengraph-image",
-  // Marketing landing page — intentionally brand-tinted, not token-driven.
-  path.join("app", "[locale]", "page.tsx"),
-];
+const ALLOWLIST = ["empty-state-illustrations", "scenario-runner", "opengraph-image"];
 
 /**
  * Baseline count — the ratchet ceiling for `--strict`. Lower this as you migrate.

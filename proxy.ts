@@ -229,7 +229,7 @@ export async function proxy(request: NextRequest) {
   // Set when an authenticated portal page needs the CSRF cookie seeded. It is applied to
   // whatever response this function ends up building — returning `NextResponse.next()` here
   // instead would skip the locale rewrite below, and `/dashboard` would route as
-  // `[locale] = "dashboard"`, i.e. the landing page.
+  // `[locale] = "dashboard"`, i.e. the root page.
   let seedCsrfCookie = false;
 
   const isMainPortalPage =
