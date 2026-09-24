@@ -10,9 +10,9 @@ import type { Receipt } from "@/lib/types";
  * drift, so the mapping lives in one place and the `Record` type makes a new `ReceiptType` a
  * compile error rather than a word that renders as itself.
  */
-export const RECEIPT_TYPE_KEY: Record<Receipt["type"], string> = {
+export const RECEIPT_TYPE_KEY = {
   rent: "typeRent",
   deposit: "typeDeposit",
   maintenance: "typeMaintenance",
   other: "typeOther",
-};
+} as const satisfies Record<Receipt["type"], string>;

@@ -57,7 +57,8 @@ function PositionFigure({ label, value }: { label: string; value: string }) {
 }
 
 /** Draft vs final, in one place — the table cell and the mobile card would otherwise drift. */
-function StatusBadge({ filing, t }: { filing: TaxFilingRecord; t: (key: string) => string }) {
+function StatusBadge({ filing }: { filing: TaxFilingRecord }) {
+  const t = useTranslations("taxFiling");
   return (
     <Badge variant={filing.status === "final" ? "default" : "secondary"} className="text-xs">
       {filing.status === "final" ? t("statusFinal") : t("statusDraft")}
@@ -219,7 +220,7 @@ export function TaxFilingView() {
                     <span className="mono-label mr-2">{filing.country}</span>
                     {filing.year}
                   </span>
-                  <StatusBadge filing={filing} t={t} />
+                  <StatusBadge filing={filing} />
                 </div>
                 <p className="text-xs text-[var(--color-muted-foreground)]">{filing.regime}</p>
                 <div className="flex items-center justify-between gap-4 text-sm">
@@ -299,7 +300,7 @@ export function TaxFilingView() {
               // the first draft of this used one of the field's own VALUES — so the column of
               // Draft/Final badges sat under a heading that said "Draft".
               header: tForms("status"),
-              cell: (filing) => <StatusBadge filing={filing} t={t} />,
+              cell: (filing) => <StatusBadge filing={filing} />,
             },
             {
               key: "taxDue",

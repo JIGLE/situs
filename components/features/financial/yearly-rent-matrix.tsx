@@ -7,6 +7,7 @@ import { httpError, useApiError } from "@/lib/utils/api-error";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { rentPeriodStatusKey } from "@/lib/utils/rent-period-labels";
 
 /**
  * Situs Yearly Rent Overview — the contract × 12-month payment matrix.
@@ -68,6 +69,10 @@ export function YearlyRentMatrix(): React.ReactElement {
   // The cell itself shows a four-letter code (PAID/LATE/PART) by design; the tooltip is the
   // place the state gets said in words, and it was saying the stored enum.
   const tPeriod = useTranslations("rentPeriodStatus");
+  const periodLabel = (status: string) => {
+    const key = rentPeriodStatusKey(status);
+    return key ? tPeriod(key) : status;
+  };
   const [year, setYear] = useState(() => new Date().getUTCFullYear());
   const [rows, setRows] = useState<MatrixRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -167,7 +172,7 @@ export function YearlyRentMatrix(): React.ReactElement {
                         className="border-b border-[var(--color-border)] px-1 py-2.5 text-center"
                         title={
                           cell
-                            ? `${tPeriod(cell.status)} · ${cell.allocatedAmount.toFixed(2)} / ${cell.dueAmount.toFixed(2)}`
+                            ? `${periodLabel(cell.status)} · ${cell.allocatedAmount.toFixed(2)} / ${cell.dueAmount.toFixed(2)}`
                             : undefined
                         }
                       >

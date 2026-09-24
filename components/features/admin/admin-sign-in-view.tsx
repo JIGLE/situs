@@ -5,14 +5,7 @@ import { useTranslations } from "next-intl";
 import { Check, Minus } from "lucide-react";
 
 import { apiFetch } from "@/lib/utils/api-client";
-
-interface SignInStatus {
-  providers: { key: string; configured: boolean }[];
-  registration: "open_bootstrap" | "closed";
-  totalAccounts: number;
-  adminAccounts: number;
-  allowlist: string[];
-}
+import type { SignInStatus } from "@/lib/services/admin/sign-in-status";
 
 /**
  * How anyone can get into this instance.

@@ -75,7 +75,6 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
     const tForms = useTranslations("forms");
     const tActions = useTranslations("actions");
     const tStatus = useTranslations("status");
-    const tMaint = useTranslations("maintenance");
 
     // Form UI state — collapsible sections
     const [showManualFields, setShowManualFields] = useState(false);
@@ -423,10 +422,12 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                     <SelectContent>
                       <SelectItem value="vacant">{tStatus("vacant")}</SelectItem>
                       <SelectItem value="occupied">
-                        {dialog.editingItem ? "Occupied" : "Occupied — I'll add the tenant next"}
+                        {dialog.editingItem ? tStatus("occupied") : t("statusOccupiedAddTenant")}
                       </SelectItem>
+                      {/* Was `useTranslations("maintenance")`, a namespace cut with the ticketing
+                          module, so this option read "maintenance.title". */}
                       {dialog.editingItem && (
-                        <SelectItem value="maintenance">{tMaint("title")}</SelectItem>
+                        <SelectItem value="maintenance">{tStatus("maintenance")}</SelectItem>
                       )}
                     </SelectContent>
                   </Select>

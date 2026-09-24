@@ -873,6 +873,7 @@
     "renewalNoticeDays": "Renewal Notice Days",
     "active": "Active",
     "expired": "Expired",
+    "expiring": "Expiring",
     "terminated": "Terminated",
     "rendaAcessivel": "Renda Acessível Programme",
     "priorContractRent": "Prior Contract Rent",
@@ -893,6 +894,7 @@
     "addLease": "Add Lease",
     "searchPlaceholder": "Search leases by tenant or property name...",
     "pending": "Pending",
+    "draft": "Draft",
     "emptyTitle": "Get started with leases",
     "expiringSoon": "{count, plural, one {# lease expiring within 60 days} other {# leases expiring within 60 days}}",
     "step": {
@@ -1197,10 +1199,12 @@
     "overdue": "Overdue",
     "all": "All",
     "occupied": "Occupied",
+    "maintenance": "Maintenance",
     "vacant": "Vacant"
   },
   "properties": {
     "addNew": "Add New Property",
+    "statusOccupiedAddTenant": "Occupied — I'll add the tenant next",
     "editProperty": "Edit Property",
     "updateDetails": "Update property details",
     "enterInfo": "Enter property information",

@@ -42,15 +42,7 @@ import { EmptyStateIllustration } from "@/components/ui/empty-state-illustration
 import { useFormDialog } from "@/lib/hooks/use-form-dialog";
 import { csrfHeaders } from "@/lib/utils/api-client";
 import { httpError, useApiError } from "@/lib/utils/api-error";
-
-/**
- * Expense categories have had translated labels under `financial.categories` all along — this
- * view was de-underscoring the enum value instead, so a Portuguese reader read "Condominium
- * Fees". A stored row can still carry a category outside the current enum (older data, a renamed
- * key), and asking the catalogue for a key it does not have logs an error and renders the key, so
- * anything unrecognised keeps the old title-case transform.
- */
-const KNOWN_CATEGORIES: ReadonlySet<string> = new Set(EXPENSE_CATEGORIES);
+import { expenseCategoryKey } from "@/lib/utils/expense-labels";
 
 /**
  * The tax calculator's deduction breakdown is a closed set of camelCase keys. It was rendered by
@@ -212,10 +204,17 @@ export function FinancialsView(): React.ReactElement {
 
   const getCategoryColor = (category: string) => getExpenseCategoryColor(category);
 
-  const formatCategoryLabel = (category: string) =>
-    KNOWN_CATEGORIES.has(category)
-      ? tCategories(category)
+  /**
+   * Expense categories have had translated labels under `financial.categories` all along — this
+   * view was de-underscoring the enum value instead, so a Portuguese reader read "Condominium
+   * Fees". A category outside the current enum keeps the old title-case transform.
+   */
+  const formatCategoryLabel = (category: string) => {
+    const key = expenseCategoryKey(category);
+    return key
+      ? tCategories(key)
       : category.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  };
 
   // Group receipts by month for table display
   const groupedReceipts = useMemo(() => {

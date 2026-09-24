@@ -873,6 +873,7 @@
     "renewalNoticeDays": "Días de Aviso de Renovación",
     "active": "Activo",
     "expired": "Expirado",
+    "expiring": "Por vencer",
     "terminated": "Terminado",
     "rendaAcessivel": "Programa Renda Acessível (PT)",
     "priorContractRent": "Alquiler del Contrato Anterior",
@@ -893,6 +894,7 @@
     "addLease": "Añadir contrato",
     "searchPlaceholder": "Buscar contratos por inquilino o inmueble...",
     "pending": "Pendiente",
+    "draft": "Borrador",
     "emptyTitle": "Empieza por los contratos",
     "expiringSoon": "{count, plural, one {# contrato vence en 60 días} other {# contratos vencen en 60 días}}",
     "step": {
@@ -1197,10 +1199,12 @@
     "overdue": "Vencido",
     "all": "Todos",
     "occupied": "Ocupado",
+    "maintenance": "En mantenimiento",
     "vacant": "Vacante"
   },
   "properties": {
     "addNew": "Añadir Nueva Propiedad",
+    "statusOccupiedAddTenant": "Ocupado — añadiré el inquilino a continuación",
     "editProperty": "Editar Propiedad",
     "updateDetails": "Actualizar detalles de la propiedad",
     "enterInfo": "Introducir información de la propiedad",
