@@ -46,7 +46,6 @@ model User {
   notifications          Notification[]
   rentReceipts           RentReceipt[]
   settings               UserSettings?
-  modelo179Submissions   Modelo179Submission[]
   productEvents          ProductEvent[]
   subscription           Subscription?
   bankConnections        BankConnection[]
@@ -221,16 +220,12 @@ model Property {
   description String?
   image       String?
 
-  // Multi-currency and income distribution
-  currency              Currency              @default(EUR)
+  // Income distribution
   distributionFrequency DistributionFrequency @default(MONTHLY)
   createdByOwnerId      String? // Owner who created this property (auto managing owner)
-  // Spain: Ley de Vivienda
-  isZonaTensionada      Boolean               @default(false)
-  cadasterReference     String? // Referencia catastral (ES) or artigo matricial (PT)
+  cadasterReference     String? // Artigo matricial
   // Fiscal / rental regime
   rentalRegime          String                @default("standard") // "standard" | "acessivel" | "al" | "short_term"
-  propertyCountry       String                @default("PT") // ISO country code
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -246,7 +241,6 @@ model Property {
   documents           Document[]
   incomeDistributions IncomeDistribution[]
   rentReceipts        RentReceipt[]
-  nruaRegistrations   NRUARegistration[]
   rentPeriods         RentPeriod[]
 
   // Performance indexes
@@ -273,14 +267,13 @@ model Tenant {
   updatedAt     DateTime      @updatedAt
 
   // Relations
-  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property          Property?          @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  receipts          Receipt[]
-  leases            Lease[]
-  documents         Document[]
-  rentReceipts      RentReceipt[]
-  nruaRegistrations NRUARegistration[]
-  rentPeriods       RentPeriod[]
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property     Property?     @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  receipts     Receipt[]
+  leases       Lease[]
+  documents    Document[]
+  rentReceipts RentReceipt[]
+  rentPeriods  RentPeriod[]
 
   // Performance indexes
   @@index([userId])
@@ -306,7 +299,7 @@ model Receipt {
   // rows self-backfill to "emitted" via the default.
   rentPeriodId   String?
   referenceMonth String? // "YYYY-MM" denormalized for queue/list display
-  // draft|review|emitted|submitted|accepted|rejected|exported|voided — Zod-validated
+  // draft|review|emitted|submitted|accepted|rejected|voided — Zod-validated
   // (Migration C, lib/services/receipts/lifecycle.ts). Legacy rows self-backfill to "emitted".
   lifecycle      String        @default("emitted")
   source         String        @default("manual") // manual|automation
@@ -594,15 +587,11 @@ model Lease {
   contractFile        Bytes? // Store PDF content as BLOB
   contractFileName    String?
   contractFileSize    Int?
-  taxRegime           String? // 'portugal_rendimentos' or 'spain_inmuebles'
   status              LeaseStatus @default(active)
   autoRenew           Boolean     @default(false)
   renewalNoticeDays   Int         @default(60)
   // Portugal: Renda Acessível programme
   isRendaAcessivel    Boolean     @default(false)
-  // Spain: Ley de Vivienda
-  isZonaTensionada    Boolean     @default(false)
-  priorContractRent   Float? // Previous contract rent (for rent cap validation)
   notes               String?
   // Renewal lifecycle
   renewalStatus       String? // null | "offered" | "accepted" | "declined" | "expired"
@@ -616,14 +605,12 @@ model Lease {
   updatedAt           DateTime    @updatedAt
 
   // Relations
-  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property             Property              @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  tenant               Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  unit                 Unit?                 @relation(fields: [unitId], references: [id], onDelete: SetNull)
-  nruaRegistrations    NRUARegistration[]
-  expenses             Expense[]
-  modelo179Submissions Modelo179Submission[]
-  rentPeriods          RentPeriod[]
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property    Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  unit        Unit?        @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  expenses    Expense[]
+  rentPeriods RentPeriod[]
 
   @@index([userId])
   @@index([propertyId])
@@ -713,8 +700,6 @@ model Notification {
   @@index([createdAt])
   @@map("notifications")
 }
-
-// Payment System Models for Portugal/Spain
 
 // Enums
 enum PropertyType {
@@ -818,7 +803,6 @@ model IncomeDistribution {
   totalIncome          Float
   totalExpenses        Float
   netIncome            Float
-  currency             Currency  @default(EUR)
   version              Int       @default(1) // Incremented on recalculation
   calculatedByUserId   String
   recalculatedByUserId String?
@@ -857,8 +841,6 @@ model UserSettings {
   userId                    String    @unique
   theme                     String    @default("system") // light, dark, system
   language                  String    @default("en")
-  defaultCurrency           Currency  @default(EUR)
-  defaultTaxCountry         String? // PT, ES, DK
   emailNotifications        Boolean   @default(true)
   taxReminderNotifications  Boolean   @default(true)
   distributionNotifications Boolean   @default(true)
@@ -944,97 +926,10 @@ enum OwnerRole {
   REGULAR // View-only access to income reports
 }
 
-enum Currency {
-  EUR // Euro (Portugal, Spain)
-  DKK // Danish Krone
-  USD // US Dollar
-  GBP // British Pound
-}
-
 enum DistributionFrequency {
   MONTHLY
   QUARTERLY
   ANNUAL
-}
-
-// ========================================
-// Spain: Ley de Vivienda — Stressed Zones
-// ========================================
-
-model StressedZone {
-  id                  String    @id @default(cuid())
-  country             String    @default("ES")
-  communityCode       String // Autonomous community code (e.g. "CAT", "MAD")
-  communityName       String // "Cataluña", "Comunidad de Madrid"
-  municipalityCode    String // INE municipality code
-  municipalityName    String // e.g. "Barcelona", "Madrid"
-  postalCodes         String? // JSON array of applicable postal codes (null = whole municipality)
-  declaredDate        DateTime // Date zone was declared stressed
-  expiresDate         DateTime? // Expiration (renewable every 3 years per Ley 12/2023 Art. 18)
-  mitmaReferenceIndex Float? // Official MITMA rent reference index (€/m²/month)
-  isActive            Boolean   @default(true)
-  source              String? // "BOE", "DOGC", "BOCM", etc.
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-
-  @@unique([municipalityCode, communityCode])
-  @@index([country, isActive])
-  @@index([municipalityCode])
-  @@map("stressed_zones")
-}
-
-// ========================================
-// Spain: NRUA — Registro Único de Arrendamientos
-// Ventanilla Única Digital (mandatory from 2026)
-// ========================================
-
-model NRUARegistration {
-  id                 String           @id @default(cuid())
-  leaseId            String
-  propertyId         String
-  tenantId           String
-  landlordNif        String // NIF/NIE of landlord
-  tenantNif          String // NIF/NIE of tenant
-  propertyReference  String // Referencia catastral
-  municipalityCode   String // INE municipality code
-  monthlyRent        Float
-  contractStartDate  DateTime
-  contractEndDate    DateTime?
-  contractType       NRUAContractType
-  isZonaTensionada   Boolean          @default(false)
-  registrationNumber String? // Assigned by MITMA upon submission
-  status             NRUAStatus       @default(pending)
-  submittedAt        DateTime?
-  confirmedAt        DateTime?
-  rejectionReason    String?
-  exportedXml        String? // Last exported XML payload
-  metadata           String? // JSON for additional fields
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-
-  // Relations
-  lease    Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)
-  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@index([leaseId])
-  @@index([status])
-  @@index([landlordNif])
-  @@map("nrua_registrations")
-}
-
-enum NRUAContractType {
-  VIVIENDA_HABITUAL // Primary residence
-  VIVIENDA_TEMPORAL // Temporary housing
-  VIVIENDA_TURISTICA // Tourist rental
-}
-
-enum NRUAStatus {
-  pending // Not yet submitted
-  submitted // Sent to Ventanilla Única
-  confirmed // Accepted by MITMA
-  rejected // Rejected — needs correction
-  cancelled // Contract terminated, registration cancelled
 }
 
 // ========================================
@@ -1096,14 +991,14 @@ model RentReceipt {
 // One row per (user, connector) — mode defaults to "review": every emission
 // routes through human review before anything reaches a tax authority. The
 // PT connector (lib/tax/connectors/pt-at.ts) wraps the existing
-// rent-receipts-pt.ts numbering/XML/5-day-rule logic unchanged; ES is
-// export-only today. TaxSubmissionLog is the append-only record the
+// rent-receipts-pt.ts numbering/XML/5-day-rule logic unchanged.
+// TaxSubmissionLog is the append-only record the
 // Intelligence Tax Connector dashboard (PR 10) reads.
 model TaxAuthorityConnector {
   id               String    @id @default(cuid())
   userId           String
-  country          String // ISO country code: "PT", "ES", …
-  connectorKey     String // "pt_at_recibos" | "es_nrua_ventanilla" | …
+  country          String // ISO country code: "PT"
+  connectorKey     String // "pt_at_recibos"
   mode             String    @default("review") // sandbox|review|live
   status           String    @default("active") // active|disabled|error
   lastSubmissionAt DateTime?
@@ -1123,7 +1018,7 @@ model TaxSubmissionLog {
   id           String   @id @default(cuid())
   userId       String
   connectorId  String
-  subjectType  String // rent_receipt|modelo179|nrua
+  subjectType  String // rent_receipt
   subjectId    String
   action       String // validate|submit|poll|cancel
   mode         String // sandbox|review|live — snapshot at call time
@@ -1147,24 +1042,4 @@ enum RentReceiptStatus {
   accepted // Accepted by AT
   rejected // Rejected by AT — needs correction
   cancelled // Anulado
-}
-
-model Modelo179Submission {
-  id          String    @id @default(cuid())
-  userId      String
-  leaseId     String
-  periodYear  Int
-  status      String    @default("pending") // "pending" | "submitted" | "confirmed" | "rejected"
-  submittedAt DateTime?
-  atReference String?
-  notes       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lease Lease @relation(fields: [leaseId], references: [id], onDelete: Cascade)
-
-  @@unique([leaseId, periodYear])
-  @@index([userId, periodYear])
-  @@map("modelo179_submissions")
 }

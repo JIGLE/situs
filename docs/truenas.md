@@ -521,7 +521,7 @@ changes on start. If it is set to `false`, that is the cause.
 
 A second, rarer cause looks identical from the browser: `PII_ENCRYPTION_KEY` was changed on an
 instance that already had encrypted rows. That only breaks models with protected fields — tenants,
-owners, rent receipts, NRUA registrations — so if properties and buildings load
+owners, rent receipts — so if properties and buildings load
 fine and those do not, suspect the key rather than the schema. Affected fields now read
 `[ENCRYPTED]` instead of failing the request, and the reason is logged. Recover with
 `node scripts/backfill-pii-encryption.js`, or restore the original key.

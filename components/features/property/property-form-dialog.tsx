@@ -26,7 +26,6 @@ import { useApp } from "@/lib/contexts/app-context";
 import { useCurrency } from "@/lib/contexts/currency-context";
 import { useFormDialog } from "@/lib/hooks/use-form-dialog";
 import { propertySchema, type PropertyFormData } from "@/lib/schemas/property.schema";
-import { getCountryName, resolveCountryCode } from "@/lib/utils/country";
 import {
   AddressVerificationService,
   type AddressSuggestion,
@@ -39,7 +38,6 @@ const initialFormData: PropertyFormData = {
   streetAddress: "",
   city: "",
   zipCode: "",
-  country: "PT",
   latitude: undefined,
   longitude: undefined,
   addressVerified: false,
@@ -132,10 +130,7 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
       }
 
       try {
-        const suggestions = await AddressVerificationService.searchAddresses(
-          query,
-          getCountryName(dialog.formData.country as "PT" | "ES") as "Portugal" | "Spain",
-        );
+        const suggestions = await AddressVerificationService.searchAddresses(query);
         setAddressSuggestions(suggestions);
         setShowSuggestions(suggestions.length > 0);
       } catch (error) {
@@ -153,7 +148,6 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
         streetAddress: verifiedAddress.streetAddress,
         city: verifiedAddress.city,
         zipCode: verifiedAddress.zipCode,
-        country: resolveCountryCode(verifiedAddress.country) as "PT" | "ES",
         latitude: verifiedAddress.latitude,
         longitude: verifiedAddress.longitude,
         addressVerified: verifiedAddress.verified,
@@ -289,30 +283,10 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                   <div className="space-y-3 rounded-md border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-3">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-2">
-                        <Label htmlFor="country">{tForms("country")}</Label>
-                        <Select
-                          value={dialog.formData.country}
-                          onValueChange={(value) =>
-                            dialog.updateFormData({
-                              country: value as "PT" | "ES",
-                            })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="PT">{t("country.portugal")}</SelectItem>
-                            <SelectItem value="ES">{t("country.spain")}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
                         <Label htmlFor="zipCode">{t("postalCode")}</Label>
                         <Input
                           id="zipCode"
-                          placeholder={dialog.formData.country === "PT" ? "1234-567" : "12345"}
+                          placeholder="1234-567"
                           value={dialog.formData.zipCode || ""}
                           onChange={(e) => dialog.updateFormData({ zipCode: e.target.value })}
                           className={

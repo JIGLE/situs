@@ -70,10 +70,8 @@
     "imageConsent": "Mostrar Imagen de Perfil",
     "imageConsentDesc": "Permitir mostrar tu imagen de perfil de Google en la app (compatible con RGPD).",
     "taxProfile": "Perfil Fiscal",
-    "taxRegimeMutuallyExclusive": "RNH e IFICI son mutuamente excluyentes — solo uno puede estar activo a la vez.",
     "nav": {
       "account": "Cuenta",
-      "taxRegion": "Fiscalidad y región",
       "notifications": "Notificaciones",
       "security": "Seguridad y privacidad",
       "integrations": "Integraciones",
@@ -160,13 +158,6 @@
       "verifying": "Verificando…",
       "qrAlt": "Código QR de dos pasos",
       "cantScan": "¿No puedes escanear? Introdúcelo manualmente",
-      "regional": "Ajustes regionales",
-      "regionalDescription": "Moneda y configuración fiscal de tu cartera",
-      "defaultCurrency": "Moneda predeterminada",
-      "selectCurrency": "Selecciona la moneda",
-      "defaultTaxCountry": "País fiscal predeterminado",
-      "selectCountry": "Selecciona el país",
-      "taxCountryHelp": "Se usa por defecto en el cálculo de impuestos de los nuevos inmuebles",
       "toastTaxLoadFailed": "No se ha podido cargar el perfil fiscal.",
       "emailNotifications": "Notificaciones por correo",
       "emailNotificationsDescription": "Elige qué avisos por correo recibes",
@@ -207,13 +198,6 @@
       "planStatus": "Estado: {status}",
       "movesToFree": "Pasa a Free el {date}",
       "manageBilling": "Gestionar facturación",
-      "currencyEUR": "Euro (€)",
-      "currencyDKK": "Corona danesa (kr)",
-      "currencyUSD": "Dólar estadounidense ($)",
-      "currencyGBP": "Libra esterlina (£)",
-      "countryPT": "Portugal",
-      "countryES": "España",
-      "countryDK": "Dinamarca",
       "bankConnectCta": "Conectar un banco",
       "bankPickerTitle": "Conectar un banco",
       "bankPickerHelp": "Se le enviará a su banco para autorizar el acceso de solo lectura a su cuenta. Situs nunca ve su contraseña bancaria.",
@@ -375,7 +359,6 @@
     "systemGroup": "Sistema",
     "finance": "Finanzas",
     "contracts": "Contratos",
-    "compliance": "Cumplimiento",
     "account": "Cuenta",
     "more": "Más",
     "signOut": "Cerrar sesión",
@@ -621,7 +604,7 @@
     "exportJson": "Exportar como JSON"
   },
   "landing": {
-    "eyebrow": "Operaciones de alquiler para Portugal y España",
+    "eyebrow": "Operaciones de alquiler en Portugal",
     "signIn": "Iniciar sesión",
     "hero2": "Ingresos, recibos y prueba fiscal bajo control.",
     "subtitle2": "Situs ayuda a los propietarios a seguir los pagos de alquiler, asignar transferencias atrasadas al mes de referencia correcto, emitir recibos, archivar documentos, gestionar gastos y preparar prueba lista para impuestos en carteras de inmuebles de la UE.",
@@ -638,8 +621,7 @@
       "jumpAria": "Saltar al final de la secuencia"
     },
     "countries": {
-      "pt": "Portugal",
-      "es": "España"
+      "pt": "Portugal"
     }
   },
   "errors": {
@@ -676,58 +658,9 @@
       "securityTokenExpired": "Su token de seguridad ha caducado. Actualice la página e inténtelo de nuevo."
     }
   },
-  "compliance": {
-    "title": "Cumplimiento",
-    "rentReceipts": "Recibos de Alquiler",
-    "rentReceiptsPt": "Recibos de Renda Electrónicos (PT)",
-    "createReceipt": "Emitir Recibo de Alquiler",
-    "receiptNumber": "Número de Recibo",
-    "landlordNif": "NIF del Arrendador",
-    "tenantNif": "NIF del Inquilino",
-    "rentAmount": "Importe del Alquiler",
-    "withholdingRate": "Tasa de Retención",
-    "paymentDate": "Fecha de Pago",
-    "rentalPeriod": "Período de Alquiler",
-    "receiptStatus": "Estado del Recibo",
-    "submitToAT": "Enviar a la Autoridade Tributária (PT)",
-    "downloadPdf": "Descargar PDF",
-    "receiptCreated": "Recibo de alquiler emitido correctamente",
-    "receiptDeadlineWarning": "Plazo legal: el recibo debe emitirse dentro de 5 días desde el pago",
-    "nrua": "Registro NRUA",
-    "nruaTitle": "Registro de Contrato de Arrendamiento (NRUA)",
-    "nruaDescription": "Registra contratos de arrendamiento en la Ventanilla Única Digital de España",
-    "registerContract": "Registrar Contrato",
-    "registrationStatus": "Estado del Registro",
-    "cadasterReference": "Referencia Catastral",
-    "municipalityCode": "Código de Municipio",
-    "contractType": "Tipo de Contrato",
-    "primaryResidence": "Vivienda Habitual",
-    "temporaryHousing": "Vivienda Temporal",
-    "touristRental": "Alquiler Turístico",
-    "modelo179Title": "Modelo 179 — Registro de Contratos de Arrendamiento (PT)",
-    "modelo179Subtitle": "Seguimiento de comunicaciones anuales de contratos a la Autoridade Tributária (AT) portuguesa",
-    "modelo179Status": "Estado",
-    "modelo179Pending": "Pendiente",
-    "modelo179Submitted": "Enviado",
-    "modelo179Confirmed": "Confirmado",
-    "modelo179Rejected": "Rechazado",
-    "modelo179ATRef": "Referencia AT",
-    "modelo179Export": "Exportar CSV",
-    "modelo179Alert": "{count} contrato(s) sin registrar en AT para {year}",
-    "modelo179Tenant": "Inquilino",
-    "modelo179Property": "Inmueble",
-    "modelo179Period": "Periodo",
-    "modelo179Actions": "Acciones",
-    "modelo179MarkSubmitted": "Marcar como presentado",
-    "modelo179DialogTitle": "Marcar como presentado a la AT",
-    "modelo179DialogDescription": "Introduzca la referencia de la AT para la presentación del Modelo 179 de {tenant} — {property} ({year}).",
-    "modelo179ATRefPlaceholder": "p. ej. AT2025-XXXXXXXX",
-    "modelo179Saving": "Guardando…",
-    "modelo179ToastSubmitted": "Modelo 179 marcado como presentado"
-  },
   "payments": {
     "title": "Pagos",
-    "desc": "Controla las rentas pendientes, registra pagos, emite recibos y revisa los totales fiscales PT/ES.",
+    "desc": "Controla las rentas pendientes, registra pagos, emite recibos y revisa los totales fiscales.",
     "descTenantScope": "Revisar historial de pagos, recibos y próximos pasos de cobro de {name}.",
     "descPropertyScope": "Revisar estado de rentas, recibos y resultados fiscales de {name}.",
     "theSelectedTenant": "el inquilino seleccionado",
@@ -751,9 +684,7 @@
     "pendingReceipts": "Recibos pendientes",
     "pendingReceiptsHint": "Registros que aún esperan pago o emisión de recibo",
     "collectedMonth": "Cobrado este mes",
-    "collectedMonthHint": "Renta ya recibida este mes",
-    "taxLinked": "Contratos con fiscalidad",
-    "taxLinkedHint": "Contratos con configuración fiscal PT/ES"
+    "collectedMonthHint": "Renta ya recibida este mes"
   },
   "leases": {
     "title": "Contratos de Arrendamiento",
@@ -768,8 +699,6 @@
     "expiring": "Por vencer",
     "terminated": "Terminado",
     "rendaAcessivel": "Programa Renda Acessível (PT)",
-    "priorContractRent": "Alquiler del Contrato Anterior",
-    "stressedZone": "Zona de Mercado Residencial Tensionado",
     "contractUpload": "Subir Contrato",
     "contractDownload": "Descargar Contrato",
     "offerRenewal": "Ofrecer Renovación",
@@ -831,7 +760,6 @@
       "actions": "Acciones",
       "period": "Periodo",
       "contract": "Contrato",
-      "taxRegime": "Régimen fiscal",
       "renewalNoticeDays": "Preaviso de renovación (días)"
     },
     "selectProperty": {
@@ -856,12 +784,8 @@
     "additionalNotes": "Notas adicionales",
     "notesPlaceholder": "Añade condiciones especiales o notas sobre este contrato...",
     "filter": {
-      "allStatuses": "Todos los estados",
-      "allRegimes": "Todos los regímenes"
+      "allStatuses": "Todos los estados"
     },
-    "taxRegimePlaceholder": "Selecciona el régimen fiscal...",
-    "taxRegimePt": "Portugal — Rendimentos",
-    "taxRegimeEs": "España — Inmuebles Urbanos",
     "bulk": {
       "title": "Incremento masivo de alquiler",
       "percentLabel": "Porcentaje de incremento (%)",
@@ -1065,7 +989,6 @@
     "email": "Correo Electrónico",
     "phone": "Teléfono",
     "address": "Dirección",
-    "country": "País",
     "city": "Ciudad",
     "notes": "Notas",
     "description": "Descripción",
@@ -1129,10 +1052,6 @@
     "postalCode": "Código postal",
     "commercial": "Comercial",
     "addressSearchFailed": "La búsqueda de dirección ha fallado.",
-    "country": {
-      "portugal": "Portugal",
-      "spain": "España"
-    },
     "map": {
       "mapped": "Inmuebles en el mapa",
       "missingCoords": "Sin coordenadas",
@@ -1176,7 +1095,6 @@
       "software_hosting": "Software y alojamiento",
       "other": "Otro",
       "imi": "IMI – Impuesto Municipal PT",
-      "ibi": "IBI – Impuesto sobre Bienes Inmuebles",
       "stamp_duty": "Impuesto de Actos Jurídicos Documentados",
       "other_tax": "Otro Impuesto sobre el Inmueble",
       "building_insurance": "Seguro de Edificio",
@@ -1387,7 +1305,7 @@
       "allocated": "Imputado",
       "comingSoon": "Próximamente",
       "linkBankMovement": "Vincular un movimiento bancario",
-      "issueTaxReceipt": "Emitir recibo de alquiler a la AEAT"
+      "issueTaxReceipt": "Emitir recibo de alquiler a la AT"
     },
     "tenantName": "Nombre del inquilino",
     "email": "Correo electrónico",
@@ -1526,7 +1444,7 @@
     "signin": {
       "eyebrow": "Bienvenido de nuevo",
       "heading": "Inicia sesión en Situs",
-      "subheading": "Retoma la gestión de tus alquileres donde la dejaste — rentas, recibos y obligaciones fiscales en Portugal y España.",
+      "subheading": "Retoma la gestión de tus alquileres donde la dejaste — rentas, recibos y obligaciones fiscales en Portugal.",
       "primary": "Continuar con Google",
       "switchText": "¿Nuevo en Situs?",
       "switchAction": "Crear una cuenta"
@@ -1542,12 +1460,12 @@
     "brand": {
       "system": "Sovereign Capital System",
       "tagline": "Ingresos, recibos y prueba fiscal bajo control.",
-      "footer": "Autoalojado y alineado con el RGPD · Portugal y España",
+      "footer": "Autoalojado y alineado con el RGPD · Portugal",
       "proof": {
         "bankLabel": "Banco → conciliar → imputar",
         "bankNote": "Cada pago conciliado con su mes",
         "receiptLabel": "Recibo → emitir → archivar",
-        "receiptNote": "Documentos fiscales PT y ES, a tiempo",
+        "receiptNote": "Recibos de alquiler de la AT, a tiempo",
         "auditLabel": "Registro de auditoría siempre activo",
         "auditNote": "Cada paso del proceso queda registrado"
       }
@@ -1731,9 +1649,9 @@
       "useTitle": "Cómo los utilizamos",
       "use1": "Para prestar el servicio: registro de inmuebles, contratos, inquilinos y alquileres.",
       "use2": "Para conciliar alquileres con movimientos bancarios, que es la finalidad de una cuenta conectada.",
-      "use3": "Para generar documentos fiscales — recibos de alquiler de la AT portuguesa y declaraciones NRUA — a partir de los datos que haya introducido.",
+      "use3": "Para generar documentos fiscales — recibos de alquiler de la AT portuguesa — a partir de los datos que haya introducido.",
       "use4": "Para enviar el correo transaccional que haya configurado, como avisos de alquiler y alertas de vencimiento de contrato.",
-      "use5": "Para cumplir obligaciones legales conforme al derecho portugués y español.",
+      "use5": "Para cumplir obligaciones legales conforme al derecho portugués.",
       "bankTitle": "Acceso a la cuenta bancaria",
       "bankBody": "La conexión con un banco utiliza el acceso a información de cuenta previsto en la PSD2, a través de Enable Banking, proveedor autorizado de servicios de información sobre cuentas. El acceso es de solo lectura: esta instancia puede leer datos de la cuenta y movimientos, y nunca puede mover dinero. La autorización se concede en su propio banco, no aquí, y caduca — 90 días, salvo que su banco fije un plazo menor — tras lo cual debe otorgarse de nuevo.",
       "bankStorage": "Los IBAN se cifran en reposo con AES-256-GCM. La conciliación y la detección de duplicados funcionan con un hash unidireccional y no con el valor almacenado, de modo que el IBAN nunca necesita descifrarse para prestar el servicio. Solo se muestran los cuatro últimos dígitos.",
@@ -1765,7 +1683,7 @@
       "processorStripeBody": "Facturación de suscripciones, centro de datos en la UE. Solo si la facturación está activada.",
       "processorEmail": "Brevo",
       "processorEmailBody": "Entrega el correo transaccional y, por tanto, ve la dirección del destinatario y el mensaje. Con sede en la UE (Francia). Solo si el correo está configurado.",
-      "processorTax": "Autoridades fiscales española y portuguesa",
+      "processorTax": "Autoridad Tributaria portuguesa (AT)",
       "processorTaxBody": "Reciben las declaraciones fiscales que usted decida presentar.",
       "contactTitle": "Contacto",
       "contactBody": "Para consultas sobre protección de datos, o para ejercer cualquiera de los derechos anteriores, escriba a:"
@@ -1774,7 +1692,7 @@
       "acceptanceTitle": "Aceptación",
       "acceptanceBody": "Al crear una cuenta o utilizar esta instancia de Situs, acepta estos términos. Si no está de acuerdo, no la utilice.",
       "serviceTitle": "Qué es el servicio",
-      "serviceBody": "Situs es software de gestión inmobiliaria para arrendadores y administradores en Portugal y España: inmuebles, unidades, inquilinos, contratos, recibos, gastos, mantenimiento y cumplimiento fiscal. Se presta tal cual. Ayuda con las obligaciones fiscales; no las sustituye, ni reemplaza a un asesor fiscal.",
+      "serviceBody": "Situs es software de gestión inmobiliaria para arrendadores y administradores en Portugal: inmuebles, unidades, inquilinos, contratos, recibos, gastos, mantenimiento y cumplimiento fiscal. Se presta tal cual. Ayuda con las obligaciones fiscales; no las sustituye, ni reemplaza a un asesor fiscal.",
       "accountsTitle": "Cuentas",
       "accounts1": "Los datos de registro deben ser exactos.",
       "accounts2": "Usted es responsable de mantener la confidencialidad de sus credenciales.",

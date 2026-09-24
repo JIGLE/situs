@@ -1,11 +1,8 @@
 import { z } from "zod";
 
-/** Mirrors the `Currency` enum in prisma/schema.prisma; `settings.schema.test.ts` holds them equal. */
-export const CURRENCIES = ["EUR", "DKK", "USD", "GBP"] as const;
-
 /**
  * `POST /api/settings`. Every field is optional and none has a default: the onboarding checklist
- * and the currency switcher each send one field, and must not reset the rest.
+ * sends one field, and must not reset the rest.
  *
  * `theme` and `language` are checked as strings, not against today's option lists. The settings
  * form posts back the row it loaded, so a value an older version stored ("light", "dark-oled")
@@ -15,8 +12,6 @@ export const updateSettingsSchema = z
   .object({
     theme: z.string().trim().max(20),
     language: z.string().trim().max(10),
-    defaultCurrency: z.enum(CURRENCIES),
-    defaultTaxCountry: z.string().trim().max(2).nullable(),
     emailNotifications: z.boolean(),
     taxReminderNotifications: z.boolean(),
     distributionNotifications: z.boolean(),

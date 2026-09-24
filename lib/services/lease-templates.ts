@@ -1,18 +1,9 @@
 /**
- * Iberian Lease Contract Templates
- *
- * Pre-built bilingual lease templates for:
- * - Portugal: Contrato de Arrendamento Urbano (NRAU regime)
- * - Spain: Contrato de Arrendamiento de Vivienda (LAU 2024)
- *
- * These templates include country-specific legal clauses required
- * by Portuguese and Spanish tenancy law.
+ * Lease contract template: Contrato de Arrendamento Urbano (NRAU regime), with the clauses
+ * Portuguese tenancy law requires.
  */
 
-export interface IberianLeaseTemplateData {
-  // Country
-  country: "PT" | "ES";
-
+export interface LeaseTemplateData {
   // Landlord
   landlordName: string;
   landlordNif: string;
@@ -31,7 +22,7 @@ export interface IberianLeaseTemplateData {
   propertyAddress: string;
   propertyDescription?: string;
   propertyTypology?: string; // e.g., T2, T3
-  cadasterReference?: string; // Spain: referencia catastral
+  cadasterReference?: string; // Artigo matricial
   licencaHabitacao?: string; // Portugal: licença de habitação number
   energyCertificateClass?: string; // A+, A, B, C, D, E, F
 
@@ -44,11 +35,7 @@ export interface IberianLeaseTemplateData {
   autoRenew: boolean;
   renewalNoticeDays?: number;
 
-  // Iberian-specific
-  isRendaAcessivel?: boolean; // PT: renda acessível programme
-  isZonaTensionada?: boolean; // ES: stressed housing zone
-  priorContractRent?: number; // ES: previous contract rent for rent cap
-  fianzaMonths?: number; // ES: statutory deposit (1 month habitual, 2 months other)
+  isRendaAcessivel?: boolean; // Programa de Arrendamento Acessível
 
   // Additional
   includedUtilities?: string[];
@@ -58,14 +45,6 @@ export interface IberianLeaseTemplateData {
 
 function formatDatePT(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("pt-PT", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
-function formatDateES(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("es-ES", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -144,7 +123,7 @@ const CSS = `
  * Generate Portuguese Contrato de Arrendamento Urbano
  * Compliant with NRAU (Lei n.º 6/2006) and subsequent amendments
  */
-export function generatePortugueseLease(data: IberianLeaseTemplateData): string {
+export function generatePortugueseLease(data: LeaseTemplateData): string {
   const fd = formatDatePT;
   const fe = formatEuro;
 
@@ -285,190 +264,6 @@ export function generatePortugueseLease(data: IberianLeaseTemplateData): string 
 </html>`;
 }
 
-/**
- * Generate Spanish Contrato de Arrendamiento de Vivienda
- * Compliant with LAU (Ley 29/1994) as amended by Ley de Vivienda 12/2023
- */
-export function generateSpanishLease(data: IberianLeaseTemplateData): string {
-  const fd = formatDateES;
-  const fe = formatEuro;
-  const fianzaMonths = data.fianzaMonths ?? 1;
-
-  return `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Contrato de Arrendamiento de Vivienda</title>
-  <style>${CSS}</style>
-</head>
-<body>
-  <h1>Contrato de Arrendamiento de Vivienda</h1>
-  <p class="subtitle">Conforme a la Ley 29/1994 de Arrendamientos Urbanos (LAU) y Ley 12/2023 por el Derecho a la Vivienda</p>
-
-  <div class="parties">
-    <p>En ${data.propertyAddress.split(",").pop()?.trim() ?? "___"}, a ${data.signatureDate ? fd(data.signatureDate) : "_______________"}</p>
-    
-    <p><strong>REUNIDOS</strong></p>
-    
-    <p><strong>De una parte, como ARRENDADOR:</strong> D./Dña. ${data.landlordName}, con NIF/NIE ${data.landlordNif}, 
-    con domicilio en ${data.landlordAddress}${data.landlordEmail ? `, correo electrónico: ${data.landlordEmail}` : ""}${data.landlordPhone ? `, teléfono: ${data.landlordPhone}` : ""}.</p>
-    
-    <p><strong>De otra parte, como ARRENDATARIO:</strong> D./Dña. ${data.tenantName}, con NIF/NIE ${data.tenantNif}, 
-    con domicilio en ${data.tenantAddress}${data.tenantEmail ? `, correo electrónico: ${data.tenantEmail}` : ""}${data.tenantPhone ? `, teléfono: ${data.tenantPhone}` : ""}.</p>
-    
-    <p>Ambas partes se reconocen capacidad legal suficiente para el otorgamiento del presente contrato y, a tal efecto,</p>
-    <p><strong>EXPONEN</strong></p>
-    <p>Que el arrendador es propietario de la vivienda descrita en la estipulación primera, y que desea arrendarla al arrendatario, quien a su vez desea tomarla en arrendamiento, conviniendo ambas partes en celebrar el presente contrato con arreglo a las siguientes</p>
-  </div>
-
-  <h2>Primera — Objeto del Contrato</h2>
-  <div class="section">
-    <p class="clause">El arrendador cede en arrendamiento al arrendatario la vivienda sita en 
-    <span class="highlight">${data.propertyAddress}</span>${data.propertyTypology ? `, tipología ${data.propertyTypology}` : ""}, 
-    destinada a satisfacer la necesidad permanente de vivienda del arrendatario.</p>
-    ${data.cadasterReference ? `<p class="clause">Referencia catastral: ${data.cadasterReference}.</p>` : ""}
-    ${data.energyCertificateClass ? `<p class="clause">Certificado de eficiencia energética: clase ${data.energyCertificateClass}.</p>` : ""}
-    ${data.propertyDescription ? `<p class="clause">Descripción: ${data.propertyDescription}</p>` : ""}
-  </div>
-
-  <h2>Segunda — Duración</h2>
-  <div class="section">
-    <p class="clause">El plazo de duración del arrendamiento es de ${calculateMonths(data.startDate, data.endDate)} meses, 
-    desde el <span class="highlight">${fd(data.startDate)}</span> hasta el <span class="highlight">${fd(data.endDate)}</span>.</p>
-    <p class="clause">Conforme al artículo 9 de la LAU, si la duración pactada fuera inferior a cinco años (o siete años si el arrendador es persona jurídica), 
-    se prorrogará obligatoriamente por plazos anuales hasta alcanzar dicha duración mínima, salvo que el arrendatario manifieste su voluntad de no renovar con 30 días de antelación.</p>
-    ${
-      data.autoRenew
-        ? `<p class="clause">Transcurrido el período mínimo legal, el contrato se prorrogará tácitamente por plazos anuales sucesivos, 
-      salvo que cualquiera de las partes comunique a la otra su voluntad de no renovar con ${data.renewalNoticeDays ?? 30} días de antelación.</p>`
-        : `<p class="clause">Transcurrido el período contractual, el contrato no se prorrogará tácitamente.</p>`
-    }
-  </div>
-
-  <h2>Tercera — Renta</h2>
-  <div class="section">
-    <p class="clause">La renta mensual se fija en <span class="highlight">${fe(data.monthlyRent)}</span> (${numberToWordsES(data.monthlyRent)}), 
-    pagadera dentro de los primeros <span class="highlight">${data.paymentDueDay ?? 7}</span> días de cada mes.</p>
-    <p class="clause">La renta se actualizará anualmente conforme al Índice de Garantía de Competitividad (IGC) o, en su defecto, 
-    al índice de referencia que establezca el Instituto Nacional de Estadística, conforme al artículo 18 de la LAU.</p>
-    ${
-      data.isZonaTensionada
-        ? `
-    <p class="clause"><strong>Zona de mercado residencial tensionado:</strong> La vivienda se encuentra en una zona declarada de mercado residencial tensionado. 
-    Conforme al artículo 17.6 de la LAU (modificado por Ley 12/2023), la renta no podrá exceder la última renta vigente del contrato anterior, 
-    actualizada conforme al índice de referencia.${data.priorContractRent ? ` Renta del contrato anterior: ${fe(data.priorContractRent)}.` : ""}</p>
-    `
-        : ""
-    }
-  </div>
-
-  <h2>Cuarta — Fianza</h2>
-  <div class="section">
-    <p class="clause">Conforme al artículo 36 de la LAU, el arrendatario entrega al arrendador en concepto de fianza legal obligatoria 
-    la cantidad de <span class="highlight">${fe(data.monthlyRent * fianzaMonths)}</span>, equivalente a ${fianzaMonths} mensualidad(es) de renta.</p>
-    ${
-      data.deposit > data.monthlyRent * fianzaMonths
-        ? `
-    <p class="clause">Adicionalmente, se establece una garantía adicional de <span class="highlight">${fe(data.deposit - data.monthlyRent * fianzaMonths)}</span>. 
-    El total de garantías adicionales no podrá exceder de dos mensualidades de renta conforme al artículo 36.5 de la LAU.</p>
-    `
-        : ""
-    }
-    <p class="clause">La fianza será depositada en el organismo autonómico correspondiente conforme a la legislación aplicable.</p>
-  </div>
-
-  <h2>Quinta — Obligaciones del Arrendatario</h2>
-  <div class="section">
-    <p class="clause">a) Pagar la renta puntualmente en los plazos convenidos;</p>
-    <p class="clause">b) Usar la vivienda con la diligencia debida, destinándola a vivienda habitual;</p>
-    <p class="clause">c) No realizar obras que modifiquen la configuración de la vivienda sin consentimiento escrito del arrendador;</p>
-    <p class="clause">d) No subarrendar ni ceder total o parcialmente la vivienda sin consentimiento escrito del arrendador (art. 8 LAU);</p>
-    <p class="clause">e) Comunicar al arrendador los desperfectos o deterioros que requieran reparación;</p>
-    <p class="clause">f) Permitir al arrendador realizar las obras de conservación y mejora previstas en la LAU, con preaviso.</p>
-  </div>
-
-  <h2>Sexta — Obligaciones del Arrendador</h2>
-  <div class="section">
-    <p class="clause">a) Entregar la vivienda en condiciones de habitabilidad;</p>
-    <p class="clause">b) Realizar las reparaciones necesarias para la conservación de la vivienda (art. 21 LAU);</p>
-    <p class="clause">c) Mantener al arrendatario en el goce pacífico del arrendamiento;</p>
-    <p class="clause">d) Entregar los justificantes de pago de la renta cuando sean solicitados.</p>
-  </div>
-
-  ${
-    data.includedUtilities && data.includedUtilities.length > 0
-      ? `
-  <h2>Séptima — Gastos y Suministros</h2>
-  <div class="section">
-    <p class="clause">Los siguientes suministros están incluidos en la renta:</p>
-    <ul>${data.includedUtilities.map((u) => `<li>${u}</li>`).join("\n      ")}</ul>
-    <p class="clause">Los demás gastos de suministros y servicios individualizables serán a cargo del arrendatario.</p>
-  </div>
-  `
-      : ""
-  }
-
-  ${
-    data.specialClauses && data.specialClauses.length > 0
-      ? `
-  <h2>Cláusulas Adicionales</h2>
-  <div class="section">
-    <ul>${data.specialClauses.map((c) => `<li>${c}</li>`).join("\n      ")}</ul>
-  </div>
-  `
-      : ""
-  }
-
-  <h2>Disposiciones Finales</h2>
-  <div class="section">
-    <p class="clause">El presente contrato se rige por la Ley 29/1994 de Arrendamientos Urbanos, en la redacción dada por la Ley 12/2023, y supletoriamente por el Código Civil.</p>
-    <p class="clause">Para cualquier controversia derivada del presente contrato, las partes se someten a la jurisdicción de los Juzgados y Tribunales del lugar donde radica la finca.</p>
-    <p class="clause">El presente contrato se firma en dos ejemplares, uno para cada parte, a un solo efecto.</p>
-  </div>
-
-  <div class="signature-block">
-    <div class="signature-line">
-      <div class="line"></div>
-      <div class="label">El Arrendador</div>
-      <p>${data.landlordName}</p>
-      <p>NIF/NIE: ${data.landlordNif}</p>
-      <p>Fecha: ${data.signatureDate ? fd(data.signatureDate) : "_______________"}</p>
-    </div>
-    <div class="signature-line">
-      <div class="line"></div>
-      <div class="label">El Arrendatario</div>
-      <p>${data.tenantName}</p>
-      <p>NIF/NIE: ${data.tenantNif}</p>
-      <p>Fecha: ${data.signatureDate ? fd(data.signatureDate) : "_______________"}</p>
-    </div>
-  </div>
-
-  <div class="legal-note">
-    <p>Nota: Conforme al artículo 36.1 de la LAU, la fianza deberá ser depositada en el organismo autonómico competente. 
-    Este contrato deberá inscribirse en el Registro de la Propiedad si cualquiera de las partes lo solicita (art. 7 LAU).
-    ${data.isZonaTensionada ? " A partir de 2025, los contratos en zonas de mercado residencial tensionado deberán registrarse en la Ventanilla Única Digital (NRUA)." : ""}</p>
-  </div>
-</body>
-</html>`;
-}
-
-/**
- * Generate lease agreement for the appropriate country
- */
-export function generateIberianLease(data: IberianLeaseTemplateData): string {
-  if (data.country === "PT") {
-    return generatePortugueseLease(data);
-  }
-  return generateSpanishLease(data);
-}
-
-// Helper: calculate months between two dates
-function calculateMonths(startStr: string, endStr: string): number {
-  const start = new Date(startStr);
-  const end = new Date(endStr);
-  return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
-}
-
 // Helper: number to words in Portuguese (simplified for amounts up to €99,999)
 function numberToWordsPT(amount: number): string {
   const euros = Math.floor(amount);
@@ -543,97 +338,6 @@ function numberToWordsPT(amount: number): string {
   let result = `${convert(euros)} euro${euros !== 1 ? "s" : ""}`;
   if (cents > 0) {
     result += ` e ${convert(cents)} cêntimo${cents !== 1 ? "s" : ""}`;
-  }
-  return result;
-}
-
-// Helper: number to words in Spanish (simplified for amounts up to €99,999)
-function numberToWordsES(amount: number): string {
-  const euros = Math.floor(amount);
-  const cents = Math.round((amount - euros) * 100);
-
-  const units = ["", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve"];
-  const teens = [
-    "diez",
-    "once",
-    "doce",
-    "trece",
-    "catorce",
-    "quince",
-    "dieciséis",
-    "diecisiete",
-    "dieciocho",
-    "diecinueve",
-  ];
-  const twenties = [
-    "veinte",
-    "veintiuno",
-    "veintidós",
-    "veintitrés",
-    "veinticuatro",
-    "veinticinco",
-    "veintiséis",
-    "veintisiete",
-    "veintiocho",
-    "veintinueve",
-  ];
-  const tens = [
-    "",
-    "",
-    "veinte",
-    "treinta",
-    "cuarenta",
-    "cincuenta",
-    "sesenta",
-    "setenta",
-    "ochenta",
-    "noventa",
-  ];
-  const hundreds = [
-    "",
-    "cien",
-    "doscientos",
-    "trescientos",
-    "cuatrocientos",
-    "quinientos",
-    "seiscientos",
-    "setecientos",
-    "ochocientos",
-    "novecientos",
-  ];
-
-  function convertBelow1000(n: number): string {
-    if (n === 0) return "";
-    if (n < 10) return units[n];
-    if (n < 20) return teens[n - 10];
-    if (n < 30) return twenties[n - 20];
-    if (n < 100) {
-      const t = Math.floor(n / 10);
-      const u = n % 10;
-      return u === 0 ? tens[t] : `${tens[t]} y ${units[u]}`;
-    }
-    const h = Math.floor(n / 100);
-    const remainder = n % 100;
-    if (remainder === 0) return hundreds[h];
-    const hWord = h === 1 ? "ciento" : hundreds[h];
-    return `${hWord} ${convertBelow1000(remainder)}`;
-  }
-
-  function convert(n: number): string {
-    if (n === 0) return "cero";
-    if (n >= 1000) {
-      const thousands = Math.floor(n / 1000);
-      const remainder = n % 1000;
-      const tWord = thousands === 1 ? "mil" : `${convertBelow1000(thousands)} mil`;
-      if (remainder === 0) return tWord;
-      return `${tWord} ${convertBelow1000(remainder)}`;
-    }
-    return convertBelow1000(n);
-  }
-
-  let result = `${convert(euros)} euro${euros !== 1 ? "s" : ""}`;
-  if (cents > 0) {
-    result += ` con ${convert(cents)} céntimo${cents !== 1 ? "s" : ""}`;
   }
   return result;
 }

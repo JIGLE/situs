@@ -32,16 +32,7 @@ export type UpdateReceipt = z.infer<typeof updateReceiptSchema>;
 // Situs receipt lifecycle (Migration C) — see lib/services/receipts/lifecycle.ts
 // for the state machine this validates against.
 export const receiptLifecycleTransitionSchema = z.object({
-  to: z.enum([
-    "draft",
-    "review",
-    "emitted",
-    "submitted",
-    "accepted",
-    "rejected",
-    "exported",
-    "voided",
-  ]),
+  to: z.enum(["draft", "review", "emitted", "submitted", "accepted", "rejected", "voided"]),
   voidReason: z.string().max(500).optional(),
 });
 

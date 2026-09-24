@@ -1,79 +1,22 @@
-import React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
-let mockStatus: "loading" | "authenticated" | "unauthenticated" = "unauthenticated";
+// tests/setup.ts replaces this module for component tests; this file checks the real one.
+const { useCurrency } =
+  await vi.importActual<typeof import("./currency-context")>("./currency-context");
 
-vi.mock("next-auth/react", () => ({
-  useSession: () => ({
-    status: mockStatus,
-  }),
-}));
+describe("useCurrency", () => {
+  it("formats every amount as euros", () => {
+    const { formatCurrency, currencySymbol } = useCurrency();
 
-function CurrencyReader({
-  useCurrency,
-}: {
-  useCurrency: () => { currency: string; isLoading: boolean };
-}) {
-  const { currency, isLoading } = useCurrency();
-
-  return (
-    <div>
-      <span data-testid="currency">{currency}</span>
-      <span data-testid="loading">{String(isLoading)}</span>
-    </div>
-  );
-}
-
-describe("CurrencyProvider", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+    expect(currencySymbol).toBe("€");
+    expect(formatCurrency(1234.5)).toBe("€1234,50");
+    expect(formatCurrency(0)).toBe("€0,00");
   });
 
-  it("does not call settings API when user is unauthenticated", async () => {
-    const { CurrencyProvider, useCurrency } =
-      await vi.importActual<typeof import("./currency-context")>("./currency-context");
+  it("shows a dash when there is no amount", () => {
+    const { formatCurrency } = useCurrency();
 
-    mockStatus = "unauthenticated";
-    const fetchMock = vi.fn();
-    global.fetch = fetchMock as unknown as typeof global.fetch;
-
-    render(
-      <CurrencyProvider>
-        <CurrencyReader useCurrency={useCurrency} />
-      </CurrencyProvider>,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByTestId("loading").textContent).toBe("false");
-    });
-
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(screen.getByTestId("currency").textContent).toBe("EUR");
-  });
-
-  it("loads currency from nested settings payload when authenticated", async () => {
-    const { CurrencyProvider, useCurrency } =
-      await vi.importActual<typeof import("./currency-context")>("./currency-context");
-
-    mockStatus = "authenticated";
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ data: { defaultCurrency: "USD" } }),
-    });
-    global.fetch = fetchMock as unknown as typeof global.fetch;
-
-    render(
-      <CurrencyProvider>
-        <CurrencyReader useCurrency={useCurrency} />
-      </CurrencyProvider>,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByTestId("currency").textContent).toBe("USD");
-      expect(screen.getByTestId("loading").textContent).toBe("false");
-    });
-
-    expect(fetchMock).toHaveBeenCalledWith("/api/settings");
+    expect(formatCurrency(null)).toBe("-");
+    expect(formatCurrency(undefined)).toBe("-");
   });
 });

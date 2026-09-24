@@ -126,14 +126,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
     groupLabelKey: "navigation.systemGroup",
     items: [
       {
-        key: "compliance",
-        href: "/compliance/modelo179",
-        label: "Compliance",
-        labelKey: "navigation.compliance",
-        icon: ShieldCheck,
-        hidden: true,
-      },
-      {
         key: "leases",
         href: "/leases",
         label: "Leases",

@@ -97,13 +97,11 @@ export function FinancialsContainer() {
       }, 0);
 
     const pendingReceipts = state.receipts.filter((receipt) => receipt.status === "pending").length;
-    const taxTrackedLeases = state.leases.filter((lease) => lease.taxRegime).length;
 
     return {
       monthlyCollected,
       overdueAmount,
       pendingReceipts,
-      taxTrackedLeases,
     };
   }, [state.leases, state.receipts, state.tenants]);
 
@@ -161,7 +159,7 @@ export function FinancialsContainer() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <button
           type="button"
           onClick={() => setActiveTab("queue")}
@@ -216,20 +214,6 @@ export function FinancialsContainer() {
           </p>
           <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">
             {t("collectedMonthHint")}
-          </p>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("tax")}
-          className="panel p-4 text-left transition-colors hover:border-[var(--color-border-hover)]"
-        >
-          <p className="mono-label">{t("taxLinked")}</p>
-          <p className="mt-2 text-xl font-light tabular-nums text-[var(--color-foreground)] sm:text-2xl">
-            {metrics.taxTrackedLeases}
-          </p>
-          <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">
-            {t("taxLinkedHint")}
           </p>
         </button>
       </div>

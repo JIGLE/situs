@@ -4,7 +4,6 @@ import { z } from "zod";
 import { documentExport } from "@/lib/services/pdf-generator";
 
 const generateLeaseSchema = z.object({
-  country: z.enum(["PT", "ES"]),
   landlordName: z.string().min(1),
   landlordNif: z.string().min(1),
   landlordAddress: z.string().min(1),
@@ -29,9 +28,6 @@ const generateLeaseSchema = z.object({
   autoRenew: z.boolean(),
   renewalNoticeDays: z.number().optional(),
   isRendaAcessivel: z.boolean().optional(),
-  isZonaTensionada: z.boolean().optional(),
-  priorContractRent: z.number().optional(),
-  fianzaMonths: z.number().optional(),
   includedUtilities: z.array(z.string()).optional(),
   specialClauses: z.array(z.string()).optional(),
   signatureDate: z.string().optional(),
@@ -52,7 +48,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const result = await documentExport.generateIberianLeasePDF(parsed.data);
+    const result = await documentExport.generateLeasePDF(parsed.data);
 
     if (!result.buffer) {
       return NextResponse.json({ error: "PDF generation failed" }, { status: 500 });

@@ -19,7 +19,6 @@ import { SIMULATED_MODES } from "./modes";
 /** The body a connector files with, for display. Keys are ISO country codes. */
 export const AUTHORITY_BY_COUNTRY: Record<string, string> = {
   PT: "Autoridade Tributária",
-  ES: "MITMA Ventanilla Única",
 };
 
 export function authorityName(country: string): string {

@@ -1,13 +1,11 @@
 import { z } from "zod";
 
 // ─── Expense Categories ──────────────────────────────────────────────────────
-// Used across both Portugal and Spain. IRS/IRPF deductibility is indicated
-// by the DEDUCTIBLE_CATEGORIES set below.
+// IRS deductibility (Category F) is indicated by the DEDUCTIBLE_CATEGORIES set below.
 
 export const EXPENSE_CATEGORIES = [
   // Property taxes
   "imi", // PT: Imposto Municipal sobre Imóveis
-  "ibi", // ES: Impuesto sobre Bienes Inmuebles
   "stamp_duty", // Stamp duty / Imposto de Selo
   "other_tax", // Other property-related taxes
   // Insurance
@@ -49,13 +47,11 @@ export const EXPENSE_CATEGORIES = [
 export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
 
 /**
- * Categories that are generally deductible for IRS (PT) Categoria F
- * and IRPF (ES) Rendimientos del Capital Inmobiliario.
- * This is indicative — always confirm with a certified accountant (TOC/gestor).
+ * Categories that are generally deductible for IRS Categoria F.
+ * This is indicative — always confirm with a certified accountant (TOC).
  */
 export const DEDUCTIBLE_CATEGORIES = new Set<ExpenseCategory>([
   "imi",
-  "ibi",
   "building_insurance",
   "contents_insurance",
   "liability_insurance",

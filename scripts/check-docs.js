@@ -46,6 +46,23 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // The removed ARTIFACTS and the scope claim. "Spanish" alone stays legal: it is one of the
+    // four interface languages, and the bank picker lists Spanish banks.
+    pattern:
+      /\/api\/compliance\/(?:nrua|modelo179)|\/compliance\/modelo179|es-nrua|NRUARegistration|Modelo179Submission|nrua-export|StressedZone|emitted → exported|exported in Spain|(?:management|managers) (?:for|in) \**Portugal and Spain/,
+    retired: "2026-09-24 (simplification, step 2)",
+    because:
+      "Situs serves Portugal only: NRUA, Modelo 179, the Spanish connector and the receipts' " +
+      "export branch were removed, and every property is Portuguese",
+  },
+  {
+    pattern: /\/api\/exchange|lib\/exchange\.ts|\/api\/user\/preferences|currency switcher/i,
+    retired: "2026-09-24 (simplification, step 2)",
+    because:
+      "amounts are euros everywhere: the currency setting, the stored currency columns, the " +
+      "exchange-rate API and the preferred-currency route were removed",
+  },
+  {
     // The removed ARTIFACTS, never the words. "Tax filing" is the core loop's receipt filing at
     // Finanças, which the PT connector still does, and the ROADMAP rows that record this removal
     // name the features in prose.

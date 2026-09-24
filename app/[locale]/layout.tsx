@@ -1,6 +1,5 @@
 import { ClientProviders } from "@/components/shared/client-providers";
 import DevDebug from "@/components/shared/dev-debug";
-import { CurrencyProvider } from "@/lib/contexts/currency-context";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { locales, defaultLocale } from "@/lib/i18n/config";
@@ -35,12 +34,10 @@ export default async function Layout({
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <HtmlLangSync locale={locale} />
-      <CurrencyProvider initialLocale={locale}>
-        <ClientProviders>
-          {children}
-          {process.env.NODE_ENV === "development" && <DevDebug />}
-        </ClientProviders>
-      </CurrencyProvider>
+      <ClientProviders>
+        {children}
+        {process.env.NODE_ENV === "development" && <DevDebug />}
+      </ClientProviders>
     </NextIntlClientProvider>
   );
 }

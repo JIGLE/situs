@@ -22,9 +22,6 @@ const leaseFields = z.object({
   endDate: z.string().refine((date) => !isNaN(Date.parse(date)), "Invalid end date"),
   monthlyRent: z.number().positive("Rent must be positive"),
   deposit: z.number().min(0, "Deposit cannot be negative"),
-  // Spelled as the wizard's Select and the demo seed spell it; nullable because a lease created
-  // without a regime stores null, and editing it sends that null back.
-  taxRegime: z.enum(["portugal_rendimentos", "spain_inmuebles"]).nullish(),
   status: z.enum(["active", "expired", "terminated", "pending", "draft"]),
   autoRenew: z.boolean(),
   renewalNoticeDays: z.number().min(0).max(365),

@@ -74,7 +74,8 @@ const ALLOWLIST = [
 // `units-view.tsx` and four hooks among them — and they were deleted too.
 // 235 → 211 on 2026-09-24. Removing the IRS summaries took 16 with the tax rules view and the
 // fiscal-profile card; the other 8 were slack, since main already measured 227.
-const BASELINE = 211;
+// 211 → 199 the same day: the Modelo 179 view took 12 when Spain's compliance went.
+const BASELINE = 199;
 
 function walk(dir, acc) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

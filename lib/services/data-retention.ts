@@ -17,10 +17,10 @@
  * TWO DELIBERATE NARROWINGS, because "delete old bank data" is the wrong rule:
  *
  *   1. Only movements with NO receipt link are deleted. A matched movement is the provenance
- *      of a Receipt — the evidence of where that money came from — and PT/ES fiscal records
- *      outlive two years. Deleting it would leave a receipt whose origin cannot be shown,
- *      which is worse for the subject and for the operator than keeping it. Matched movements
- *      are governed by the retention of the receipt they belong to.
+ *      of a Receipt — the evidence of where that money came from — and Portuguese fiscal
+ *      records outlive two years. Deleting it would leave a receipt whose origin cannot be
+ *      shown, which is worse for the subject and for the operator than keeping it. Matched
+ *      movements are governed by the retention of the receipt they belong to.
  *
  *   2. Consent reaping targets connections that never completed. `startConsent` writes a live
  *      256-bit reference into `BankConnection.metadata` and creates the row BEFORE calling the

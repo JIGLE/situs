@@ -2,7 +2,7 @@
 
 # Situs
 
-**Sovereign Capital System** — self-hosted property management for Portugal and Spain.
+**Sovereign Capital System** — self-hosted property management for Portugal.
 
 [![CI](https://github.com/JIGLE/situs/actions/workflows/ci.yml/badge.svg)](https://github.com/JIGLE/situs/actions/workflows/ci.yml)
 [![Security Scan](https://github.com/JIGLE/situs/actions/workflows/security-scan.yml/badge.svg)](https://github.com/JIGLE/situs/actions/workflows/security-scan.yml)
@@ -45,14 +45,14 @@ is _derived_ from this ledger, never hand-set.
 
 ### The rent ledger (the core loop)
 
-| Capability                 | What it does                                                                                                                                                                                                                                                                               |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Reference-month ledger** | One `RentPeriod` row per lease per month. Status is recomputed inside the same transaction as every allocation write — it can never drift from the money.                                                                                                                                  |
-| **Waterfall allocation**   | Always fills the oldest not-fully-allocated period first, so partial payments can't silently skip a month. Pure engine, independently tested.                                                                                                                                              |
-| **Bank matching**          | CSV/manual import or a live PSD2 sync → fingerprint dedupe (idempotent) → fuzzy-duplicate check → reconciliation rules → weighted confidence score. ≥ 0.85 auto-allocates; anything lower waits in the Bank Movements inbox for a human.                                                   |
-| **Receipt lifecycle**      | Money state (`paid`/`pending`) is kept separate from the _document_ state machine: draft → review → emitted, then submitted → accepted/rejected in Portugal or exported in Spain. A receipt can be voided from draft, review, emitted or exported; voiding soft-reverses live allocations. |
-| **Tax connectors**         | One connector row per user and connector key, in sandbox or review mode: no live AT/AEAT integration exists, so live mode fails closed. Every call appends an immutable submission-log row.                                                                                                |
-| **Audit trail**            | Scoped per-record or account-wide, persisted on every workflow mutation.                                                                                                                                                                                                                   |
+| Capability                 | What it does                                                                                                                                                                                                                                |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Reference-month ledger** | One `RentPeriod` row per lease per month. Status is recomputed inside the same transaction as every allocation write — it can never drift from the money.                                                                                   |
+| **Waterfall allocation**   | Always fills the oldest not-fully-allocated period first, so partial payments can't silently skip a month. Pure engine, independently tested.                                                                                               |
+| **Bank matching**          | CSV/manual import or a live PSD2 sync → fingerprint dedupe (idempotent) → fuzzy-duplicate check → reconciliation rules → weighted confidence score. ≥ 0.85 auto-allocates; anything lower waits in the Bank Movements inbox for a human.    |
+| **Receipt lifecycle**      | Money state (`paid`/`pending`) is kept separate from the _document_ state machine: draft → review → emitted → submitted → accepted/rejected. A receipt can be voided from draft, review or emitted; voiding soft-reverses live allocations. |
+| **Tax connectors**         | One connector row per user and connector key, in sandbox or review mode: no live AT integration exists, so live mode fails closed. Every call appends an immutable submission-log row.                                                      |
+| **Audit trail**            | Scoped per-record or account-wide, persisted on every workflow mutation.                                                                                                                                                                    |
 
 ### Portfolio and operations
 
@@ -63,10 +63,6 @@ is _derived_ from this ledger, never hand-set.
 ### 🇵🇹 Portugal
 
 - **Recibos de Renda Eletrónicos** — AT-compatible XML payload, NIF validation, 5-day deadline enforcement
-
-### 🇪🇸 Spain
-
-- **NRUA export** — Ventanilla Única Digital payload generation and registration tracking for 2026
 
 ### Security
 
@@ -127,7 +123,7 @@ lib/
     bank/              → CSV import, fingerprint dedupe, matching pipeline
     receipts/          → receipt document-lifecycle state machine (pure)
     tax/               → connector find-or-create + submission log
-  tax/connectors/      → per-country TaxConnector implementations
+  tax/connectors/      → the Portuguese TaxConnector
   contexts/            → global AppState, CSRF, toast, currency
   utils/               → PII encryption, API client, logger, env validation
 prisma/

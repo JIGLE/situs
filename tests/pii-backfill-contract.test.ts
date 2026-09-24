@@ -23,7 +23,8 @@ function scriptTable(): Record<string, string[]> {
 
 describe("PII backfill contract", () => {
   it("encrypts exactly the fields the Prisma extension encrypts", () => {
-    // Prisma exposes model `NRUARegistration` as the delegate `prisma.nRUARegistration`.
+    // A Prisma delegate is the model name with its first letter lowercased: `RentReceipt` is
+    // `prisma.rentReceipt`.
     const expected = Object.fromEntries(
       Object.entries(PII_FIELDS).map(([model, fields]) => [
         model[0].toLowerCase() + model.slice(1),

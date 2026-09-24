@@ -7,7 +7,7 @@ import { MODE_KIND_STYLES, authorityName, modeKind } from "@/lib/tax/connectors/
 import { useCallback, useEffect, useState } from "react";
 
 /**
- * Situs Tax Connector Dashboard — every fiscal connector (PT AT, ES AEAT, …)
+ * Situs Tax Connector Dashboard — the fiscal connector (PT AT)
  * with its mode/status/last submission and the explainability trail behind
  * every call (Migration C: TaxAuthorityConnector + TaxSubmissionLog). Mode
  * stays sandbox/review until a connector is explicitly promoted to live —

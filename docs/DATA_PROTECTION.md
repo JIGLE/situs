@@ -21,7 +21,7 @@ right and this is a bug. `docs:check` enforces that this file stays reachable, a
 | ----------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | Controller              | The operator of the instance                                                                                         |
 | Data protection contact | `DATA_PROTECTION_EMAIL` (see `.env.example`), published on `/privacy`                                                |
-| Supervisory authorities | CNPD (Portugal), AEPD (Spain)                                                                                        |
+| Supervisory authorities | CNPD (Portugal)                                                                                                      |
 | DPO                     | Not appointed. Article 37 does not require one here: no large-scale monitoring, no large-scale special-category data |
 
 No DPIA has been carried out. Article 35 triggers on large-scale or systematic processing;
@@ -36,7 +36,7 @@ ever offered to other people.
 | Tenant and lease records            | Performing the tenancy agreement            | Contract (Art. 6(1)(b))                              |
 | Rent ledger, receipts, allocations  | Recording rent due and paid                 | Contract; legal obligation for the fiscal parts      |
 | Bank movement ingestion (PSD2)      | Reconciling rent against bank credits       | Consent, given at the bank under PSD2 (Art. 6(1)(a)) |
-| Fiscal filing (PT AT, ES NRUA)      | Statutory rent-income reporting             | Legal obligation (Art. 6(1)(c))                      |
+| Fiscal filing (AT rent receipts)    | Statutory rent-income reporting             | Legal obligation (Art. 6(1)(c))                      |
 | Transactional email                 | Rent reminders, lease-expiry alerts         | Contract; legitimate interest                        |
 | Audit log                           | Accountability (Art. 5(2)), fraud detection | Legal obligation; legitimate interest                |
 
@@ -59,12 +59,11 @@ Fields marked **encrypted** are AES-256-GCM at rest (`lib/utils/pii-encryption.t
 where the client is built (`lib/services/database/database.ts`), so the encryption is
 transparent rather than per-call-site:
 
-| Model              | Encrypted fields                   |
-| ------------------ | ---------------------------------- |
-| `Owner`            | `taxIdentificationNumber`, `phone` |
-| `Tenant`           | `phone`                            |
-| `RentReceipt`      | `landlordNif`, `tenantNif`         |
-| `NRUARegistration` | `landlordNif`, `tenantNif`         |
+| Model         | Encrypted fields                   |
+| ------------- | ---------------------------------- |
+| `Owner`       | `taxIdentificationNumber`, `phone` |
+| `Tenant`      | `phone`                            |
+| `RentReceipt` | `landlordNif`, `tenantNif`         |
 
 ### Encrypted at the call site
 
@@ -105,7 +104,6 @@ A self-hosted instance shares data with a service only when that service is conf
 | Stripe         | Subscription billing details                                     | Only where billing is enabled  | EEA          |
 | Brevo          | Recipient address and message body of transactional mail we send | Only where email is configured | France (EEA) |
 | Portuguese AT  | Rent receipt filings                                             | Only on submission             | Portugal     |
-| Spanish AEAT   | NRUA / Modelo 179 filings                                        | Only on submission             | Spain        |
 
 **Enable Banking is the licensed AISP**, which is why the instance needs no PSD2 licence and no
 eIDAS certificate. Access is read-only account information: account details and transactions.
@@ -137,7 +135,7 @@ schedule cannot drift from the code that applies it.
 Three rules that are not simply "delete old things":
 
 - **Reconciled bank movements are not deleted on this schedule.** A matched movement is the
-  provenance of a `Receipt`, and PT/ES fiscal records outlive two years. It follows the
+  provenance of a `Receipt`, and fiscal records outlive two years. It follows the
   retention of the receipt it evidences.
 - **Consent reaping only touches connections holding no accounts.** Deleting a `BankConnection`
   cascades to `BankAccount` and `BankTransaction`, so the guard is on both status and emptiness.

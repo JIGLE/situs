@@ -87,7 +87,7 @@ describe("LeaseDetailView renewal", () => {
 
 /**
  * Asserted in Portuguese because asserting English cannot catch hardcoded English: the renewal and
- * edit buttons were literal English strings, and the tax regime printed its stored value.
+ * edit buttons were literal English strings.
  */
 describe("LeaseDetailView in Portuguese", () => {
   const pt = ptMessages.leases;
@@ -107,13 +107,5 @@ describe("LeaseDetailView in Portuguese", () => {
 
     expect(screen.getByRole("button", { name: pt.detail.withdrawOffer })).toBeInTheDocument();
     expect(screen.queryByText(/Withdraw Offer/)).not.toBeInTheDocument();
-  });
-
-  it("shows the tax regime's label, not its stored value", () => {
-    app.leases = [{ ...lease, taxRegime: "portugal_rendimentos" }];
-    renderWithProviders(<LeaseDetailView leaseId="lease-1" />, { initialLocale: "pt" });
-
-    expect(screen.getByText(pt.taxRegimePt)).toBeInTheDocument();
-    expect(screen.queryByText("portugal_rendimentos")).not.toBeInTheDocument();
   });
 });

@@ -1,7 +1,7 @@
 /**
  * Situs tax connector contract. Every country connector wraps the existing
  * fiscal logic for that jurisdiction — this interface does not replace
- * lib/compliance/{rent-receipts-pt,nrua-es}.ts, it orchestrates them and
+ * lib/compliance/rent-receipts-pt.ts, it orchestrates it and
  * appends the TaxSubmissionLog trail (Migration C).
  *
  * `mode` on the underlying TaxAuthorityConnector row governs behavior:

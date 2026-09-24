@@ -35,12 +35,12 @@ const COMING_SOON_LOCALES: { code: string; flag: string; label: string }[] = [
   { code: "de", flag: "🇩🇪", label: "Deutsch" },
 ];
 
-// The countries Situs operates in. lib/design/country-themes.ts holds a theme per entry here;
+// The country Situs operates in. lib/design/country-themes.ts holds a theme per entry here;
 // adding a country means adding it to both.
-const COUNTRY_SWATCH = [
-  { code: "PT", hex: "#006600" },
-  { code: "ES", hex: "#aa151b" },
-] as const satisfies readonly { code: CountryCode; hex: string }[];
+const COUNTRY_SWATCH = [{ code: "PT", hex: "#006600" }] as const satisfies readonly {
+  code: CountryCode;
+  hex: string;
+}[];
 
 type SwatchCode = (typeof COUNTRY_SWATCH)[number]["code"];
 

@@ -3,9 +3,8 @@
  * Receipt (`Receipt.lifecycle`). Distinct from `Receipt.status`, which is the
  * MONEY state (paid|pending) and is untouched by this module.
  *
- *   draft → review → emitted →(PT)→ submitted → accepted | rejected
+ *   draft → review → emitted → submitted → accepted | rejected
  *   draft/review/emitted → voided
- *   emitted →(ES)→ exported
  *   rejected → review (fix and resubmit)
  *
  * Archive is a SIDE EFFECT of reaching emitted/accepted, not a state of its
@@ -14,16 +13,15 @@
  */
 
 export type ReceiptLifecycleState =
-  "draft" | "review" | "emitted" | "submitted" | "accepted" | "rejected" | "exported" | "voided";
+  "draft" | "review" | "emitted" | "submitted" | "accepted" | "rejected" | "voided";
 
 const TRANSITIONS: Record<ReceiptLifecycleState, ReceiptLifecycleState[]> = {
   draft: ["review", "emitted", "voided"],
   review: ["draft", "emitted", "voided"],
-  emitted: ["submitted", "exported", "voided"],
+  emitted: ["submitted", "voided"],
   submitted: ["accepted", "rejected"],
   accepted: [],
   rejected: ["review"],
-  exported: ["voided"],
   voided: [],
 };
 

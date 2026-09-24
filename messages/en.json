@@ -70,10 +70,8 @@
     "imageConsent": "Display Profile Image",
     "imageConsentDesc": "Allow displaying your Google profile image in the app (GDPR compliant).",
     "taxProfile": "Tax & Fiscal Profile",
-    "taxRegimeMutuallyExclusive": "NHR and IFICI are mutually exclusive — only one can be active at a time.",
     "nav": {
       "account": "Account",
-      "taxRegion": "Tax & Region",
       "notifications": "Notifications",
       "security": "Security & privacy",
       "integrations": "Integrations",
@@ -160,13 +158,6 @@
       "verifying": "Verifying…",
       "qrAlt": "Two-factor QR code",
       "cantScan": "Can't scan? Enter it manually",
-      "regional": "Regional settings",
-      "regionalDescription": "Currency and tax configuration for your portfolio",
-      "defaultCurrency": "Default currency",
-      "selectCurrency": "Select currency",
-      "defaultTaxCountry": "Default tax country",
-      "selectCountry": "Select country",
-      "taxCountryHelp": "Used as the default for tax calculations on new properties",
       "toastTaxLoadFailed": "Couldn't load your fiscal profile.",
       "emailNotifications": "Email notifications",
       "emailNotificationsDescription": "Choose which email alerts you receive",
@@ -207,13 +198,6 @@
       "planStatus": "Status: {status}",
       "movesToFree": "Moves to Free on {date}",
       "manageBilling": "Manage billing",
-      "currencyEUR": "Euro (€)",
-      "currencyDKK": "Danish krone (kr)",
-      "currencyUSD": "US dollar ($)",
-      "currencyGBP": "British pound (£)",
-      "countryPT": "Portugal",
-      "countryES": "Spain",
-      "countryDK": "Denmark",
       "bankConnectCta": "Connect a bank",
       "bankPickerTitle": "Connect a bank",
       "bankPickerHelp": "You will be sent to your bank to authorise read-only access to your account. Situs never sees your banking password.",
@@ -375,7 +359,6 @@
     "systemGroup": "System",
     "finance": "Finance",
     "contracts": "Contracts",
-    "compliance": "Compliance",
     "account": "Account",
     "more": "More",
     "signOut": "Sign out",
@@ -621,7 +604,7 @@
     "exportJson": "Export as JSON"
   },
   "landing": {
-    "eyebrow": "Portugal & Spain rental operations",
+    "eyebrow": "Rental operations in Portugal",
     "signIn": "Sign in",
     "hero2": "Property income, receipts and tax evidence under control.",
     "subtitle2": "Situs helps owners track rent payments, allocate late transfers to the correct reference month, emit receipts, archive documents, manage expenses and prepare tax-ready evidence across EU property portfolios.",
@@ -638,8 +621,7 @@
       "jumpAria": "Jump to the end of the sequence"
     },
     "countries": {
-      "pt": "Portugal",
-      "es": "Spain"
+      "pt": "Portugal"
     }
   },
   "errors": {
@@ -676,58 +658,9 @@
       "securityTokenExpired": "Your security token expired. Refresh the page and try again."
     }
   },
-  "compliance": {
-    "title": "Compliance",
-    "rentReceipts": "Rent Receipts",
-    "rentReceiptsPt": "Recibos de Renda Eletrónicos",
-    "createReceipt": "Issue Rent Receipt",
-    "receiptNumber": "Receipt Number",
-    "landlordNif": "Landlord NIF",
-    "tenantNif": "Tenant NIF",
-    "rentAmount": "Rent Amount",
-    "withholdingRate": "Withholding Rate",
-    "paymentDate": "Payment Date",
-    "rentalPeriod": "Rental Period",
-    "receiptStatus": "Receipt Status",
-    "submitToAT": "Submit to Tax Authority",
-    "downloadPdf": "Download PDF",
-    "receiptCreated": "Rent receipt created successfully",
-    "receiptDeadlineWarning": "Legal deadline: receipt must be issued within 5 days of payment",
-    "nrua": "NRUA Registration",
-    "nruaTitle": "Rental Contract Registration (NRUA)",
-    "nruaDescription": "Register rental contracts with Spain's Ventanilla Única Digital",
-    "registerContract": "Register Contract",
-    "registrationStatus": "Registration Status",
-    "cadasterReference": "Cadaster Reference",
-    "municipalityCode": "Municipality Code",
-    "contractType": "Contract Type",
-    "primaryResidence": "Primary Residence",
-    "temporaryHousing": "Temporary Housing",
-    "touristRental": "Tourist Rental",
-    "modelo179Title": "Modelo 179 — Lease Registration",
-    "modelo179Subtitle": "Track annual lease registration submissions to Autoridade Tributária (AT)",
-    "modelo179Status": "Status",
-    "modelo179Pending": "Pending",
-    "modelo179Submitted": "Submitted",
-    "modelo179Confirmed": "Confirmed",
-    "modelo179Rejected": "Rejected",
-    "modelo179ATRef": "AT Reference",
-    "modelo179Export": "Export CSV",
-    "modelo179Alert": "{count} lease(s) not registered with AT for {year}",
-    "modelo179Tenant": "Tenant",
-    "modelo179Property": "Property",
-    "modelo179Period": "Period",
-    "modelo179Actions": "Actions",
-    "modelo179MarkSubmitted": "Mark as submitted",
-    "modelo179DialogTitle": "Mark as submitted to AT",
-    "modelo179DialogDescription": "Enter the AT reference for the Modelo 179 submission for {tenant} — {property} ({year}).",
-    "modelo179ATRefPlaceholder": "e.g. AT2025-XXXXXXXX",
-    "modelo179Saving": "Saving…",
-    "modelo179ToastSubmitted": "Modelo 179 marked as submitted"
-  },
   "payments": {
     "title": "Payments",
-    "desc": "Track due rent, record payments, issue receipts, and review PT/ES tax-ready totals.",
+    "desc": "Track due rent, record payments, issue receipts, and review tax-ready totals.",
     "descTenantScope": "Review payment history, receipt output, and next collection steps for {name}.",
     "descPropertyScope": "Review rent status, receipts, and tax-ready outputs for {name}.",
     "theSelectedTenant": "the selected tenant",
@@ -751,9 +684,7 @@
     "pendingReceipts": "Pending receipts",
     "pendingReceiptsHint": "Records that still need payment or receipt follow-up",
     "collectedMonth": "Collected this month",
-    "collectedMonthHint": "Paid rent already received this month",
-    "taxLinked": "Tax-linked leases",
-    "taxLinkedHint": "Lease records carrying PT/ES tax configuration"
+    "collectedMonthHint": "Paid rent already received this month"
   },
   "leases": {
     "title": "Leases",
@@ -768,8 +699,6 @@
     "expiring": "Expiring",
     "terminated": "Terminated",
     "rendaAcessivel": "Renda Acessível Programme",
-    "priorContractRent": "Prior Contract Rent",
-    "stressedZone": "Stressed Housing Zone",
     "contractUpload": "Upload Contract",
     "contractDownload": "Download Contract",
     "offerRenewal": "Offer Renewal",
@@ -831,7 +760,6 @@
       "actions": "Actions",
       "period": "Period",
       "contract": "Contract",
-      "taxRegime": "Tax Regime",
       "renewalNoticeDays": "Renewal Notice (Days)"
     },
     "selectProperty": {
@@ -856,12 +784,8 @@
     "additionalNotes": "Additional Notes",
     "notesPlaceholder": "Add any special terms, conditions, or notes about this lease...",
     "filter": {
-      "allStatuses": "All Statuses",
-      "allRegimes": "All Regimes"
+      "allStatuses": "All Statuses"
     },
-    "taxRegimePlaceholder": "Select tax regime...",
-    "taxRegimePt": "Portugal - Rendimentos",
-    "taxRegimeEs": "Spain - Inmuebles Urbanos",
     "bulk": {
       "title": "Bulk Rent Increase",
       "percentLabel": "Increase percentage (%)",
@@ -1065,7 +989,6 @@
     "email": "Email",
     "phone": "Phone",
     "address": "Address",
-    "country": "Country",
     "city": "City",
     "notes": "Notes",
     "description": "Description",
@@ -1129,10 +1052,6 @@
     "postalCode": "Postal code",
     "commercial": "Commercial",
     "addressSearchFailed": "Address search failed.",
-    "country": {
-      "portugal": "Portugal",
-      "spain": "Spain"
-    },
     "map": {
       "mapped": "Mapped properties",
       "missingCoords": "Missing coordinates",
@@ -1176,7 +1095,6 @@
       "software_hosting": "Software and hosting",
       "other": "Other",
       "imi": "IMI – Property Tax (PT)",
-      "ibi": "IBI – Property Tax (ES)",
       "stamp_duty": "Stamp Duty",
       "other_tax": "Other Property Tax",
       "building_insurance": "Building Insurance",
@@ -1526,7 +1444,7 @@
     "signin": {
       "eyebrow": "Welcome back",
       "heading": "Sign in to Situs",
-      "subheading": "Pick up your rental compliance where you left off — rent, receipts, and fiscal filings for Portugal & Spain.",
+      "subheading": "Pick up your rental compliance where you left off — rent, receipts, and fiscal filings in Portugal.",
       "primary": "Continue with Google",
       "switchText": "New to Situs?",
       "switchAction": "Create an account"
@@ -1542,12 +1460,12 @@
     "brand": {
       "system": "Sovereign Capital System",
       "tagline": "Property income, receipts and tax evidence under control.",
-      "footer": "Self-hosted & GDPR-aligned · Portugal & Spain",
+      "footer": "Self-hosted & GDPR-aligned · Portugal",
       "proof": {
         "bankLabel": "Bank → match → allocate",
         "bankNote": "Every payment reconciled to its month",
         "receiptLabel": "Receipt → emit → archive",
-        "receiptNote": "PT & ES fiscal documents, on time",
+        "receiptNote": "AT rent receipts, on time",
         "auditLabel": "Audit trail, always on",
         "auditNote": "Every workflow step recorded"
       }
@@ -1731,9 +1649,9 @@
       "useTitle": "How we use it",
       "use1": "To run the service: recording properties, leases, tenants and rent.",
       "use2": "To reconcile rent against bank movements, which is what a connected bank account is for.",
-      "use3": "To produce fiscal documents — Portuguese AT rent receipts and Spanish NRUA filings — from data you have entered.",
+      "use3": "To produce fiscal documents — Portuguese AT rent receipts — from data you have entered.",
       "use4": "To send the transactional email you have configured, such as rent reminders and lease-expiry alerts.",
-      "use5": "To meet legal obligations under Portuguese and Spanish law.",
+      "use5": "To meet legal obligations under Portuguese law.",
       "bankTitle": "Bank account access",
       "bankBody": "Connecting a bank uses PSD2 account information access through Enable Banking, a licensed account information service provider. Access is read-only: this instance can read account details and transactions, and can never move money. You authorise the access at your own bank, not here, and the authorisation expires — 90 days unless your bank sets a shorter period — after which it must be granted again.",
       "bankStorage": "IBANs are encrypted at rest with AES-256-GCM. Matching and duplicate detection work from a one-way hash rather than the stored value, so the IBAN never needs to be decrypted to run the service. Only the last four digits are ever displayed.",
@@ -1765,7 +1683,7 @@
       "processorStripeBody": "Subscription billing, EU data centre. Only where billing is enabled.",
       "processorEmail": "Brevo",
       "processorEmailBody": "Delivers transactional email, and therefore sees the recipient address and the message. EU-based (France). Only where email is configured.",
-      "processorTax": "Portuguese and Spanish tax authorities",
+      "processorTax": "Portuguese Tax Authority (AT)",
       "processorTaxBody": "Receive the fiscal filings you choose to submit.",
       "contactTitle": "Contact",
       "contactBody": "For data protection enquiries, or to exercise any of the rights above, write to:"
@@ -1774,7 +1692,7 @@
       "acceptanceTitle": "Acceptance",
       "acceptanceBody": "By creating an account or using this Situs instance you agree to these terms. If you do not agree, do not use it.",
       "serviceTitle": "What the service is",
-      "serviceBody": "Situs is property-management software for landlords and property managers in Portugal and Spain: properties, units, tenants, leases, receipts, expenses, maintenance and fiscal compliance. It is provided as is. It assists with fiscal obligations; it does not discharge them, and it is not a substitute for an accountant.",
+      "serviceBody": "Situs is property-management software for landlords and property managers in Portugal: properties, units, tenants, leases, receipts, expenses, maintenance and fiscal compliance. It is provided as is. It assists with fiscal obligations; it does not discharge them, and it is not a substitute for an accountant.",
       "accountsTitle": "Accounts",
       "accounts1": "Registration information must be accurate.",
       "accounts2": "You are responsible for keeping your credentials confidential.",

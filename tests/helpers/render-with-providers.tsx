@@ -21,27 +21,6 @@ const CATALOGUES: Record<string, typeof enMessages> = {
   it: itMessages as typeof enMessages,
 };
 
-// Mock Currency Context - provides formatCurrency for tests
-interface MockCurrencyContextType {
-  currency: string;
-  setCurrency: (currency: string) => void;
-  formatCurrency: (amount: number) => string;
-  locale: string;
-}
-
-const MockCurrencyContext = createContext<MockCurrencyContextType | undefined>(undefined);
-
-const MockCurrencyProvider = ({ children }: { children: React.ReactNode }) => {
-  const value: MockCurrencyContextType = {
-    currency: "USD",
-    setCurrency: () => {},
-    formatCurrency: (amount: number) => `$${amount.toFixed(2)}`,
-    locale: "en",
-  };
-
-  return <MockCurrencyContext.Provider value={value}>{children}</MockCurrencyContext.Provider>;
-};
-
 // Mock Toast Context - provides toast functions for tests
 interface MockToastContextType {
   success: (message: string) => void;
@@ -93,7 +72,7 @@ const MockThemeProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 // Export contexts for tests that need direct access
-export { MockCurrencyContext, MockToastContext, MockThemeContext };
+export { MockToastContext, MockThemeContext };
 
 interface CustomRenderOptions {
   initialLocale?: string;
@@ -109,9 +88,7 @@ export function renderWithProviders(ui: React.ReactElement, options?: CustomRend
       messages={CATALOGUES[initialLocale] ?? enMessages}
     >
       <MockThemeProvider>
-        <MockCurrencyProvider>
-          <MockToastProvider>{ui}</MockToastProvider>
-        </MockCurrencyProvider>
+        <MockToastProvider>{ui}</MockToastProvider>
       </MockThemeProvider>
     </NextIntlClientProvider>
   );

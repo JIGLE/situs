@@ -1,8 +1,6 @@
 export interface UserSettings {
   theme: "normal" | "dark" | "system";
   language: string;
-  defaultCurrency: "EUR" | "DKK" | "USD" | "GBP";
-  defaultTaxCountry: string | null;
   emailNotifications: boolean;
   taxReminderNotifications: boolean;
   distributionNotifications: boolean;
@@ -11,8 +9,6 @@ export interface UserSettings {
 export const defaultSettings: UserSettings = {
   theme: "system",
   language: "en",
-  defaultCurrency: "EUR",
-  defaultTaxCountry: null,
   emailNotifications: true,
   taxReminderNotifications: true,
   distributionNotifications: true,

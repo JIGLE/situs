@@ -19,7 +19,6 @@ import { useCsrf } from "@/lib/contexts/csrf-context";
 import { useTheme } from "@/lib/contexts/theme-context";
 import { SettingsAccount } from "./settings-account";
 import { SettingsAppearance } from "./settings-appearance";
-import { SettingsTax } from "./settings-tax";
 import { SettingsNotifications } from "./settings-notifications";
 import { SettingsSecurity } from "./settings-security";
 import { SettingsSystem } from "./settings-system";
@@ -44,7 +43,6 @@ const SECTIONS = [
   { id: "security", group: "personal" },
   { id: "appearance", group: "personal" },
   { id: "notifications", group: "personal" },
-  { id: "tax", group: "workspace" },
   { id: "billing", group: "workspace" },
   { id: "integrations", group: "system" },
   { id: "system", group: "system" },
@@ -100,9 +98,7 @@ export function SettingsView(): React.ReactElement {
   );
   const visibleSection = sections.includes(activeSection) ? activeSection : sections[0];
 
-  /** `tax` is the section id; its label lives under a different key. */
-  const sectionLabel = (value: SectionValue) =>
-    value === "tax" ? t("taxRegion") : t(value as Exclude<SectionValue, "tax">);
+  const sectionLabel = (value: SectionValue) => t(value);
 
   useEffect(() => {
     loadSettings();
@@ -284,12 +280,9 @@ export function SettingsView(): React.ReactElement {
             label-over-value pairs and single-column forms — so every field was a short string
             floating at the left edge of a very wide bordered box, which is what made Settings
             read as heavy while being mostly empty. `3xl` is wide enough for the two-column
-            grids inside Appearance and Tax and narrow enough that a value stays near its label. */}
+            grids inside Appearance and narrow enough that a value stays near its label. */}
         <div className="min-w-0 max-w-3xl">
           {visibleSection === "account" && <SettingsAccount appVersion={appVersion} />}
-          {visibleSection === "tax" && (
-            <SettingsTax settings={settings} updateSetting={updateSetting} />
-          )}
           {visibleSection === "notifications" && (
             <SettingsNotifications settings={settings} updateSetting={updateSetting} />
           )}
