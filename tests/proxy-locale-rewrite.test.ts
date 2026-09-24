@@ -38,11 +38,13 @@ describe("proxy locale rewrite", { timeout: 30_000 }, () => {
     vi.resetModules();
   });
 
-  it("rewrites the bare root to a locale segment and marks the rewrite", async () => {
-    const res = await run("/");
+  // `/` itself no longer comes this way: it redirects (proxy-root-redirect.test.ts). Every other
+  // clean path does, and `/privacy` needs no session, so it reaches the rewrite.
+  it("rewrites a clean path to a locale segment and marks the rewrite", async () => {
+    const res = await run("/privacy");
     const rewritten = res.headers.get("x-middleware-rewrite");
-    expect(rewritten, "the root must be rewritten, not redirected").toBeTruthy();
-    expect(new URL(rewritten as string).pathname).toMatch(/^\/(pt|en|es|it)$/);
+    expect(rewritten, "a clean path must be rewritten, not redirected").toBeTruthy();
+    expect(new URL(rewritten as string).pathname).toMatch(/^\/(pt|en|es|it)\/privacy$/);
 
     // Next encodes request headers set on a rewrite as `x-middleware-request-<name>`. Asserting
     // it here is what makes the pass-through test below meaningful: without the marker actually
