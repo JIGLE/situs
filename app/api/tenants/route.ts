@@ -15,22 +15,31 @@ import { sanitizeForDatabase, sanitizeEmail, sanitizeNumber } from "@/lib/utils/
 import { getPaginationFromRequest, createPaginatedResponse } from "@/lib/utils/pagination";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { getPrismaClient } from "@/lib/services/database/database";
+import {
+  blankToNull,
+  checkTaxId,
+  normalizeTaxId,
+  taxIdentityFields,
+} from "@/lib/schemas/tax-identity";
 import { z } from "zod";
 
 // Validation schemas
-const createTenantSchema = z.object({
-  name: z.string().min(1).max(200),
-  email: z.string().email(),
-  phone: z.string().max(20).optional().default(""),
-  propertyId: z.string().optional(),
-  rent: z.number().min(0).optional().default(0),
-  leaseStart: z.string().optional().default(""),
-  leaseEnd: z.string().optional().default(""),
-  // paymentStatus is derived from the RentPeriod ledger (lib/services/allocation/service.ts), so a
-  // new tenant takes the column default. Accepting it here let a tenant be created "paid" with no
-  // money behind it; the update route in ./[id] has always refused it for the same reason.
-  notes: z.string().max(1000).optional(),
-});
+const createTenantSchema = z
+  .object({
+    name: z.string().min(1).max(200),
+    email: z.string().email(),
+    phone: z.string().max(20).optional().default(""),
+    propertyId: z.string().optional(),
+    rent: z.number().min(0).optional().default(0),
+    leaseStart: z.string().optional().default(""),
+    leaseEnd: z.string().optional().default(""),
+    // paymentStatus is derived from the RentPeriod ledger (lib/services/allocation/service.ts), so a
+    // new tenant takes the column default. Accepting it here let a tenant be created "paid" with no
+    // money behind it; the update route in ./[id] has always refused it for the same reason.
+    notes: z.string().max(1000).optional(),
+    ...taxIdentityFields,
+  })
+  .superRefine((data, ctx) => checkTaxId(data, ctx));
 
 // GET /api/tenants - Get all tenants for the authenticated user (with pagination)
 async function handleGet(request: NextRequest): Promise<Response> {
@@ -88,10 +97,18 @@ async function handlePost(request: NextRequest): Promise<Response> {
     propertyId: raw.propertyId ? sanitizeForDatabase(raw.propertyId) : undefined,
     rent: sanitizeNumber(raw.rent, 0, 0),
     notes: raw.notes ? sanitizeForDatabase(raw.notes) : undefined,
+    taxId: raw.taxId ? sanitizeForDatabase(raw.taxId) : undefined,
+    idDocument: raw.idDocument ? sanitizeForDatabase(raw.idDocument) : undefined,
   };
 
   const validatedData = parseBody(sanitizedBody, createTenantSchema);
-  const tenant = await tenantService.create(scopeUserId, validatedData);
+  const taxCountry = validatedData.taxCountry ?? "PT";
+  const tenant = await tenantService.create(scopeUserId, {
+    ...validatedData,
+    taxCountry,
+    taxId: normalizeTaxId(validatedData.taxId, taxCountry),
+    idDocument: blankToNull(validatedData.idDocument),
+  });
   return createSuccessResponse(tenant, 201);
 }
 

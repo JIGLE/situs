@@ -47,6 +47,12 @@ const propertyFields = z.object({
   status: z.enum(["occupied", "vacant", "maintenance"]),
   description: z.string().max(500, "Description too long").optional(),
   image: z.string().url("Invalid image URL").optional(),
+
+  // Where Finanças places it: the matriz article, and the fração within it. Nullish, not just
+  // optional: the edit dialog loads a property as the API returns it, with null for an empty
+  // column, and an unknown key used to be stripped where a known one now has to validate.
+  cadasterReference: z.string().max(50, "Matriz article too long").nullish(),
+  fraction: z.string().max(20, "Fraction too long").nullish(),
 });
 
 export const propertySchema = propertyFields.extend({

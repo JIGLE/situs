@@ -40,6 +40,7 @@ model User {
   rentPeriods            RentPeriod[]
   paymentAllocations     PaymentAllocation[]
   leases                 Lease[]
+  leaseParties           LeaseParty[]
   owners                 Owner[]
   emailLogs              EmailLog[]
   documents              Document[]
@@ -222,6 +223,7 @@ model Property {
   distributionFrequency DistributionFrequency @default(MONTHLY)
   createdByOwnerId      String? // Owner who created this property (auto managing owner)
   cadasterReference     String? // Artigo matricial
+  fraction              String? // Fração autónoma, e.g. "A" or "1.º Esq."
   // Fiscal / rental regime
   rentalRegime          String                @default("standard") // "standard" | "acessivel" | "al" | "short_term"
 
@@ -260,6 +262,11 @@ model Tenant {
   paymentStatus PaymentStatus @default(pending)
   lastPayment   DateTime?
   notes         String?
+  // What an AT receipt names the tenant by: a NIF, or, with no Portuguese NIF, an identity
+  // document and the country that issued it. Both encrypted (PII_FIELDS).
+  taxId         String?
+  taxCountry    String?       @default("PT")
+  idDocument    String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
@@ -594,6 +601,11 @@ model Lease {
   renewalProposedRent Float?
   renewalStartDate    DateTime?
   renewalEndDate      DateTime?
+  // The number AT gave the contract when it was registered, which every receipt issued in
+  // Finanças names, and the version AT gives it after a change. Software cannot look either up:
+  // AT's webservice registers contracts but does not list them.
+  atContractNumber    String?
+  atContractVersion   Int?
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 
@@ -603,6 +615,7 @@ model Lease {
   tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   expenses    Expense[]
   rentPeriods RentPeriod[]
+  parties     LeaseParty[]
 
   @@index([userId])
   @@index([propertyId])
@@ -610,6 +623,40 @@ model Lease {
   @@index([status])
   @@index([userId, status])
   @@map("leases")
+}
+
+/// Someone on a lease besides its main tenant: a co-tenant, or a guarantor (fiador).
+///
+/// The main tenant stays `Lease.tenantId`, which the ledger, bank matching and receipts key on. A
+/// co-tenant still belongs on AT's receipt, which lists every tenant of the contract.
+///
+/// Written and read through `prisma.leaseParty` itself, never nested under a lease: the PII
+/// extension encrypts and decrypts only the queried model's own fields, so a nested create would
+/// store the NIF in clear and a nested include would return it still encrypted.
+model LeaseParty {
+  id         String         @id @default(cuid())
+  userId     String
+  leaseId    String
+  role       LeasePartyRole
+  name       String
+  // As on Tenant: a NIF, or an identity document and its country. Both encrypted (PII_FIELDS).
+  taxId      String?
+  taxCountry String         @default("PT")
+  idDocument String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lease Lease @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([leaseId])
+  @@map("lease_parties")
+}
+
+enum LeasePartyRole {
+  tenant
+  guarantor
 }
 
 model Document {

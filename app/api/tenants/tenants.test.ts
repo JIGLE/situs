@@ -309,3 +309,73 @@ describe("Tenants API - POST /api/tenants", () => {
     expect([200, 201]).toContain(response.status);
   });
 });
+
+// What an AT receipt names the tenant by. A Portuguese NIF is checked and stored as its nine
+// digits; another country's tax number is taken as it is.
+describe("Tenants API - POST /api/tenants: the NIF", () => {
+  const post = (body: Record<string, unknown>) =>
+    postTenants(
+      new NextRequest("http://localhost:3000/api/tenants", {
+        method: "POST",
+        headers: new Headers({ Authorization: "Bearer valid-token" }),
+        // A rent, as every POST here sends: this file's sanitizeNumber mock makes a missing one NaN.
+        body: JSON.stringify({ name: "Ana Costa", email: "ana@example.com", rent: 900, ...body }),
+      }),
+    );
+  const created = async () => {
+    const { tenantService } = await import("@/lib/services/database/tenant");
+    return vi.mocked(tenantService.create).mock.calls.at(-1)?.[1];
+  };
+
+  it("stores a Portuguese NIF as its nine digits, with Portugal as its country", async () => {
+    const response = await post({ taxId: "123 456 789" });
+
+    expect(response.status).toBe(201);
+    expect(await created()).toMatchObject({ taxId: "123456789", taxCountry: "PT" });
+  });
+
+  it("refuses a Portuguese NIF whose check digit is wrong", async () => {
+    const { tenantService } = await import("@/lib/services/database/tenant");
+    vi.mocked(tenantService.create).mockClear();
+
+    const response = await post({ taxId: "123456780" });
+
+    expect(response.status).toBe(400);
+    expect(tenantService.create).not.toHaveBeenCalled();
+  });
+
+  it("accepts a non-resident's NIF, which starts with 45", async () => {
+    const response = await post({ taxId: "450000001" });
+
+    expect(response.status).toBe(201);
+    expect(await created()).toMatchObject({ taxId: "450000001" });
+  });
+
+  it("takes another country's tax number as it is, with an identity document", async () => {
+    const response = await post({
+      taxId: "DE 123 456",
+      taxCountry: "DE",
+      idDocument: "C01X00T47",
+    });
+
+    expect(response.status).toBe(201);
+    expect(await created()).toMatchObject({
+      taxId: "DE 123 456",
+      taxCountry: "DE",
+      idDocument: "C01X00T47",
+    });
+  });
+
+  it("refuses a country that is not a two-letter code", async () => {
+    const response = await post({ taxId: "123456789", taxCountry: "Portugal" });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("does not check a NIF left blank", async () => {
+    const response = await post({ taxId: "" });
+
+    expect(response.status).toBe(201);
+    expect((await created())?.taxId).toBeUndefined();
+  });
+});

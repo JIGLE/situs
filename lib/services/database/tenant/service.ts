@@ -76,6 +76,9 @@ export const tenantService = {
         // (lib/services/allocation/service.ts), never the caller.
         lastPayment: data.lastPayment ? new Date(data.lastPayment) : null,
         notes: data.notes,
+        taxId: data.taxId ?? null,
+        taxCountry: data.taxCountry ?? "PT",
+        idDocument: data.idDocument ?? null,
       },
       include: { property: true },
     });
@@ -115,6 +118,10 @@ export const tenantService = {
         // lib/services/allocation/service.ts), never accepted here.
         lastPayment: data.lastPayment ? new Date(data.lastPayment) : undefined,
         notes: data.notes,
+        // Undefined leaves a field as it is; null, from a blank input, clears it.
+        taxId: data.taxId,
+        taxCountry: data.taxCountry,
+        idDocument: data.idDocument,
       },
       include: { property: true },
     });

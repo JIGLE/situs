@@ -239,3 +239,36 @@ describe("Properties API - POST /api/properties", () => {
     expect([200, 201, 400, 422]).toContain(response.status);
   });
 });
+
+// Where Finanças places the property: the matriz article, and the fração within it. The import
+// from a contract matches a property on both.
+describe("Properties API - POST /api/properties: the matriz article and fraction", () => {
+  it("passes both to the service", async () => {
+    const { propertyService } = await import("@/lib/services/database/property");
+    vi.mocked(propertyService.create).mockClear();
+
+    const response = await postProperties(
+      new NextRequest("http://localhost:3000/api/properties", {
+        method: "POST",
+        headers: new Headers({ Authorization: "Bearer valid-token" }),
+        body: JSON.stringify({
+          name: "Rua Augusta 12, 2.º Esq.",
+          address: "Rua Augusta 12, Lisboa",
+          type: "apartment",
+          bedrooms: 2,
+          bathrooms: 1,
+          rent: 950,
+          status: "occupied",
+          cadasterReference: "2321",
+          fraction: "C",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    expect(vi.mocked(propertyService.create).mock.calls[0][1]).toMatchObject({
+      cadasterReference: "2321",
+      fraction: "C",
+    });
+  });
+});

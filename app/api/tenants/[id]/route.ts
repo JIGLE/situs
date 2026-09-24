@@ -7,6 +7,8 @@ import {
 } from "@/lib/utils/error-handling";
 import { tenantService } from "@/lib/services/database/tenant";
 import { sanitizeForDatabase, sanitizeEmail, sanitizeNumber } from "@/lib/utils/sanitize";
+import { blankToNull, normalizeTaxId, taxIdentityFields } from "@/lib/schemas/tax-identity";
+import { validatePortugueseNIF } from "@/lib/utils/tax-id-validation";
 import { z } from "zod";
 
 // Validation schema for updates
@@ -22,6 +24,7 @@ const updateTenantSchema = z.object({
   // lib/services/allocation/service.ts) and is never accepted from a manual
   // edit; a value here would silently drift the next time an allocation runs.
   notes: z.string().max(1000).optional(),
+  ...taxIdentityFields,
 });
 
 // GET /api/tenants/[id] - Get a specific tenant
@@ -89,12 +92,28 @@ async function handlePut(
       propertyId: body.propertyId ? sanitizeForDatabase(body.propertyId) : undefined,
       rent: body.rent !== undefined ? sanitizeNumber(body.rent, 0, 0) : undefined,
       notes: body.notes ? sanitizeForDatabase(body.notes) : undefined,
+      // `sanitizeForDatabase` turns a missing value into "", which would clear the field; only a
+      // value the request sent is sanitized.
+      taxId: typeof body.taxId === "string" ? sanitizeForDatabase(body.taxId) : undefined,
+      idDocument:
+        typeof body.idDocument === "string" ? sanitizeForDatabase(body.idDocument) : undefined,
     };
 
     // Validate input
     const validatedData = updateTenantSchema.parse(sanitizedBody);
 
-    const tenant = await tenantService.update(userId, id, validatedData);
+    // A NIF is checked against its country, which an update that only changes the NIF leaves
+    // unsent: the tenant's stored country decides then.
+    const taxCountry = validatedData.taxCountry ?? existingTenant.taxCountry ?? "PT";
+    if (validatedData.taxId && taxCountry === "PT" && !validatePortugueseNIF(validatedData.taxId)) {
+      return createErrorResponse(new Error("Validation error: Invalid NIF"), 400, request);
+    }
+
+    const tenant = await tenantService.update(userId, id, {
+      ...validatedData,
+      taxId: normalizeTaxId(validatedData.taxId, taxCountry),
+      idDocument: blankToNull(validatedData.idDocument),
+    });
     return createSuccessResponse(tenant);
   } catch (error) {
     if (error instanceof z.ZodError) {

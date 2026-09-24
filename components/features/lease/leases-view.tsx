@@ -61,8 +61,10 @@ import { RelationshipBadge, daysUntil } from "@/components/shared/relationship-b
 import { Lease } from "@/lib/types";
 import { leaseSchema, type LeaseFormData } from "@/lib/schemas/lease.schema";
 import { useToast } from "@/lib/contexts/toast-context";
-import { useFormDialog } from "@/lib/hooks/use-form-dialog";
 import { wasReported } from "@/lib/utils/api-error";
+import { downloadContract, uploadContract } from "./lease-contract";
+import { MAX_CONTRACT_BYTES, MAX_CONTRACT_MB } from "@/lib/utils/contract-file";
+import { LeasePartiesEditor, leasePartiesInvalid } from "./lease-parties-editor";
 import { useMultiStepForm, StepConfig } from "@/lib/hooks/use-multi-step-form";
 import {
   MultiStepFormContainer,
@@ -81,7 +83,7 @@ import { withEntityDetail } from "@/lib/utils/entity-detail-url";
 export type LeasesViewProps = Record<string, never>;
 
 export function LeasesView(): React.ReactElement {
-  const { state, addLease, updateLease, deleteLease } = useApp();
+  const { state, addLease, updateLease, deleteLease, refreshData } = useApp();
   const { properties, tenants, leases, loading } = state;
   const { success, error } = useToast();
   const { formatCurrency, currencySymbol } = useCurrency();
@@ -130,6 +132,8 @@ export function LeasesView(): React.ReactElement {
     renewalNoticeDays: 60,
     status: "draft" as const,
     notes: "",
+    atContractNumber: "",
+    parties: [],
   };
 
   // Multi-step form configuration
@@ -144,7 +148,11 @@ export function LeasesView(): React.ReactElement {
       id: "tenant",
       title: t("step.tenantTitle"),
       description: t("step.tenantDescription"),
-      fields: ["tenantId"],
+      fields: ["tenantId", "parties"],
+      // Checked here, not only by the schema at the end, so "Continue" can say what is wrong in
+      // the user's language.
+      validate: (data) =>
+        leasePartiesInvalid(data.parties) ? { parties: t("parties.invalid") } : null,
     },
     {
       id: "terms",
@@ -156,7 +164,11 @@ export function LeasesView(): React.ReactElement {
       id: "notes",
       title: t("step.notesTitle"),
       description: t("step.notesDescription"),
-      fields: ["notes"],
+      fields: ["notes", "atContractNumber", "atContractVersion"],
+      validate: (data) =>
+        /^\d*$/.test(data.atContractNumber ?? "")
+          ? null
+          : { atContractNumber: t("atContract.invalid") },
     },
   ];
 
@@ -176,26 +188,25 @@ export function LeasesView(): React.ReactElement {
     schema: leaseSchema,
     initialData: initialFormData,
     onComplete: async (data) => {
-      // Convert file to buffer if present
-      let contractBuffer: Buffer | undefined;
-      if (contractFile) {
-        contractBuffer = Buffer.from(await contractFile.arrayBuffer());
-      }
+      const leaseData = { ...data, status: "active" as const };
 
-      const leaseData = {
-        ...data,
-        contractFile: contractBuffer,
-        contractFileName: contractFile?.name,
-        contractFileSize: contractFile?.size,
-        status: "active" as const,
-      };
-
+      let saved: Lease;
       if (editingLease) {
-        await updateLease(editingLease.id, leaseData);
+        saved = await updateLease(editingLease.id, leaseData);
         success(t("toast.updated"));
       } else {
-        await addLease(leaseData);
+        saved = await addLease(leaseData);
         success(t("toast.created"));
+      }
+
+      // The PDF goes to the contract's own route once the lease exists, as the file itself.
+      if (contractFile) {
+        try {
+          await uploadContract(saved.id, contractFile);
+          await refreshData();
+        } catch {
+          error(t("toast.contractUploadFailed"));
+        }
       }
 
       setWizardOpen(false);
@@ -206,40 +217,10 @@ export function LeasesView(): React.ReactElement {
     persistence: {
       key: "lease-wizard-draft",
       ttl: 24 * 60 * 60 * 1000, // 24 hours
+      // Co-tenants' and guarantors' NIFs and documents: encrypted on the server, so not left
+      // in clear in the browser.
+      omit: ["parties"],
     },
-  });
-
-  const dialog = useFormDialog<LeaseFormData, Lease>({
-    schema: leaseSchema,
-    initialData: initialFormData,
-    onSubmit: async (data, isEdit) => {
-      // This is kept for backward compatibility
-      let contractBuffer: Buffer | undefined;
-      if (contractFile) {
-        contractBuffer = Buffer.from(await contractFile.arrayBuffer());
-      }
-
-      const leaseData = {
-        ...data,
-        contractFile: contractBuffer,
-        contractFileName: contractFile?.name,
-        contractFileSize: contractFile?.size,
-        status: "active" as const,
-      };
-
-      if (isEdit && dialog.editingItem) {
-        await updateLease(dialog.editingItem.id, leaseData);
-        success(t("toast.updated"));
-      } else {
-        await addLease(leaseData);
-        success(t("toast.created"));
-      }
-      setContractFile(null);
-    },
-    onError: (errorMessage) => {
-      error(errorMessage);
-    },
-    validation: { validateOnChange: true, debounceValidation: 300 },
   });
 
   const getStatusBadge = (status: string) => {
@@ -260,9 +241,9 @@ export function LeasesView(): React.ReactElement {
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Validate file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        error(t("toast.fileTooLarge"));
+      // The contract route's limit, so the form refuses what the server would.
+      if (file.size > MAX_CONTRACT_BYTES) {
+        error(t("toast.fileTooLarge", { size: MAX_CONTRACT_MB }));
         return;
       }
       // Validate file type
@@ -286,6 +267,15 @@ export function LeasesView(): React.ReactElement {
       autoRenew: lease.autoRenew,
       renewalNoticeDays: lease.renewalNoticeDays,
       notes: lease.notes || "",
+      atContractNumber: lease.atContractNumber ?? "",
+      atContractVersion: lease.atContractVersion ?? null,
+      parties: (lease.parties ?? []).map((party) => ({
+        role: party.role,
+        name: party.name,
+        taxId: party.taxId ?? "",
+        taxCountry: party.taxCountry ?? "PT",
+        idDocument: party.idDocument ?? "",
+      })),
     });
     setContractFile(null);
     setWizardOpen(true);
@@ -408,19 +398,11 @@ export function LeasesView(): React.ReactElement {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, leases, loading]);
 
-  const handleDownloadContract = (lease: Lease) => {
-    if (lease.contractFile) {
-      // Convert Buffer to Uint8Array for Blob compatibility
-      const uint8Array = new Uint8Array(lease.contractFile);
-      const blob = new Blob([uint8Array], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = lease.contractFileName || `lease-${lease.id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+  const handleDownloadContract = async (lease: Lease) => {
+    try {
+      await downloadContract(lease);
+    } catch {
+      error(t("toast.contractDownloadFailed"));
     }
   };
 
@@ -837,6 +819,14 @@ export function LeasesView(): React.ReactElement {
                         <p className="text-sm text-destructive">{wizard.stepErrors.tenantId}</p>
                       )}
                     </div>
+
+                    <LeasePartiesEditor
+                      parties={wizard.formData.parties ?? []}
+                      onChange={(parties) => wizard.updateFormData({ parties })}
+                      // The step's own check says this in the user's language; the schema's
+                      // English, which the final submit would add, is never shown.
+                      error={wizard.stepErrors.parties ? t("parties.invalid") : undefined}
+                    />
                   </StepContent>
                 )}
 
@@ -948,6 +938,49 @@ export function LeasesView(): React.ReactElement {
                 {wizard.currentStep === 3 && (
                   <StepContent title={t("docsStepTitle")} description={t("docsStepDescription")}>
                     <div className="space-y-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="atContractNumber">{t("atContract.number")}</Label>
+                          <Input
+                            id="atContractNumber"
+                            inputMode="numeric"
+                            maxLength={20}
+                            value={wizard.formData.atContractNumber ?? ""}
+                            onChange={(e) =>
+                              wizard.updateFormData({ atContractNumber: e.target.value.trim() })
+                            }
+                            aria-invalid={!!wizard.stepErrors.atContractNumber}
+                            className={
+                              wizard.stepErrors.atContractNumber ? "border-destructive" : ""
+                            }
+                          />
+                          {wizard.stepErrors.atContractNumber && (
+                            <p className="text-sm text-destructive">{t("atContract.invalid")}</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="atContractVersion">{t("atContract.version")}</Label>
+                          <Input
+                            id="atContractVersion"
+                            type="number"
+                            min="1"
+                            max="999"
+                            value={wizard.formData.atContractVersion ?? ""}
+                            onChange={(e) => {
+                              const version = parseInt(e.target.value, 10);
+                              wizard.updateFormData({
+                                atContractVersion: Number.isNaN(version) ? null : version,
+                              });
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-[var(--color-muted-foreground)]">
+                        {t("atContract.hint")}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
                       <Label htmlFor="contractFile">{t("contractPdf")}</Label>
                       <div className="flex items-center gap-2">
                         <Input
@@ -971,7 +1004,7 @@ export function LeasesView(): React.ReactElement {
                         )}
                       </div>
                       <p className="text-xs text-[var(--color-muted-foreground)]">
-                        {t("maxFileSize")}
+                        {t("maxFileSize", { size: MAX_CONTRACT_MB })}
                       </p>
                     </div>
 
@@ -1073,7 +1106,7 @@ export function LeasesView(): React.ReactElement {
                 type={leases.length === 0 ? "leases" : "generic"}
                 title={leases.length === 0 ? undefined : t("noneFound")}
                 description={leases.length === 0 ? undefined : t("adjustFilters")}
-                onAction={leases.length === 0 ? dialog.openDialog : undefined}
+                onAction={leases.length === 0 ? () => setWizardOpen(true) : undefined}
                 actionLabel={leases.length === 0 ? t("addFirst") : undefined}
               />
             )
@@ -1282,7 +1315,7 @@ export function LeasesView(): React.ReactElement {
                       type={leases.length === 0 ? "leases" : "generic"}
                       title={leases.length === 0 ? undefined : t("noneFound")}
                       description={leases.length === 0 ? undefined : t("adjustFilters")}
-                      onAction={leases.length === 0 ? dialog.openDialog : undefined}
+                      onAction={leases.length === 0 ? () => setWizardOpen(true) : undefined}
                       actionLabel={leases.length === 0 ? t("addFirst") : undefined}
                     />
                   )}
@@ -1345,7 +1378,7 @@ export function LeasesView(): React.ReactElement {
                         <span>{t("dateTo")}</span>
                         <span>{new Date(lease.endDate).toLocaleDateString(locale)}</span>
                       </div>
-                      {lease.contractFile && (
+                      {lease.contractFileName && (
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-[var(--color-muted-foreground)]">
                             {t("field.contract")}

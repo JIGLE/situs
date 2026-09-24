@@ -693,10 +693,12 @@
       "created": "Lease created successfully",
       "updated": "Lease updated successfully",
       "deleted": "Lease deleted successfully",
-      "fileTooLarge": "File size must be less than 5MB",
+      "fileTooLarge": "File size must be less than {size} MB",
       "pdfOnly": "Only PDF files are allowed",
       "rentIncreased": "Rent increased by {pct}% for {count} lease(s).",
-      "rentIncreaseFailed": "Failed to apply rent increase. Please try again."
+      "rentIncreaseFailed": "Failed to apply rent increase. Please try again.",
+      "contractUploadFailed": "The lease was saved, but the contract could not be uploaded.",
+      "contractDownloadFailed": "The contract could not be downloaded."
     },
     "deleteDialog": {
       "title": "Delete Lease",
@@ -737,7 +739,7 @@
     "docsStepTitle": "Documents & Notes",
     "docsStepDescription": "Upload contract and add additional information",
     "contractPdf": "Lease Contract (PDF)",
-    "maxFileSize": "Maximum file size: 5MB. PDF format only.",
+    "maxFileSize": "Maximum file size: {size} MB. PDF format only.",
     "additionalNotes": "Additional Notes",
     "notesPlaceholder": "Add any special terms, conditions, or notes about this lease...",
     "filter": {
@@ -821,9 +823,29 @@
         "title": "Terminate lease",
         "description": "This lease will be marked as terminated. This action cannot be undone.",
         "confirmLabel": "Terminate"
-      }
+      },
+      "atContract": "AT contract",
+      "atContractVersion": "{number}, version {version}",
+      "notRecorded": "Not recorded"
     },
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "parties": {
+      "title": "Co-tenants and guarantors",
+      "description": "Everyone on the contract besides the main tenant. Receipts issued in Finanças list every tenant.",
+      "add": "Add a person",
+      "remove": "Remove",
+      "role": "Role",
+      "roleTenant": "Co-tenant",
+      "roleGuarantor": "Guarantor",
+      "name": "Full name",
+      "invalid": "Each person needs a name, and a valid NIF if one is given."
+    },
+    "atContract": {
+      "number": "AT contract number",
+      "version": "Contract version",
+      "hint": "From the Portal das Finanças or the registration proof. Every receipt issued in Finanças names it.",
+      "invalid": "Digits only."
+    }
   },
   "notifications": {
     "title": "Notifications",
@@ -951,7 +973,10 @@
       "bedrooms": "Bedrooms",
       "bathrooms": "Bathrooms",
       "monthlyRent": "Monthly Rent",
-      "propertyStatus": "Property Status"
+      "propertyStatus": "Property Status",
+      "cadasterReference": "Matriz article",
+      "fraction": "Fraction",
+      "cadasterHint": "As on the caderneta predial, e.g. 2321 and C."
     },
     "types": {
       "apartment": "Apartment",
@@ -1584,5 +1609,14 @@
       "contactTitle": "Contact",
       "contactBody": "Questions about these terms:"
     }
+  },
+  "taxIdentity": {
+    "title": "Tax identification",
+    "country": "Country",
+    "nif": "NIF",
+    "taxId": "Tax number",
+    "idDocument": "Identity document",
+    "idDocumentHint": "For someone without a Portuguese NIF: passport or ID card number.",
+    "invalidNif": "This NIF is not valid: its check digit does not match."
   }
 }

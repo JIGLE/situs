@@ -11,13 +11,17 @@ import { NextRequest } from "next/server";
  * and all.
  */
 
-const { prismaMock } = vi.hoisted(() => ({
-  prismaMock: {
+const { prismaMock } = vi.hoisted(() => {
+  const prismaMock = {
     lease: { update: vi.fn(), delete: vi.fn() },
     property: { findFirst: vi.fn() },
     tenant: { findFirst: vi.fn() },
-  },
-}));
+    leaseParty: { deleteMany: vi.fn(), createMany: vi.fn(), findMany: vi.fn() },
+    // The interactive transaction runs its callback against the same mock.
+    $transaction: vi.fn(async (run: (tx: unknown) => Promise<unknown>) => run(prismaMock)),
+  };
+  return { prismaMock };
+});
 
 vi.mock("@/lib/services/auth/auth-middleware", () => ({
   requireAuth: vi.fn(async () => ({ userId: "user-1" })),
@@ -46,6 +50,7 @@ describe("PUT /api/leases/[id]", () => {
     prismaMock.lease.update.mockImplementation(async ({ data }) => ({ id: "lease-1", ...data }));
     prismaMock.property.findFirst.mockResolvedValue({ id: "prop-1" });
     prismaMock.tenant.findFirst.mockResolvedValue({ id: "tenant-1" });
+    prismaMock.leaseParty.findMany.mockResolvedValue([]);
   });
 
   it("never moves the lease into another account", async () => {
@@ -100,12 +105,100 @@ describe("PUT /api/leases/[id]", () => {
     expect(prismaMock.lease.update).not.toHaveBeenCalled();
   });
 
-  it("still stores an uploaded contract", async () => {
-    // What the wizard sends: a Buffer, which JSON turns into `{ type: "Buffer", data: [...] }`.
-    await put({ contractFile: { type: "Buffer", data: [37, 80, 68, 70] } });
+  // The contract has its own route now, which checks it is a PDF and stores it encrypted. The
+  // wizard used to send it here inside the JSON, as `{ type: "Buffer", data: [...] }`.
+  it("does not take a contract from the JSON body", async () => {
+    await put({ monthlyRent: 800, contractFile: { type: "Buffer", data: [37, 80, 68, 70] } });
 
-    expect(Buffer.from(written().contractFile as Uint8Array).toString()).toBe("%PDF");
-    expect(written().contractFileSize).toBe(4);
-    expect(written().contractFileName).toMatch(/^lease-contract-\d+\.pdf$/);
+    expect(written()).toEqual({ monthlyRent: 800 });
+  });
+
+  it("stores AT's contract number and version", async () => {
+    await put({ atContractNumber: "20240012345", atContractVersion: 2 });
+
+    expect(written()).toEqual({ atContractNumber: "20240012345", atContractVersion: 2 });
+  });
+
+  it("clears the AT contract number with a blank input", async () => {
+    await put({ atContractNumber: "" });
+
+    expect(written()).toEqual({ atContractNumber: null });
+  });
+
+  it("refuses an AT contract number that is not digits", async () => {
+    const res = await put({ atContractNumber: "PT-2024" });
+
+    expect(res.status).toBe(400);
+    expect(prismaMock.lease.update).not.toHaveBeenCalled();
+  });
+
+  describe("co-tenants and guarantors", () => {
+    it("replaces them when sent, after the lease update proves the lease is the caller's", async () => {
+      await put({
+        parties: [
+          { role: "tenant", name: "Rui Costa", taxId: "123 456 789" },
+          { role: "guarantor", name: "Hans Weber", taxId: "DE 12345", taxCountry: "DE" },
+        ],
+      });
+
+      expect(prismaMock.leaseParty.deleteMany).toHaveBeenCalledWith({
+        where: { userId: "user-1", leaseId: "lease-1" },
+      });
+      expect(prismaMock.leaseParty.createMany).toHaveBeenCalledWith({
+        data: [
+          {
+            userId: "user-1",
+            leaseId: "lease-1",
+            role: "tenant",
+            name: "Rui Costa",
+            taxCountry: "PT",
+            taxId: "123456789",
+            idDocument: null,
+          },
+          {
+            userId: "user-1",
+            leaseId: "lease-1",
+            role: "guarantor",
+            name: "Hans Weber",
+            taxCountry: "DE",
+            taxId: "DE 12345",
+            idDocument: null,
+          },
+        ],
+      });
+      const [updateOrder] = prismaMock.lease.update.mock.invocationCallOrder;
+      const [deleteOrder] = prismaMock.leaseParty.deleteMany.mock.invocationCallOrder;
+      expect(updateOrder).toBeLessThan(deleteOrder);
+      // Through the transaction, so a lease never keeps half its parties.
+      expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
+    });
+
+    it("leaves them as they are when the request does not send them", async () => {
+      await put({ monthlyRent: 800 });
+
+      expect(prismaMock.leaseParty.deleteMany).not.toHaveBeenCalled();
+      expect(prismaMock.leaseParty.createMany).not.toHaveBeenCalled();
+    });
+
+    it("refuses a Portuguese NIF whose check digit is wrong, before writing anything", async () => {
+      const res = await put({
+        parties: [{ role: "tenant", name: "Rui Costa", taxId: "123456780" }],
+      });
+
+      expect(res.status).toBe(400);
+      expect(prismaMock.lease.update).not.toHaveBeenCalled();
+      expect(prismaMock.leaseParty.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it("answers with the parties as stored", async () => {
+      prismaMock.leaseParty.findMany.mockResolvedValue([
+        { id: "party-1", leaseId: "lease-1", role: "guarantor", name: "Hans Weber" },
+      ]);
+
+      const res = await put({ monthlyRent: 800 });
+      const body = await res.json();
+
+      expect(body.data.parties).toEqual([{ id: "party-1", role: "guarantor", name: "Hans Weber" }]);
+    });
   });
 });

@@ -693,10 +693,12 @@
       "created": "Contratto creato correttamente",
       "updated": "Contratto aggiornato correttamente",
       "deleted": "Contratto eliminato correttamente",
-      "fileTooLarge": "Il file deve pesare meno di 5 MB",
+      "fileTooLarge": "Il file deve pesare meno di {size} MB",
       "pdfOnly": "Sono ammessi solo file PDF",
       "rentIncreased": "Canone aumentato del {pct}% su {count} contratto/i.",
-      "rentIncreaseFailed": "Impossibile applicare l'aumento del canone. Riprova."
+      "rentIncreaseFailed": "Impossibile applicare l'aumento del canone. Riprova.",
+      "contractUploadFailed": "La locazione è stata salvata, ma non è stato possibile caricare il contratto.",
+      "contractDownloadFailed": "Non è stato possibile scaricare il contratto."
     },
     "deleteDialog": {
       "title": "Elimina contratto",
@@ -737,7 +739,7 @@
     "docsStepTitle": "Documenti e note",
     "docsStepDescription": "Carica il contratto e aggiungi informazioni",
     "contractPdf": "Contratto di locazione (PDF)",
-    "maxFileSize": "Dimensione massima: 5 MB. Solo formato PDF.",
+    "maxFileSize": "Dimensione massima: {size} MB. Solo formato PDF.",
     "additionalNotes": "Note aggiuntive",
     "notesPlaceholder": "Aggiungi condizioni particolari o note su questo contratto...",
     "filter": {
@@ -821,9 +823,29 @@
         "title": "Risolvi contratto",
         "description": "Questo contratto sarà contrassegnato come risolto. L'azione non può essere annullata.",
         "confirmLabel": "Risolvi"
-      }
+      },
+      "atContract": "Contratto presso l'AT",
+      "atContractVersion": "{number}, versione {version}",
+      "notRecorded": "Non registrato"
     },
-    "unknown": "Sconosciuto"
+    "unknown": "Sconosciuto",
+    "parties": {
+      "title": "Co-conduttori e garanti",
+      "description": "Tutte le persone del contratto oltre al conduttore principale. Le ricevute emesse presso le Finanças indicano tutti i conduttori.",
+      "add": "Aggiungi persona",
+      "remove": "Rimuovi",
+      "role": "Ruolo",
+      "roleTenant": "Co-conduttore",
+      "roleGuarantor": "Garante",
+      "name": "Nome completo",
+      "invalid": "Ogni persona deve avere un nome e, se indicato, un NIF valido."
+    },
+    "atContract": {
+      "number": "N. del contratto presso l'AT",
+      "version": "Versione del contratto",
+      "hint": "Si trova nel Portal das Finanças o nella ricevuta di registrazione. Ogni ricevuta emessa presso le Finanças lo indica.",
+      "invalid": "Solo cifre."
+    }
   },
   "notifications": {
     "title": "Notifiche",
@@ -951,7 +973,10 @@
       "bedrooms": "Camere da letto",
       "bathrooms": "Bagni",
       "monthlyRent": "Canone mensile",
-      "propertyStatus": "Stato immobile"
+      "propertyStatus": "Stato immobile",
+      "cadasterReference": "Articolo catastale",
+      "fraction": "Frazione",
+      "cadasterHint": "Come nella caderneta predial, per esempio 2321 e C."
     },
     "types": {
       "apartment": "Appartamento",
@@ -1584,5 +1609,14 @@
       "contactTitle": "Contatti",
       "contactBody": "Domande su questi termini:"
     }
+  },
+  "taxIdentity": {
+    "title": "Identificazione fiscale",
+    "country": "Paese",
+    "nif": "NIF",
+    "taxId": "Codice fiscale",
+    "idDocument": "Documento d'identità",
+    "idDocumentHint": "Per chi non ha un NIF portoghese: numero del passaporto o della carta d'identità.",
+    "invalidNif": "Questo NIF non è valido: la cifra di controllo non corrisponde."
   }
 }

@@ -358,6 +358,34 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                 )}
               </div>
 
+              {/* Where Finanças places it. Importing a lease from its contract matches the property
+                  on both. */}
+              <div className="space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cadasterReference">{t("fields.cadasterReference")}</Label>
+                    <Input
+                      id="cadasterReference"
+                      maxLength={50}
+                      value={dialog.formData.cadasterReference ?? ""}
+                      onChange={(e) => dialog.updateFormData({ cadasterReference: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="fraction">{t("fields.fraction")}</Label>
+                    <Input
+                      id="fraction"
+                      maxLength={20}
+                      value={dialog.formData.fraction ?? ""}
+                      onChange={(e) => dialog.updateFormData({ fraction: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-[var(--color-muted-foreground)]">
+                  {t("fields.cadasterHint")}
+                </p>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="rent">Monthly Rent ({currencySymbol})</Label>

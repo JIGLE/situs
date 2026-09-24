@@ -37,8 +37,9 @@ interface AppContextValue {
   deleteOwner: (id: string) => Promise<void>;
   addExpense: (data: Partial<Expense>) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
-  addLease: (data: Partial<Lease>) => Promise<void>;
-  updateLease: (id: string, data: Partial<Lease>) => Promise<void>;
+  /** The lease as saved: the wizard uploads the contract to its id afterwards. */
+  addLease: (data: Partial<Lease>) => Promise<Lease>;
+  updateLease: (id: string, data: Partial<Lease>) => Promise<Lease>;
   deleteLease: (id: string) => Promise<void>;
   refreshData: () => Promise<void>;
 }
@@ -99,8 +100,8 @@ export function AppProvider({ children }: { children: ReactNode }): React.ReactE
       deleteOwner: (id) => ownerActions.remove(id),
       addExpense: (d) => expenseActions.add(d) as unknown as Promise<void>,
       deleteExpense: (id) => expenseActions.remove(id),
-      addLease: (d) => leaseActions.add(d) as unknown as Promise<void>,
-      updateLease: (id, d) => leaseActions.update(id, d) as unknown as Promise<void>,
+      addLease: (d) => leaseActions.add(d),
+      updateLease: (id, d) => leaseActions.update(id, d),
       deleteLease: (id) => leaseActions.remove(id),
       refreshData,
     }),

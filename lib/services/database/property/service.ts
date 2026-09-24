@@ -78,6 +78,8 @@ export const propertyService = {
         status: data.status,
         description: data.description,
         image: data.image,
+        cadasterReference: data.cadasterReference,
+        fraction: data.fraction,
       },
     });
     try {
@@ -128,6 +130,8 @@ export const propertyService = {
         status: data.status,
         description: data.description,
         image: data.image,
+        cadasterReference: data.cadasterReference,
+        fraction: data.fraction,
       },
     });
     return {

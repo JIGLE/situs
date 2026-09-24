@@ -15,6 +15,7 @@ import { leaseSchema } from "@/lib/schemas/lease.schema";
 import { isMockMode } from "@/lib/config/data-mode";
 import { ZodError } from "zod";
 import { assertOwnsRelations } from "@/lib/services/database/assert-owned";
+import { partiesByLease, replaceLeaseParties } from "@/lib/services/database/lease-parties";
 
 const leaseInclude = {
   property: { select: { name: true, address: true } },
@@ -32,13 +33,21 @@ async function handleGet(request: NextRequest): Promise<Response> {
   const { scopeUserId } = authResult;
   const prisma = getPrismaClient();
 
+  // The contract's bytes are not here: the client omits them from every lease read, and
+  // /api/leases/[id]/contract serves them. This list used to carry every lease's whole PDF.
   const leases = await prisma.lease.findMany({
     where: { userId: scopeUserId },
     orderBy: { createdAt: "desc" },
     include: leaseInclude,
   });
+  const parties = await partiesByLease(
+    scopeUserId,
+    leases.map((lease) => lease.id),
+  );
 
-  return createSuccessResponse(leases);
+  return createSuccessResponse(
+    leases.map((lease) => ({ ...lease, parties: parties.get(lease.id) ?? [] })),
+  );
 }
 
 async function handlePost(request: NextRequest): Promise<Response> {
@@ -50,7 +59,7 @@ async function handlePost(request: NextRequest): Promise<Response> {
 
   try {
     const json = await request.json();
-    const body = leaseSchema.parse(json);
+    const { parties, ...body } = leaseSchema.parse(json);
 
     // Both ids come from the body. A lease is the record that binds a tenant to a property
     // and drives the rent ledger, so creating one against records the caller does not own
@@ -60,27 +69,21 @@ async function handlePost(request: NextRequest): Promise<Response> {
       tenantId: body.tenantId,
     });
 
-    let contractFile: Buffer | undefined;
-    let contractFileName: string | undefined;
-    let contractFileSize: number | undefined;
-
-    if (json.contractFile) {
-      contractFile = Buffer.from(json.contractFile, "base64");
-      contractFileSize = contractFile.length;
-      contractFileName = `lease-contract-${Date.now()}.pdf`;
-    }
-
-    const lease = await prisma.lease.create({
-      data: {
-        ...body,
-        userId: scopeUserId,
-        startDate: new Date(body.startDate),
-        endDate: new Date(body.endDate),
-        contractFile: contractFile ? Buffer.from(contractFile) : undefined,
-        contractFileName,
-        contractFileSize,
-      },
-      include: leaseInclude,
+    // The contract PDF is uploaded afterwards, to /api/leases/[id]/contract. It used to arrive
+    // here inside the JSON, as an array of numbers.
+    const lease = await prisma.$transaction(async (tx) => {
+      const created = await tx.lease.create({
+        data: {
+          ...body,
+          userId: scopeUserId,
+          startDate: new Date(body.startDate),
+          endDate: new Date(body.endDate),
+          atContractNumber: body.atContractNumber || null,
+        },
+        include: leaseInclude,
+      });
+      if (parties) await replaceLeaseParties(tx, scopeUserId, created.id, parties);
+      return created;
     });
 
     // Situs: seed the reference-month ledger for the new lease (idempotent,
@@ -92,7 +95,8 @@ async function handlePost(request: NextRequest): Promise<Response> {
       // Ledger generation must never block lease creation.
     }
 
-    return createSuccessResponse(lease, 201);
+    const saved = await partiesByLease(scopeUserId, [lease.id]);
+    return createSuccessResponse({ ...lease, parties: saved.get(lease.id) ?? [] }, 201);
   } catch (error) {
     if (error instanceof ZodError) {
       return createErrorResponse(

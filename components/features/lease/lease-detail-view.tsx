@@ -37,6 +37,7 @@ import { EntityLink } from "@/components/shared/entity-link";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
 import { csrfHeaders } from "@/lib/utils/api-client";
 import { wasReported } from "@/lib/utils/api-error";
+import { downloadContract } from "./lease-contract";
 
 interface LeaseDetailViewProps {
   leaseId: string;
@@ -327,7 +328,61 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
                 {t("noticeDays", { days: lease.renewalNoticeDays })}
               </p>
             </div>
+            <div>
+              <span className="text-[var(--color-muted-foreground)]">{t("atContract")}</span>
+              <p className="font-medium mt-1">
+                {!lease.atContractNumber
+                  ? t("notRecorded")
+                  : lease.atContractVersion
+                    ? t("atContractVersion", {
+                        number: lease.atContractNumber,
+                        version: lease.atContractVersion,
+                      })
+                    : lease.atContractNumber}
+              </p>
+            </div>
           </div>
+
+          {lease.parties && lease.parties.length > 0 && (
+            <div className="mt-6 pt-4 border-t border-[var(--color-border)]">
+              <span className="text-sm text-[var(--color-muted-foreground)]">
+                {tLease("parties.title")}
+              </span>
+              <ul className="mt-2 space-y-1 text-sm">
+                {lease.parties.map((party, index) => (
+                  <li key={party.id ?? index}>
+                    <span className="font-medium">{party.name}</span>
+                    <span className="text-[var(--color-muted-foreground)]">
+                      {" · "}
+                      {party.role === "guarantor"
+                        ? tLease("parties.roleGuarantor")
+                        : tLease("parties.roleTenant")}
+                      {party.taxId ? ` · ${party.taxId}` : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {lease.contractFileName && (
+            <div className="mt-6 pt-4 border-t border-[var(--color-border)]">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await downloadContract(lease);
+                  } catch {
+                    error(tLease("toast.contractDownloadFailed"));
+                  }
+                }}
+              >
+                <FileText className="h-4 w-4 mr-2" aria-hidden="true" />
+                {tLease("contractDownload")}
+              </Button>
+            </div>
+          )}
 
           {lease.notes && (
             <div className="mt-6 pt-4 border-t border-[var(--color-border)]">

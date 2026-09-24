@@ -33,7 +33,12 @@ Two concrete risks, both real today, neither urgent yet:
    copy, and every WAL checkpoint. It's the only BLOB field in the schema —
    `Document.storagePath`, which the receipt archive uses, already does this correctly,
    storing a filesystem path or URL instead of bytes. `Lease.contractFile` predates that
-   pattern and was never migrated to match it.
+   pattern and was never migrated to match it. What changed is who reads it: only
+   `/api/leases/[id]/contract` does, and it stores the file encrypted (`encryptFile`,
+   `lib/utils/pii-encryption.ts`). The app's Prisma client leaves the column out of every
+   other lease query (`omit` in `lib/services/database/database.ts`), so a tool that copies
+   rows through that client must select `contractFile` by name or it copies every lease
+   without its contract.
 2. **`lib/contexts/use-app-data.ts` loads seven full, unpaginated collections
    (`/api/properties`, `/api/buildings`, `/api/tenants`, `/api/receipts`,
    `/api/owners`, `/api/expenses`, `/api/leases`) in parallel on every app mount**,

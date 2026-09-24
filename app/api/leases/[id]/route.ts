@@ -8,6 +8,7 @@ import {
 } from "@/lib/utils/error-handling";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { assertOwnsRelations } from "@/lib/services/database/assert-owned";
+import { partiesByLease, replaceLeaseParties } from "@/lib/services/database/lease-parties";
 import { updateLeaseSchema } from "@/lib/schemas/lease.schema";
 
 const leaseInclude = {
@@ -37,7 +38,7 @@ async function handlePut(
   // The lease's own terms, and only those the request sent. The body used to be spread into the
   // update whole, so a request could write any column — `userId` included, which moved the lease
   // into another account — and the renewal screen's round trip sent relation objects back.
-  const body = parseBody(json, updateLeaseSchema);
+  const { parties, ...body } = parseBody(json, updateLeaseSchema);
 
   // The same check POST makes: a lease binds a tenant to a property and drives the rent ledger,
   // so re-pointing one at records the caller does not own writes into another landlord's books.
@@ -50,22 +51,24 @@ async function handlePut(
 
   if (body.startDate) updateData.startDate = new Date(body.startDate);
   if (body.endDate) updateData.endDate = new Date(body.endDate);
-
-  // Read off the raw body, as POST does: the upload is not one of the lease's terms.
-  if (json.contractFile) {
-    const contractBuffer = Buffer.from(json.contractFile, "base64");
-    updateData.contractFile = contractBuffer;
-    updateData.contractFileSize = contractBuffer.length;
-    updateData.contractFileName = `lease-contract-${Date.now()}.pdf`;
+  if (body.atContractNumber !== undefined) {
+    updateData.atContractNumber = body.atContractNumber || null;
   }
 
-  const lease = await prisma.lease.update({
-    where: { id, userId },
-    data: updateData,
-    include: leaseInclude,
+  // The contract PDF is replaced through /api/leases/[id]/contract, not here.
+  const lease = await prisma.$transaction(async (tx) => {
+    // First, so a lease the caller does not own fails before its parties are touched.
+    const updated = await tx.lease.update({
+      where: { id, userId },
+      data: updateData,
+      include: leaseInclude,
+    });
+    if (parties) await replaceLeaseParties(tx, userId, id, parties);
+    return updated;
   });
 
-  return createSuccessResponse(lease);
+  const saved = await partiesByLease(userId, [id]);
+  return createSuccessResponse({ ...lease, parties: saved.get(id) ?? [] });
 }
 
 async function handleDelete(
