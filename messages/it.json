@@ -873,6 +873,7 @@
     "renewalNoticeDays": "Giorni di preavviso rinnovo",
     "active": "Attivo",
     "expired": "Scaduto",
+    "expiring": "In scadenza",
     "terminated": "Risolto",
     "rendaAcessivel": "Programma Renda Acessível",
     "priorContractRent": "Canone contratto precedente",
@@ -893,6 +894,7 @@
     "addLease": "Aggiungi contratto",
     "searchPlaceholder": "Cerca contratti per inquilino o immobile...",
     "pending": "In attesa",
+    "draft": "Bozza",
     "emptyTitle": "Inizia dai contratti",
     "expiringSoon": "{count, plural, one {# contratto in scadenza entro 60 giorni} other {# contratti in scadenza entro 60 giorni}}",
     "step": {
@@ -1198,10 +1200,12 @@
     "overdue": "Scaduto",
     "all": "Tutti",
     "occupied": "Occupato",
+    "maintenance": "In manutenzione",
     "vacant": "Libero"
   },
   "properties": {
     "addNew": "Aggiungi nuovo immobile",
+    "statusOccupiedAddTenant": "Occupato — aggiungerò l'inquilino dopo",
     "editProperty": "Modifica immobile",
     "updateDetails": "Aggiorna i dettagli dell'immobile",
     "enterInfo": "Inserisci le informazioni sull'immobile",

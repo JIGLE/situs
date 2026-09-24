@@ -3,8 +3,13 @@
  * under moduleResolution: "bundler".
  *
  * next-auth v4 ships types for the root module but not for sub-paths like
- * next-auth/react and next-auth/next. framer-motion and next-intl have types but
- * the bundler resolution mode doesn't always pick them up from "exports".
+ * next-auth/react and next-auth/next. framer-motion has types but the bundler
+ * resolution mode doesn't always pick them up from "exports".
+ *
+ * next-intl is deliberately absent. Its stubs here typed every translator as
+ * `(key: string) => string`, so no key was ever checked; its own types resolve
+ * fine, and types/next-intl.d.ts types the keys against messages/en.json.
+ * tests/translation-keys.typecheck.ts fails the type-check if a stub comes back.
  */
 
 declare module "next-auth/react" {
@@ -116,71 +121,6 @@ declare module "framer-motion" {
   export function useAnimation(): unknown;
   export function useInView(ref: unknown, options?: Record<string, unknown>): boolean;
   export function useReducedMotion(): boolean | null;
-}
-
-declare module "next-intl" {
-  export function useTranslations(
-    namespace?: string,
-  ): (key: string, values?: Record<string, unknown>) => string;
-  export function useLocale(): string;
-  export function useMessages(): Record<string, unknown>;
-  export function useNow(): Date;
-  export function useTimeZone(): string;
-  export function hasLocale(locales: readonly string[], locale: string): boolean;
-  export function useFormatter(): {
-    number: (value: number, options?: Intl.NumberFormatOptions) => string;
-    dateTime: (value: Date | number, options?: Intl.DateTimeFormatOptions) => string;
-    relativeTime: (value: Date | number, now?: Date | number) => string;
-    list: (value: Iterable<string>, options?: Intl.ListFormatOptions) => string;
-  };
-  export function NextIntlClientProvider(props: {
-    children: React.ReactNode;
-    locale?: string;
-    messages?: Record<string, unknown>;
-    now?: Date;
-    timeZone?: string;
-  }): JSX.Element;
-}
-
-declare module "next-intl/server" {
-  export function getTranslations(
-    namespace?: string,
-  ): Promise<(key: string, values?: Record<string, unknown>) => string>;
-  export function getLocale(): Promise<string>;
-  export function getMessages(opts?: { locale?: string }): Promise<Record<string, unknown>>;
-  export function getNow(): Promise<Date>;
-  export function getTimeZone(): Promise<string>;
-  export function setRequestLocale(locale: string): void;
-  export function getRequestConfig(
-    callback: (params: {
-      requestLocale: Promise<string | undefined>;
-    }) => Promise<{ locale: string | undefined; messages: unknown }>,
-  ): unknown;
-  export function getFormatter(): Promise<{
-    number: (value: number, options?: Intl.NumberFormatOptions) => string;
-    dateTime: (value: Date | number, options?: Intl.DateTimeFormatOptions) => string;
-    relativeTime: (value: Date | number, now?: Date | number) => string;
-    list: (value: Iterable<string>, options?: Intl.ListFormatOptions) => string;
-  }>;
-}
-
-declare module "next-intl/navigation" {
-  export function createNavigation(config: {
-    locales: readonly string[];
-    defaultLocale?: string;
-    localePrefix?: string | { mode: string; prefixes?: Record<string, string> };
-  }): {
-    Link: React.ComponentType<Record<string, unknown>>;
-    redirect: (path: string, options?: Record<string, unknown>) => never;
-    usePathname: () => string;
-    useRouter: () => Record<string, unknown>;
-    getPathname: (options: Record<string, unknown>) => string;
-  };
-}
-
-declare module "next-intl/plugin" {
-  function createNextIntlPlugin(requestConfigPath?: string): (config: unknown) => unknown;
-  export default createNextIntlPlugin;
 }
 
 declare module "jspdf" {

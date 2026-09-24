@@ -257,7 +257,9 @@ Each of these passed type-check, lint and the mobile audit while the running app
 **A stored enum is not a label** — `capitalize` and `replace(/_/g, " ")` are not a translation.
 When two components render one enum, extract the map (`lib/utils/receipt-labels.ts`).
 **`i18n:check:strict` cannot see an unreachable key**: it compares the four catalogues with each
-other, never with what a component asks for. `tests/i18n-no-hardcoded-copy.test.tsx` asserts
+other, never with what a component asks for. The type-check does that: `types/next-intl.d.ts`
+types every key against `messages/en.json`, so a missing key is a compile error, and a key built
+from data needs a typed map rather than a cast. `tests/i18n-no-hardcoded-copy.test.tsx` asserts
 Portuguese because asserting English cannot catch hardcoded English.
 
 **A guard that is too narrow is worse than none**, because it reports clean. Prove a new guard by

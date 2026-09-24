@@ -17,8 +17,11 @@ import { getPrismaClient } from "@/lib/services/database/database";
 import { allowedEmails } from "@/lib/services/auth/registration";
 
 export interface SignInStatus {
-  /** Providers compiled in, and whether this instance has credentials for each. */
-  providers: { key: string; configured: boolean }[];
+  /**
+   * Providers compiled in, and whether this instance has credentials for each. Each key names its
+   * label, `admin.signIn.provider.<key>`.
+   */
+  providers: { key: "credentials" | "google"; configured: boolean }[];
   /**
    * Registration state, derived from the account count rather than from a setting.
    * `open_bootstrap` means no account exists yet, so the next sign-in claims the instance.

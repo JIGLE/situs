@@ -26,14 +26,14 @@ export type NotificationType =
  * place that can go stale when a value is added, instead of every reader re-deriving its own
  * label (or, worse, printing the raw snake_case value).
  */
-export const NOTIFICATION_TYPE_KEY: Record<NotificationType, string> = {
+export const NOTIFICATION_TYPE_KEY = {
   payment_due: "paymentDue",
   payment_overdue: "paymentOverdue",
   rent_receipt_due: "rentReceiptDue",
   lease_renewal_reminder: "leaseRenewalReminder",
   system: "system",
   other: "other",
-};
+} as const satisfies Record<NotificationType, string>;
 
 /** Icon shown next to a notification of this type in the bell and anywhere else it is listed. */
 export const NOTIFICATION_TYPE_ICON: Record<NotificationType, LucideIcon> = {

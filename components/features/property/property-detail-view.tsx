@@ -61,6 +61,8 @@ import { usePropertyActivity } from "@/lib/hooks/use-property-activity";
 import { AuditTrail } from "@/components/shared/audit-trail";
 import { PropertyFormDialog, type PropertyFormDialogRef } from "./property-form-dialog";
 import { PropertyYearStrip, type YearStripSelection } from "./property-year-strip";
+import { expenseCategoryKey } from "@/lib/utils/expense-labels";
+import { rentPeriodStatusKey } from "@/lib/utils/rent-period-labels";
 
 interface PropertyDetailViewProps {
   propertyId: string;
@@ -83,6 +85,10 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
   const tTenants = useTranslations("tenants");
   const tTypes = useTranslations("properties.types");
   const tPeriod = useTranslations("rentPeriodStatus");
+  const periodLabel = (status?: string | null) => {
+    const key = rentPeriodStatusKey(status);
+    return key ? tPeriod(key) : status || "—";
+  };
   const apiError = useApiError();
 
   /**
@@ -102,12 +108,10 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
 
   const expenseCategoryLabel = (raw?: string | null): string => {
     if (!raw) return tFin("expense");
-    const key = `categories.${raw.toLowerCase().replace(/\s+/g, "_")}`;
-    const label = tFin(key);
-    // On a miss next-intl renders the full key path, so detect that rather than testing for
-    // undefined. Normalisation resolves the seeded categories ("Repairs" -> repairs,
-    // "Mortgage Interest" -> mortgage_interest); this only catches genuinely unknown ones.
-    return label.endsWith(key) ? raw : label;
+    // Asked only for a category the catalogue has. This used to ask for any key and spot a miss
+    // by the key path next-intl renders for one, which also logged an error each time.
+    const key = expenseCategoryKey(raw);
+    return key ? tFin(`categories.${key}`) : raw;
   };
   // (no debug logs in production view)
 
@@ -738,7 +742,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                         Portuguese ledger. The seven `RentPeriod` states now come from
                         `rentPeriodStatus`. */}
                     <p className="mt-1 text-sm font-medium text-[var(--color-foreground)]">
-                      {selectedMonth.status ? tPeriod(selectedMonth.status) : "—"}
+                      {periodLabel(selectedMonth.status)}
                     </p>
                   </div>
                   <div className="panel p-3">

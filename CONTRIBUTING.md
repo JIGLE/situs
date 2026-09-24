@@ -133,7 +133,10 @@ three of them fails CI.
 1. Add the key to **all four** files simultaneously
 2. Use nested namespaces matching the component domain: `dashboard.portfolioOverview`, `forms.addTenant`
 3. Use named parameters for dynamic content: `"leaseExpiresSoon": "Lease expires in {days} days"`
-4. Run `npx tsc --noEmit` to verify all `useTranslations()` calls resolve
+4. Run `npm run type-check`. Every key is typed against `messages/en.json`
+   (`types/next-intl.d.ts`), so asking for a key or namespace that does not exist is a compile
+   error. A key built from data at runtime needs a typed map, as `lib/utils/receipt-labels.ts`
+   does, not a cast
 
 **Wiring in a component:**
 

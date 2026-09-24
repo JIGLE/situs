@@ -9,6 +9,17 @@ import { apiFetch } from "@/lib/utils/api-client";
 import { useCsrf } from "@/lib/contexts/csrf-context";
 import { Fact, Panel } from "./panel";
 
+/**
+ * The reasons the catalogue names. Any other — another HTTP status, a configuration error's own
+ * text — reads as `unknown`: building the key from the reason rendered the key path itself
+ * ("admin.bank.authError.http_500"), and the reason's text is not something to show a user.
+ */
+const AUTH_ERROR_KEYS = ["network_unreachable", "malformed_json", "http_401", "http_403"] as const;
+
+function authErrorKey(reason: string | null) {
+  return `authError.${AUTH_ERROR_KEYS.find((key) => key === reason) ?? "unknown"}` as const;
+}
+
 interface Diagnostics {
   key: string;
   displayName: string;
@@ -236,9 +247,7 @@ export function BankTestPanel({ className }: { className?: string }) {
                   ) : (
                     <span className="inline-flex items-center gap-1 text-[var(--semantic-danger-readable)]">
                       <X className="size-3.5" aria-hidden />
-                      {t(`authError.${primary.authError ?? "unknown"}`, {
-                        fallback: primary.authError ?? "",
-                      })}
+                      {t(authErrorKey(primary.authError))}
                     </span>
                   )
                 }

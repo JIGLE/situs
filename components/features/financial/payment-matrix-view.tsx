@@ -24,6 +24,14 @@ interface PaymentCell {
   receiptId?: string;
 }
 
+/** Each cell state's label under `paymentMatrix`. There is no `none` key, so `none` has its own. */
+const CELL_STATUS_KEY = {
+  paid: "paid",
+  pending: "pending",
+  overdue: "overdue",
+  none: "noPaymentDue",
+} as const satisfies Record<PaymentCell["status"], string>;
+
 export function PaymentMatrixView(): React.ReactElement {
   const { state } = useApp();
   const { tenants, receipts } = state;
@@ -51,7 +59,7 @@ export function PaymentMatrixView(): React.ReactElement {
     "oct",
     "nov",
     "dec",
-  ];
+  ] as const;
   const months = monthKeys.map((key) => tMonths(key));
 
   // Get unique years from receipts
@@ -338,7 +346,7 @@ export function PaymentMatrixView(): React.ReactElement {
                             title={
                               cell.date
                                 ? t("cellTooltip", {
-                                    status: t(cell.status),
+                                    status: t(CELL_STATUS_KEY[cell.status]),
                                     date: new Date(cell.date).toLocaleDateString(locale),
                                     amount: formatCurrency(cell.amount || 0),
                                   })

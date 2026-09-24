@@ -6,7 +6,12 @@ import { formatDateTime } from "@/lib/utils/format-date";
 import { useLocale, useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
-import type { StatusSeverity, SystemStatus } from "@/lib/services/admin/system-status";
+import type {
+  StatusCheck,
+  StatusCheckKind,
+  StatusSeverity,
+  SystemStatus,
+} from "@/lib/services/admin/system-status";
 
 /**
  * Operator view of what this instance is actually connected to.
@@ -74,6 +79,11 @@ export const SEVERITY_STYLE: Record<StatusSeverity, SeverityStyle> = {
 
 /** Order the summary reads in: what needs a human first, what is merely true last. */
 export const SUMMARY_ORDER: StatusSeverity[] = ["error", "warning", "simulated", "ok"];
+
+/** A check's label key under `admin`: its id up to the colon, so `tax:PT` reads `check.tax`. */
+export function checkLabelKey(id: StatusCheck["id"]) {
+  return `check.${id.split(":")[0] as StatusCheckKind}` as const;
+}
 
 export function SystemStatusView() {
   const t = useTranslations("admin");
@@ -191,7 +201,7 @@ export function SystemStatusView() {
                         <div className="min-w-0 flex-1 space-y-1">
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                             <h3 className="text-sm font-medium text-[var(--color-foreground)]">
-                              {t(`check.${check.id.split(":")[0]}`, {
+                              {t(checkLabelKey(check.id), {
                                 country: check.id.split(":")[1] ?? "",
                               })}
                             </h3>

@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { useMessages, useTranslations } from "next-intl";
 import { ZodError } from "zod";
+import type en from "@/messages/en.json";
 
 /**
  * Turn a failed request into a sentence the user's own language owns.
@@ -26,7 +27,9 @@ import { ZodError } from "zod";
  */
 
 /** Status → key under `errors.api`. Anything unlisted is a `generic`. */
-const STATUS_KEY: Record<number, string> = {
+const STATUS_KEY: Partial<
+  Record<number, "signedOut" | "planLimit" | "notAllowed" | "notFound" | "conflict" | "tooMany">
+> = {
   401: "signedOut",
   402: "planLimit",
   403: "notAllowed",
@@ -34,6 +37,20 @@ const STATUS_KEY: Record<number, string> = {
   409: "conflict",
   429: "tooMany",
 };
+
+type FormsCatalogue = (typeof en)["forms"];
+/** A field with its own label under `forms` (not a nested group such as a sub-form's keys). */
+type FormFieldKey = {
+  [K in keyof FormsCatalogue]: FormsCatalogue[K] extends string ? K : never;
+}[keyof FormsCatalogue];
+
+/** Whether the catalogue has a label for this field, checked against the live messages. */
+function isFormField(
+  forms: Record<string, unknown> | undefined,
+  field: string,
+): field is FormFieldKey {
+  return forms !== undefined && typeof forms[field] === "string";
+}
 
 type ApiErrorShape = Error & { status?: number; field?: string };
 
@@ -87,7 +104,7 @@ export function useApiError(): (err: unknown) => string {
           // A validation error naming a column this catalogue has never heard of must not take
           // the whole screen down on its way to explaining itself.
           const forms = messages?.forms as Record<string, unknown> | undefined;
-          if (forms && typeof forms[field] === "string") {
+          if (isFormField(forms, field)) {
             return t("invalidField", { field: tFields(field) });
           }
         }

@@ -8,17 +8,10 @@ import { ArrowRight, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/utils/api-client";
 import type { SystemStatus } from "@/lib/services/admin/system-status";
-import { SEVERITY_STYLE, SUMMARY_ORDER } from "../system-status-view";
+import { SEVERITY_STYLE, SUMMARY_ORDER, checkLabelKey } from "../system-status-view";
 import { BankTestPanel } from "./bank-test-panel";
 import { Fact, Panel } from "./panel";
-
-interface SignInStatus {
-  providers: { key: string; configured: boolean }[];
-  registration: "open_bootstrap" | "closed";
-  totalAccounts: number;
-  adminAccounts: number;
-  allowlist: string[];
-}
+import type { SignInStatus } from "@/lib/services/admin/sign-in-status";
 
 /**
  * The instance at a glance.
@@ -114,7 +107,7 @@ export function AdminControlCenter() {
                   <li key={check.id} className="flex items-center gap-2.5 px-4 py-2">
                     <Icon className={`size-3.5 shrink-0 ${style.accent}`} aria-hidden />
                     <span className="min-w-0 flex-1 truncate text-sm text-[var(--color-foreground)]">
-                      {t(`check.${check.id.split(":")[0]}`, {
+                      {t(checkLabelKey(check.id), {
                         country: check.id.split(":")[1] ?? "",
                       })}
                     </span>

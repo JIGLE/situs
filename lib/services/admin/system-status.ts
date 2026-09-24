@@ -48,8 +48,21 @@ import { authorityName, modeKind } from "@/lib/tax/connectors/presentation";
  */
 export type StatusSeverity = "ok" | "simulated" | "warning" | "error";
 
+/** What a check is about. Its label is `admin.check.<kind>` in the message catalogues. */
+export type StatusCheckKind =
+  | "schema"
+  | "database"
+  | "session_user"
+  | "pii"
+  | "email"
+  | "billing"
+  | "bank"
+  | "bank_provider"
+  | "tax";
+
 export interface StatusCheck {
-  id: string;
+  /** The kind; a per-country tax check is `tax:<country>`. */
+  id: StatusCheckKind | `tax:${string}`;
   /** Grouping for the UI: infrastructure the instance runs on vs outside connections. */
   group: "platform" | "integration";
   severity: StatusSeverity;

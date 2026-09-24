@@ -37,10 +37,15 @@ const COMING_SOON_LOCALES: { code: string; flag: string; label: string }[] = [
 
 // The countries Situs operates in. lib/design/country-themes.ts holds a theme per entry here;
 // adding a country means adding it to both.
-const COUNTRY_SWATCH: { code: CountryCode; hex: string }[] = [
+const COUNTRY_SWATCH = [
   { code: "PT", hex: "#006600" },
   { code: "ES", hex: "#aa151b" },
-];
+] as const satisfies readonly { code: CountryCode; hex: string }[];
+
+type SwatchCode = (typeof COUNTRY_SWATCH)[number]["code"];
+
+/** A country's name key under `landing.countries`. `toLowerCase()` is typed `string` in lib.d.ts. */
+const countryKey = (code: SwatchCode) => code.toLowerCase() as Lowercase<SwatchCode>;
 
 interface Props {
   locale: string;
@@ -237,7 +242,7 @@ export function LandingHeroSequence({ locale }: Props): React.ReactElement {
     if (!filterQuery) return true;
     return (
       code.toLowerCase().includes(filterQuery) ||
-      tCountries(code.toLowerCase()).toLowerCase().includes(filterQuery)
+      tCountries(countryKey(code)).toLowerCase().includes(filterQuery)
     );
   });
 
@@ -304,7 +309,7 @@ export function LandingHeroSequence({ locale }: Props): React.ReactElement {
                   <button
                     key={code}
                     type="button"
-                    title={tCountries(code.toLowerCase())}
+                    title={tCountries(countryKey(code))}
                     style={{ background: hex }}
                     onClick={() => selectCountry(code)}
                     className={cn(styles.countryChip, country === code && styles.countryChipActive)}
