@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
+import { createErrorResponse, parseBody, ValidationError } from "@/lib/utils/error-handling";
+import { updateUnitSchema } from "@/lib/schemas/unit.schema";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -60,8 +62,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const { userId } = authResult;
     const { id } = await params;
-    const body = await request.json();
-    const { number, floor, sizeSqM, bedrooms, bathrooms, status, notes } = body;
+    const data = parseBody(await request.json(), updateUnitSchema);
 
     const prisma = getPrismaClient();
 
@@ -79,18 +80,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Unit not found" }, { status: 404 });
     }
 
-    // Update unit
+    // Only what was sent. This used to set floor, size, bedrooms and bathrooms to null whenever
+    // they were left out, and stored a 0 in any of them as null too.
     const unit = await prisma.unit.update({
       where: { id },
-      data: {
-        number,
-        floor: floor ? parseInt(floor) : null,
-        sizeSqM: sizeSqM ? parseFloat(sizeSqM) : null,
-        bedrooms: bedrooms ? parseInt(bedrooms) : null,
-        bathrooms: bathrooms ? parseInt(bathrooms) : null,
-        status,
-        notes,
-      },
+      data,
       include: {
         property: {
           select: {
@@ -104,6 +98,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(unit);
   } catch (error: unknown) {
+    if (error instanceof ValidationError) return createErrorResponse(error, 400, request);
     console.error("Error updating unit:", error);
 
     if (error && typeof error === "object" && "code" in error && error.code === "P2002") {

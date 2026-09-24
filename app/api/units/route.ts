@@ -5,9 +5,11 @@ import { isMockMode } from "@/lib/config/data-mode";
 import {
   createErrorResponse,
   createSuccessResponse,
+  parseBody,
   withErrorHandler,
 } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
+import { createUnitSchema } from "@/lib/schemas/unit.schema";
 
 async function handleGet(request: NextRequest): Promise<Response> {
   const authResult = await requireAuth(request);
@@ -63,12 +65,8 @@ async function handlePost(request: NextRequest): Promise<Response> {
   if (authResult instanceof Response) return authResult;
 
   const { userId } = authResult;
-  const body = await request.json();
-  const { propertyId, number, floor, sizeSqM, bedrooms, bathrooms, status, notes } = body;
-
-  if (!propertyId || !number) {
-    return createErrorResponse(new Error("Property ID and unit number are required"), 400, request);
-  }
+  // Invalid input answers 400 (ValidationError) before anything is read or written.
+  const { propertyId, ...fields } = parseBody(await request.json(), createUnitSchema);
 
   const prisma = getPrismaClient();
 
@@ -86,16 +84,9 @@ async function handlePost(request: NextRequest): Promise<Response> {
 
   try {
     const unit = await prisma.unit.create({
-      data: {
-        propertyId,
-        number,
-        floor: floor ? parseInt(floor) : null,
-        sizeSqM: sizeSqM ? parseFloat(sizeSqM) : null,
-        bedrooms: bedrooms ? parseInt(bedrooms) : null,
-        bathrooms: bathrooms ? parseInt(bathrooms) : null,
-        status: status || "vacant",
-        notes,
-      },
+      // Taken as validated: `floor ? parseInt(floor) : null` stored a ground floor (0) and a
+      // T0's zero bedrooms as empty. A unit sent without a status takes the column default.
+      data: { propertyId, ...fields },
       include: {
         property: {
           select: {
