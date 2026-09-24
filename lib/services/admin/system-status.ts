@@ -30,7 +30,6 @@
 
 import { getPrismaClient } from "@/lib/services/database/database";
 import { checkSchemaDrift } from "./schema-drift";
-import { registeredCountries, getTaxConnector } from "@/lib/tax/connectors/registry";
 import {
   configuredProviders,
   getBankProvider,
@@ -162,7 +161,7 @@ function encryptionCheck(): StatusCheck {
   };
 }
 
-/** One row per country that has a connector, whether or not this user has configured it. */
+/** The Portuguese connector, whether or not this user has configured it yet. */
 async function taxChecks(userId: string): Promise<StatusCheck[]> {
   let rows: { country: string; mode: string; status: string; lastSubmissionAt: Date | null }[] = [];
   try {
@@ -183,28 +182,29 @@ async function taxChecks(userId: string): Promise<StatusCheck[]> {
     ];
   }
 
-  return registeredCountries().map((country) => {
-    const authority = authorityName(country);
-    const row = rows.find((r) => r.country.toUpperCase() === country);
-    const files = getTaxConnector(country)?.country === country;
+  const country = "PT";
+  const authority = authorityName(country);
+  const row = rows.find((r) => r.country.toUpperCase() === country);
 
-    if (!row) {
-      return {
+  if (!row) {
+    return [
+      {
         id: `tax:${country}`,
         group: "integration",
         severity: "simulated",
         state: "not_created",
         detail: `${authority}. No connector record yet — one is created on first use.`,
-        remedy: files ? undefined : "No connector is registered for this country.",
-      };
-    }
+      },
+    ];
+  }
 
-    // An unsupported mode is an ERROR, not a note: the connector refuses every call and logs,
-    // so the symptom is silence. Without this the operator has no way to learn why nothing
-    // submits. Derived from the guard's own SIMULATED_MODES via modeKind().
-    const unsupported = modeKind(row.mode) === "unsupported";
+  // An unsupported mode is an ERROR, not a note: the connector refuses every call and logs,
+  // so the symptom is silence. Without this the operator has no way to learn why nothing
+  // submits. Derived from the guard's own SIMULATED_MODES via modeKind().
+  const unsupported = modeKind(row.mode) === "unsupported";
 
-    return {
+  return [
+    {
       id: `tax:${country}`,
       group: "integration",
       severity: unsupported ? "error" : "simulated",
@@ -218,8 +218,8 @@ async function taxChecks(userId: string): Promise<StatusCheck[]> {
       remedy: unsupported
         ? 'Set the connector mode back to "sandbox" or "review". No live endpoint exists yet.'
         : undefined,
-    };
-  });
+    },
+  ];
 }
 
 async function bankCheck(userId: string): Promise<StatusCheck> {

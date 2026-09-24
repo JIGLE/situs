@@ -87,12 +87,12 @@ describe("nothing simulated is ever reported as ok", () => {
     expect(pt.remedy).toMatch(/sandbox|review/i);
   });
 
-  it("reports a country with no connector row without inventing a status", async () => {
+  it("reports a connector with no row yet without inventing a status", async () => {
     const { checks } = await getSystemStatus("user-1");
 
-    // ES has a registered connector but no record for this user yet.
-    expect(find(checks, "tax:ES")!.severity).toBe("simulated");
-    expect(find(checks, "tax:ES")!.state).toBe("not_created");
+    // No record for this user yet: one is created on first use.
+    expect(find(checks, "tax:PT")!.severity).toBe("simulated");
+    expect(find(checks, "tax:PT")!.state).toBe("not_created");
   });
 });
 

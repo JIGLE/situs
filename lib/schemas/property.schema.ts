@@ -13,7 +13,10 @@ import { z } from "zod";
 
 /**
  * The property's fields with no defaults, so a partial update never fills one in: an edit that
- * leaves `country` out must keep it, not reset it to PT. That is the trap #393 fixed for leases.
+ * leaves `addressVerified` out must keep it, not reset it to false. That is the trap #393 fixed
+ * for leases.
+ *
+ * There is no `country`: every property is in Portugal, and the column's default says so.
  */
 const propertyFields = z.object({
   name: z.string().min(1, "Property name is required").max(100, "Name too long"),
@@ -26,9 +29,8 @@ const propertyFields = z.object({
   // empty alternative admits the empty string. `.optional()` alone admits only a missing value.
   zipCode: z
     .string()
-    .regex(/^(?:[0-9]{4}-[0-9]{3}|[0-9]{5}|)$/, "Invalid postal code format")
+    .regex(/^(?:[0-9]{4}-[0-9]{3}|)$/, "Invalid postal code format")
     .optional(),
-  country: z.enum(["PT", "ES"]),
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
   addressVerified: z.boolean(),
@@ -48,7 +50,6 @@ const propertyFields = z.object({
 });
 
 export const propertySchema = propertyFields.extend({
-  country: propertyFields.shape.country.default("PT"),
   addressVerified: propertyFields.shape.addressVerified.default(false),
 });
 

@@ -11,16 +11,7 @@ import {
 
 describe("isValidState", () => {
   it("accepts every known lifecycle state", () => {
-    for (const s of [
-      "draft",
-      "review",
-      "emitted",
-      "submitted",
-      "accepted",
-      "rejected",
-      "exported",
-      "voided",
-    ]) {
+    for (const s of ["draft", "review", "emitted", "submitted", "accepted", "rejected", "voided"]) {
       expect(isValidState(s)).toBe(true);
     }
   });
@@ -46,9 +37,8 @@ describe("canTransition — the documented state machine", () => {
     expect(canTransition("review", "voided")).toBe(true);
   });
 
-  it("emitted can move to submitted (PT), exported (ES), or voided", () => {
+  it("emitted can move to submitted or voided", () => {
     expect(canTransition("emitted", "submitted")).toBe(true);
-    expect(canTransition("emitted", "exported")).toBe(true);
     expect(canTransition("emitted", "voided")).toBe(true);
     expect(canTransition("emitted", "accepted")).toBe(false);
   });
@@ -64,11 +54,6 @@ describe("canTransition — the documented state machine", () => {
     expect(canTransition("rejected", "review")).toBe(true);
     expect(canTransition("rejected", "emitted")).toBe(false);
     expect(canTransition("rejected", "voided")).toBe(false);
-  });
-
-  it("exported can only be voided", () => {
-    expect(canTransition("exported", "voided")).toBe(true);
-    expect(canTransition("exported", "emitted")).toBe(false);
   });
 
   it("accepted and voided are terminal — no outbound transitions", () => {

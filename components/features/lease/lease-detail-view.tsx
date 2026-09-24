@@ -32,7 +32,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useApp } from "@/lib/contexts/app-context";
 import { useToast } from "@/lib/contexts/toast-context";
-import { taxRegimeKey } from "@/lib/utils/lease-labels";
 import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { EntityLink } from "@/components/shared/entity-link";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
@@ -98,7 +97,6 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
   const daysUntilExpiry = Math.ceil(
     (new Date(lease.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
   );
-  const regimeKey = taxRegimeKey(lease.taxRegime);
   const totalPaid = relatedReceipts
     .filter((r) => r.status === "paid")
     .reduce((sum, r) => sum + r.amount, 0);
@@ -319,17 +317,6 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
               </span>
               <p className="text-lg font-semibold mt-1">{lease.endDate}</p>
             </div>
-            {lease.taxRegime && (
-              <div>
-                <span className="text-[var(--color-muted-foreground)]">
-                  {tLease("field.taxRegime")}
-                </span>
-                <p className="font-medium mt-1">
-                  {/* A value no current regime matches is shown as stored, not hidden. */}
-                  {regimeKey ? tLease(regimeKey) : lease.taxRegime}
-                </p>
-              </div>
-            )}
             <div>
               <span className="text-[var(--color-muted-foreground)]">{t("autoRenewBadge")}</span>
               <p className="font-medium mt-1">{lease.autoRenew ? t("yes") : t("no")}</p>

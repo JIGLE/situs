@@ -155,5 +155,4 @@ export const PII_FIELDS: Record<string, string[]> = {
   Owner: ["taxIdentificationNumber", "phone"],
   Tenant: ["phone"],
   RentReceipt: ["landlordNif", "tenantNif"],
-  NRUARegistration: ["landlordNif", "tenantNif"],
 };

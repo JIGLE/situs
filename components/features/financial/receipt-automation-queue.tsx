@@ -36,7 +36,6 @@ const LIFECYCLE_STYLES: Record<string, string> = {
   submitted: "bg-[var(--semantic-info-soft)] text-[var(--semantic-info-readable)]",
   accepted: "bg-[var(--semantic-success-soft)] text-[var(--semantic-success-readable)]",
   emitted: "bg-[var(--semantic-success-soft)] text-[var(--semantic-success-readable)]",
-  exported: "bg-[var(--semantic-success-soft)] text-[var(--semantic-success-readable)]",
   voided: "text-[var(--color-muted-foreground)] line-through",
 };
 

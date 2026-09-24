@@ -16,7 +16,7 @@ import { logAudit } from "@/lib/services/audit-log";
 import { reverseAllocationsForReceipt } from "@/lib/services/allocation/service";
 import { pdfGenerator } from "@/lib/services/pdf-generator";
 import { documentService } from "@/lib/services/document-service";
-import { filesRentReceipts, getTaxConnector, resolveCountry } from "@/lib/tax/connectors/registry";
+import { ptAtConnector } from "@/lib/tax/connectors/pt-at";
 import { evaluateTransition, type ReceiptLifecycleState } from "./lifecycle";
 
 const ARCHIVE_MARKER_PREFIX = "situs-receipt-archive:";
@@ -126,16 +126,8 @@ export async function transitionReceipt(
   opts: TransitionOptions = {},
 ): Promise<TransitionOutcome> {
   const prisma = getPrismaClient();
-  // The property comes along because the country decides which tax authority (if any) this
-  // receipt is filed with. Previously this service imported the Portuguese connector by name,
-  // which meant the receipt domain knew about the Autoridade Tributária.
-  const receipt = await prisma.receipt.findFirst({
-    where: { id: receiptId, userId },
-    include: { property: { select: { country: true } } },
-  });
+  const receipt = await prisma.receipt.findFirst({ where: { id: receiptId, userId } });
   if (!receipt) throw new Error("Receipt not found");
-
-  const country = resolveCountry(receipt.property?.country);
 
   const from = receipt.lifecycle;
   const evaluation = evaluateTransition(from, to);
@@ -144,23 +136,6 @@ export async function transitionReceipt(
   let connectorResult: TransitionOutcome["connector"];
 
   if (to === "submitted" || to === "accepted") {
-    // Only countries that file rent receipts belong on this path. Spain files an NRUA lease
-    // registration — a different object, with a different authority, on a different schedule —
-    // so pushing an ES receipt through here would invoke the wrong country's filing. The
-    // lifecycle table allows emitted → submitted for any receipt, so this gate is the only
-    // thing that stops it.
-    if (!filesRentReceipts(country)) {
-      throw new Error(
-        `Receipts for ${country} properties are not filed as rent receipts. ` +
-          `Spain files an NRUA lease registration instead — use the NRUA flow on the lease.`,
-      );
-    }
-
-    const connector = getTaxConnector(country);
-    if (!connector) {
-      throw new Error(`No tax connector is registered for ${country}`);
-    }
-
     const filing = await prisma.rentReceipt.findFirst({
       where: { receiptId: receipt.id, userId },
     });
@@ -169,12 +144,12 @@ export async function transitionReceipt(
       if (!filing) {
         throw new Error("Link a PT rent receipt (Modelo 44) to this receipt before submitting");
       }
-      const result = await connector.submit(filing.id);
+      const result = await ptAtConnector.submit(filing.id);
       if (result.status === "error") throw new Error(result.responseBody ?? "AT submission failed");
       connectorResult = result;
     } else {
       if (!filing) throw new Error("No linked rent receipt to poll");
-      const result = await connector.poll(filing.id);
+      const result = await ptAtConnector.poll(filing.id);
       if (result.status === "error") throw new Error(result.responseBody ?? "AT poll failed");
       connectorResult = result;
     }

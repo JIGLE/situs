@@ -95,9 +95,7 @@ export function PortfolioTree({
     const countries = new Map<string, Map<string, ClusterNode>>();
     for (const property of properties) {
       const building = property.buildingId ? buildingsById.get(property.buildingId) : undefined;
-      const code = (property.propertyCountry || property.country || building?.country || "PT")
-        .toUpperCase()
-        .slice(0, 2);
+      const code = (property.country || building?.country || "PT").toUpperCase().slice(0, 2);
       const clusterKey = building ? `b:${building.id}` : `c:${property.city || "—"}`;
       const clusterLabel = building?.name || property.city || t("unclustered");
 

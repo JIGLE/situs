@@ -29,41 +29,12 @@ test.describe("Compliance: Rent Receipts (PT)", () => {
   });
 });
 
-// ─── NRUA Registration (Spain) ───────────────────────────────────────────────
-
-test.describe("Compliance: NRUA Registration (ES)", () => {
-  test("GET /api/compliance/nrua requires authentication", async ({ request }) => {
-    const response = await request.get("/api/compliance/nrua");
-    expect([401, 403, 302].includes(response.status())).toBeTruthy();
-  });
-
-  test("POST /api/compliance/nrua requires authentication", async ({ request }) => {
-    const response = await request.post("/api/compliance/nrua", {
-      data: {
-        leaseId: "lease_123",
-        landlordNif: "12345678Z",
-        tenantNif: "X1234567L",
-        cadasterReference: "1234567AB1234A0001JJ",
-        municipalityCode: "28079",
-        contractType: "primary_residence",
-      },
-    });
-    expect([401, 403, 302].includes(response.status())).toBeTruthy();
-  });
-
-  test("GET /api/compliance/nrua endpoint exists (not 404)", async ({ request }) => {
-    const response = await request.get("/api/compliance/nrua");
-    expect(response.status()).not.toBe(404);
-  });
-});
-
 // ─── Lease Template Generation ────────────────────────────────────────────────
 
 test.describe("Compliance: Lease Template Generation", () => {
   test("POST /api/leases/generate-template requires authentication", async ({ request }) => {
     const response = await request.post("/api/leases/generate-template", {
       data: {
-        country: "PT",
         landlordName: "João Silva",
         landlordNif: "123456789",
         landlordAddress: "Rua A, Lisboa",

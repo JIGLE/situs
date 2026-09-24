@@ -1,8 +1,5 @@
 "use client";
 
-/** Currency codes supported by the application (mirrors the Prisma Currency enum). */
-export type Currency = "EUR" | "DKK" | "USD" | "GBP";
-
 export interface User {
   id: string;
   name?: string;
@@ -52,7 +49,6 @@ export interface Property {
   image?: string;
   // Fiscal / rental regime (Wave 2.2)
   rentalRegime?: string; // "standard" | "acessivel" | "al" | "short_term"
-  propertyCountry?: string; // ISO country code (defaults to "PT")
   createdAt: string;
   updatedAt: string;
 }
@@ -140,11 +136,9 @@ export interface Lease {
   endDate: string;
   monthlyRent: number;
   deposit: number;
-  currency?: string;
   contractFile?: Buffer;
   contractFileName?: string;
   contractFileSize?: number;
-  taxRegime?: string | null;
   status: "active" | "expiring" | "expired" | "terminated" | "pending" | "draft";
   autoRenew: boolean;
   renewalNoticeDays: number;

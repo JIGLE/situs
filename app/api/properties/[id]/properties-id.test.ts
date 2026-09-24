@@ -324,7 +324,6 @@ describe("Properties API - PUT saves every field the edit form sends", () => {
       streetAddress: "Rua Augusta 1",
       city: "Lisboa",
       zipCode: "1100-048",
-      country: "ES",
       latitude: 38.71,
       longitude: -9.14,
       addressVerified: true,
@@ -364,5 +363,11 @@ describe("Properties API - PUT saves every field the edit form sends", () => {
     const data = await savedData();
     expect(data).not.toHaveProperty("country");
     expect(data).not.toHaveProperty("addressVerified");
+  });
+
+  it("ignores a country sent anyway: every property is in Portugal", async () => {
+    await put({ name: "Renamed", country: "ES" });
+
+    expect(await savedData()).not.toHaveProperty("country");
   });
 });

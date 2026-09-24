@@ -3,7 +3,7 @@
 ## Project
 
 Situs — **Situs // Sovereign Capital System** — is self-hosted property management for landlords
-and property managers in **Portugal and Spain**. The product is one loop: bank movement → match →
+and property managers in **Portugal**. The product is one loop: bank movement → match →
 allocate → receipt → tax filing → audit trail. Around it sit the records the loop runs on
 (properties, units, buildings, owners, tenants, leases, expenses) and the compliance substrate (PII
 encryption, GDPR export and retention, the Article 30 record, the legal pages). Stripe serves the
@@ -63,8 +63,8 @@ lib/
       providers/        # PSD2 provider contract + registry + Enable Banking adapter + test fake
     receipts/           # Receipt document-lifecycle state machine + orchestration
     tax/                # Tax connector find-or-create + submission-log service
-  tax/connectors/       # Per-country TaxConnector implementations (pt-at.ts, es-nrua.ts)
-  design/country-themes.ts  # PT/ES/EU theme table
+  tax/connectors/       # The Portuguese TaxConnector (pt-at.ts) and its mode guard
+  design/country-themes.ts  # PT/EU theme table
 prisma/schema.prisma    # Database schema — source of truth
 messages/               # en.json, pt.json, es.json, it.json
 tests/                  # Cross-cutting contract tests; unit tests sit next to their source
@@ -83,7 +83,7 @@ e2e/                    # Playwright E2E tests
   components and never live in AppState.
 - **API routes**: one folder per domain under `app/api/`. Validate with Zod, check the NextAuth
   session before touching the database.
-- **Compliance**: PT `/api/compliance/rent-receipts`, ES `/api/compliance/nrua`. Tax logic lives in
+- **Compliance**: `/api/compliance/rent-receipts`, Portugal's rent receipts. Tax logic lives in
   `lib/tax/` and `lib/services/tax/connector-service.ts`.
 - **PII encryption**: AES-256-GCM via `lib/utils/pii-encryption.ts`, keyed off
   `PII_ENCRYPTION_KEY`. `PII_FIELDS` lists the fields the Prisma extension (applied in
@@ -117,9 +117,9 @@ e2e/                    # Playwright E2E tests
   for a real bank and `manual`/`csv` otherwise — never offer a sync to the latter.
 - **Receipt lifecycle**: `Receipt.status` is the money state (paid|pending); `Receipt.lifecycle` is
   the document state machine (`lib/services/receipts/lifecycle.ts`, pure): draft → review →
-  emitted, then PT emitted → submitted → accepted/rejected (rejected → review) and ES emitted →
-  exported. Voiding is allowed from draft, review, emitted and exported only. Reaching
-  emitted/accepted archives a PDF `Document`; voiding soft-reverses live `PaymentAllocation` rows.
+  emitted → submitted → accepted/rejected (rejected → review). Voiding is allowed from draft,
+  review and emitted only. Reaching emitted/accepted archives a PDF `Document`; voiding
+  soft-reverses live `PaymentAllocation` rows.
 - **Receipt archive**, the one surviving use of `Document`: the archive's `description` carries
   `situs-receipt-archive:<receiptId>` — a convention, not a foreign key, and the only link between
   a receipt and the proof of its filing. Resolve it through `findExistingArchive`
@@ -127,7 +127,7 @@ e2e/                    # Playwright E2E tests
   `GET /api/receipts/[id]/archive` exposes it; the Receipts dropdown serves that PDF before the
   client-side jsPDF copy.
 - **Tax connectors**: one `TaxAuthorityConnector` row per `[userId, connectorKey]`; `mode` is
-  sandbox, review or live. No live AT/AEAT integration exists, and `lib/tax/connectors/mode-guard.ts`
+  sandbox, review or live. No live AT integration exists, and `lib/tax/connectors/mode-guard.ts`
   makes `live` fail closed, so going live is a code change, not a row edit. Every call appends an
   immutable `TaxSubmissionLog` row (`GET /api/tax/connectors`, Finance › Tax Summary).
 - **Alert generation**: `lib/services/notifications/notification-automation.ts` reads the rent

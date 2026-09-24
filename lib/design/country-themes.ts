@@ -171,18 +171,6 @@ export const COUNTRY_THEMES: Record<string, CountryTheme> = {
     normal: makeTheme("#221D16", "#F6F0E4", "#F1E8D8", "#DDD3C3", "#006600", "#756E63"),
     dark: makeTheme("#EEF7F0", "#0B110D", "#121B15", "#263428", "#FFFF00", "#A5B8A9"),
   },
-  ES: {
-    name: "Spain",
-    roles: {
-      primary: "#AA151B",
-      secondary: "#AA151B",
-      accent: "#F1BF00",
-      neutral: "#FFFFFF",
-      note: "Spain: arc red, line red, dot yellow.",
-    },
-    normal: makeTheme("#251A12", "#F8F1E5", "#F1E5D2", "#E2D0B8", "#AA151B", "#74675A"),
-    dark: makeTheme("#FFF3E6", "#160E0A", "#211611", "#3A2A20", "#F1BF00", "#BFAE9E"),
-  },
 };
 
 export type CountryCode = keyof typeof COUNTRY_THEMES;
@@ -278,14 +266,13 @@ export function isCountryCode(value: string): value is CountryCode {
 /**
  * The country's name in the reader's language.
  *
- * `COUNTRY_THEMES[code].name` is an English string in a 28-country table, so anything rendering
- * it said "Spain" to a Portuguese reader, and would have said "Germany" and "France" to them too.
- * Translating the table would mean 28 names times four catalogues, maintained by hand, growing
- * with every country added.
+ * `COUNTRY_THEMES[code].name` is an English string, so anything rendering it would say
+ * "Portugal" in the one spelling. Translating the table would mean each name times four
+ * catalogues, maintained by hand.
  *
- * `Intl.DisplayNames` already knows them, in every locale the app has and every one it might add:
- * ES renders as Espanha / España / Spagna / Spain with nothing to maintain. It even covers the
- * table's one non-ISO entry — EU comes back as "União Europeia".
+ * `Intl.DisplayNames` already knows them, in every locale the app has and every one it might add,
+ * with nothing to maintain. It even covers the table's one non-ISO entry — EU comes back as
+ * "União Europeia".
  *
  * The table's `name` stays as the fallback for a code the platform does not recognise.
  *

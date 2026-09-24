@@ -77,7 +77,6 @@ import { PageHeader } from "@/components/shared/page-header";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { withEntityDetail } from "@/lib/utils/entity-detail-url";
-import { TAX_REGIME_KEY, taxRegimeKey } from "@/lib/utils/lease-labels";
 
 export type LeasesViewProps = Record<string, never>;
 
@@ -102,7 +101,6 @@ export function LeasesView(): React.ReactElement {
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [taxRegimeFilter, setTaxRegimeFilter] = useState<string>("all");
 
   // Bulk selection state
   const [selectedLeaseIds, setSelectedLeaseIds] = useState<Set<string>>(new Set());
@@ -128,7 +126,6 @@ export function LeasesView(): React.ReactElement {
     endDate: "",
     monthlyRent: 0,
     deposit: 0,
-    taxRegime: undefined,
     autoRenew: false,
     renewalNoticeDays: 60,
     status: "draft" as const,
@@ -153,15 +150,7 @@ export function LeasesView(): React.ReactElement {
       id: "terms",
       title: t("step.termsTitle"),
       description: t("step.termsDescription"),
-      fields: [
-        "startDate",
-        "endDate",
-        "monthlyRent",
-        "deposit",
-        "taxRegime",
-        "autoRenew",
-        "renewalNoticeDays",
-      ],
+      fields: ["startDate", "endDate", "monthlyRent", "deposit", "autoRenew", "renewalNoticeDays"],
     },
     {
       id: "notes",
@@ -294,7 +283,6 @@ export function LeasesView(): React.ReactElement {
       endDate: lease.endDate.split("T")[0],
       monthlyRent: lease.monthlyRent,
       deposit: lease.deposit,
-      taxRegime: lease.taxRegime as LeaseFormData["taxRegime"],
       autoRenew: lease.autoRenew,
       renewalNoticeDays: lease.renewalNoticeDays,
       notes: lease.notes || "",
@@ -450,12 +438,9 @@ export function LeasesView(): React.ReactElement {
       // Status filter
       const matchesStatus = statusFilter === "all" || lease.status === statusFilter;
 
-      // Tax regime filter
-      const matchesTaxRegime = taxRegimeFilter === "all" || lease.taxRegime === taxRegimeFilter;
-
-      return matchesSearch && matchesStatus && matchesTaxRegime;
+      return matchesSearch && matchesStatus;
     });
-  }, [leases, tenants, properties, searchQuery, statusFilter, taxRegimeFilter]);
+  }, [leases, tenants, properties, searchQuery, statusFilter]);
 
   // Sorting
   const {
@@ -680,14 +665,6 @@ export function LeasesView(): React.ReactElement {
                 format: (value) => formatCurrency(value as number),
               },
               { key: "status", label: t("field.status") },
-              {
-                key: "taxRegime",
-                label: t("field.taxRegime"),
-                format: (value) => {
-                  const key = taxRegimeKey(value as string | null);
-                  return key ? t(key) : String(value ?? "");
-                },
-              },
             ]}
           />
 
@@ -950,29 +927,6 @@ export function LeasesView(): React.ReactElement {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="taxRegime">{t("field.taxRegime")}</Label>
-                        <Select
-                          value={wizard.formData.taxRegime || ""}
-                          onValueChange={(value) =>
-                            wizard.updateFormData({
-                              taxRegime: value as LeaseFormData["taxRegime"],
-                            })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder={t("taxRegimePlaceholder")} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(TAX_REGIME_KEY).map(([regime, key]) => (
-                              <SelectItem key={regime} value={regime}>
-                                {t(key)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
                         <Label htmlFor="renewalNoticeDays">{t("field.renewalNoticeDays")}</Label>
                         <Input
                           id="renewalNoticeDays"
@@ -1048,7 +1002,6 @@ export function LeasesView(): React.ReactElement {
           onSearchChange={setSearchQuery}
           onFilterChange={(key, value) => {
             if (key === "status") setStatusFilter(value);
-            if (key === "taxRegime") setTaxRegimeFilter(value);
           }}
           filters={[
             {
@@ -1060,23 +1013,6 @@ export function LeasesView(): React.ReactElement {
                 { label: t("pending"), value: "pending" },
                 { label: t("expired"), value: "expired" },
                 { label: t("terminated"), value: "terminated" },
-              ],
-              defaultValue: "all",
-            },
-            {
-              key: "taxRegime",
-              label: t("field.taxRegime"),
-              // The values a lease can actually hold: `TAX_REGIME_KEY`, the map the wizard's own
-              // regime Select is built from, typed by the lease schema. This once offered
-              // `article9` / `article53` — an IVA-exemption pair from an earlier shape of the
-              // field — so both options filtered to nothing, on every account, always. One map
-              // means the filter and the form name the regime identically.
-              options: [
-                { label: t("filter.allRegimes"), value: "all" },
-                ...Object.entries(TAX_REGIME_KEY).map(([regime, key]) => ({
-                  label: t(key),
-                  value: regime,
-                })),
               ],
               defaultValue: "all",
             },

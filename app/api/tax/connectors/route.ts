@@ -9,8 +9,8 @@ export const runtime = "nodejs";
 
 /**
  * Situs TaxConnectorDashboard read model: every connector the user has
- * (PT/ES/…, mode/status/last submission) plus its recent submission log —
- * the explainability trail behind every AT/AEAT call (Migration C).
+ * (country, mode/status/last submission) plus its recent submission log —
+ * the explainability trail behind every AT call (Migration C).
  */
 async function handleGet(request: NextRequest): Promise<Response> {
   const authResult = await requireOwnerAccess(request);

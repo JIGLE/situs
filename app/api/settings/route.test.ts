@@ -77,7 +77,6 @@ describe("POST /api/settings validates what it writes", () => {
 
   it.each([
     ["a flag that is not a boolean", { emailNotifications: "yes" }],
-    ["a currency the column cannot hold", { defaultCurrency: "BTC" }],
     ["a dismissal date that is not a date", { onboardingDismissedAt: "yesterday" }],
     ["a theme that is not a string", { theme: 42 }],
   ])("answers 400 for %s and writes nothing", async (_label, body) => {
@@ -87,12 +86,12 @@ describe("POST /api/settings validates what it writes", () => {
     expect(upsertMock).not.toHaveBeenCalled();
   });
 
-  it("saves one field without touching the others (the currency switcher sends only this)", async () => {
-    const response = await POST(postRequest({ defaultCurrency: "GBP" }));
+  it("saves one field without touching the others (the onboarding checklist sends only one)", async () => {
+    const response = await POST(postRequest({ distributionNotifications: false }));
 
     expect(response.status).toBe(200);
     const { update } = upsertMock.mock.calls[0][0];
-    expect(update.defaultCurrency).toBe("GBP");
+    expect(update.distributionNotifications).toBe(false);
     expect(update.emailNotifications).toBeUndefined();
     expect(update.theme).toBeUndefined();
   });
@@ -105,8 +104,6 @@ describe("POST /api/settings validates what it writes", () => {
       userId: "user-123",
       theme: "light",
       language: "pt",
-      defaultCurrency: "EUR",
-      defaultTaxCountry: null,
       emailNotifications: false,
       taxReminderNotifications: true,
       distributionNotifications: true,

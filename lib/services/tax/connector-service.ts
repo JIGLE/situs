@@ -20,7 +20,7 @@ export async function ensureConnector(userId: string, country: string, connector
 export interface LogSubmissionInput {
   userId: string;
   connectorId: string;
-  subjectType: "rent_receipt" | "modelo179" | "nrua";
+  subjectType: "rent_receipt";
   subjectId: string;
   action: "validate" | "submit" | "poll" | "cancel";
   mode: string;

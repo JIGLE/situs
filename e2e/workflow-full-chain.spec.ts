@@ -130,7 +130,6 @@ test("Critical Path: a bank movement becomes a filed receipt, and the audit trai
       {
         name: `Chain Property ${STAMP}`,
         address: `Rua da Cadeia ${STAMP}, Lisboa`,
-        country: "PT",
         type: "apartment",
         bedrooms: 2,
         bathrooms: 1,

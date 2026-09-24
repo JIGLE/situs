@@ -1,9 +1,6 @@
 /**
- * Address verification service using Nominatim (OpenStreetMap)
- * Free geocoding service for Portugal and Spain
+ * Address verification service using Nominatim (OpenStreetMap), limited to Portugal.
  */
-
-import { resolveCountryCode, getCountryName } from "@/lib/utils/country";
 
 export interface AddressSuggestion {
   display_name: string;
@@ -43,31 +40,23 @@ export interface VerifiedAddress {
 
 const NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org";
 
-// Search bounds for Portugal and Spain (helps prioritize local results)
+// Search bounds for Portugal (helps prioritize local results)
 const PORTUGAL_BOUNDS = "-9.5,-6.2,36.9,42.2"; // min_lon,min_lat,max_lon,max_lat
-const SPAIN_BOUNDS = "-18.2,-4.3,27.6,43.8";
 
 export class AddressVerificationService {
   /**
    * Search for address suggestions
    */
-  static async searchAddresses(
-    query: string,
-    country: "Portugal" | "Spain" = "Portugal",
-  ): Promise<AddressSuggestion[]> {
+  static async searchAddresses(query: string): Promise<AddressSuggestion[]> {
     try {
-      const code = resolveCountryCode(country);
-      const bounds = code === "PT" ? PORTUGAL_BOUNDS : SPAIN_BOUNDS;
-      const countryCode = code === "PT" ? "pt" : "es";
-
       const params = new URLSearchParams({
         q: query,
         format: "json",
         addressdetails: "1",
         limit: "10",
-        countrycodes: countryCode,
+        countrycodes: "pt",
         bounded: "1",
-        viewbox: bounds,
+        viewbox: PORTUGAL_BOUNDS,
         extratags: "1",
         namedetails: "1",
       });
@@ -95,8 +84,6 @@ export class AddressVerificationService {
    */
   static parseAddressSuggestion(suggestion: AddressSuggestion): VerifiedAddress {
     const address = suggestion.address;
-    const code = resolveCountryCode(address.country === "Portugal" ? "Portugal" : "Spain");
-    const country = getCountryName(code);
 
     // Build street address from components
     const streetParts = [];
@@ -106,26 +93,24 @@ export class AddressVerificationService {
 
     const streetAddress = streetParts.join(" ") || suggestion.display_name.split(",")[0];
 
-    // Determine city (prefer municipality over city for Portugal/Spain)
+    // Determine city (prefer municipality over city: Portuguese addresses name the concelho)
     const city = address.municipality || address.city || address.county || "";
 
     // Validate postal code format
     let zipCode = address.postcode || "";
-    if (code === "PT" && zipCode && !/^[0-9]{4}-[0-9]{3}$/.test(zipCode)) {
+    if (zipCode && !/^[0-9]{4}-[0-9]{3}$/.test(zipCode)) {
       // Try to format Portuguese postal codes
       const digits = zipCode.replace(/\D/g, "");
       if (digits.length === 7) {
         zipCode = `${digits.slice(0, 4)}-${digits.slice(4)}`;
       }
-    } else if (code === "ES" && zipCode && !/^[0-9]{5}$/.test(zipCode)) {
-      zipCode = zipCode.replace(/\D/g, "").slice(0, 5);
     }
 
     return {
       streetAddress,
       city,
       zipCode,
-      country,
+      country: "Portugal",
       latitude: parseFloat(suggestion.lat),
       longitude: parseFloat(suggestion.lon),
       verified: true,
@@ -135,14 +120,8 @@ export class AddressVerificationService {
   /**
    * Validate postal code format
    */
-  static validatePostalCode(zipCode: string, country: "Portugal" | "Spain"): boolean {
-    const code = resolveCountryCode(country);
-    if (code === "PT") {
-      return /^[0-9]{4}-[0-9]{3}$/.test(zipCode);
-    } else if (code === "ES") {
-      return /^[0-9]{5}$/.test(zipCode);
-    }
-    return false;
+  static validatePostalCode(zipCode: string): boolean {
+    return /^[0-9]{4}-[0-9]{3}$/.test(zipCode);
   }
 
   /**

@@ -76,7 +76,6 @@ const PII_FIELDS = {
   owner: ["taxIdentificationNumber", "phone"],
   tenant: ["phone"],
   rentReceipt: ["landlordNif", "tenantNif"],
-  nRUARegistration: ["landlordNif", "tenantNif"],
 };
 
 async function main() {

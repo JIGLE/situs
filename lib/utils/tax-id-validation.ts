@@ -1,7 +1,5 @@
 /**
- * Shared tax identification number validation utilities
- * Portugal: NIF (Número de Identificação Fiscal)
- * Spain: NIF/NIE (Número de Identificación Fiscal / Número de Identidad de Extranjero)
+ * Tax identification number validation: the Portuguese NIF (Número de Identificação Fiscal).
  */
 
 /**
@@ -26,36 +24,4 @@ export function validatePortugueseNIF(nif: string): boolean {
   const expectedCheckDigit = checkDigit >= 10 ? 0 : checkDigit;
 
   return parseInt(clean[8]) === expectedCheckDigit;
-}
-
-/**
- * Validate a Spanish NIF/NIE
- * NIF: 8 digits + control letter (Spanish citizens)
- * NIE: X/Y/Z + 7 digits + control letter (foreigners)
- */
-export function validateSpanishNIF(nif: string): boolean {
-  const clean = nif.replace(/\s|-/g, "").toUpperCase();
-
-  // NIF: 8 digits + letter
-  const nifPattern = /^(\d{8})([A-Z])$/;
-  // NIE: X/Y/Z + 7 digits + letter
-  const niePattern = /^([XYZ])(\d{7})([A-Z])$/;
-
-  const letters = "TRWAGMYFPDXBNJZSQVHLCKE";
-
-  if (nifPattern.test(clean)) {
-    const [, number, letter] = clean.match(nifPattern)!;
-    const expectedLetter = letters[parseInt(number) % 23];
-    return letter === expectedLetter;
-  }
-
-  if (niePattern.test(clean)) {
-    const [, prefix, number, letter] = clean.match(niePattern)!;
-    const prefixMap: Record<string, string> = { X: "0", Y: "1", Z: "2" };
-    const fullNumber = prefixMap[prefix] + number;
-    const expectedLetter = letters[parseInt(fullNumber) % 23];
-    return letter === expectedLetter;
-  }
-
-  return false;
 }

@@ -307,22 +307,6 @@ describe("recibo de renda deadline (rent_receipt_due, PT only)", () => {
 
     expect(result.receiptReminders).toBe(0);
   });
-
-  it("is Portugal-only — a Spanish property has no 5-day recibo obligation", async () => {
-    const { result } = await run({
-      allocations: [
-        allocation({
-          rentPeriod: {
-            tenant: { name: "Ana Silva" },
-            property: { address: "Calle B 2", country: "ES" },
-            rentReceiptFilings: [],
-          },
-        }),
-      ],
-    });
-
-    expect(result.receiptReminders).toBe(0);
-  });
 });
 
 describe("all four alert types survive the payment-stack cut", () => {

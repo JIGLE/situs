@@ -26,13 +26,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export function AssetsView(): React.ReactElement {
   const { state, addBuilding } = useApp();
@@ -61,7 +54,6 @@ export function AssetsView(): React.ReactElement {
     name: "",
     address: "",
     city: "",
-    country: "PT",
   });
   const [buildingSubmitting, setBuildingSubmitting] = useState(false);
 
@@ -74,13 +66,12 @@ export function AssetsView(): React.ReactElement {
         name: buildingForm.name.trim(),
         address: buildingForm.address.trim(),
         city: buildingForm.city.trim(),
-        country: buildingForm.country,
       });
       // The only feedback this save had was the action's own English "Building added
       // successfully", which the action no longer shows: a success belongs to the screen.
       success(t("toastBuildingCreated"));
       setBuildingDialogOpen(false);
-      setBuildingForm({ name: "", address: "", city: "", country: "PT" });
+      setBuildingForm({ name: "", address: "", city: "" });
     } catch {
       // The action has already reported the failure; the dialog stays open for another try.
     } finally {
@@ -184,21 +175,6 @@ export function AssetsView(): React.ReactElement {
                   value={buildingForm.city}
                   onChange={(e) => setBuildingForm((f) => ({ ...f, city: e.target.value }))}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="building-country">Country</Label>
-                <Select
-                  value={buildingForm.country}
-                  onValueChange={(v) => setBuildingForm((f) => ({ ...f, country: v }))}
-                >
-                  <SelectTrigger id="building-country">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PT">Portugal</SelectItem>
-                    <SelectItem value="ES">Spain</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
             <div className="space-y-2">

@@ -7,7 +7,7 @@ import {
 import prismaMock from "./helpers/prisma-mock";
 import "@testing-library/jest-dom/vitest";
 
-// Use an explicit render helper for tests that need Intl / Currency contexts.
+// Use an explicit render helper for tests that need the Intl context.
 // Tests should import `renderWithProviders` from `tests/helpers/render-with-providers`.
 
 // Global mocks for Next.js modules
@@ -43,12 +43,8 @@ vi.mock("next/navigation", () => ({
 // Mock currency context - used by many components
 vi.mock("@/lib/contexts/currency-context", () => ({
   useCurrency: () => ({
-    currency: "USD",
-    setCurrency: vi.fn(),
     formatCurrency: (amount: number) => `$${amount?.toFixed(2) ?? "0.00"}`,
-    locale: "en",
   }),
-  CurrencyProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 // Mock toast context - used by many components

@@ -42,10 +42,10 @@ describe("country-themes color math", () => {
 
 describe("country table integrity", () => {
   it("covers the countries Situs operates in, plus the EU fallback", () => {
-    // Trimmed from 28 (EU + every member state) to the two markets the product actually
-    // serves. countryLabel() reads Intl.DisplayNames first, so a property in an unlisted
-    // country still renders its name correctly — only the theme falls back to EU.
-    expect(COUNTRY_CODES).toEqual(["EU", "PT", "ES"]);
+    // Trimmed from 28 (EU + every member state) to the one market the product serves.
+    // countryLabel() reads Intl.DisplayNames first, so a property in an unlisted country still
+    // renders its name correctly — only the theme falls back to EU.
+    expect(COUNTRY_CODES).toEqual(["EU", "PT"]);
     expect(COUNTRY_CODES).toContain(DEFAULT_COUNTRY);
   });
 
@@ -64,11 +64,6 @@ describe("country table integrity", () => {
       primary: "#006600",
       secondary: "#FF0000",
       accent: "#FFFF00",
-    });
-    expect(COUNTRY_THEMES.ES.roles).toMatchObject({
-      primary: "#AA151B",
-      secondary: "#AA151B",
-      accent: "#F1BF00",
     });
     expect(COUNTRY_THEMES.EU.roles).toMatchObject({
       primary: "#003399",

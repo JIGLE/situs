@@ -41,7 +41,7 @@ function makeSuggestion(
       municipality: "Lisboa",
       postcode: "1200-001",
       country: country_field ?? "Portugal",
-      country_code: country_field === "Spain" ? "es" : "pt",
+      country_code: "pt",
       ...addressOverrides,
     },
   };
@@ -51,27 +51,19 @@ function makeSuggestion(
 
 describe("AddressVerificationService.validatePostalCode", () => {
   it("valid Portuguese postal code XXXX-XXX", () => {
-    expect(AddressVerificationService.validatePostalCode("1000-001", "Portugal")).toBe(true);
+    expect(AddressVerificationService.validatePostalCode("1000-001")).toBe(true);
   });
 
   it("invalid Portuguese code without hyphen", () => {
-    expect(AddressVerificationService.validatePostalCode("1000001", "Portugal")).toBe(false);
+    expect(AddressVerificationService.validatePostalCode("1000001")).toBe(false);
   });
 
   it("invalid Portuguese code too short", () => {
-    expect(AddressVerificationService.validatePostalCode("100-001", "Portugal")).toBe(false);
+    expect(AddressVerificationService.validatePostalCode("100-001")).toBe(false);
   });
 
-  it("valid Spanish postal code XXXXX", () => {
-    expect(AddressVerificationService.validatePostalCode("28001", "Spain")).toBe(true);
-  });
-
-  it("invalid Spanish code (6 digits)", () => {
-    expect(AddressVerificationService.validatePostalCode("280010", "Spain")).toBe(false);
-  });
-
-  it("invalid Spanish code with letters", () => {
-    expect(AddressVerificationService.validatePostalCode("2800A", "Spain")).toBe(false);
+  it("a Spanish five-digit code is not a Portuguese one", () => {
+    expect(AddressVerificationService.validatePostalCode("28001")).toBe(false);
   });
 });
 
@@ -153,20 +145,6 @@ describe("AddressVerificationService.parseAddressSuggestion", () => {
     expect(result.zipCode).toBeDefined();
   });
 
-  it("ES: valid 5-digit postal code left unchanged", () => {
-    const result = AddressVerificationService.parseAddressSuggestion(
-      makeSuggestion({ postcode: "28001", country: "Spain", country_code: "es" }),
-    );
-    expect(result.zipCode).toBe("28001");
-  });
-
-  it("ES: postal code with non-digits stripped and truncated to 5", () => {
-    const result = AddressVerificationService.parseAddressSuggestion(
-      makeSuggestion({ postcode: "28-001-X", country: "Spain", country_code: "es" }),
-    );
-    expect(result.zipCode).toBe("28001");
-  });
-
   it("latitude and longitude parsed as numbers", () => {
     const result = AddressVerificationService.parseAddressSuggestion(
       makeSuggestion({ lat: "38.7169", lon: "-9.1399" }),
@@ -229,12 +207,12 @@ describe("AddressVerificationService.searchAddresses", () => {
       })),
     );
 
-    const results = await AddressVerificationService.searchAddresses("Rua do Ouro", "Portugal");
+    const results = await AddressVerificationService.searchAddresses("Rua do Ouro");
     expect(results).toHaveLength(1);
     expect(results[0].address.country).toBe("Portugal");
   });
 
-  it("uses Portugal bounds and country code for Portugal queries", async () => {
+  it("searches within Portugal only", async () => {
     let capturedUrl = "";
     vi.stubGlobal(
       "fetch",
@@ -244,23 +222,9 @@ describe("AddressVerificationService.searchAddresses", () => {
       }),
     );
 
-    await AddressVerificationService.searchAddresses("Lisbon", "Portugal");
+    await AddressVerificationService.searchAddresses("Lisbon");
     expect(capturedUrl).toContain("countrycodes=pt");
     expect(capturedUrl).toContain("bounded=1");
-  });
-
-  it("uses Spain bounds and country code for Spain queries", async () => {
-    let capturedUrl = "";
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: string) => {
-        capturedUrl = url;
-        return { ok: true, json: async () => [] };
-      }),
-    );
-
-    await AddressVerificationService.searchAddresses("Madrid", "Spain");
-    expect(capturedUrl).toContain("countrycodes=es");
   });
 
   it("returns empty array when API responds with non-OK status", async () => {

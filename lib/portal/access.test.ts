@@ -60,15 +60,7 @@ describe("normalising a portal path", () => {
 
 describe("access derived from the normalised path", () => {
   it("grants the nav pages under either URL shape", () => {
-    for (const path of [
-      "/portfolio",
-      "/settings",
-      "/admin",
-      "/people",
-      "/financials",
-      "/leases",
-      "/compliance/modelo179",
-    ]) {
+    for (const path of ["/portfolio", "/settings", "/admin", "/people", "/financials", "/leases"]) {
       expect(canAccessPortalPath(path)).toBe(true);
       expect(canAccessPortalPath(`/en${path}`)).toBe(true);
     }

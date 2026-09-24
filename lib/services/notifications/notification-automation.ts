@@ -323,11 +323,6 @@ async function generateReceiptDeadlineReminders(
     const period = allocation.rentPeriod;
     if (!period?.property) continue;
 
-    // Only for Portuguese properties (check country or tax regime)
-    const country = (period.property.country ?? "").toUpperCase();
-    const isPortugueseProperty = country === "PT" || country === "PORTUGAL";
-    if (!isPortugueseProperty) continue;
-
     // A recibo already filed for this reference month discharges the obligation.
     if (period.rentReceiptFilings.length > 0) continue;
 
