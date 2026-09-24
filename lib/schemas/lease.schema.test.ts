@@ -10,8 +10,8 @@ const lease = {
 };
 
 describe("lease schema: tax regime", () => {
-  // The wizard's Select, the demo seed and the tax calculator all say `portugal_rendimentos`; the
-  // schema said `portugal_rendamentos`. Choosing the Portuguese regime made a lease impossible to
+  // The wizard's Select and the demo seed say `portugal_rendimentos`; the schema said
+  // `portugal_rendamentos`. Choosing the Portuguese regime made a lease impossible to
   // save: the wizard's final check failed on a value the wizard itself had written.
   it("accepts the Portuguese regime as the rest of the app spells it", () => {
     expect(leaseSchema.safeParse({ ...lease, taxRegime: "portugal_rendimentos" }).success).toBe(
