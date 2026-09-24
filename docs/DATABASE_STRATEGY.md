@@ -150,4 +150,3 @@ See `prisma/schema.prisma` for the full data model. Key models:
 - `Property` — property listings
 - `Tenant` — tenant records
 - `Lease` — lease agreements
-- `Subscription` — the app's own SaaS plan/billing state

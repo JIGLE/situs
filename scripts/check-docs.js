@@ -46,6 +46,16 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // The removed ARTIFACTS. "Stripe" alone is left alone: the ROADMAP rows that record this
+    // removal name it.
+    pattern:
+      /\/api\/billing|webhooks\/stripe|lib\/billing\/|STRIPE_[A-Z_]+|ENABLE_BILLING|ENABLE_STRIPE|Subscription billing|Free\/Pro\/Business|\/api\/events\b|ProductEvent|\/api\/monitoring\/(?:metrics|landing|track)|landing-page beacon/,
+    retired: "2026-09-24 (simplification, step 3)",
+    because:
+      "Situs is one owner's instance: Stripe billing and its plan limits, the marketing landing " +
+      "page, the product-event sink and the landing counters were removed",
+  },
+  {
     // The removed ARTIFACTS and the scope claim. "Spanish" alone stays legal: it is one of the
     // four interface languages, and the bank picker lists Spanish banks.
     pattern:
@@ -116,9 +126,7 @@ const RETIRED_CLAIMS = [
     // The payment METHODS, which only ever existed for tenant rent collection.
     pattern: /\b(?:Multibanco|MB WAY|MBWay|Bizum)\b/i,
     retired: "2026-09-22 (scope cutdown, phase 9)",
-    because:
-      "the SIBS and Bizum adapters and their webhooks went with the payment stack; Stripe " +
-      "survives for the app's own subscription billing only",
+    because: "the SIBS and Bizum adapters and their webhooks went with the payment stack",
   },
   {
     // Narrow on purpose: "review required" also means a PR review in CONTRIBUTING.md, and
@@ -444,8 +452,8 @@ const RETIRED_CLAIMS = [
       /Scraping it takes `INIT_SECRET`|same secret is the production bearer for `\/api\/metrics`|DB init endpoint and for `\/api\/metrics`/,
     retired: "2026-09-24 (leftover findings)",
     because:
-      "/api/metrics, /api/monitoring/metrics and /api/monitoring/landing take METRICS_TOKEN " +
-      "through lib/utils/metrics-auth.ts; INIT_SECRET opens only the DB init endpoint",
+      "/api/metrics takes METRICS_TOKEN through lib/utils/metrics-auth.ts; INIT_SECRET opens " +
+      "only the DB init endpoint",
   },
   {
     pattern: /no rate-limit environment variables/i,
@@ -473,6 +481,8 @@ const CLAIM_ALLOWLIST = [
   // decided on the day. Both name the payment methods phase 9 removed; neither offers them.
   /Full payment integration for Portugal and Spain markets/,
   /Keep MB WAY\/Bizum as documented placeholders/,
+  // A dated Decisions Log row that cites the plan-limits module the own-use step removed.
+  /Identity model stays single-account/,
 ];
 
 const LINK = /\[[^\]]*\]\(([^)]+)\)/g;

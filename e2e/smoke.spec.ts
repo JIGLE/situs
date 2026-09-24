@@ -72,6 +72,14 @@ test.describe("Authentication", () => {
       await expect(page.locator('input[name="email"]')).toBeVisible();
     });
   }
+
+  // `/` has no page of its own any more: there is no marketing landing to show a stranger.
+  test("/ sends a signed-out visitor to sign-in", async ({ page }) => {
+    await page.goto("/");
+
+    expect(new URL(page.url()).pathname).toBe("/auth/signin");
+    await expect(page.locator('input[name="email"]')).toBeVisible();
+  });
 });
 
 /**

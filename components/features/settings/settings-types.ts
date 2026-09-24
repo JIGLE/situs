@@ -13,13 +13,3 @@ export const defaultSettings: UserSettings = {
   taxReminderNotifications: true,
   distributionNotifications: true,
 };
-
-export interface BillingInfo {
-  plan: "free" | "pro" | "business";
-  status: string;
-  currentPeriodEnd: string | null;
-  cancelAtPeriodEnd: boolean;
-  maxProperties: number | null;
-  propertyCount: number;
-  billingEnabled?: boolean;
-}

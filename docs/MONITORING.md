@@ -90,18 +90,13 @@ Three properties worth knowing before you build anything on it:
 - **Scraping it takes `METRICS_TOKEN`.** The proxy lets `/api/metrics` through without a session.
   In production the route then answers `403` unless the request carries
   `Authorization: Bearer $METRICS_TOKEN` — always `403` while `METRICS_TOKEN` is unset. In
-  development it answers anyone. `/api/monitoring/metrics` and `/api/monitoring/landing` take the
-  same token. It opens nothing else, so a scrape config holds read access to counters and no more.
+  development it answers anyone. The token opens nothing else, so a scrape config holds read access
+  to counters and no more.
 - **The email counters count only the automated reminder e-mails**
   (`lib/services/notifications/reminder-email.ts`), not every message the app sends.
 - **The counters live in process.** They reset on every restart and every redeploy, which is
   what `metrics_reset_timestamp_seconds` is for. Treat them as rates since last boot, not as
   lifetime totals.
-
-A second endpoint, `GET /api/monitoring/metrics`, is public in the proxy and wants the same
-bearer in production. It reads a different store, `lib/monitoring/metrics.ts`, which only the
-landing-page beacon (`/api/monitoring/track`) writes to — so it reports landing-page event
-counts, as JSON or, with `?format=prometheus`, as text.
 
 ## Structured logging
 

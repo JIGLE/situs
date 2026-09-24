@@ -76,14 +76,11 @@
       "security": "Segurança e privacidade",
       "integrations": "Integrações",
       "system": "Sistema",
-      "billing": "Faturação",
       "heading": "Definições",
       "subtitle": "Faça a gestão das suas preferências e da conta",
       "sectionsLabel": "Secções das definições",
       "toastSaved": "Definições guardadas",
-      "toastSubscription": "Subscrição atualizada — obrigado.",
       "loadFailed": "Não foi possível carregar as definições.",
-      "toastCanceled": "Pagamento cancelado",
       "toastSaveFailed": "Não foi possível guardar as definições.",
       "appearance": "Aparência",
       "groups": {
@@ -181,13 +178,6 @@
       "emailService": "Serviço de e-mail",
       "refresh": "Atualizar",
       "systemUnavailable": "Não foi possível obter a informação do sistema.",
-      "billing": "Subscrição e faturação",
-      "billingDescription": "Faça a gestão do plano, da utilização e dos dados de pagamento",
-      "currentPlan": "Plano atual",
-      "properties": "Imóveis",
-      "upgradePro": "Mudar para Pro",
-      "upgradeBusiness": "Mudar para Business",
-      "billingFailed": "Não foi possível carregar a informação de faturação.",
       "bankConnectionsHelp": "Contas que alimentam a caixa Finanças › Movimentos bancários",
       "noBankConnection": "Ainda sem ligação bancária — importe um extrato CSV em Finanças › Movimentos bancários para criar uma.",
       "taxConnectorsHelp": "O histórico completo de submissões está em Finanças › Resumo fiscal — aqui é só o estado",
@@ -195,9 +185,6 @@
       "classifierHelp": "Deteção de tipo por palavras-chave nos quatro idiomas — resultados ambíguos ou sem ligação vão para Documentos › Revisão necessária",
       "active": "ativo",
       "uptimeValue": "{hours} h {minutes} m",
-      "planStatus": "Estado: {status}",
-      "movesToFree": "Passa a Free em {date}",
-      "manageBilling": "Gerir faturação",
       "bankConnectCta": "Ligar um banco",
       "bankPickerTitle": "Ligar um banco",
       "bankPickerHelp": "Será encaminhado para o seu banco para autorizar o acesso apenas de leitura à sua conta. O Situs nunca vê a sua senha bancária.",
@@ -261,7 +248,6 @@
       "session_user": "Conta com sessão iniciada",
       "pii": "Encriptação de dados pessoais",
       "email": "Email (SMTP)",
-      "billing": "Faturação de subscrição (Stripe)",
       "bank": "Movimentos bancários",
       "bank_provider": "Fornecedor bancário",
       "tax": "Autoridade fiscal — {country}"
@@ -603,27 +589,6 @@
     "exportCsv": "Exportar como CSV",
     "exportJson": "Exportar como JSON"
   },
-  "landing": {
-    "eyebrow": "Operações de arrendamento em Portugal",
-    "signIn": "Entrar",
-    "hero2": "Rendimentos, recibos e prova fiscal sob controlo.",
-    "subtitle2": "O Situs ajuda proprietários a acompanhar pagamentos de renda, alocar transferências em atraso ao mês de referência correto, emitir recibos, arquivar documentos, gerir despesas e preparar prova pronta para impostos em carteiras de imóveis da UE.",
-    "heroCta": {
-      "tryIt": "Experimentar",
-      "join": "Aderir"
-    },
-    "localeControl": {
-      "language": "Idioma",
-      "countryTheme": "Tema do país",
-      "searchCountry": "Procurar país…",
-      "noMatch": "Sem correspondência.",
-      "comingSoon": "Brevemente",
-      "jumpAria": "Saltar para o fim da sequência"
-    },
-    "countries": {
-      "pt": "Portugal"
-    }
-  },
   "errors": {
     "notFound": {
       "title": "Página não encontrada",
@@ -652,7 +617,6 @@
       "notAllowed": "Não tem permissão para efetuar esta ação.",
       "notFound": "Esse registo já não existe. Pode ter sido eliminado.",
       "conflict": "Alguém alterou isto enquanto estava a editar. Recarregue e tente novamente.",
-      "planLimit": "O seu plano não inclui esta funcionalidade. Faça upgrade para continuar.",
       "tooMany": "Demasiados pedidos. Aguarde um momento e tente novamente.",
       "serverError": "O servidor teve um problema. Tente novamente dentro de momentos.",
       "securityTokenExpired": "O seu token de segurança expirou. Atualize a página e tente novamente."
@@ -1321,11 +1285,6 @@
       "reachesFull": "O total passa a ser exatamente 100% ✓"
     }
   },
-  "footer": {
-    "copyright": "© {year} Situs. Todos os direitos reservados.",
-    "privacy": "Política de Privacidade",
-    "terms": "Termos de Serviço"
-  },
   "paymentMatrix": {
     "title": "Matriz de Acompanhamento de Pagamentos",
     "subtitle": "Visão geral mensal do estado de pagamento de todos os inquilinos",
@@ -1429,9 +1388,7 @@
   },
   "language": {
     "label": "Idioma",
-    "change": "Mudar de idioma",
-    "chooseTitle": "Escolha o seu idioma",
-    "chooseHelp": "Escolha um idioma para continuar. Pode alterá-lo mais tarde."
+    "change": "Mudar de idioma"
   },
   "auth": {
     "loading": "A carregar…",
@@ -1644,8 +1601,6 @@
       "collectPropertyBody": "Moradas, condições dos contratos, valores de renda, contactos dos inquilinos, números de identificação fiscal e documentos que carregue.",
       "collectBank": "Dados bancários",
       "collectBankBody": "Caso ligue uma conta bancária: o nome da conta e o IBAN e, para cada movimento, a data, o montante, o nome da contraparte, o IBAN da contraparte e o descritivo em texto livre fornecido pelo banco.",
-      "collectPayment": "Dados de pagamento",
-      "collectPaymentBody": "A faturação da subscrição é tratada pela Stripe. Os números de cartão nunca chegam a esta instância.",
       "useTitle": "Como os utilizamos",
       "use1": "Para prestar o serviço: registo de imóveis, contratos, inquilinos e rendas.",
       "use2": "Para reconciliar rendas com movimentos bancários, que é a razão de ser de uma conta ligada.",
@@ -1679,8 +1634,6 @@
       "processorsIntro": "Uma instância self-hosted só partilha dados com um serviço quando esse serviço tiver sido configurado por si.",
       "processorEnableBanking": "Enable Banking",
       "processorEnableBankingBody": "Prestador licenciado de serviços de informação sobre contas. Recebe a sua autorização bancária e devolve dados de conta e de movimentos. Apenas se ligar um banco.",
-      "processorStripe": "Stripe",
-      "processorStripeBody": "Faturação de subscrições, centro de dados na UE. Apenas se a faturação estiver ativa.",
       "processorEmail": "Brevo",
       "processorEmailBody": "Entrega o email transacional e, por isso, vê o endereço do destinatário e a mensagem. Sediada na UE (França). Apenas se o email estiver configurado.",
       "processorTax": "Autoridade Tributária e Aduaneira (AT)",
@@ -1707,11 +1660,6 @@
       "use5": "Fazer-se passar por outra pessoa ou organização.",
       "bankTitle": "Ligações bancárias",
       "bankBody": "Ao ligar uma conta bancária, autoriza no seu próprio banco um acesso apenas de leitura ao abrigo da DSP2. É responsável por ligar apenas contas a que tenha direito de acesso. A ligação pode ser revogada junto do banco ou removida aqui, e caduca por si; a caducidade interrompe a sincronização e nada mais.",
-      "paymentTitle": "Pagamento",
-      "payment1": "Os planos pagos são faturados mensalmente e antecipadamente, a preços apresentados com IVA incluído quando aplicável.",
-      "payment2": "As subscrições renovam-se automaticamente salvo cancelamento antes da data de renovação.",
-      "payment3": "Reembolsos de meses completos não utilizados ficam ao critério do operador, salvo quando a lei exija outra coisa.",
-      "payment4": "Alterações de preço têm 30 dias de pré-aviso; a continuação da utilização após essa data vale como aceitação.",
       "liabilityTitle": "Responsabilidade",
       "liabilityBody": "Na medida em que a lei o permita, o operador não responde por danos indiretos ou consequenciais, por lucros cessantes, nem por perda de dados para além da cópia de segurança mais recente. Nada aqui limita responsabilidade que não possa legalmente ser limitada.",
       "ipTitle": "Propriedade intelectual",

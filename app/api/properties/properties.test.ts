@@ -67,11 +67,6 @@ vi.mock("@/lib/services/database/database", () => ({
   })),
 }));
 
-const canCreatePropertyMock = vi.hoisted(() => vi.fn().mockResolvedValue(true));
-vi.mock("@/lib/billing/subscription-service", () => ({
-  canCreateProperty: canCreatePropertyMock,
-}));
-
 describe("Properties API - GET /api/properties", () => {
   it("should return all properties for authenticated user", async () => {
     const request = new NextRequest("http://localhost:3000/api/properties", {
@@ -242,29 +237,5 @@ describe("Properties API - POST /api/properties", () => {
 
     const response = await postProperties(request);
     expect([200, 201, 400, 422]).toContain(response.status);
-  });
-
-  it("returns 402 when the plan's property limit has been reached", async () => {
-    canCreatePropertyMock.mockResolvedValueOnce(false);
-
-    const request = new NextRequest("http://localhost:3000/api/properties", {
-      method: "POST",
-      headers: new Headers({ Authorization: "Bearer valid-token" }),
-      body: JSON.stringify({
-        name: "123 Main St",
-        address: "123 Main Street, City, State 12345",
-        type: "apartment",
-        bedrooms: 2,
-        bathrooms: 1,
-        rent: 1200,
-        status: "vacant",
-      }),
-    });
-
-    const response = await postProperties(request);
-    const body = await response.json();
-
-    expect(response.status).toBe(402);
-    expect(body.error).toBe("Upgrade your plan to add more properties");
   });
 });

@@ -75,7 +75,8 @@ const ALLOWLIST = [
 // 235 → 211 on 2026-09-24. Removing the IRS summaries took 16 with the tax rules view and the
 // fiscal-profile card; the other 8 were slack, since main already measured 227.
 // 211 → 199 the same day: the Modelo 179 view took 12 when Spain's compliance went.
-const BASELINE = 199;
+// 199 → 186: the landing's language chooser took 12 and the billing panel 1.
+const BASELINE = 186;
 
 function walk(dir, acc) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

@@ -23,27 +23,23 @@ import { SettingsNotifications } from "./settings-notifications";
 import { SettingsSecurity } from "./settings-security";
 import { SettingsSystem } from "./settings-system";
 import { SettingsIntegrations } from "./settings-integrations";
-import { SettingsBilling } from "./settings-billing";
-import { defaultSettings, type BillingInfo, type UserSettings } from "./settings-types";
+import { defaultSettings, type UserSettings } from "./settings-types";
 
 /**
  * Section ids only — labels resolve against `settings.nav` at render.
  *
  * Each entry used to carry a role list, because a tenant reached Settings for the Account
  * section but had no tax rules, integrations or billing to configure. The scope cutdown
- * removed tenant access, so every section is an owner section and only billing is still
- * conditional — on the instance having billing enabled, not on who is looking.
+ * removed tenant access, so every section is an owner section.
  */
 const SECTIONS = [
-  // Grouped by whose settings they are, which is the split every settings screen worth copying
-  // uses: what belongs to YOU, what belongs to the BUSINESS you run in here, and what belongs to
-  // the INSTANCE. Eight equal-weight entries in arrival order made a reader scan all eight to
-  // find one; three short groups make most lookups stop at the heading.
+  // Grouped by whose settings they are: what belongs to YOU, and what belongs to the INSTANCE.
+  // Equal-weight entries in arrival order made a reader scan them all to find one; short groups
+  // make most lookups stop at the heading.
   { id: "account", group: "personal" },
   { id: "security", group: "personal" },
   { id: "appearance", group: "personal" },
   { id: "notifications", group: "personal" },
-  { id: "billing", group: "workspace" },
   { id: "integrations", group: "system" },
   { id: "system", group: "system" },
 ] as const satisfies readonly {
@@ -51,8 +47,8 @@ const SECTIONS = [
   group: SectionGroup;
 }[];
 
-/** Group order is the render order. A group with no visible sections renders nothing. */
-const GROUPS = ["personal", "workspace", "system"] as const;
+/** Group order is the render order. */
+const GROUPS = ["personal", "system"] as const;
 type SectionGroup = (typeof GROUPS)[number];
 
 type SectionValue = (typeof SECTIONS)[number]["id"];
@@ -73,20 +69,11 @@ export function SettingsView(): React.ReactElement {
   const [hasChanges, setHasChanges] = useState(false);
   const [appVersion, setAppVersion] = useState<string>("");
 
-  const [billing, setBilling] = useState<BillingInfo | null>(null);
-  const [billingLoading, setBillingLoading] = useState(true);
-  // Whether to surface any subscription UI at all. Off on self-hosted instances
-  // (ENABLE_BILLING unset) so the account never sees subscription framing.
-  const showBilling = billing?.billingEnabled === true;
-
-  const visible = SECTIONS.filter((s) => s.id !== "billing" || showBilling);
-  const sections: readonly SectionValue[] = visible.map((s) => s.id);
-  // Groups that actually have something in them — "workspace" empties out when billing is
-  // hidden, and an empty heading is worse than no heading.
+  const sections: readonly SectionValue[] = SECTIONS.map((s) => s.id);
   const groupedSections = GROUPS.map((group) => ({
     group,
-    ids: visible.filter((s) => s.group === group).map((s) => s.id),
-  })).filter((g) => g.ids.length > 0);
+    ids: SECTIONS.filter((s) => s.group === group).map((s) => s.id),
+  }));
 
   // A `?tab=` the current role can't see (a stale link, or an owner URL opened by a tenant)
   // falls back to the first section rather than rendering an empty panel.
@@ -102,37 +89,12 @@ export function SettingsView(): React.ReactElement {
 
   useEffect(() => {
     loadSettings();
-    loadBilling();
     fetch("/version.json")
       .then((r) => r.json())
       .then((d) => setAppVersion(d.version || ""))
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    const checkout = searchParams.get("checkout");
-    if (checkout === "success") {
-      success(t("toastSubscription"));
-    } else if (checkout === "canceled") {
-      showError(t("toastCanceled"));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
-  const loadBilling = async () => {
-    try {
-      const response = await fetch("/api/billing/subscription");
-      if (response.ok) {
-        const data = await response.json();
-        if (data.data) setBilling(data.data);
-      }
-    } catch (err) {
-      console.error("Failed to load billing info:", err);
-    } finally {
-      setBillingLoading(false);
-    }
-  };
 
   const loadSettings = async () => {
     if (!session?.user) {
@@ -292,9 +254,6 @@ export function SettingsView(): React.ReactElement {
           {visibleSection === "security" && <SettingsSecurity />}
           {visibleSection === "integrations" && <SettingsIntegrations />}
           {visibleSection === "system" && <SettingsSystem />}
-          {visibleSection === "billing" && showBilling && (
-            <SettingsBilling billing={billing} billingLoading={billingLoading} />
-          )}
         </div>
       </div>
     </div>

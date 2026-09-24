@@ -95,7 +95,6 @@ the header is ignored entirely. Getting it wrong lets a caller pick their own ra
 | `ENABLE_DEMO_LOGIN`                         | `true` enables demo credentials that grant **ADMIN**. Leave unset in production. |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Enables Google sign-in — see below                                               |
 | `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`       | Email delivery over SMTP (Brevo, Resend, SES — any provider)                     |
-| `STRIPE_SECRET_KEY`, `ENABLE_STRIPE`        | Subscription billing for the app itself — never rent                             |
 | `AUTO_DB_INIT`, `AUTO_DB_SCHEMA_SYNC`       | Both default `true`; set `false` to manage schema yourself                       |
 
 > `NEXT_PUBLIC_ENABLE_DEMO_LOGIN` no longer exists. The sign-in form now resolves demo
@@ -334,13 +333,12 @@ delete the comments marking them as assumptions.
 Worth knowing before signing up for anything: almost every external service is optional, and a
 self-hosted instance collecting rent by bank transfer needs none of them.
 
-| Service        | Required? | What it is for                                                                                                                              |
-| -------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Enable Banking | optional  | live bank movements. Unset, CSV import covers it                                                                                            |
-| Stripe         | optional  | the app's own subscription billing — never rent. Unset, there is nothing to subscribe to; plan limits apply only with `ENABLE_BILLING=true` |
-| SMTP           | optional  | outbound email, any provider. Unset, email is simply not sent                                                                               |
-| Redis          | optional  | shared counters for one of the rate limiters (`docs/SECURITY.md`). Unset, every limiter counts in process                                   |
-| Google OAuth   | optional  | sign-in. Credentials sign-in works without it                                                                                               |
+| Service        | Required? | What it is for                                                                                            |
+| -------------- | --------- | --------------------------------------------------------------------------------------------------------- |
+| Enable Banking | optional  | live bank movements. Unset, CSV import covers it                                                          |
+| SMTP           | optional  | outbound email, any provider. Unset, email is simply not sent                                             |
+| Redis          | optional  | shared counters for one of the rate limiters (`docs/SECURITY.md`). Unset, every limiter counts in process |
+| Google OAuth   | optional  | sign-in. Credentials sign-in works without it                                                             |
 
 Required in every case: `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, and
 `PII_ENCRYPTION_KEY` in production.

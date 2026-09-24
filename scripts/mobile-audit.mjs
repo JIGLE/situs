@@ -125,21 +125,12 @@ const FULLPAGE = flag("fullpage");
  * removed seven surfaces: the sources did not change, only the number of screens they are
  * counted on. Do not chase this one to zero; it would mean overriding two deliberate choices.
  *
- * `touchTargetFails` is the landing footer's two text links, counted once per theme. They are
- * links in prose, which the doctrine's rule 2 exempts only with explicit design review — so this
- * is recorded debt, not an accepted floor. It is also the whole of the metric: every other touch
- * target in the app now clears 44px below `md`.
- *
- * It reads 2 rather than 4 now, and the ceiling stays at 4 deliberately. The measurement used to
- * run in Portuguese ("Política de Privacidade" 188×16, "Termos de Serviço" 139×16 — both fails);
- * with the locale pinned to English by cookie, "Terms of Service" wraps to 192×35 and lands in
- * the warn band instead. That is a text-wrapping artifact, not a fix: a font-metric difference
- * between browser builds could put it back. Tightening to 2 would make the gate depend on how
- * one string happens to wrap.
- *
- * The 38-surface sweep reads 2 as well. That is the same two links wrapping the same way, not
- * evidence the ceiling can come down — the footer is on every surface, so removing seven of them
- * could not have moved this metric, and it did not.
+ * `touchTargetFails` was the landing footer's two text links, counted once per theme — links in
+ * prose, which the doctrine's rule 2 exempts only with explicit design review. The landing page
+ * went with the own-use simplification (`/` now redirects), and with it every touch target this
+ * metric was counting.
+ * The ceiling stays at 4 until CI prints the new figure on two runs: tighten from printed numbers,
+ * as below, never from the expectation that it is now 0.
  *
  * Two of these metrics are NOT deterministic, which was found by running the harness three times
  * back to back against one build and one database: `clippedContainers` gave 4, 6, 6 and
@@ -218,7 +209,6 @@ const BASELINE = {
  * and `--strict` treats a skip as a failure. When a page goes, its entry goes with it.
  */
 const SURFACES = [
-  { id: "landing", path: "/", auth: false },
   { id: "signin", path: "/auth/signin", auth: false },
   { id: "signup", path: "/auth/signup", auth: false },
   { id: "dashboard", path: "/dashboard" },
@@ -835,7 +825,7 @@ async function auditSurface(context, surface, theme, ids) {
         //
         // So release the height first: find every element that is actually scrolling its own
         // overflow and let it grow, along with its ancestors. Done generically rather than by
-        // class name so the landing page and the tenant portal — different shells — work too.
+        // class name so a page with a different shell works too.
         // This runs after `measure()`, so no metric can see it.
         const released = await page.evaluate(() => {
           const touched = [];
@@ -1019,7 +1009,7 @@ async function main() {
     locale: LOCALE,
     deviceScaleFactor: 2,
   });
-  // Surfaces marked `auth: false` (landing, signin, signup) must never see the bootstrap
+  // Surfaces marked `auth: false` (signin, signup) must never see the bootstrap
   // session below — an authenticated visit to /auth/signin silently redirects to /dashboard,
   // which would mislabel the dashboard's own violations as belonging to the signin/signup pages.
   const anonContext = await browser.newContext({
@@ -1027,19 +1017,6 @@ async function main() {
     locale: LOCALE,
     deviceScaleFactor: 2,
   });
-  // LocaleSelectOverlay is a blocking, full-screen first-visit language chooser, shown whenever
-  // `situs.locale.selected` is absent. A fresh Playwright context is always a "first visit", so
-  // without this the signed-out surfaces were being measured underneath that overlay — the page's
-  // own controls sat behind a z-[99999] scrim and the numbers described the chooser, not the page.
-  // Presenting as a returning visitor measures the surface these routes actually serve.
-  await anonContext.addInitScript((locale) => {
-    try {
-      localStorage.setItem("situs.locale.selected", locale);
-    } catch {
-      /* storage disabled — the overlay just shows, same as a real first visit */
-    }
-  }, LOCALE);
-
   // `--locale pt` used to work by rewriting the path prefix. With the prefix gone the proxy
   // resolves the locale from the `situs-locale` cookie, so set it on both contexts — otherwise
   // the flag would silently audit whatever `Accept-Language` happened to negotiate.

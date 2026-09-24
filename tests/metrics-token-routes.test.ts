@@ -1,9 +1,9 @@
 /**
- * The three counter endpoints take `METRICS_TOKEN`, and nothing else, in production.
+ * The counter endpoint takes `METRICS_TOKEN`, and nothing else, in production.
  *
- * They took `INIT_SECRET`, each through its own copy of the same check. That secret also opens
+ * It took `INIT_SECRET`, through its own copy of the same check. That secret also opens
  * `/api/debug/db/init`, so a Prometheus scrape config held more than read access to counters. One
- * helper now serves all three; this pins each route to it rather than to a fourth copy.
+ * helper now serves it; this pins the route to that helper rather than to a copy.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
@@ -13,14 +13,8 @@ vi.mock("@/lib/services/database/database", () => ({
 }));
 
 import { GET as scrape } from "@/app/api/metrics/route";
-import { GET as monitoringMetrics } from "@/app/api/monitoring/metrics/route";
-import { GET as landingCounters } from "@/app/api/monitoring/landing/route";
 
-const routes = [
-  ["/api/metrics", scrape],
-  ["/api/monitoring/metrics", monitoringMetrics],
-  ["/api/monitoring/landing", landingCounters],
-] as const;
+const routes = [["/api/metrics", scrape]] as const;
 
 const get = (path: string, bearer?: string) =>
   new NextRequest(`http://localhost${path}`, {

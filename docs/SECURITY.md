@@ -55,7 +55,7 @@ implementations are live, which is worth knowing before you add a fourth:
 | Where                            | Export                     | Used by                                            | Backing store                                  |
 | -------------------------------- | -------------------------- | -------------------------------------------------- | ---------------------------------------------- |
 | `lib/utils/rate-limit.ts`        | `withRateLimit`            | the routes that wrap their handler in it           | in-process `Map`                               |
-| `lib/middleware/rate-limit.ts`   | `rateLimit` + `RateLimits` | the Stripe webhook, TOTP verify                    | Redis when `REDIS_URL` is set, else in-process |
+| `lib/middleware/rate-limit.ts`   | `rateLimit` + `RateLimits` | TOTP verify                                        | Redis when `REDIS_URL` is set, else in-process |
 | `app/api/debug/db/init/route.ts` | its own `isRateLimited`    | the init endpoint only — 5 requests per IP an hour | in-process `Map`                               |
 
 `git grep -l withRateLimit app/api` lists the first one's users. `REDIS_URL` only changes where the

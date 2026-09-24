@@ -28,10 +28,9 @@ import type en from "@/messages/en.json";
 
 /** Status → key under `errors.api`. Anything unlisted is a `generic`. */
 const STATUS_KEY: Partial<
-  Record<number, "signedOut" | "planLimit" | "notAllowed" | "notFound" | "conflict" | "tooMany">
+  Record<number, "signedOut" | "notAllowed" | "notFound" | "conflict" | "tooMany">
 > = {
   401: "signedOut",
-  402: "planLimit",
   403: "notAllowed",
   404: "notFound",
   409: "conflict",

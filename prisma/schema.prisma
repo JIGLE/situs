@@ -46,8 +46,6 @@ model User {
   notifications          Notification[]
   rentReceipts           RentReceipt[]
   settings               UserSettings?
-  productEvents          ProductEvent[]
-  subscription           Subscription?
   bankConnections        BankConnection[]
   bankAccounts           BankAccount[]
   bankTransactions       BankTransaction[]
@@ -845,8 +843,8 @@ model UserSettings {
   taxReminderNotifications  Boolean   @default(true)
   distributionNotifications Boolean   @default(true)
   // Server-side onboarding-checklist dismissal — was localStorage-only, so it
-  // didn't survive across browsers/devices and couldn't be measured. Null
-  // means "not dismissed" (or dismissed pre-migration, on an old client).
+  // didn't survive across browsers/devices. Null means "not dismissed" (or
+  // dismissed pre-migration, on an old client).
   onboardingDismissedAt     DateTime?
   createdAt                 DateTime  @default(now())
   updatedAt                 DateTime  @updatedAt
@@ -854,67 +852,6 @@ model UserSettings {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_settings")
-}
-
-/// Lightweight product-analytics event sink (the app had landing-page funnel
-/// tracking but no in-app product analytics).
-/// Deliberately generic (name + JSON metadata) rather than a table per event
-/// type — most core-loop facts (first property/tenant/lease/receipt, rent
-/// marked paid, rent receipt issued) are already derivable retroactively from
-/// existing tables' createdAt/status columns, so this sink is reserved for
-/// signals that have no other home, e.g. "a reminder notification was clicked"
-/// (as opposed to "a notification was marked read" via a bulk action).
-model ProductEvent {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String
-  metadata  String? // JSON
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, name])
-  @@index([createdAt])
-  @@map("product_events")
-}
-
-/// SaaS subscription state for the app itself (distinct from rent collection,
-/// which reaches the ledger as a matched bank movement, not a card payment).
-/// No row for a user means Free — a row is only created once a Checkout
-/// Session completes (the pricing tiers were previously unbacked marketing
-/// copy).
-model Subscription {
-  id                   String             @id @default(cuid())
-  userId               String             @unique
-  plan                 SubscriptionPlan   @default(free)
-  status               SubscriptionStatus @default(active)
-  stripeCustomerId     String?
-  stripeSubscriptionId String?
-  stripePriceId        String?
-  currentPeriodEnd     DateTime?
-  cancelAtPeriodEnd    Boolean            @default(false)
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([stripeCustomerId])
-  @@index([stripeSubscriptionId])
-  @@map("subscriptions")
-}
-
-enum SubscriptionPlan {
-  free
-  pro
-  business
-}
-
-enum SubscriptionStatus {
-  active
-  trialing
-  past_due
-  canceled
-  incomplete
 }
 
 // ========================================

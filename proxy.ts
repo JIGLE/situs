@@ -69,17 +69,11 @@ function resolveLocale(request: NextRequest): string {
  * /api/ready             — Readiness probe; never touches the database
  * /api/info              — Version, commit and build time baked into the image
  * /api/csrf-token        — Issues the CSRF cookie (GET only)
- * /api/monitoring/**     — Database probe and landing beacon; its metrics and landing counters
- *                          want `Bearer $METRICS_TOKEN` in production, and errors answers only in
- *                          development
+ * /api/monitoring/**     — Database probe, and an error list that answers only in development
  * /api/metrics           — Prometheus scrape. A scraper has no session; the route checks
  *                          `Authorization: Bearer $METRICS_TOKEN` itself in production.
- * /api/webhooks/**       — Provider callbacks: Stripe verifies its signature, Brevo (which signs
- *                          nothing) a shared secret
- * /api/billing/checkout  — Browser-navigable pricing CTA (GET). Self-guards:
- *                          redirects unauthenticated visitors to sign-in and
- *                          requires a session to create a Checkout Session, so
- *                          it must not be 401'd by the proxy first.
+ * /api/webhooks/**       — Brevo's delivery events, checked against a shared secret because Brevo
+ *                          signs nothing
  */
 function isPublicApiRoute(pathname: string): boolean {
   return (
@@ -90,8 +84,7 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname === "/api/csrf-token" ||
     pathname.startsWith("/api/monitoring") ||
     pathname === "/api/metrics" ||
-    pathname.startsWith("/api/webhooks") ||
-    pathname === "/api/billing/checkout"
+    pathname.startsWith("/api/webhooks")
   );
 }
 
@@ -145,8 +138,8 @@ function applySecurityHeaders(response: NextResponse, nonce: string): void {
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     "img-src 'self' data: blob: https:",
     "font-src 'self' data: https://fonts.gstatic.com",
-    `connect-src 'self' https://accounts.google.com https://api.stripe.com https://nominatim.openstreetmap.org${isDev ? " http://localhost:*" : ""}`,
-    "frame-src 'self' https://accounts.google.com https://js.stripe.com",
+    `connect-src 'self' https://accounts.google.com https://nominatim.openstreetmap.org${isDev ? " http://localhost:*" : ""}`,
+    "frame-src 'self' https://accounts.google.com",
     "object-src 'none'",
     "media-src 'self'",
     "worker-src 'self' blob:",

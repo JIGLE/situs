@@ -141,10 +141,3 @@ declare module "jspdf" {
   }
   export default jsPDF;
 }
-
-// NOTE: Stripe's own types (node_modules/stripe) are complete and correct as of
-// v22 — do NOT re-declare `declare module "stripe"` here. A replacement stub used
-// to live here; under Stripe v22's ESM `export default` layout it shadowed the
-// real types (Checkout/Subscription/billingPortal resolved to `unknown`). Any
-// project-specific field additions must be written as an *augmentation*
-// (`import "stripe"` first, then `declare module "stripe"`), never a replacement.

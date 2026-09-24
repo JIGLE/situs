@@ -69,7 +69,6 @@ export default async function PrivacyPage() {
               <Term label={t("privacy.collectAccount")}>{t("privacy.collectAccountBody")}</Term>
               <Term label={t("privacy.collectProperty")}>{t("privacy.collectPropertyBody")}</Term>
               <Term label={t("privacy.collectBank")}>{t("privacy.collectBankBody")}</Term>
-              <Term label={t("privacy.collectPayment")}>{t("privacy.collectPaymentBody")}</Term>
             </ul>
           </Section>
 
@@ -127,7 +126,6 @@ export default async function PrivacyPage() {
               <Term label={t("privacy.processorEnableBanking")}>
                 {t("privacy.processorEnableBankingBody")}
               </Term>
-              <Term label={t("privacy.processorStripe")}>{t("privacy.processorStripeBody")}</Term>
               <Term label={t("privacy.processorEmail")}>{t("privacy.processorEmailBody")}</Term>
               <Term label={t("privacy.processorTax")}>{t("privacy.processorTaxBody")}</Term>
             </ul>
