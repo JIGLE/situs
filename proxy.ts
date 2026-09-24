@@ -335,6 +335,25 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // `/` has no page of its own: a signed-in owner belongs on the dashboard, anyone else on
+  // sign-in. It is answered here, with a 307 before anything renders, because the page cannot do
+  // it reliably. `app/[locale]/loading.tsx` puts `app/[locale]/page.tsx` behind a Suspense
+  // boundary, so the response is already streaming when the page runs, and Next can then send
+  // its `redirect()` only as a client-side meta refresh: the visitor watched the loading screen at
+  // `/` first, and the smoke test, reading the URL after the load event, saw `/`.
+  //
+  // After the legacy `?tab=` redirects above, which exist for old bookmarks of `/`, and for the
+  // bare path only: `/pt` still takes the 308 below, which keeps its language in the cookie, and
+  // comes back here as `/`.
+  if (pathname === "/") {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const response = NextResponse.redirect(
+      new URL(token ? "/dashboard" : "/auth/signin", request.nextUrl.origin),
+    );
+    applySecurityHeaders(response, nonce);
+    return response;
+  }
+
   // Check if pathname already starts with a supported locale
   const pathnameHasLocale = locales.some(
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
@@ -343,17 +362,18 @@ export async function proxy(request: NextRequest) {
   /**
    * On the standalone server — the one the Dockerfile runs and the one CI boots — this proxy
    * runs AGAIN on the path it rewrote to. That makes the two branches below, each correct on
-   * its own, mutually recursive: `/` is rewritten to `/pt`, the second pass sees a locale
-   * prefix and 308s it back to `/`, and the browser gives up with ERR_TOO_MANY_REDIRECTS on
-   * the home page. Under `next start` there is no second pass, which is why every local check
-   * missed it. It is invisible to the mobile-audit ratchet too: an unreachable surface lands
-   * in `failedToLoad`, and BASELINE does not include that key, so the gate stays green while
-   * the front door is shut.
+   * its own, mutually recursive: `/privacy` is rewritten to `/pt/privacy`, the second pass sees
+   * a locale prefix and 308s it back to `/privacy`, and the browser gives up with
+   * ERR_TOO_MANY_REDIRECTS. It was found on the home page, which took this rewrite until `/`
+   * began redirecting above. Under `next start` there is no second pass, which is why every
+   * local check missed it. It is invisible to the mobile-audit ratchet too: an unreachable
+   * surface lands in `failedToLoad`, and BASELINE does not include that key, so the gate stays
+   * green while the front door is shut.
    *
    * Suppressing only the 308 is not enough. The second pass then takes the rewrite branch
-   * instead and asks for `/pt/pt`, then `/pt/pt/pt`, until the request simply never answers —
-   * which is what the first attempt at this fix actually produced. The second pass has to do
-   * nothing at all.
+   * instead and asks for `/pt/pt/privacy`, then `/pt/pt/pt/privacy`, until the request simply
+   * never answers — which is what the first attempt at this fix actually produced. The second
+   * pass has to do nothing at all.
    *
    * A client can set this header on its own request. That costs it the locale rewrite and
    * earns it a 404, and nothing more: every auth, portal and rate-limit check above this

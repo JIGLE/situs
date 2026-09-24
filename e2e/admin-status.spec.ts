@@ -83,10 +83,11 @@ test.describe("Admin › System status (/admin/status)", () => {
     await expect(page.getByText(/database schema/i).first()).toBeVisible();
     await expect(page.getByText(/pii encryption/i).first()).toBeVisible();
 
-    // Both registered countries appear whether or not a connector record exists for this user —
-    // "no connector yet" is itself information, and omitting the row would read as "fine".
+    // The tax check appears whether or not a connector record exists for this user — "no
+    // connector yet" is itself information, and omitting the row would read as "fine". Portugal
+    // is the only country; Spain's row went with its connector.
     await expect(page.getByText(/tax authority — PT/i)).toBeVisible();
-    await expect(page.getByText(/tax authority — ES/i)).toBeVisible();
+    await expect(page.getByText(/tax authority — ES/i)).toHaveCount(0);
     await expect(page.getByText(/bank movements/i).first()).toBeVisible();
   });
 });
