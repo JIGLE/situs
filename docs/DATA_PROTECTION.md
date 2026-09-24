@@ -173,6 +173,12 @@ The export is **derived from the Prisma schema** (`lib/services/gdpr/export-scop
 a hand-written list, so a relation added to `User` is exported the day it exists. It previously
 listed eleven relations against a model with thirty-five.
 
+The export is **readable**. It reads every relation nested under the user, and the PII extension
+decrypts only the model a query names, so each relation is decrypted with the `PII_FIELDS` of the
+model it holds (`decryptExportedRelations`). Until that existed, every NIF and phone number reached
+the file as ciphertext. The IBANs encrypted at the call site (§3) stay as stored, as they do
+everywhere else in the app.
+
 Two relations are excluded, and the export says so in its own payload: `accounts` and `sessions`
 hold NextAuth OAuth and session tokens. Those are login credentials rather than information
 about the subject, and a downloadable file containing them would be a security risk to the

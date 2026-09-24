@@ -1,7 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Prisma } from "@prisma/client";
 
-import { buildExportInclude, excludedRelations, EXPORT_DENY_LIST } from "./export-scope";
+import { encryptPII, PII_FIELDS } from "@/lib/utils/pii-encryption";
+import {
+  buildExportInclude,
+  decryptExportedRelations,
+  excludedRelations,
+  EXPORT_DENY_LIST,
+} from "./export-scope";
 
 /**
  * The point of these is that the export cannot quietly narrow again.
@@ -12,9 +18,14 @@ import { buildExportInclude, excludedRelations, EXPORT_DENY_LIST } from "./expor
  * metadata rather than against a second hand-written list, which would drift the same way.
  */
 function schemaRelations(): string[] {
+  return [...schemaRelationModels().keys()];
+}
+
+/** Each relation on `User` and the model it holds, straight from the metadata. */
+function schemaRelationModels(): Map<string, string> {
   const user = Prisma.dmmf.datamodel.models.find((m) => m.name === "User");
   if (!user) throw new Error("no User model in dmmf");
-  return user.fields.filter((f) => f.kind === "object").map((f) => f.name);
+  return new Map(user.fields.filter((f) => f.kind === "object").map((f) => [f.name, f.type]));
 }
 
 describe("GDPR export scope", () => {
@@ -81,5 +92,52 @@ describe("GDPR export scope", () => {
 
   it("reports what it excluded, so the export can say so", () => {
     expect(excludedRelations().sort()).toEqual(Object.keys(EXPORT_DENY_LIST).sort());
+  });
+});
+
+/**
+ * The export reads every relation nested under the user, and the PII extension decrypts only the
+ * top-level model a query names. So the file carried every NIF and phone number as `enc:…`.
+ */
+describe("decryptExportedRelations", () => {
+  beforeEach(() => vi.stubEnv("PII_ENCRYPTION_KEY", "c".repeat(64)));
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("decrypts every encrypted field under every relation that holds a PII model", () => {
+    // Built from the metadata and PII_FIELDS, so a model added to either is covered here too.
+    const user: Record<string, unknown> = { id: "user-1", email: "owner@example.pt" };
+    const expected: Record<string, unknown> = { ...user };
+    for (const [relation, model] of schemaRelationModels()) {
+      const fields = PII_FIELDS[model];
+      if (!fields) continue;
+      const plain = Object.fromEntries(
+        fields.map((field) => [field, `${model}.${field} 912345678`]),
+      );
+      const stored = Object.fromEntries(fields.map((field) => [field, encryptPII(plain[field])]));
+      user[relation] = [{ id: `${model}-1`, ...stored }];
+      expected[relation] = [{ id: `${model}-1`, ...plain }];
+    }
+
+    expect(JSON.stringify(user)).toContain("enc:");
+    expect(decryptExportedRelations(user)).toEqual(expected);
+  });
+
+  it("reaches every model in PII_FIELDS through a relation on User", () => {
+    // A PII model the user does not hold directly would sit in no relation, and so in no export.
+    const models = new Set(schemaRelationModels().values());
+    for (const model of Object.keys(PII_FIELDS)) {
+      expect(models, `${model} is in PII_FIELDS but no relation on User holds it`).toContain(model);
+    }
+  });
+
+  it("leaves the user's own fields, and relations with nothing encrypted, as they are", () => {
+    const user = {
+      id: "user-1",
+      email: "owner@example.pt",
+      properties: [{ id: "property-1", name: "Rua Augusta 12" }],
+      settings: null,
+    };
+
+    expect(decryptExportedRelations(user)).toEqual(user);
   });
 });
