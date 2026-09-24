@@ -6,21 +6,9 @@ import {
   withErrorHandler,
 } from "@/lib/utils/error-handling";
 import { propertyService } from "@/lib/services/database/property";
-import { sanitizeForDatabase, sanitizeNumber } from "@/lib/utils/sanitize";
+import { sanitizeForDatabase } from "@/lib/utils/sanitize";
+import { updatePropertySchema } from "@/lib/schemas/property.schema";
 import { z } from "zod";
-
-// Validation schema for updates
-const updatePropertySchema = z.object({
-  name: z.string().min(1).max(200).optional(),
-  address: z.string().min(1).max(500).optional(),
-  type: z.enum(["apartment", "house", "condo", "townhouse", "other"]).optional(),
-  bedrooms: z.number().min(0).max(100).optional(),
-  bathrooms: z.number().min(0).max(100).optional(),
-  rent: z.number().min(0).optional(),
-  status: z.enum(["occupied", "vacant", "maintenance"]).optional(),
-  description: z.string().max(1000).optional(),
-  image: z.string().url().optional(),
-});
 
 // GET /api/properties/[id] - Get a specific property
 async function handleGet(
@@ -76,25 +64,23 @@ async function handlePut(
       return createErrorResponse(new Error("Property not found"), 404, request);
     }
 
-    const body = await request.json();
+    // The shared fields, all optional. This route used to parse a list of its own that lacked the
+    // address and building fields, which z.object drops, so an edit to them was silently lost;
+    // its type list also lacked "commercial", so such a property could not be edited at all.
+    const validatedData = updatePropertySchema.parse(await request.json());
 
-    // Sanitize input
-    const sanitizedBody = {
-      ...body,
-      name: body.name ? sanitizeForDatabase(body.name) : undefined,
-      address: body.address ? sanitizeForDatabase(body.address) : undefined,
-      description: body.description ? sanitizeForDatabase(body.description) : undefined,
-      image: body.image ? sanitizeForDatabase(body.image) : undefined,
-      bedrooms: body.bedrooms !== undefined ? sanitizeNumber(body.bedrooms, 0, 0, 100) : undefined,
-      bathrooms:
-        body.bathrooms !== undefined ? sanitizeNumber(body.bathrooms, 0, 0, 100) : undefined,
-      rent: body.rent !== undefined ? sanitizeNumber(body.rent, 0, 0) : undefined,
-    };
-
-    // Validate input
-    const validatedData = updatePropertySchema.parse(sanitizedBody);
-
-    const property = await propertyService.update(userId, id, validatedData);
+    // Sanitized after validation, as POST does. A blank stays "" rather than becoming undefined:
+    // on an edit it means "clear this field", and the service reads "" back as absent.
+    const clean = (value?: string) => (value ? sanitizeForDatabase(value) : value);
+    const property = await propertyService.update(userId, id, {
+      ...validatedData,
+      name: clean(validatedData.name),
+      address: clean(validatedData.address),
+      streetAddress: clean(validatedData.streetAddress),
+      city: clean(validatedData.city),
+      description: clean(validatedData.description),
+      image: clean(validatedData.image),
+    });
     return createSuccessResponse(property);
   } catch (error) {
     if (error instanceof z.ZodError) {

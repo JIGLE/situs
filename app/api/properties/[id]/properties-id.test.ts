@@ -302,3 +302,67 @@ describe("Properties API - DELETE /api/properties/[id]", () => {
     expect([403, 404]).toContain(response.status);
   });
 });
+
+describe("Properties API - PUT saves every field the edit form sends", () => {
+  const put = (body: Record<string, unknown>) =>
+    updateProperty(
+      new NextRequest("http://localhost:3000/api/properties/prop-123", {
+        method: "PUT",
+        headers: new Headers({ Authorization: "Bearer valid-token" }),
+        body: JSON.stringify(body),
+      }),
+      { params: { id: "prop-123" } },
+    );
+  const savedData = async () => {
+    const { propertyService } = await import("@/lib/services/database/property");
+    const calls = vi.mocked(propertyService.update).mock.calls;
+    return calls[calls.length - 1][2];
+  };
+
+  it("saves the address and building fields instead of dropping them", async () => {
+    const address = {
+      streetAddress: "Rua Augusta 1",
+      city: "Lisboa",
+      zipCode: "1100-048",
+      country: "ES",
+      latitude: 38.71,
+      longitude: -9.14,
+      addressVerified: true,
+      buildingId: "building-1",
+      buildingName: "Edifício Augusta",
+    };
+
+    const response = await put(address);
+
+    expect(response.status).toBe(200);
+    expect(await savedData()).toMatchObject(address);
+  });
+
+  it("edits a commercial property", async () => {
+    const response = await put({ type: "commercial" });
+
+    expect(response.status).toBe(200);
+    expect(await savedData()).toMatchObject({ type: "commercial" });
+  });
+
+  it("clears a postal code sent blank", async () => {
+    const response = await put({ zipCode: "" });
+
+    expect(response.status).toBe(200);
+    expect(await savedData()).toMatchObject({ zipCode: "" });
+  });
+
+  it("refuses a malformed postal code", async () => {
+    const response = await put({ zipCode: "12" });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("leaves the country and verification flag alone when the edit does not send them", async () => {
+    await put({ name: "Renamed" });
+
+    const data = await savedData();
+    expect(data).not.toHaveProperty("country");
+    expect(data).not.toHaveProperty("addressVerified");
+  });
+});
