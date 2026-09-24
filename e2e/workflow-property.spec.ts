@@ -50,7 +50,7 @@ test.describe("Critical Path: Property management", () => {
     const responsePromise = page.waitForResponse(
       (res) => res.url().includes("/api/properties") && res.request().method() === "POST",
     );
-    await dialog.getByRole("button", { name: /create property/i }).click();
+    await dialog.getByRole("button", { name: /^create$/i }).click();
 
     const response = await responsePromise;
     expect(response.status()).toBe(201);
@@ -66,7 +66,7 @@ test.describe("Critical Path: Property management", () => {
 
     // Submit without filling anything. Unlike the tenant form, none of these inputs carry the
     // native `required` attribute, so submission reaches the schema and renders real messages.
-    await dialog.getByRole("button", { name: /create property/i }).click();
+    await dialog.getByRole("button", { name: /^create$/i }).click();
 
     // Form should stay open with validation feedback
     await expect(dialog).toBeVisible();

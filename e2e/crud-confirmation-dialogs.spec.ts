@@ -148,7 +148,7 @@ test.describe("Form Validation – Authenticated", () => {
     const nameInput = page.getByLabel("Property Name");
     await nameInput.fill("Temporary");
     await nameInput.clear();
-    await dialog.getByRole("button", { name: /create property/i }).click();
+    await dialog.getByRole("button", { name: /^create$/i }).click();
 
     await expect(dialog.locator(".text-destructive, [role='alert']").first()).toBeVisible({
       timeout: 5000,
