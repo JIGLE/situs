@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { httpError, useApiError } from "@/lib/utils/api-error";
 import { formatDateTime } from "@/lib/utils/format-date";
+import { auditActionKey } from "@/lib/utils/audit-labels";
 import { History } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,6 +39,7 @@ export function AuditTrail({
 }: AuditTrailProps): React.ReactElement {
   const apiError = useApiError();
   const t = useTranslations("common");
+  const tAction = useTranslations("auditActions");
   const locale = useLocale();
   // Defaults resolve here, not in the parameter list, because `t` does not exist yet up there.
   // They used to be English string literals, so any caller that did not pass its own copy — the
@@ -136,9 +138,7 @@ export function AuditTrail({
         {entries.map((entry) => (
           <div key={entry.id} className="px-4 py-2.5 text-sm">
             <div className="flex items-center justify-between gap-3">
-              <span className="font-mono text-xs uppercase tracking-[0.04em]">
-                {entry.action.replace(/_/g, " ")}
-              </span>
+              <ActionLabel action={entry.action} label={tAction} />
               <span className="tabular-nums text-xs text-[var(--color-muted-foreground)]">
                 {formatDateTime(entry.createdAt, locale)}
               </span>
@@ -147,5 +147,21 @@ export function AuditTrail({
         ))}
       </div>
     </div>
+  );
+}
+
+/** The action in the reader's language; an action no longer written keeps its stored code. */
+function ActionLabel({
+  action,
+  label,
+}: {
+  action: string;
+  label: (key: NonNullable<ReturnType<typeof auditActionKey>>) => string;
+}): React.ReactElement {
+  const key = auditActionKey(action);
+  return key ? (
+    <span className="text-xs font-medium">{label(key)}</span>
+  ) : (
+    <span className="font-mono text-xs uppercase tracking-[0.04em]">{action}</span>
   );
 }
