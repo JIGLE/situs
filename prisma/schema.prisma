@@ -1123,7 +1123,7 @@ model TaxSubmissionLog {
   id           String   @id @default(cuid())
   userId       String
   connectorId  String
-  subjectType  String // rent_receipt|modelo179|nrua|tax_filing
+  subjectType  String // rent_receipt|modelo179|nrua
   subjectId    String
   action       String // validate|submit|poll|cancel
   mode         String // sandbox|review|live — snapshot at call time

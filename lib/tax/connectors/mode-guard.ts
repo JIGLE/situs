@@ -27,7 +27,7 @@ export interface ModeGuardInput {
   connector: { id: string; mode: string };
   userId: string;
   /** Matches TaxSubmissionLog.subjectType — a rent receipt for PT, an NRUA registration for ES. */
-  subjectType: "rent_receipt" | "modelo179" | "nrua" | "tax_filing";
+  subjectType: "rent_receipt" | "modelo179" | "nrua";
   subjectId: string;
   action: "submit" | "poll";
   /** Human name of the authority, for the message the operator will read. */
