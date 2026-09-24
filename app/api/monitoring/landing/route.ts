@@ -1,34 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { metrics } from "@/lib/monitoring/metrics";
+import { requireMetricsToken } from "@/lib/utils/metrics-auth";
 
 const LANDING_EVENT_PREFIX = "landing.";
-
-function ensureAuthorized(request: NextRequest): NextResponse | null {
-  if (process.env.NODE_ENV !== "production") {
-    return null;
-  }
-
-  const authHeader = request.headers.get("authorization") || "";
-  const initSecret = process.env.INIT_SECRET;
-  if (!initSecret || authHeader !== `Bearer ${initSecret}`) {
-    return NextResponse.json(
-      { error: "Authentication required for monitoring endpoint" },
-      { status: 403 },
-    );
-  }
-
-  return null;
-}
 
 /**
  * GET /api/monitoring/landing
  * Returns landing-specific event counters and recent event records.
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const unauthorized = ensureAuthorized(request);
-  if (unauthorized) {
-    return unauthorized;
-  }
+  const refused = requireMetricsToken(request);
+  if (refused) return refused;
 
   const url = new URL(request.url);
   const limitParam = Number(url.searchParams.get("limit") ?? "50");

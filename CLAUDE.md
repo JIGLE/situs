@@ -322,6 +322,8 @@ Optional:
   Without these the app is CSV-import-only and shows no connect button.
 - `CRON_SECRET` gates the three `/api/cron/*` endpoints (notifications, data retention, bank sync);
   each returns 503 while it is unset.
+- `METRICS_TOKEN` gates the counter endpoints (`/api/metrics`, `/api/monitoring/metrics`,
+  `/api/monitoring/landing`) in production; each answers 403 while it is unset.
 - Subscription billing (Free/Pro/Business tiers): `STRIPE_PRICE_ID_PRO`,
   `STRIPE_PRICE_ID_BUSINESS`, `STRIPE_TRIAL_DAYS_PRO`, `ENABLE_BILLING` (plan limits; off by
   default, so self-hosted instances are unlimited).
