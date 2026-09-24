@@ -8,8 +8,9 @@ import { NextRequest } from "next/server";
  * re-run, so it is pinned here along with the month window it searches.
  */
 
-const { requireOwnerAccessMock, prismaMock } = vi.hoisted(() => ({
+const { requireOwnerAccessMock, allocateReceiptMock, prismaMock } = vi.hoisted(() => ({
   requireOwnerAccessMock: vi.fn(),
+  allocateReceiptMock: vi.fn(),
   prismaMock: {
     lease: { findMany: vi.fn() },
     receipt: { findFirst: vi.fn(), create: vi.fn() },
@@ -21,6 +22,7 @@ vi.mock("@/lib/services/auth/auth-middleware", () => ({
   handleOptions: vi.fn(),
 }));
 vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prismaMock }));
+vi.mock("@/lib/services/allocation/service", () => ({ allocateReceipt: allocateReceiptMock }));
 
 import { POST } from "./route";
 
@@ -63,6 +65,7 @@ describe("POST /api/receipts/bulk", () => {
     prismaMock.lease.findMany.mockResolvedValue([lease]);
     prismaMock.receipt.findFirst.mockResolvedValue(null);
     prismaMock.receipt.create.mockResolvedValue(createdReceipt);
+    allocateReceiptMock.mockResolvedValue(null);
   });
 
   it("generates a receipt for an active lease with none yet that month", async () => {
@@ -119,6 +122,29 @@ describe("POST /api/receipts/bulk", () => {
         where: expect.objectContaining({ id: { in: ["lease-1", "lease-2"] } }),
       }),
     );
+  });
+
+  // The Finance screen used to POST every generated receipt back to /api/receipts, which wrote each
+  // one a second time — and only that copy went through the waterfall, because this route never
+  // allocated. A generated receipt now arrives linked and allocated, so there is nothing to resend.
+  it("links each receipt to its lease and allocates it, as a single receipt is", async () => {
+    await POST(bulkRequest({ month: "2026-03" }));
+
+    expect(prismaMock.receipt.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ leaseId: "lease-1" }) }),
+    );
+    expect(allocateReceiptMock).toHaveBeenCalledWith("rec-1");
+  });
+
+  it("keeps a receipt whose allocation failed, as a single receipt does", async () => {
+    allocateReceiptMock.mockRejectedValueOnce(new Error("ledger busy"));
+
+    const res = await POST(bulkRequest({ month: "2026-03" }));
+    const payload = (await res.json()) as { data: { generated: unknown[]; errors: string[] } };
+
+    expect(allocateReceiptMock).toHaveBeenCalledTimes(1);
+    expect(payload.data.generated).toHaveLength(1);
+    expect(payload.data.errors).toEqual([]);
   });
 
   it("returns 400 for a month that is not YYYY-MM", async () => {

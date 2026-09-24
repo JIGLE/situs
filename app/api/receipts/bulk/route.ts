@@ -4,6 +4,7 @@ import { createSuccessResponse, parseBody, withErrorHandler } from "@/lib/utils/
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { sanitizeForDatabase } from "@/lib/utils/sanitize";
+import { logger } from "@/lib/utils/logger";
 import { z } from "zod";
 import { Receipt } from "@/lib/types";
 
@@ -77,6 +78,8 @@ async function handlePost(request: NextRequest): Promise<Response> {
           userId: scopeUserId,
           tenantId: lease.tenantId,
           propertyId: lease.propertyId,
+          // Linked, so allocation below settles this lease rather than guessing among a tenant's.
+          leaseId: lease.id,
           amount: lease.monthlyRent,
           date: monthStart,
           type: "rent",
@@ -85,6 +88,18 @@ async function handlePost(request: NextRequest): Promise<Response> {
         },
         include: { tenant: true, property: true },
       });
+
+      // Through the reference-month waterfall, as `POST /api/receipts` does for a single receipt.
+      // This route never did, and the Finance screen made up for it by POSTing every generated
+      // receipt back to that endpoint — which wrote each one a second time. Best-effort for the
+      // same reason as there: the receipt is written, and `scripts/backfill-rent-periods.ts`
+      // allocates any rent receipt that was missed.
+      try {
+        const { allocateReceipt } = await import("@/lib/services/allocation/service");
+        await allocateReceipt(receipt.id);
+      } catch (allocErr) {
+        logger.error("Receipt allocation failed", allocErr, { receiptId: receipt.id });
+      }
 
       generated.push({
         id: receipt.id,
