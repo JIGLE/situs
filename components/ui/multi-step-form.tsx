@@ -392,15 +392,15 @@ interface DraftBannerProps {
 }
 
 export function DraftBanner({ onRestore, onDiscard }: DraftBannerProps): React.ReactElement {
+  const t = useTranslations("forms");
+  const tActions = useTranslations("actions");
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-info)]/10 border border-[var(--color-info)]/30"
     >
-      <p className="text-sm text-[var(--color-info)]">
-        You have an unsaved draft. Would you like to continue?
-      </p>
+      <p className="text-sm text-[var(--color-info)]">{t("draftFound")}</p>
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
@@ -408,14 +408,14 @@ export function DraftBanner({ onRestore, onDiscard }: DraftBannerProps): React.R
           onClick={onDiscard}
           className="text-[var(--color-muted-foreground)]"
         >
-          Discard
+          {tActions("discard")}
         </Button>
         <Button
           size="sm"
           onClick={onRestore}
           className="bg-[var(--color-info)] hover:bg-[var(--color-info)]/90"
         >
-          Continue
+          {tActions("continue")}
         </Button>
       </div>
     </motion.div>

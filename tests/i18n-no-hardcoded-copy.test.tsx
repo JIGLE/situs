@@ -35,6 +35,7 @@ import { AuditTrail } from "@/components/shared/audit-trail";
 import { FinancialsView } from "@/components/features/financial/financials-view";
 import { TaxConnectorDashboard } from "@/components/features/financial/tax-connector-dashboard";
 import { AuditTrail as AuditTrailForError } from "@/components/shared/audit-trail";
+import { DraftBanner } from "@/components/ui/multi-step-form";
 import ptMessages from "@/messages/pt.json";
 
 vi.mock("@/lib/contexts/currency-context", () => ({
@@ -185,5 +186,55 @@ describe("user-visible copy comes from the catalogue, not from literals", () => 
 
     expect(await screen.findByText(ptMessages.errors.api.serverError)).toBeInTheDocument();
     expect(screen.queryByText(/Database operation failed/)).not.toBeInTheDocument();
+  });
+
+  it("names each audit action in Portuguese, and keeps the code of one no longer written", async () => {
+    // Each row printed its stored action with the underscores removed: "UPLOAD LEASE CONTRACT"
+    // in a Portuguese trail.
+    const row = (id: string, action: string) => ({
+      id,
+      action,
+      resourceType: "Lease",
+      resourceId: "lease-1",
+      createdAt: "2026-09-01T10:00:00Z",
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              data: [
+                row("a1", "ALLOCATE_PAYMENT"),
+                row("a2", "UPLOAD_LEASE_CONTRACT"),
+                row("a3", "RETIRED_FEATURE_ACTION"),
+                row("a4", "EXTRACT_LEASE_CONTRACT"),
+              ],
+            }),
+        }),
+      ),
+    );
+
+    renderWithProviders(<AuditTrail resourceIds={["lease-1"]} />, { initialLocale: "pt" });
+
+    expect(await screen.findByText("Pagamento atribuído")).toBeInTheDocument();
+    expect(screen.getByText("PDF do contrato carregado")).toBeInTheDocument();
+    // The record of a contract leaving the instance says where it went.
+    expect(screen.getByText("Contrato enviado à Anthropic para leitura")).toBeInTheDocument();
+    // Rows outlive the code that wrote them; an action with no label keeps its stored code.
+    expect(screen.getByText("RETIRED_FEATURE_ACTION")).toBeInTheDocument();
+    expect(screen.queryByText(/ALLOCATE PAYMENT|UPLOAD LEASE CONTRACT/i)).not.toBeInTheDocument();
+  });
+
+  it("offers to restore a form draft in Portuguese", () => {
+    // Every multi-step wizard shows this banner, and it was English in every language.
+    renderWithProviders(<DraftBanner onRestore={vi.fn()} onDiscard={vi.fn()} />, {
+      initialLocale: "pt",
+    });
+
+    expect(screen.getByText("Tem um rascunho por guardar. Quer continuar?")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Descartar" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continuar" })).toBeInTheDocument();
   });
 });

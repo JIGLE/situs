@@ -5,6 +5,7 @@ import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { logAudit, getAuditLogsForUser } from "@/lib/services/audit-log";
 import {
   buildExportInclude,
+  decryptExportedRelations,
   excludedRelations,
   EXPORT_DENY_LIST,
 } from "@/lib/services/gdpr/export-scope";
@@ -40,7 +41,8 @@ export async function POST(request: NextRequest) {
     // `auditLogs` is fetched separately because getAuditLogsForUser applies the same shaping
     // the audit UI uses; the include above would return the raw rows.
     const exportData = {
-      ...user,
+      // Relations come back as stored: the PII extension decrypts only the top-level model.
+      ...decryptExportedRelations(user),
       auditLogs,
       exportedAt: new Date().toISOString(),
       // Article 15(1) asks the controller to say what is held, so an export that silently

@@ -582,7 +582,8 @@
     "continue": "Continuar",
     "processing": "A processar…",
     "exportCsv": "Exportar como CSV",
-    "exportJson": "Exportar como JSON"
+    "exportJson": "Exportar como JSON",
+    "discard": "Descartar"
   },
   "errors": {
     "notFound": {
@@ -1006,7 +1007,8 @@
     "allProperties": "Todos os Imóveis",
     "saving": "A guardar...",
     "selectProperty": "Selecionar Imóvel",
-    "selectTenant": "Selecionar Inquilino"
+    "selectTenant": "Selecionar Inquilino",
+    "draftFound": "Tem um rascunho por guardar. Quer continuar?"
   },
   "status": {
     "active": "Ativo",
@@ -1064,7 +1066,11 @@
       "selectAsset": "Selecione um ativo na árvore para abrir a sua área de trabalho."
     },
     "toastCreated": "Imóvel adicionado",
-    "toastUpdated": "Imóvel atualizado"
+    "toastUpdated": "Imóvel atualizado",
+    "editManually": "Editar manualmente",
+    "hideFields": "Ocultar campos",
+    "addDetails": "Adicionar detalhes (quartos, casas de banho, descrição)",
+    "hideDetails": "Ocultar detalhes"
   },
   "financial": {
     "title": "Financeiro",
@@ -1682,5 +1688,68 @@
     "idDocument": "Documento de identificação",
     "idDocumentHint": "Para quem não tem NIF português: número do passaporte ou do cartão de identificação.",
     "invalidNif": "Este NIF não é válido: o dígito de controlo não confere."
+  },
+  "auditActions": {
+    "login": "Sessão iniciada",
+    "logout": "Sessão terminada",
+    "passwordChange": "Palavra-passe alterada",
+    "viewPersonalData": "Dados pessoais consultados",
+    "exportPersonalData": "Dados pessoais exportados",
+    "deletePersonalData": "Dados pessoais eliminados",
+    "createProperty": "Imóvel criado",
+    "updateProperty": "Imóvel atualizado",
+    "deleteProperty": "Imóvel eliminado",
+    "createTenant": "Inquilino criado",
+    "updateTenant": "Inquilino atualizado",
+    "deleteTenant": "Inquilino eliminado",
+    "revokePortalAccess": "Acesso ao portal revogado",
+    "createLease": "Contrato criado",
+    "updateLease": "Contrato atualizado",
+    "deleteLease": "Contrato eliminado",
+    "uploadLeaseContract": "PDF do contrato carregado",
+    "downloadLeaseContract": "PDF do contrato descarregado",
+    "deleteLeaseContract": "PDF do contrato eliminado",
+    "extractLeaseContract": "Contrato enviado à Anthropic para leitura",
+    "importLeaseContract": "Contrato importado",
+    "createUnit": "Unidade criada",
+    "updateUnit": "Unidade atualizada",
+    "deleteUnit": "Unidade eliminada",
+    "createReceipt": "Recibo criado",
+    "updateReceipt": "Recibo atualizado",
+    "deleteReceipt": "Recibo eliminado",
+    "createExpense": "Despesa criada",
+    "updateExpense": "Despesa atualizada",
+    "deleteExpense": "Despesa eliminada",
+    "sendEmail": "Email enviado",
+    "viewRentReceipts": "Recibos de renda consultados",
+    "createRentReceipt": "Recibo de renda registado",
+    "viewOwnershipVerifications": "Verificações de propriedade consultadas",
+    "createOwnershipVerification": "Verificação de propriedade criada",
+    "databaseAccess": "Base de dados acedida",
+    "databaseExport": "Base de dados exportada",
+    "settingsChange": "Definições alteradas",
+    "generateRentPeriods": "Meses de renda gerados",
+    "allocatePayment": "Pagamento atribuído",
+    "reverseAllocation": "Atribuição revertida",
+    "importBankTransactions": "Movimentos bancários importados",
+    "matchPayment": "Pagamento conciliado",
+    "confirmMatch": "Conciliação confirmada",
+    "overrideMatch": "Conciliação reatribuída",
+    "ignoreTransaction": "Movimento ignorado",
+    "applyReconciliationRule": "Regra de conciliação aplicada",
+    "bankConnectionCreated": "Banco ligado",
+    "bankConnectionDeleted": "Ligação bancária de teste eliminada",
+    "bankConsentGranted": "Consentimento bancário concedido",
+    "bankConsentExpired": "Consentimento bancário expirado",
+    "emitReceipt": "Recibo emitido",
+    "submitReceipt": "Recibo submetido",
+    "archiveReceipt": "Recibo arquivado",
+    "voidReceipt": "Recibo anulado",
+    "transitionReceiptLifecycle": "Estado do recibo alterado",
+    "ocrClassifyDocument": "Documento classificado",
+    "ocrExtractionReviewed": "Leitura do documento revista",
+    "linkExpenseDocument": "Documento associado a uma despesa",
+    "assignPropertyOwner": "Proprietário atribuído",
+    "removePropertyOwner": "Proprietário removido"
   }
 }
