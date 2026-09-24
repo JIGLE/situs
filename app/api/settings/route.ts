@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { isMockMode } from "@/lib/config/data-mode";
+import { createErrorResponse, parseBody, ValidationError } from "@/lib/utils/error-handling";
+import { updateSettingsSchema } from "@/lib/schemas/settings.schema";
 
 export async function GET(request: NextRequest) {
   try {
@@ -46,7 +48,8 @@ export async function POST(request: NextRequest) {
 
     const { userId } = authResult;
 
-    const data = await request.json();
+    // Checked before the upsert: a wrong type used to reach Prisma and answer 500.
+    const data = parseBody(await request.json(), updateSettingsSchema);
 
     // In mock mode, just echo back the settings
     if (isMockMode) {
@@ -93,6 +96,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: settings });
   } catch (error) {
+    if (error instanceof ValidationError) return createErrorResponse(error, 400, request);
     console.error("Failed to save settings:", error);
     return NextResponse.json({ error: "Failed to save settings" }, { status: 500 });
   }
