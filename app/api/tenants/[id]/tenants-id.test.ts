@@ -315,3 +315,63 @@ describe("Tenants API - DELETE /api/tenants/[id]", () => {
     expect([403, 404]).toContain(response.status);
   });
 });
+
+// An update may send a NIF without the country the tenant already has, so the stored country
+// decides how it is checked.
+describe("Tenants API - PUT /api/tenants/[id]: the NIF", () => {
+  const put = (body: Record<string, unknown>) =>
+    updateTenant(
+      new NextRequest("http://localhost:3000/api/tenants/tenant-123", {
+        method: "PUT",
+        headers: new Headers({ Authorization: "Bearer valid-token" }),
+        body: JSON.stringify(body),
+      }),
+      { params: { id: "tenant-123" } },
+    );
+  const service = async () => (await import("@/lib/services/database/tenant")).tenantService;
+
+  it("refuses a Portuguese NIF whose check digit is wrong, before writing", async () => {
+    const tenantService = await service();
+    vi.mocked(tenantService.update).mockClear();
+
+    const response = await put({ taxId: "123456780" });
+
+    expect(response.status).toBe(400);
+    expect(tenantService.update).not.toHaveBeenCalled();
+  });
+
+  it("checks a NIF against the tenant's stored country", async () => {
+    const tenantService = await service();
+    vi.mocked(tenantService.getById).mockResolvedValueOnce({
+      id: "tenant-123",
+      name: "Hans Weber",
+      email: "hans@example.com",
+      taxCountry: "DE",
+    } as never);
+
+    const response = await put({ taxId: "DE 999 999" });
+
+    expect(response.status).toBe(200);
+    expect(vi.mocked(tenantService.update).mock.calls.at(-1)?.[2]).toMatchObject({
+      taxId: "DE 999 999",
+    });
+  });
+
+  it("leaves the NIF alone when the request does not send one", async () => {
+    const tenantService = await service();
+
+    await put({ name: "Jane Doe" });
+
+    const data = vi.mocked(tenantService.update).mock.calls.at(-1)?.[2];
+    expect(data?.taxId).toBeUndefined();
+    expect(data?.idDocument).toBeUndefined();
+  });
+
+  it("clears the NIF with a blank input", async () => {
+    const tenantService = await service();
+
+    await put({ taxId: "" });
+
+    expect(vi.mocked(tenantService.update).mock.calls.at(-1)?.[2]).toMatchObject({ taxId: null });
+  });
+});

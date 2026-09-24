@@ -46,6 +46,15 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // DATA_PROTECTION §3's call-site table gained the contract, and its plaintext table said the
+    // documents store held uploaded leases.
+    pattern: /Two bank fields are deliberately|Whatever the operator uploaded/,
+    retired: "2026-09-24 (lease contract fields)",
+    because:
+      "the lease contract is encrypted at the call site beside the two bank fields, and the " +
+      "documents store holds only receipt archives",
+  },
+  {
     // The removed ARTIFACTS and the two sentences that listed them. The Completed Features list
     // in ROADMAP.md still names "Units" and the "Property Map": it is a record of what was built.
     pattern:

@@ -46,7 +46,14 @@ function getPrismaClient(): PrismaClient {
       // Prisma 7 requires a driver adapter to provide the database connection
       try {
         const adapter = new PrismaBetterSqlite3({ url: dbUrl });
-        const rawClient = new PrismaClient({ adapter });
+        const rawClient = new PrismaClient({
+          adapter,
+          // A stored contract is a PDF of up to 20 MB, and many queries read whole lease rows:
+          // the ledger, notifications, bank matching, every lease list. Only the contract's own
+          // route (app/api/leases/[id]/contract) wants the bytes, and it asks with `select`,
+          // which a global omit does not touch.
+          omit: { lease: { contractFile: true } },
+        });
         // Transparent PII field encryption/decryption — see pii-extension.ts.
         // The extension only transforms field VALUES at runtime; it doesn't
         // change the client's query/return shapes, so this cast is safe.

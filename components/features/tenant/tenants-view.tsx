@@ -61,6 +61,7 @@ import { useBulkSelection } from "@/lib/hooks/use-bulk-selection";
 import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { SwipeableListItem } from "@/components/ui/swipeable-list-item";
+import { TaxIdentityFields } from "@/components/shared/tax-identity-fields";
 
 export type TenantsViewProps = { density?: "comfortable" | "compact" };
 
@@ -82,6 +83,7 @@ function TenantForm({
   const t = useTranslations("tenants");
   const tForms = useTranslations("forms");
   const tActions = useTranslations("actions");
+  const tTaxIdentity = useTranslations("taxIdentity");
 
   return (
     <form onSubmit={dialog.handleSubmit} className="space-y-4">
@@ -223,6 +225,15 @@ function TenantForm({
               )}
             </div>
           </div>
+
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium">{tTaxIdentity("title")}</legend>
+            <TaxIdentityFields
+              idPrefix="tenant"
+              value={dialog.formData}
+              onChange={(update) => dialog.updateFormData(update)}
+            />
+          </fieldset>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -410,6 +421,9 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
                 leaseEnd: t.leaseEnd || "",
                 paymentStatus: t.paymentStatus,
                 notes: t.notes || "",
+                taxId: t.taxId || "",
+                taxCountry: t.taxCountry || "PT",
+                idDocument: t.idDocument || "",
               }));
             }}
           >

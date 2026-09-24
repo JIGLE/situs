@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-import { decryptPII, encryptPII, isEncrypted } from "./pii-encryption";
+import {
+  decryptFile,
+  decryptPII,
+  encryptFile,
+  encryptPII,
+  isEncrypted,
+  isEncryptedFile,
+} from "./pii-encryption";
 
 /**
  * `decryptPII` has three failure modes and they were not handled consistently.
@@ -110,5 +117,56 @@ describe("the other two failure modes still degrade the same way", () => {
 
     expect(() => decryptPII(corrupted)).not.toThrow();
     expect(decryptPII(corrupted)).toBe("[ENCRYPTED]");
+  });
+});
+
+/**
+ * A stored contract PDF carries the same NIFs `PII_FIELDS` encrypts in their own columns, so it is
+ * encrypted too: at the call site, since it is bytes and the Prisma extension transforms strings.
+ */
+describe("files", () => {
+  const pdf = Buffer.from("%PDF-1.7\nContrato de arrendamento, NIF 123456789\n%%EOF");
+
+  it("round-trips, and what is stored does not contain the text", () => {
+    const stored = encryptFile(pdf);
+
+    expect(isEncryptedFile(stored)).toBe(true);
+    expect(stored.includes(Buffer.from("123456789"))).toBe(false);
+    expect(decryptFile(stored)?.equals(pdf)).toBe(true);
+  });
+
+  it("serves a file stored before encryption as it is", () => {
+    expect(isEncryptedFile(pdf)).toBe(false);
+    expect(decryptFile(pdf)?.equals(pdf)).toBe(true);
+  });
+
+  it("stores the file as it is when no key is configured", () => {
+    delete process.env.PII_ENCRYPTION_KEY;
+
+    expect(encryptFile(pdf).equals(pdf)).toBe(true);
+  });
+
+  it("returns null, without throwing, when the key has changed", () => {
+    const stored = encryptFile(pdf);
+    process.env.PII_ENCRYPTION_KEY = KEY_B;
+
+    expect(decryptFile(stored)).toBeNull();
+    expect(String(error.mock.calls[0]?.[0] ?? "")).toMatch(/PII_ENCRYPTION_KEY/);
+  });
+
+  it("returns null when the key is absent", () => {
+    const stored = encryptFile(pdf);
+    delete process.env.PII_ENCRYPTION_KEY;
+
+    expect(decryptFile(stored)).toBeNull();
+  });
+
+  it("returns null for a truncated or tampered file", () => {
+    const stored = encryptFile(pdf);
+    const tampered = Buffer.from(stored);
+    tampered[tampered.length - 1] ^= 0xff;
+
+    expect(decryptFile(stored.subarray(0, 20))).toBeNull();
+    expect(decryptFile(tampered)).toBeNull();
   });
 });

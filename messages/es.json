@@ -693,10 +693,12 @@
       "created": "Contrato creado correctamente",
       "updated": "Contrato actualizado correctamente",
       "deleted": "Contrato eliminado correctamente",
-      "fileTooLarge": "El archivo debe pesar menos de 5 MB",
+      "fileTooLarge": "El archivo debe pesar menos de {size} MB",
       "pdfOnly": "Solo se permiten archivos PDF",
       "rentIncreased": "Alquiler incrementado un {pct}% en {count} contrato(s).",
-      "rentIncreaseFailed": "No se ha podido aplicar el incremento. Inténtalo de nuevo."
+      "rentIncreaseFailed": "No se ha podido aplicar el incremento. Inténtalo de nuevo.",
+      "contractUploadFailed": "El alquiler se ha guardado, pero no se ha podido subir el contrato.",
+      "contractDownloadFailed": "No se ha podido descargar el contrato."
     },
     "deleteDialog": {
       "title": "Eliminar contrato",
@@ -737,7 +739,7 @@
     "docsStepTitle": "Documentos y notas",
     "docsStepDescription": "Sube el contrato y añade información adicional",
     "contractPdf": "Contrato de alquiler (PDF)",
-    "maxFileSize": "Tamaño máximo: 5 MB. Solo formato PDF.",
+    "maxFileSize": "Tamaño máximo: {size} MB. Solo formato PDF.",
     "additionalNotes": "Notas adicionales",
     "notesPlaceholder": "Añade condiciones especiales o notas sobre este contrato...",
     "filter": {
@@ -821,9 +823,29 @@
         "title": "Rescindir contrato",
         "description": "Este contrato quedará marcado como rescindido. Esta acción no se puede deshacer.",
         "confirmLabel": "Rescindir"
-      }
+      },
+      "atContract": "Contrato en la AT",
+      "atContractVersion": "{number}, versión {version}",
+      "notRecorded": "No registrado"
     },
-    "unknown": "Desconocido"
+    "unknown": "Desconocido",
+    "parties": {
+      "title": "Coarrendatarios y avalistas",
+      "description": "Todas las personas del contrato además del inquilino principal. Los recibos emitidos en Finanças incluyen a todos los inquilinos.",
+      "add": "Añadir persona",
+      "remove": "Quitar",
+      "role": "Función",
+      "roleTenant": "Coarrendatario",
+      "roleGuarantor": "Avalista",
+      "name": "Nombre completo",
+      "invalid": "Cada persona necesita un nombre y, si se indica, un NIF válido."
+    },
+    "atContract": {
+      "number": "N.º de contrato en la AT",
+      "version": "Versión del contrato",
+      "hint": "Figura en el Portal das Finanças o en el justificante de registro. Todos los recibos emitidos en Finanças lo indican.",
+      "invalid": "Solo dígitos."
+    }
   },
   "notifications": {
     "title": "Notificaciones",
@@ -951,7 +973,10 @@
       "bedrooms": "Dormitorios",
       "bathrooms": "Baños",
       "monthlyRent": "Alquiler Mensual",
-      "propertyStatus": "Estado de la Propiedad"
+      "propertyStatus": "Estado de la Propiedad",
+      "cadasterReference": "Artículo matricial",
+      "fraction": "Fracción",
+      "cadasterHint": "Como en la caderneta predial, por ejemplo 2321 y C."
     },
     "types": {
       "apartment": "Apartamento",
@@ -1584,5 +1609,14 @@
       "contactTitle": "Contacto",
       "contactBody": "Consultas sobre estos términos:"
     }
+  },
+  "taxIdentity": {
+    "title": "Identificación fiscal",
+    "country": "País",
+    "nif": "NIF",
+    "taxId": "Número fiscal",
+    "idDocument": "Documento de identidad",
+    "idDocumentHint": "Para quien no tiene NIF portugués: número de pasaporte o de documento de identidad.",
+    "invalidNif": "Este NIF no es válido: el dígito de control no coincide."
   }
 }

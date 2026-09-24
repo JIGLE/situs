@@ -62,19 +62,32 @@ transparent rather than per-call-site:
 | Model         | Encrypted fields                   |
 | ------------- | ---------------------------------- |
 | `Owner`       | `taxIdentificationNumber`, `phone` |
-| `Tenant`      | `phone`                            |
+| `Tenant`      | `phone`, `taxId`, `idDocument`     |
+| `LeaseParty`  | `taxId`, `idDocument`              |
 | `RentReceipt` | `landlordNif`, `tenantNif`         |
+
+`LeaseParty` holds a lease's co-tenants and guarantors. The extension transforms only the fields
+of the model a query names: a nested `create` or `include` passes through it untouched. So a
+model in this table is written and read through its own delegate, as `LeaseParty` is
+(`lib/services/database/lease-parties.ts`), never nested under another.
 
 ### Encrypted at the call site
 
-Two bank fields are deliberately **not** in `PII_FIELDS`, and the distinction is load-bearing:
-`/api/debug/db` reads through the extension, so adding `BankAccount.iban` to that list would
-make the debug endpoint start returning it in plaintext.
+Three fields are deliberately **not** in `PII_FIELDS`. For the two bank fields the distinction
+is load-bearing: `/api/debug/db` reads through the extension, so adding `BankAccount.iban` to
+that list would make the debug endpoint start returning it in plaintext. The contract is bytes
+rather than text, and too large to decrypt on every lease read.
 
 | Model             | Field              | Handling                                                                                                             |
 | ----------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
 | `BankAccount`     | `iban`             | Encrypted in `lib/services/bank/consent.ts`, **never decrypted**. Matching uses `ibanHash`; display uses `ibanLast4` |
 | `BankTransaction` | `counterpartyIban` | Encrypted in `lib/services/bank/import.ts`. Matching uses `counterpartyIbanHash`                                     |
+| `Lease`           | `contractFile`     | The signed contract PDF. Encrypted and decrypted only in `app/api/leases/[id]/contract/route.ts` (`encryptFile`)     |
+
+The contract names every party with their NIF, which is why it is encrypted like the columns
+that hold those NIFs. Its route is the only reader: the Prisma client leaves the column out of
+every other lease query (`omit` in `lib/services/database/database.ts`). A contract uploaded
+before encryption still downloads, and `scripts/backfill-pii-encryption.js` encrypts it.
 
 ### Personal data held in plaintext
 
@@ -83,11 +96,12 @@ Recorded here deliberately rather than left implicit:
 | Model                  | Field              | Why                                                                                                        |
 | ---------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------- |
 | `Tenant`, `Owner`      | `name`, `email`    | Needed for search, sorting and sending mail; encrypting would break every list view                        |
+| `LeaseParty`           | `name`             | Shown on the lease beside the main tenant; the NIF beside it is encrypted                                  |
 | `BankTransaction`      | `counterpartyName` | The matching engine reads it to score a movement against a lease                                           |
 | `BankTransaction`      | `reference`        | The remittance line. Read for reference-month parsing. **Free text: may contain anything the payer typed** |
 | `BankAccount`          | `ibanLast4`        | Four digits, displayed so a human can tell two accounts apart                                              |
 | `Property`, `Building` | address fields     | Personal data where a tenant lives there; core to the product                                              |
-| `Document`             | uploaded files     | Whatever the operator uploaded — leases, receipts, notices                                                 |
+| `Document`             | receipt archives   | The PDF kept when a receipt is emitted: the tenant's name, the property's address and the amount, on disk  |
 
 `BankTransaction.rawData` preserves the imported row for re-matching, with the IBAN stripped
 before it is written (`redactRowForStorage`, `lib/services/bank/csv.ts`). It previously stored

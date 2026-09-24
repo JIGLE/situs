@@ -36,6 +36,11 @@ export interface UseMultiStepFormOptions<T extends Record<string, unknown>> {
     key: string;
     /** Time-to-live in milliseconds (default: 24 hours) */
     ttl?: number;
+    /**
+     * Fields never written to the draft. The draft sits in localStorage, in clear, for up to
+     * `ttl`: personal data the server encrypts, such as a co-tenant's NIF, stays out of it.
+     */
+    omit?: (keyof T)[];
   };
 }
 
@@ -88,6 +93,14 @@ export interface UseMultiStepFormReturn<T extends Record<string, unknown>> {
   hasDraft: boolean;
   /** Clear saved draft */
   clearDraft: () => void;
+}
+
+/**
+ * Equal by value. Callers build `initialData` afresh on every render, so an array or object in it
+ * is a new reference each time, and a reference comparison reads it as an edit.
+ */
+function sameValue(a: unknown, b: unknown): boolean {
+  return Object.is(a, b) || JSON.stringify(a) === JSON.stringify(b);
 }
 
 /**
@@ -159,7 +172,8 @@ export function useMultiStepForm<T extends Record<string, unknown>>(
         const ttl = persistence.ttl || 24 * 60 * 60 * 1000; // 24 hours default
 
         if (Date.now() - timestamp < ttl) {
-          setFormData(data);
+          // Over the initial data, so a field the draft omits comes back empty, not missing.
+          setFormData({ ...initialDataRef.current, ...data });
           setCurrentStep(step);
           setHasDraft(true);
         } else {
@@ -176,14 +190,18 @@ export function useMultiStepForm<T extends Record<string, unknown>>(
   useEffect(() => {
     if (!persistence) return;
     const initial = initialDataRef.current;
-    const changed = Object.keys(formData).some(
-      (k) => formData[k as keyof T] !== initial[k as keyof T],
+    const omitted = new Set<keyof T>(persistence.omit ?? []);
+    // By value, and only over the fields the draft keeps: a draft holding nothing new is not one.
+    const changed = (Object.keys(formData) as (keyof T)[]).some(
+      (k) => !omitted.has(k) && !sameValue(formData[k], initial[k]),
     );
     if (changed) {
+      const draft: Partial<T> = { ...formData };
+      for (const field of omitted) delete draft[field];
       localStorage.setItem(
         persistence.key,
         JSON.stringify({
-          data: formData,
+          data: draft,
           step: currentStep,
           timestamp: Date.now(),
         }),

@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["redis", "puppeteer"],
   experimental: {
     optimizePackageImports: ["lucide-react", "@radix-ui/react-slot", "framer-motion"],
+    // Behind the proxy, Next buffers a request body only up to this size and drops the rest,
+    // silently: an upload past it arrives cut short rather than refused. The default is 10 MB,
+    // and a scanned contract can be larger, so this sits above the 20 MB the contract route
+    // accepts (app/api/leases/[id]/contract).
+    proxyClientMaxBodySize: "25mb",
   },
   images: {
     remotePatterns: [{ protocol: "https", hostname: "**" }],

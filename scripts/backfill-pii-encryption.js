@@ -6,7 +6,9 @@
  * That extension transparently encrypts PII_FIELDS (IBANs, NIFs, phone
  * numbers — see lib/utils/pii-encryption.ts) on every create/update going
  * forward, but rows already in the database at the time it was added are
- * still plaintext at rest. This script finds and re-encrypts them.
+ * still plaintext at rest. This script finds and re-encrypts them, and
+ * encrypts lease contracts stored before their route encrypted them
+ * (app/api/leases/[id]/contract).
  *
  * Deliberately standalone (mirrors scripts/delete-user.js): it talks to
  * Prisma directly, WITHOUT the pii-extension, so it can tell plaintext
@@ -25,7 +27,6 @@
 
 "use strict";
 
-require("dotenv").config();
 const crypto = require("crypto");
 const { PrismaClient } = require("@prisma/client");
 const { PrismaBetterSqlite3 } = require("@prisma/adapter-better-sqlite3");
@@ -59,6 +60,25 @@ function isEncrypted(value) {
   return typeof value === "string" && value.startsWith(ENCRYPTED_PREFIX);
 }
 
+// Mirrors encryptFile in lib/utils/pii-encryption.ts: the marker, then the IV, the GCM tag and the
+// ciphertext. tests/pii-backfill-contract.test.ts reads this script's output with the app's own
+// decryptFile, so a drift here fails there rather than on a contract nobody can open.
+const FILE_MARKER = Buffer.from("SITUSENC1");
+
+function isEncryptedFile(bytes) {
+  return (
+    bytes.length >= FILE_MARKER.length &&
+    Buffer.from(bytes.subarray(0, FILE_MARKER.length)).equals(FILE_MARKER)
+  );
+}
+
+function encryptFile(plain, key) {
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+  const encrypted = Buffer.concat([cipher.update(plain), cipher.final()]);
+  return Buffer.concat([FILE_MARKER, iv, cipher.getAuthTag(), encrypted]);
+}
+
 function encryptPII(plaintext, key) {
   if (!plaintext) return plaintext;
   const iv = crypto.randomBytes(IV_LENGTH);
@@ -74,8 +94,9 @@ function encryptPII(plaintext, key) {
 // iteration threw on `prisma.paymentMethod` before touching a single row.
 const PII_FIELDS = {
   owner: ["taxIdentificationNumber", "phone"],
-  tenant: ["phone"],
+  tenant: ["phone", "taxId", "idDocument"],
   rentReceipt: ["landlordNif", "tenantNif"],
+  leaseParty: ["taxId", "idDocument"],
 };
 
 async function main() {
@@ -119,6 +140,30 @@ async function main() {
         }
       }
     }
+
+    // Contracts are bytes, which the extension never sees. Read one at a time: each is a PDF.
+    const contracts = await prisma.lease.findMany({
+      where: { contractFile: { not: null } },
+      select: { id: true },
+    });
+    for (const { id } of contracts) {
+      const lease = await prisma.lease.findUnique({
+        where: { id },
+        select: { contractFile: true },
+      });
+      if (!lease || !lease.contractFile || isEncryptedFile(lease.contractFile)) continue;
+
+      totalRows++;
+      totalFields++;
+      console.log(`${dryRun ? "[dry-run] would encrypt" : "encrypting"} lease#${id}: contractFile`);
+      if (!dryRun) {
+        await prisma.lease.update({
+          where: { id },
+          data: { contractFile: new Uint8Array(encryptFile(lease.contractFile, key)) },
+          select: { id: true },
+        });
+      }
+    }
   } finally {
     await prisma.$disconnect();
   }
@@ -128,7 +173,13 @@ async function main() {
   );
 }
 
-main().catch((err) => {
-  console.error("Backfill failed:", err);
-  process.exit(1);
-});
+// Run from the command line; required, it only lends its file encryption to the contract test.
+if (require.main === module) {
+  require("dotenv").config();
+  main().catch((err) => {
+    console.error("Backfill failed:", err);
+    process.exit(1);
+  });
+}
+
+module.exports = { encryptFile, isEncryptedFile };

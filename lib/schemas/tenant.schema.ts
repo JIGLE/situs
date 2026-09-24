@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { checkTaxId, taxIdentityFields } from "./tax-identity";
 
-export const tenantSchema = z.object({
+const tenantFields = z.object({
   name: z.string().min(1, "Tenant name is required").max(100, "Name too long"),
   email: z.string().email("Invalid email format").max(255, "Email too long"),
   phone: z.string().max(20, "Phone number too long").optional().default(""),
@@ -19,12 +20,14 @@ export const tenantSchema = z.object({
   paymentStatus: z.enum(["paid", "overdue", "pending"]).default("pending"),
   lastPayment: z.string().optional(),
   notes: z.string().max(1000, "Notes too long").optional(),
+  ...taxIdentityFields,
 });
 
-export const createTenantSchema = tenantSchema.omit({
-  paymentStatus: true,
-  lastPayment: true,
-});
+export const tenantSchema = tenantFields.superRefine((data, ctx) => checkTaxId(data, ctx));
+
+export const createTenantSchema = tenantFields
+  .omit({ paymentStatus: true, lastPayment: true })
+  .superRefine((data, ctx) => checkTaxId(data, ctx));
 
 export type Tenant = z.infer<typeof tenantSchema>;
 export type TenantFormData = z.infer<typeof tenantSchema>;

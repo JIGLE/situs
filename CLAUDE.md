@@ -89,11 +89,16 @@ e2e/                    # Playwright E2E tests
   `lib/services/database/database.ts`) encrypts on write and decrypts on read — **not** every
   encrypted field. `BankAccount.iban` is encrypted at the call site (`lib/services/bank/consent.ts`)
   and never decrypted: matching uses `ibanHash`, display uses `ibanLast4`. Do not add it to
-  `PII_FIELDS` — the extension would then decrypt it on every read. **Required in production**:
-  without the key `encryptPII` writes plaintext and only warns, so the server refuses to start:
-  `instrumentation.ts` runs `lib/utils/env.ts` before the first request (skipped under
-  `NEXT_BUILD=true` and CI), and in the image prestart's `scripts/validate-env.js` refuses even
-  earlier. `ALLOW_UNENCRYPTED_PII=true` waives both and logs a warning instead.
+  `PII_FIELDS` — the extension would then decrypt it on every read. `Lease.contractFile` (bytes)
+  is encrypted by its own route, `app/api/leases/[id]/contract` (`encryptFile`), and the client's
+  global `omit` leaves it out of every other lease read. The extension transforms only the
+  top-level model a query names, never a nested `create` or `include`, so a PII model is written
+  and read through its own delegate (`LeaseParty` via `lib/services/database/lease-parties.ts`).
+  **Required in production**: without the key `encryptPII` writes plaintext and only warns, so
+  the server refuses to start: `instrumentation.ts` runs `lib/utils/env.ts` before the first
+  request (skipped under `NEXT_BUILD=true` and CI), and in the image prestart's
+  `scripts/validate-env.js` refuses even earlier. `ALLOW_UNENCRYPTED_PII=true` waives both and
+  logs a warning instead.
 - **Reference-month rent ledger**: `RentPeriod` is one row per lease per reference month; its
   `status` is recomputed in the same transaction as every allocation write and never hand-set.
   Waterfall invariant: fill the oldest not-fully-allocated period first

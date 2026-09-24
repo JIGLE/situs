@@ -56,4 +56,23 @@ describe("propertyService", () => {
     ).rejects.toThrow("Building not found");
     expect(prismaMock.property.update).not.toHaveBeenCalled();
   });
+  // The service writes an explicit field list, so a field the schema accepts but the list leaves
+  // out is dropped without a word. That is how the property form lost fields until #399.
+  it("writes the matriz article and the fraction, on create and on update", async () => {
+    await propertyService.create("user-1", {
+      ...property,
+      cadasterReference: "2321",
+      fraction: "C",
+    });
+    await propertyService.update("user-1", "prop-1", { cadasterReference: "2321-A", fraction: "" });
+
+    expect(prismaMock.property.create.mock.calls[0][0].data).toMatchObject({
+      cadasterReference: "2321",
+      fraction: "C",
+    });
+    expect(prismaMock.property.update.mock.calls[0][0].data).toMatchObject({
+      cadasterReference: "2321-A",
+      fraction: "",
+    });
+  });
 });

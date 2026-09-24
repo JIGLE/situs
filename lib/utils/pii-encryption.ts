@@ -149,10 +149,83 @@ export function maskPII(value: string, visibleStart = 4, visibleEnd = 4): string
  *     leaving that route in plaintext.
  *
  * So the rule for this table is narrower than "what is encrypted": it is "what is encrypted AND
- * needs to come back". Anything encrypted at a call site belongs in this note instead.
+ * needs to come back". Anything encrypted at a call site belongs in this note instead:
+ *
+ *   - `BankAccount.iban`, above;
+ *   - `Lease.contractFile`, the stored contract PDF, through `encryptFile`/`decryptFile` below.
+ *     It does come back, but it is bytes and the extension transforms strings, and only the
+ *     contract's own route (`app/api/leases/[id]/contract`) reads it.
+ *
+ * The extension transforms only the queried model's own fields, so a model listed here is written
+ * and read through its own delegate: `LeaseParty` rows nested under a lease would be stored in
+ * clear and come back encrypted.
  */
 export const PII_FIELDS: Record<string, string[]> = {
   Owner: ["taxIdentificationNumber", "phone"],
-  Tenant: ["phone"],
+  Tenant: ["phone", "taxId", "idDocument"],
   RentReceipt: ["landlordNif", "tenantNif"],
+  LeaseParty: ["taxId", "idDocument"],
 };
+
+/**
+ * Marks a file this module encrypted: the marker, then the IV, the GCM tag and the ciphertext.
+ * A stored PDF begins `%PDF-`, so a file written before encryption is told apart by its first
+ * bytes and served as it is.
+ */
+const FILE_MARKER = Buffer.from("SITUSENC1");
+const TAG_LENGTH = 16;
+
+/** True for bytes `encryptFile` produced. */
+export function isEncryptedFile(stored: Uint8Array): boolean {
+  return (
+    stored.length >= FILE_MARKER.length &&
+    Buffer.from(stored.subarray(0, FILE_MARKER.length)).equals(FILE_MARKER)
+  );
+}
+
+/**
+ * Encrypt a file with the PII key. Without a key it is stored as it is, with the same one-time
+ * warning `encryptPII` gives: the server refuses to start in production without one.
+ */
+export function encryptFile(plain: Uint8Array): Buffer {
+  const key = getEncryptionKey();
+  if (!key) {
+    warnOnceAboutPlaintext();
+    return Buffer.from(plain);
+  }
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+  const encrypted = Buffer.concat([cipher.update(plain), cipher.final()]);
+  return Buffer.concat([FILE_MARKER, iv, cipher.getAuthTag(), encrypted]);
+}
+
+/**
+ * The file's bytes. A file stored before encryption comes back as it is. Null when an encrypted
+ * file cannot be read: no key, a changed key, or bytes that fail the GCM tag.
+ */
+export function decryptFile(stored: Uint8Array): Buffer | null {
+  if (!isEncryptedFile(stored)) return Buffer.from(stored);
+  const key = getEncryptionKey();
+  if (!key) {
+    console.warn("[PII] Encrypted file found but PII_ENCRYPTION_KEY not set — cannot decrypt");
+    return null;
+  }
+  const ivStart = FILE_MARKER.length;
+  const tagStart = ivStart + IV_LENGTH;
+  const dataStart = tagStart + TAG_LENGTH;
+  if (stored.length < dataStart) {
+    console.warn("[PII] Malformed encrypted file");
+    return null;
+  }
+  try {
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, stored.subarray(ivStart, tagStart));
+    decipher.setAuthTag(stored.subarray(tagStart, dataStart));
+    return Buffer.concat([decipher.update(stored.subarray(dataStart)), decipher.final()]);
+  } catch {
+    console.error(
+      "[PII] Decryption failed for a stored file. The most likely cause is that " +
+        "PII_ENCRYPTION_KEY has changed since the file was written.",
+    );
+    return null;
+  }
+}

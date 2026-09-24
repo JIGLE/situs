@@ -371,3 +371,26 @@ describe("Properties API - PUT saves every field the edit form sends", () => {
     expect(await savedData()).not.toHaveProperty("country");
   });
 });
+
+describe("Properties API - PUT /api/properties/[id]: the matriz article and fraction", () => {
+  // A blank stays "", which on an edit means "clear this field", as for the other text fields.
+  it("passes both to the service, a blank included", async () => {
+    const { propertyService } = await import("@/lib/services/database/property");
+    vi.mocked(propertyService.update).mockClear();
+
+    const response = await updateProperty(
+      new NextRequest("http://localhost:3000/api/properties/prop-123", {
+        method: "PUT",
+        headers: new Headers({ Authorization: "Bearer valid-token" }),
+        body: JSON.stringify({ cadasterReference: "2321", fraction: "" }),
+      }),
+      { params: { id: "prop-123" } },
+    );
+
+    expect(response.status).toBe(200);
+    expect(vi.mocked(propertyService.update).mock.calls[0][2]).toMatchObject({
+      cadasterReference: "2321",
+      fraction: "",
+    });
+  });
+});

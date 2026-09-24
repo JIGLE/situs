@@ -49,6 +49,9 @@ export interface Property {
   image?: string;
   // Fiscal / rental regime (Wave 2.2)
   rentalRegime?: string; // "standard" | "acessivel" | "al" | "short_term"
+  /** Artigo matricial, and the fração within it. */
+  cadasterReference?: string | null;
+  fraction?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -70,6 +73,10 @@ export interface Tenant {
   paymentStatus: "paid" | "overdue" | "pending";
   lastPayment?: string;
   notes?: string;
+  /** What an AT receipt names the tenant by: a NIF, or a document and its country. */
+  taxId?: string | null;
+  taxCountry?: string | null;
+  idDocument?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -134,9 +141,14 @@ export interface Lease {
   endDate: string;
   monthlyRent: number;
   deposit: number;
-  contractFile?: Buffer;
-  contractFileName?: string;
-  contractFileSize?: number;
+  /** The stored contract's name and size. Its bytes come only from /api/leases/[id]/contract. */
+  contractFileName?: string | null;
+  contractFileSize?: number | null;
+  /** AT's number for the contract, and the version after a change. */
+  atContractNumber?: string | null;
+  atContractVersion?: number | null;
+  /** Co-tenants and guarantors: everyone on the lease besides its main tenant. */
+  parties?: LeaseParty[];
   status: "active" | "expiring" | "expired" | "terminated" | "pending" | "draft";
   autoRenew: boolean;
   renewalNoticeDays: number;
@@ -150,6 +162,15 @@ export interface Lease {
   renewalEndDate?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface LeaseParty {
+  id?: string;
+  role: "tenant" | "guarantor";
+  name: string;
+  taxId?: string | null;
+  taxCountry?: string | null;
+  idDocument?: string | null;
 }
 
 export interface Expense {

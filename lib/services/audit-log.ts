@@ -27,6 +27,11 @@ export type AuditAction =
   | "CREATE_LEASE"
   | "UPDATE_LEASE"
   | "DELETE_LEASE"
+  // The signed contract stored on a lease: a document full of personal data, so reading it is
+  // recorded as well as changing it.
+  | "UPLOAD_LEASE_CONTRACT"
+  | "DOWNLOAD_LEASE_CONTRACT"
+  | "DELETE_LEASE_CONTRACT"
   | "CREATE_UNIT"
   | "UPDATE_UNIT"
   | "DELETE_UNIT"

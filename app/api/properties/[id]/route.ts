@@ -80,6 +80,13 @@ async function handlePut(
       city: clean(validatedData.city),
       description: clean(validatedData.description),
       image: clean(validatedData.image),
+      // Null as well as "": the edit dialog loads the property as the API returns it.
+      cadasterReference: validatedData.cadasterReference
+        ? sanitizeForDatabase(validatedData.cadasterReference)
+        : validatedData.cadasterReference,
+      fraction: validatedData.fraction
+        ? sanitizeForDatabase(validatedData.fraction)
+        : validatedData.fraction,
     });
     return createSuccessResponse(property);
   } catch (error) {

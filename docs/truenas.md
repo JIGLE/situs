@@ -434,7 +434,8 @@ container's own environment, and take `--dry-run`:
    ```
 
 2. **Encrypt PII written without a key** — if the instance ever ran without
-   `PII_ENCRYPTION_KEY`, or from before field encryption existed:
+   `PII_ENCRYPTION_KEY`, or from before field encryption existed. It also encrypts lease
+   contracts uploaded before contracts were encrypted:
 
    ```bash
    docker exec -it <container> node scripts/backfill-pii-encryption.js --dry-run

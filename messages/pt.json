@@ -693,10 +693,12 @@
       "created": "Contrato criado com sucesso",
       "updated": "Contrato atualizado com sucesso",
       "deleted": "Contrato eliminado com sucesso",
-      "fileTooLarge": "O ficheiro tem de ter menos de 5 MB",
+      "fileTooLarge": "O ficheiro tem de ter menos de {size} MB",
       "pdfOnly": "Só são permitidos ficheiros PDF",
       "rentIncreased": "Renda aumentada em {pct}% em {count} contrato(s).",
-      "rentIncreaseFailed": "Não foi possível aplicar o aumento de renda. Tente novamente."
+      "rentIncreaseFailed": "Não foi possível aplicar o aumento de renda. Tente novamente.",
+      "contractUploadFailed": "O arrendamento foi guardado, mas não foi possível carregar o contrato.",
+      "contractDownloadFailed": "Não foi possível transferir o contrato."
     },
     "deleteDialog": {
       "title": "Eliminar contrato",
@@ -737,7 +739,7 @@
     "docsStepTitle": "Documentos e notas",
     "docsStepDescription": "Carregue o contrato e acrescente informação adicional",
     "contractPdf": "Contrato de arrendamento (PDF)",
-    "maxFileSize": "Tamanho máximo: 5 MB. Apenas formato PDF.",
+    "maxFileSize": "Tamanho máximo: {size} MB. Apenas formato PDF.",
     "additionalNotes": "Notas adicionais",
     "notesPlaceholder": "Acrescente condições especiais ou notas sobre este contrato...",
     "filter": {
@@ -821,9 +823,29 @@
         "title": "Cessar contrato",
         "description": "Este contrato ficará marcado como cessado. Esta ação não pode ser anulada.",
         "confirmLabel": "Cessar"
-      }
+      },
+      "atContract": "Contrato na AT",
+      "atContractVersion": "{number}, versão {version}",
+      "notRecorded": "Não registado"
     },
-    "unknown": "Desconhecido"
+    "unknown": "Desconhecido",
+    "parties": {
+      "title": "Co-arrendatários e fiadores",
+      "description": "Todos os que constam do contrato além do arrendatário principal. Os recibos emitidos nas Finanças indicam todos os arrendatários.",
+      "add": "Adicionar pessoa",
+      "remove": "Remover",
+      "role": "Papel",
+      "roleTenant": "Co-arrendatário",
+      "roleGuarantor": "Fiador",
+      "name": "Nome completo",
+      "invalid": "Cada pessoa precisa de um nome e, se for indicado, de um NIF válido."
+    },
+    "atContract": {
+      "number": "N.º do contrato na AT",
+      "version": "Versão do contrato",
+      "hint": "Consta do Portal das Finanças ou do comprovativo de registo. Todos os recibos emitidos nas Finanças o indicam.",
+      "invalid": "Apenas algarismos."
+    }
   },
   "notifications": {
     "title": "Notificações",
@@ -951,7 +973,10 @@
       "bedrooms": "Quartos",
       "bathrooms": "Casas de Banho",
       "monthlyRent": "Renda Mensal",
-      "propertyStatus": "Estado da Propriedade"
+      "propertyStatus": "Estado da Propriedade",
+      "cadasterReference": "Artigo matricial",
+      "fraction": "Fração",
+      "cadasterHint": "Como na caderneta predial, por exemplo 2321 e C."
     },
     "types": {
       "apartment": "Apartamento",
@@ -1584,5 +1609,14 @@
       "contactTitle": "Contacto",
       "contactBody": "Questões sobre estes termos:"
     }
+  },
+  "taxIdentity": {
+    "title": "Identificação fiscal",
+    "country": "País",
+    "nif": "NIF",
+    "taxId": "Número fiscal",
+    "idDocument": "Documento de identificação",
+    "idDocumentHint": "Para quem não tem NIF português: número do passaporte ou do cartão de identificação.",
+    "invalidNif": "Este NIF não é válido: o dígito de controlo não confere."
   }
 }
