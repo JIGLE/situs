@@ -96,8 +96,8 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
         }
       },
       successMessage: {
-        create: "Property added successfully!",
-        update: "Property updated successfully!",
+        create: t("toastCreated"),
+        update: t("toastUpdated"),
       },
       validation: { validateOnChange: true, debounceValidation: 300 },
     });
@@ -530,7 +530,7 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                 {tActions("cancel")}
               </Button>
               <Button type="submit" loading={dialog.isSubmitting} className="w-full sm:w-auto">
-                {dialog.editingItem ? "Update Property" : "Create Property"}
+                {dialog.editingItem ? tActions("save") : tActions("create")}
               </Button>
             </div>
           </form>

@@ -31,18 +31,19 @@ describe("GET /api/metrics", () => {
     }
   });
 
-  it("wants the INIT_SECRET bearer in production", async () => {
+  // Its own token: INIT_SECRET also opens /api/debug/db/init, so it no longer opens this.
+  it("wants the METRICS_TOKEN bearer in production, not INIT_SECRET", async () => {
     vi.stubEnv("NODE_ENV", "production");
-    vi.stubEnv("INIT_SECRET", "scrape-secret");
+    vi.stubEnv("METRICS_TOKEN", "scrape-token");
+    vi.stubEnv("INIT_SECRET", "init-secret");
 
-    const refused = await GET(new Request("http://localhost/api/metrics"));
-    const allowed = await GET(
+    const bearer = (token: string) =>
       new Request("http://localhost/api/metrics", {
-        headers: { authorization: "Bearer scrape-secret" },
-      }),
-    );
+        headers: { authorization: `Bearer ${token}` },
+      });
 
-    expect(refused.status).toBe(403);
-    expect(allowed.status).toBe(200);
+    expect((await GET(new Request("http://localhost/api/metrics"))).status).toBe(403);
+    expect((await GET(bearer("init-secret"))).status).toBe(403);
+    expect((await GET(bearer("scrape-token"))).status).toBe(200);
   });
 });

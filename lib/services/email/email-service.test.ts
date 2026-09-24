@@ -42,6 +42,11 @@ function inject(service: unknown, transport: MailTransport) {
   internals["isInitialized"] = true;
 }
 
+/** A plain message: the service sends what it is given, as the rent reminders use it. */
+function mail(to: string) {
+  return { to, from: "noreply@situs.test", subject: "Lembrete de renda", html: "<p>Renda</p>" };
+}
+
 afterEach(() => {
   vi.restoreAllMocks();
   delete process.env.SMTP_HOST;
@@ -54,18 +59,13 @@ describe("EmailService", () => {
     expect(service.isReady()).toBe(false);
   });
 
-  it("sends a templated email and returns the provider message id", async () => {
+  it("sends an email and returns the provider message id", async () => {
     process.env.SMTP_HOST = "smtp-relay.brevo.test";
     const service = await loadService();
     const { transport, sent } = fakeTransport();
     inject(service, transport);
 
-    const res = await service.sendTemplatedEmail(
-      "rent_reminder",
-      "test@example.com",
-      { tenantName: "John", propertyAddress: "1 Main St", rentAmount: "100" },
-      "user-1",
-    );
+    const res = await service.sendEmail(mail("test@example.com"), "user-1");
 
     expect(res.success).toBe(true);
     expect(res.messageId).toBe("message-123");
@@ -73,27 +73,18 @@ describe("EmailService", () => {
     expect(sent[0].to).toBe("test@example.com");
   });
 
-  it("carries the rendered subject and body through to the transport", async () => {
+  it("carries the subject and body through to the transport", async () => {
     process.env.SMTP_HOST = "smtp-relay.brevo.test";
     const service = await loadService();
     const { transport, sent } = fakeTransport();
     inject(service, transport);
 
-    await service.sendTemplatedEmail(
-      "lease_renewal",
-      "test2@example.com",
-      {
-        tenantName: "Sam",
-        propertyAddress: "2 Elm St",
-        currentLeaseEnd: "2026-12-01",
-        renewalDeadline: "2026-11-01",
-      },
+    await service.sendEmail(
+      { ...mail("test2@example.com"), subject: "Renovação do contrato", html: "<p>Olá Sam</p>" },
       "user-2",
     );
 
-    expect(sent[0].subject).toBeTruthy();
-    // The template interpolates the tenant's name; an un-rendered template would still have
-    // the placeholder here, which is the failure this catches.
+    expect(sent[0].subject).toBe("Renovação do contrato");
     expect(sent[0].html ?? sent[0].text ?? "").toContain("Sam");
   });
 
@@ -109,12 +100,7 @@ describe("EmailService", () => {
     const { transport } = fakeTransport({ accepted: [], rejected: ["test@example.com"] });
     inject(service, transport);
 
-    const res = await service.sendTemplatedEmail(
-      "rent_reminder",
-      "test@example.com",
-      { tenantName: "John", propertyAddress: "1 Main St", rentAmount: "100" },
-      "user-1",
-    );
+    const res = await service.sendEmail(mail("test@example.com"), "user-1");
 
     expect(res.success).toBe(false);
   });
@@ -123,12 +109,7 @@ describe("EmailService", () => {
     delete process.env.SMTP_HOST;
     const service = await loadService();
 
-    const res = await service.sendTemplatedEmail(
-      "rent_reminder",
-      "test@example.com",
-      { tenantName: "John", propertyAddress: "1 Main St", rentAmount: "100" },
-      "user-1",
-    );
+    const res = await service.sendEmail(mail("test@example.com"), "user-1");
 
     expect(res.success).toBe(false);
     expect(res.error).toMatch(/not configured/i);

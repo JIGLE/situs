@@ -400,6 +400,15 @@ const RETIRED_CLAIMS = [
       "other two; none reads X-Forwarded-For from the left",
   },
   {
+    // The counter endpoints took INIT_SECRET, the secret that also opens /api/debug/db/init.
+    pattern:
+      /Scraping it takes `INIT_SECRET`|same secret is the production bearer for `\/api\/metrics`|DB init endpoint and for `\/api\/metrics`/,
+    retired: "2026-09-24 (leftover findings)",
+    because:
+      "/api/metrics, /api/monitoring/metrics and /api/monitoring/landing take METRICS_TOKEN " +
+      "through lib/utils/metrics-auth.ts; INIT_SECRET opens only the DB init endpoint",
+  },
+  {
     pattern: /no rate-limit environment variables/i,
     retired: "2026-09-23 (audit findings)",
     because:

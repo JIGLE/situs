@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPrismaClient } from "@/lib/services/database/database";
+import { requireMetricsToken } from "@/lib/utils/metrics-auth";
 
 export const runtime = "nodejs";
 
@@ -47,17 +48,8 @@ function formatPrometheusMetrics(): string {
 }
 
 export async function GET(request: Request): Promise<Response> {
-  // Require INIT_SECRET or non-production environment to access metrics
-  if (process.env.NODE_ENV === "production") {
-    const authHeader = request.headers.get("authorization") || "";
-    const initSecret = process.env.INIT_SECRET;
-    if (!initSecret || authHeader !== `Bearer ${initSecret}`) {
-      return NextResponse.json(
-        { error: "Authentication required for metrics in production" },
-        { status: 403 },
-      );
-    }
-  }
+  const refused = requireMetricsToken(request);
+  if (refused) return refused;
 
   try {
     // Check if database is healthy

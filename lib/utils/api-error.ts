@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import { useMessages, useTranslations } from "next-intl";
+import { ZodError } from "zod";
 
 /**
  * Turn a failed request into a sentence the user's own language owns.
@@ -99,5 +100,52 @@ export function useApiError(): (err: unknown) => string {
       return t(key ?? "generic");
     },
     [t, tFields, messages],
+  );
+}
+
+/**
+ * One toast per failed save.
+ *
+ * The entity actions (`create-entity-actions.ts`) toast every failure themselves and then rethrow,
+ * so the screen that called them can still react: keep a dialog open, roll a change back. Most of
+ * those screens also toasted the same failure from their own `catch`, so a failed save showed two
+ * toasts, and the second was usually generic and English. The actions mark what they report; a
+ * `catch` further up asks `wasReported` before it says anything.
+ *
+ * The mark is a non-enumerable symbol on the error itself, so the error reaches the caller
+ * unchanged: same object, same `status`, same message.
+ */
+const REPORTED = Symbol.for("situs.error.reported");
+
+export function markReported<E>(err: E): E {
+  if (err !== null && typeof err === "object" && Object.isExtensible(err)) {
+    Object.defineProperty(err, REPORTED, { value: true });
+  }
+  return err;
+}
+
+export function wasReported(err: unknown): boolean {
+  return (
+    err !== null && typeof err === "object" && (err as Record<symbol, unknown>)[REPORTED] === true
+  );
+}
+
+/**
+ * `(err) => string | null`: what to toast when a save fails, or `null` when nothing should be.
+ *
+ * A `ZodError` is the form's own complaint, so it gets the "check the form" sentence. An error the
+ * entity action already reported gets nothing more. Anything else is a failure nobody has reported
+ * yet, and gets the generic sentence: never the error's own message, which is English written for a
+ * log.
+ */
+export function useSaveFailureMessage(): (err: unknown) => string | null {
+  const t = useTranslations("errors.api");
+  return useCallback(
+    (err: unknown): string | null => {
+      if (err instanceof ZodError) return t("invalidInput");
+      if (wasReported(err)) return null;
+      return t("generic");
+    },
+    [t],
   );
 }

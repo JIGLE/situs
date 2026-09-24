@@ -105,7 +105,6 @@ export function FinancialsView(): React.ReactElement {
       create: t("expenseForm.toastCreated"),
       update: t("expenseForm.toastUpdated"),
     },
-    errorMessage: t("expenseForm.toastFailed"),
   });
 
   // Enhanced Calculations with trends

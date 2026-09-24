@@ -87,11 +87,11 @@ Exposed series: `email_sent_total`, `email_failed_total`, `process_uptime_second
 
 Three properties worth knowing before you build anything on it:
 
-- **Scraping it takes `INIT_SECRET`.** The proxy lets `/api/metrics` through without a session.
+- **Scraping it takes `METRICS_TOKEN`.** The proxy lets `/api/metrics` through without a session.
   In production the route then answers `403` unless the request carries
-  `Authorization: Bearer $INIT_SECRET` — always `403` while `INIT_SECRET` is unset. In development
-  it answers anyone. The same secret opens `/api/debug/db/init` (which also wants a session and a
-  CSRF token), so a scrape config that holds it holds more than read access to counters.
+  `Authorization: Bearer $METRICS_TOKEN` — always `403` while `METRICS_TOKEN` is unset. In
+  development it answers anyone. `/api/monitoring/metrics` and `/api/monitoring/landing` take the
+  same token. It opens nothing else, so a scrape config holds read access to counters and no more.
 - **The email counters count only the automated reminder e-mails**
   (`lib/services/notifications/reminder-email.ts`), not every message the app sends.
 - **The counters live in process.** They reset on every restart and every redeploy, which is

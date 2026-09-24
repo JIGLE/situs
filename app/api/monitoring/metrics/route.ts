@@ -10,23 +10,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { metrics } from "@/lib/monitoring/metrics";
 import { getMetrics } from "@/lib/monitoring/performance";
 import { logger } from "@/lib/utils/logger";
+import { requireMetricsToken } from "@/lib/utils/metrics-auth";
 
 /**
  * GET /api/monitoring/metrics
  * Returns application metrics in JSON format
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  // Require INIT_SECRET or non-production environment to access detailed metrics
-  if (process.env.NODE_ENV === "production") {
-    const authHeader = request.headers.get("authorization") || "";
-    const initSecret = process.env.INIT_SECRET;
-    if (!initSecret || authHeader !== `Bearer ${initSecret}`) {
-      return NextResponse.json(
-        { error: "Authentication required for metrics in production" },
-        { status: 403 },
-      );
-    }
-  }
+  const refused = requireMetricsToken(request);
+  if (refused) return refused;
 
   try {
     const url = new URL(request.url);

@@ -61,7 +61,8 @@
       "noActiveLease": "Occupied, no active lease",
       "noPriorMonth": "No receipts last month",
       "vsLastMonth": "vs last month"
-    }
+    },
+    "toastBuildingCreated": "Building added"
   },
   "settings": {
     "title": "Settings",
@@ -693,7 +694,8 @@
       "conflict": "Someone else changed this while you were editing. Reload and try again.",
       "planLimit": "Your plan doesn't include this. Upgrade to continue.",
       "tooMany": "Too many requests. Wait a moment and try again.",
-      "serverError": "The server had a problem. Try again in a moment."
+      "serverError": "The server had a problem. Try again in a moment.",
+      "securityTokenExpired": "Your security token expired. Refresh the page and try again."
     }
   },
   "compliance": {
@@ -757,7 +759,8 @@
     "modelo179DialogTitle": "Mark as submitted to AT",
     "modelo179DialogDescription": "Enter the AT reference for the Modelo 179 submission for {tenant} — {property} ({year}).",
     "modelo179ATRefPlaceholder": "e.g. AT2025-XXXXXXXX",
-    "modelo179Saving": "Saving…"
+    "modelo179Saving": "Saving…",
+    "modelo179ToastSubmitted": "Modelo 179 marked as submitted"
   },
   "tax": {
     "title": "Tax Calculation",
@@ -1121,7 +1124,6 @@
     "editOwner": "Edit owner",
     "deleteOwner": "Delete owner",
     "toastDeleted": "Owner deleted successfully",
-    "toastUpdateFailed": "Couldn't update the owner.",
     "deleteDescription": "This owner will be permanently removed. This action cannot be undone."
   },
   "calendar": {
@@ -1248,7 +1250,9 @@
       "filterAssetsLabel": "Filter assets by name or address",
       "attentionOnly": "Show only assets needing attention",
       "selectAsset": "Select an asset from the tree to open its command workspace."
-    }
+    },
+    "toastCreated": "Property added",
+    "toastUpdated": "Property updated"
   },
   "financial": {
     "title": "Financials",
@@ -1425,8 +1429,7 @@
       "selectFrequency": "Select frequency",
       "submit": "Create Expense",
       "toastCreated": "Expense recorded",
-      "toastUpdated": "Expense updated",
-      "toastFailed": "Couldn't save the expense. Try again."
+      "toastUpdated": "Expense updated"
     },
     "tax": {
       "heading": "Tax estimate — {country}",

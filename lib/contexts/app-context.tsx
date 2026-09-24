@@ -53,7 +53,7 @@ export function AppProvider({ children }: { children: ReactNode }): React.ReactE
   const [state, dispatch] = React.useReducer(appReducer, initialState);
   const { data: session } = useSession();
   const pathname = usePathname();
-  const { error: showError, success: showSuccess } = useToast();
+  const { error: showError } = useToast();
   const { token: csrfToken } = useCsrf();
   const userId = (session?.user as { id?: string } | undefined)?.id;
   const isPublicPage = isPublicPagePath(pathname);
@@ -74,7 +74,7 @@ export function AppProvider({ children }: { children: ReactNode }): React.ReactE
     ownerActions,
     expenseActions,
     leaseActions,
-  } = useEntityActions(state, dispatch, { csrfToken, userId, showError, showSuccess });
+  } = useEntityActions(state, dispatch, { csrfToken, userId, showError });
 
   // --- context value (backward-compatible shape) ---
 

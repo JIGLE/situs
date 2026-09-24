@@ -8,6 +8,7 @@ import { PropertiesView, PropertiesViewRef } from "@/components/features/propert
 import { PortfolioSummary } from "@/components/features/property/portfolio-summary";
 import { ExportButton, ExportColumn } from "@/components/ui/export-button";
 import { useApp } from "@/lib/contexts/app-context";
+import { useToast } from "@/lib/contexts/toast-context";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -40,6 +41,7 @@ export function AssetsView(): React.ReactElement {
   const { properties } = state;
   const propertiesViewRef = useRef<PropertiesViewRef>(null);
   const t = useTranslations("portfolio");
+  const { success } = useToast();
 
   // Onboarding checklist deep-links here with ?action=create-property
   // (`overview-view.tsx`'s handleAddProperty) expecting the create dialog to open
@@ -74,8 +76,13 @@ export function AssetsView(): React.ReactElement {
         city: buildingForm.city.trim(),
         country: buildingForm.country,
       });
+      // The only feedback this save had was the action's own English "Building added
+      // successfully", which the action no longer shows: a success belongs to the screen.
+      success(t("toastBuildingCreated"));
       setBuildingDialogOpen(false);
       setBuildingForm({ name: "", address: "", city: "", country: "PT" });
+    } catch {
+      // The action has already reported the failure; the dialog stays open for another try.
     } finally {
       setBuildingSubmitting(false);
     }

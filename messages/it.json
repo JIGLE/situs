@@ -61,7 +61,8 @@
       "noActiveLease": "Occupato, nessun contratto attivo",
       "noPriorMonth": "Nessuna ricevuta il mese scorso",
       "vsLastMonth": "vs mese precedente"
-    }
+    },
+    "toastBuildingCreated": "Edificio aggiunto"
   },
   "settings": {
     "title": "Impostazioni",
@@ -693,7 +694,8 @@
       "conflict": "Qualcun altro ha modificato questo elemento mentre lo stavi modificando. Ricarica e riprova.",
       "planLimit": "Il tuo piano non include questa funzione. Esegui l'upgrade per continuare.",
       "tooMany": "Troppe richieste. Attendi un momento e riprova.",
-      "serverError": "Il server ha riscontrato un problema. Riprova tra poco."
+      "serverError": "Il server ha riscontrato un problema. Riprova tra poco.",
+      "securityTokenExpired": "Il token di sicurezza è scaduto. Aggiorna la pagina e riprova."
     }
   },
   "compliance": {
@@ -757,7 +759,8 @@
     "modelo179DialogTitle": "Segna come inviato all'AT",
     "modelo179DialogDescription": "Inserisci il riferimento AT per l'invio del Modelo 179 di {tenant} — {property} ({year}).",
     "modelo179ATRefPlaceholder": "es. AT2025-XXXXXXXX",
-    "modelo179Saving": "Salvataggio…"
+    "modelo179Saving": "Salvataggio…",
+    "modelo179ToastSubmitted": "Modelo 179 segnato come presentato"
   },
   "tax": {
     "title": "Calcolo imposte",
@@ -1121,7 +1124,6 @@
     "editOwner": "Modifica proprietario",
     "deleteOwner": "Elimina proprietario",
     "toastDeleted": "Proprietario eliminato correttamente",
-    "toastUpdateFailed": "Impossibile aggiornare il proprietario.",
     "deleteDescription": "Questo proprietario sarà rimosso definitivamente. L'azione non può essere annullata."
   },
   "calendar": {
@@ -1248,7 +1250,9 @@
       "filterAssetsLabel": "Filtra gli asset per nome o indirizzo",
       "attentionOnly": "Mostra solo gli asset che richiedono attenzione",
       "selectAsset": "Seleziona un asset dall'albero per aprire il suo spazio di lavoro."
-    }
+    },
+    "toastCreated": "Immobile aggiunto",
+    "toastUpdated": "Immobile aggiornato"
   },
   "financial": {
     "title": "Finanze",
@@ -1425,8 +1429,7 @@
       "selectFrequency": "Seleziona periodicità",
       "submit": "Crea spesa",
       "toastCreated": "Spesa registrata",
-      "toastUpdated": "Spesa aggiornata",
-      "toastFailed": "Impossibile salvare la spesa. Riprova."
+      "toastUpdated": "Spesa aggiornata"
     },
     "tax": {
       "heading": "Stima fiscale — {country}",

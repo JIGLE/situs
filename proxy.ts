@@ -70,10 +70,10 @@ function resolveLocale(request: NextRequest): string {
  * /api/info              — Version, commit and build time baked into the image
  * /api/csrf-token        — Issues the CSRF cookie (GET only)
  * /api/monitoring/**     — Database probe and landing beacon; its metrics and landing counters
- *                          want `Bearer $INIT_SECRET` in production, and errors answers only in
+ *                          want `Bearer $METRICS_TOKEN` in production, and errors answers only in
  *                          development
  * /api/metrics           — Prometheus scrape. A scraper has no session; the route checks
- *                          `Authorization: Bearer $INIT_SECRET` itself in production.
+ *                          `Authorization: Bearer $METRICS_TOKEN` itself in production.
  * /api/webhooks/**       — Provider callbacks: Stripe verifies its signature, Brevo (which signs
  *                          nothing) a shared secret
  * /api/billing/checkout  — Browser-navigable pricing CTA (GET). Self-guards:
