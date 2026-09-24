@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { TaxFilingWizard, type TaxFilingProperty } from "./tax-filing-wizard";
 import { useToast } from "@/lib/contexts/toast-context";
-import { useApp } from "@/lib/app-context-db";
+import { useApp } from "@/lib/contexts/app-context";
 import { csrfHeaders } from "@/lib/utils/api-client";
 
 // ── types ──────────────────────────────────────────────────────────────────
