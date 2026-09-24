@@ -3,7 +3,6 @@
 /** Currency codes supported by the application (mirrors the Prisma Currency enum). */
 export type Currency = "EUR" | "DKK" | "USD" | "GBP";
 
-/** User fiscal profile (Wave 2.2) */
 export interface User {
   id: string;
   name?: string;
@@ -12,12 +11,6 @@ export interface User {
   image?: string;
   imageConsent?: boolean;
   role: "USER" | "ADMIN" | "MANAGER";
-  // Fiscal identity
-  fiscalResidency?: string; // ISO country code: "PT", "ES", "IT", "FR", etc.
-  nhrStatus: boolean; // PT Non-Habitual Resident (pre-2024)
-  nhrYear?: number; // Year NHR status was granted
-  ificiStatus: boolean; // PT IFICI regime (from 2024, replaces NHR)
-  ificiYear?: number; // Year IFICI status was granted
   createdAt: string;
   updatedAt: string;
 }

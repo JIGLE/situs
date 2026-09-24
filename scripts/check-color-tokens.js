@@ -72,7 +72,9 @@ const ALLOWLIST = [
 // The `/charts/` allowlist entry went too: it matched no file in the tree.
 // 331 → 235 the same day, when a reachability scan found modules only unused barrels imported —
 // `units-view.tsx` and four hooks among them — and they were deleted too.
-const BASELINE = 235;
+// 235 → 211 on 2026-09-24. Removing the IRS summaries took 16 with the tax rules view and the
+// fiscal-profile card; the other 8 were slack, since main already measured 227.
+const BASELINE = 211;
 
 function walk(dir, acc) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

@@ -1,7 +1,6 @@
 import type { ComponentType } from "react";
 import {
   Building2,
-  Calculator,
   FileText,
   Home,
   Settings,
@@ -132,14 +131,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "Compliance",
         labelKey: "navigation.compliance",
         icon: ShieldCheck,
-        hidden: true,
-      },
-      {
-        key: "tax-filing",
-        href: "/compliance/tax-filing",
-        label: "Tax Filing",
-        labelKey: "navigation.taxFiling",
-        icon: Calculator,
         hidden: true,
       },
       {

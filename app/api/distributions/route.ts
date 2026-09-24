@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     // `propertyId` is attacker-controlled — it comes straight off the query string, and
     // `requireAuth` only proves a session exists, never whose. The scoping is inside
     // getDistributionHistory so it cannot be skipped; a property belonging to someone else
-    // now returns an empty history rather than their income and per-owner tax figures.
+    // now returns an empty history rather than their income and per-owner shares.
     const distributions = await getDistributionHistory(
       propertyId,
       userId,
@@ -69,15 +69,11 @@ export async function POST(request: NextRequest) {
       periodEnd: new Date(data.periodEnd),
       totalIncome: parseFloat(data.totalIncome) || 0,
       totalExpenses: parseFloat(data.totalExpenses) || 0,
-      owners: data.owners.map(
-        (o: { ownerId: string; ownerName: string; percentage: number; taxCountry?: string }) => ({
-          ownerId: o.ownerId,
-          ownerName: o.ownerName,
-          percentage: parseFloat(String(o.percentage)),
-          taxCountry: o.taxCountry || "Portugal",
-        }),
-      ),
-      taxMode: data.taxMode || "pre-tax",
+      owners: data.owners.map((o: { ownerId: string; ownerName: string; percentage: number }) => ({
+        ownerId: o.ownerId,
+        ownerName: o.ownerName,
+        percentage: parseFloat(String(o.percentage)),
+      })),
       calculatedByUserId: userId,
     };
 

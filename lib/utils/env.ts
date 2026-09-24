@@ -31,10 +31,6 @@ const envSchema = z.object({
 
   // PII encryption key (AES-256-GCM, 32-byte hex)
   PII_ENCRYPTION_KEY: z.string().min(64).optional(),
-
-  // SAF-T PT signing key path (RSA private key in PEM)
-  SAFT_SIGNING_KEY_PATH: z.string().optional(),
-  SAFT_CERTIFICATE_NUMBER: z.string().optional(),
 });
 
 // Validate environment variables

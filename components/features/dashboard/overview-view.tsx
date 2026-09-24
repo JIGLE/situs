@@ -1,11 +1,10 @@
 "use client";
 
-import { type ElementType, type ReactElement, useMemo, useState, useEffect } from "react";
+import { type ElementType, type ReactElement, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import Link from "next/link";
-import { BadgeEuro, Building2, FileCheck2, FileText, Home, UserRound } from "lucide-react";
+import { BadgeEuro, Building2, FileText, Home, UserRound } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   OnboardingChecklist,
@@ -16,72 +15,6 @@ import { ActionPanel } from "@/components/features/dashboard/action-panel";
 import { useApp } from "@/lib/contexts/app-context";
 import { useCurrency } from "@/lib/contexts/currency-context";
 import { getActiveLease } from "@/lib/utils/lease-helpers";
-
-// ─── Modelo 179 Alert ────────────────────────────────────────────────────────
-
-function Modelo179Alert(): ReactElement | null {
-  const [missingCount, setMissingCount] = useState<number | null>(null);
-  const [targetYear, setTargetYear] = useState<number | null>(null);
-
-  useEffect(() => {
-    const now = new Date();
-    const month = now.getMonth() + 1; // 1-based
-    // Only show alert Jan–Mar
-    if (month < 1 || month > 3) return;
-    const prevYear = now.getFullYear() - 1;
-    setTargetYear(prevYear);
-
-    // Fetch fiscal profile to check PT residency
-    fetch("/api/user/fiscal-profile")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { data?: { fiscalResidency?: string } } | null) => {
-        if (!data?.data || data.data.fiscalResidency !== "PT") return;
-        // Fetch leases and check modelo179 submissions for prevYear
-        return fetch(`/api/compliance/modelo179?year=${prevYear}`);
-      })
-      .then((r) => {
-        if (!r || !r.ok) return null;
-        return r.json();
-      })
-      .then(
-        (
-          json: {
-            data?: Array<{
-              modelo179Submissions: Array<{ status: string }>;
-            }>;
-          } | null,
-        ) => {
-          if (!json?.data) return;
-          const missing = json.data.filter((lease) => {
-            const sub = lease.modelo179Submissions[0];
-            return !sub || sub.status === "pending";
-          }).length;
-          if (missing > 0) setMissingCount(missing);
-        },
-      )
-      .catch(() => {});
-  }, []);
-
-  if (missingCount === null || missingCount === 0 || targetYear === null) return null;
-
-  return (
-    <Link
-      href={"/compliance/modelo179"}
-      className="alert-card alert-warning transition-colors hover:brightness-[0.98]"
-    >
-      <div className="flex min-w-0 items-center gap-3">
-        <FileCheck2 className="h-4 w-4 shrink-0 text-[var(--semantic-warning)]" />
-        <span className="text-sm font-medium text-[var(--color-foreground)]">
-          {missingCount} lease{missingCount !== 1 ? "s" : ""} not registered with AT for{" "}
-          {targetYear} — Modelo 179 required
-        </span>
-      </div>
-      <span className="font-mono text-xs font-semibold tabular-nums text-[var(--semantic-warning)]">
-        {missingCount}
-      </span>
-    </Link>
-  );
-}
 
 export interface OverviewViewProps {
   onAddProperty?: () => void;
@@ -459,9 +392,6 @@ export function OverviewView({
           </div>
         </div>
       )}
-
-      {/* Compliance alert — seasonal, Jan–Mar only */}
-      <Modelo179Alert />
     </div>
   );
 }

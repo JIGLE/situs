@@ -21,13 +21,6 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  // Fiscal identity fields
-  fiscalResidency String? // ISO country code: "PT", "ES", "IT", "FR", etc.
-  nhrStatus       Boolean @default(false) // PT Non-Habitual Resident (pre-2024)
-  nhrYear         Int? // Year NHR status was granted
-  ificiStatus     Boolean @default(false) // PT IFICI regime (from 2024, replaces NHR)
-  ificiYear       Int? // Year IFICI status was granted
-
   // MFA / TOTP fields
   totpSecret      String? // AES-256-GCM encrypted TOTP secret
   totpEnabled     Boolean   @default(false)
@@ -54,7 +47,6 @@ model User {
   rentReceipts           RentReceipt[]
   settings               UserSettings?
   modelo179Submissions   Modelo179Submission[]
-  taxFilings             TaxFiling[]
   productEvents          ProductEvent[]
   subscription           Subscription?
   bankConnections        BankConnection[]
@@ -231,7 +223,6 @@ model Property {
 
   // Multi-currency and income distribution
   currency              Currency              @default(EUR)
-  incomeSplitMode       IncomeSplitMode       @default(POST_TAX)
   distributionFrequency DistributionFrequency @default(MONTHLY)
   createdByOwnerId      String? // Owner who created this property (auto managing owner)
   // Spain: Ley de Vivienda
@@ -820,22 +811,21 @@ enum NotificationType {
 
 // Income Distribution (with audit trail)
 model IncomeDistribution {
-  id                   String          @id @default(cuid())
+  id                   String    @id @default(cuid())
   propertyId           String
   periodStart          DateTime
   periodEnd            DateTime
-  taxMode              IncomeSplitMode
   totalIncome          Float
   totalExpenses        Float
   netIncome            Float
-  currency             Currency        @default(EUR)
-  version              Int             @default(1) // Incremented on recalculation
+  currency             Currency  @default(EUR)
+  version              Int       @default(1) // Incremented on recalculation
   calculatedByUserId   String
   recalculatedByUserId String?
   recalculatedAt       DateTime?
   notes                String?
-  createdAt            DateTime        @default(now())
-  updatedAt            DateTime        @updatedAt
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   // Relations
   property Property                  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
@@ -850,11 +840,7 @@ model IncomeDistributionShare {
   distributionId      String
   ownerId             String
   ownershipPercentage Float
-  grossShare          Float // Before tax
-  taxAmount           Float // Calculated tax
-  netShare            Float // After tax
-  taxCountry          String? // PT, ES, DK
-  taxRate             Float? // Applied tax rate
+  grossShare          Float // The owner's part of net income, before their own tax
   notifiedAt          DateTime?
   createdAt           DateTime  @default(now())
 
@@ -963,11 +949,6 @@ enum Currency {
   DKK // Danish Krone
   USD // US Dollar
   GBP // British Pound
-}
-
-enum IncomeSplitMode {
-  PRE_TAX // Split before tax calculation
-  POST_TAX // Split after tax deduction
 }
 
 enum DistributionFrequency {
@@ -1168,29 +1149,6 @@ enum RentReceiptStatus {
   cancelled // Anulado
 }
 
-// ========================================
-// Tax Rule Store (Wave 3.1)
-// Legislation-driven tax brackets and rates
-// ========================================
-
-model TaxRule {
-  id            String   @id @default(cuid())
-  country       String // "PT", "ES", "IT"
-  regime        String // "STANDARD", "NHR", "IFICI", "AL", "RENDA_ACESSIVEL"
-  ruleType      String // "INCOME_BRACKET", "DEDUCTIBLE_RATE", "WITHHOLDING_RATE", "FLAT_RATE"
-  year          Int
-  effectiveDate DateTime
-  payload       String // JSON blob with the actual values
-  sourceUrl     String? // Link to Diário da República / BOE
-  notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@unique([country, regime, ruleType, year])
-  @@index([country, year])
-  @@map("tax_rules")
-}
-
 model Modelo179Submission {
   id          String    @id @default(cuid())
   userId      String
@@ -1209,31 +1167,4 @@ model Modelo179Submission {
   @@unique([leaseId, periodYear])
   @@index([userId, periodYear])
   @@map("modelo179_submissions")
-}
-
-model TaxFiling {
-  id                String   @id @default(cuid())
-  userId            String
-  year              Int
-  country           String // "PT", "ES"
-  regime            String // "STANDARD", "NHR", "IFICI", etc.
-  propertyIds       String // JSON array of property IDs
-  grossIncome       Float
-  allowableExpenses Float
-  taxableIncome     Float
-  taxDue            Float
-  effectiveRate     Float
-  withholdingPaid   Float
-  balanceDue        Float
-  status            String   @default("draft") // "draft" | "final"
-  notes             String? // JSON array from plugin
-  payload           String // Full TaxCalculation JSON
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, year, country, regime])
-  @@index([userId, year])
-  @@map("tax_filings")
 }

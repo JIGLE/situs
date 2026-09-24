@@ -252,9 +252,8 @@ export function MultiStepFormContainer({
   showIndicator = true,
 }: MultiStepFormContainerProps): React.ReactElement {
   // Back / Continue / Processing were hardcoded English here. This is a shared primitive, so
-  // every wizard in the app inherited them — lease creation and the tax-filing wizard both showed
-  // English navigation in all four locales. Both consumers render under `[locale]`, so the
-  // provider is always present.
+  // every wizard in the app inherited them, and lease creation showed English navigation in all
+  // four locales. Every consumer renders under `[locale]`, so the provider is always present.
   const tActions = useTranslations("actions");
   const [direction, setDirection] = React.useState(1);
 

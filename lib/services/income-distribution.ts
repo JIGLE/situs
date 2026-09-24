@@ -1,37 +1,21 @@
 /**
  * Income Distribution Service
  *
- * Handles multi-owner income splitting with tax calculations
- * Supports pre-tax and post-tax distribution modes
- * Includes audit trail for recalculations
+ * Splits a property's net rental income between its owners by ownership share, with an audit
+ * trail for recalculations. Each co-owner declares their own share for IRS, so the split stops
+ * at the share: Situs does not estimate anyone's tax.
  */
 
-import { TaxCalculator, TaxCalculationInput, TaxCalculationResult } from "./tax-calculator";
-import { resolveCountryCode } from "@/lib/utils/country";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { ResourceNotFoundError } from "@/lib/utils/error-handling";
 import { sumMoney } from "@/lib/utils/money";
 
-export type TaxMode = "pre-tax" | "post-tax";
 export type DistributionFrequency = "monthly" | "quarterly" | "annually";
-
-// Map between app-level TaxMode and Prisma enum
-const taxModeToPrisma: Record<TaxMode, string> = {
-  "pre-tax": "PRE_TAX",
-  "post-tax": "POST_TAX",
-};
-const prismaToTaxMode: Record<string, TaxMode> = {
-  PRE_TAX: "pre-tax",
-  POST_TAX: "post-tax",
-};
 
 export interface OwnerShareConfig {
   ownerId: string;
   ownerName: string;
   percentage: number; // 0-100
-  taxCountry: "Portugal" | "Spain";
-  taxResidenceCountry?: string;
-  taxIdentificationNumber?: string;
 }
 
 export interface DistributionInput {
@@ -41,7 +25,6 @@ export interface DistributionInput {
   totalIncome: number;
   totalExpenses: number;
   owners: OwnerShareConfig[];
-  taxMode: TaxMode;
   calculatedByUserId: string;
 }
 
@@ -49,13 +32,8 @@ export interface OwnerDistributionShare {
   ownerId: string;
   ownerName: string;
   percentage: number;
+  /** The owner's part of net income (income − expenses), before their own tax. */
   grossShare: number;
-  taxableIncome: number;
-  taxAmount: number;
-  netShare: number;
-  taxCountry: string;
-  effectiveRate: number;
-  taxDetails: TaxCalculationResult;
 }
 
 export interface DistributionResult {
@@ -66,10 +44,7 @@ export interface DistributionResult {
   totalIncome: number;
   totalExpenses: number;
   netIncome: number;
-  taxMode: TaxMode;
   shares: OwnerDistributionShare[];
-  totalTax: number;
-  totalNetDistributed: number;
   version: number;
   calculatedAt: Date;
   calculatedByUserId: string;
@@ -93,37 +68,12 @@ export function calculateDistribution(input: DistributionInput): DistributionRes
 
   const netIncome = input.totalIncome - input.totalExpenses;
 
-  const shares: OwnerDistributionShare[] = input.owners.map((owner) => {
-    const grossShare = netIncome * (owner.percentage / 100);
-
-    // Calculate tax for this owner's share
-    const taxInput: TaxCalculationInput = {
-      country: resolveCountryCode(owner.taxCountry),
-      regime:
-        resolveCountryCode(owner.taxCountry) === "PT" ? "portugal_rendimentos" : "spain_inmuebles",
-      annualRentalIncome: grossShare,
-      deductibleExpenses: 0, // Expenses already deducted from total
-    };
-
-    const taxResult = TaxCalculator.calculateTax(taxInput);
-
-    return {
-      ownerId: owner.ownerId,
-      ownerName: owner.ownerName,
-      percentage: owner.percentage,
-      grossShare,
-      taxableIncome: taxResult.taxableIncome,
-      taxAmount: taxResult.taxAmount,
-      netShare: grossShare - taxResult.taxAmount,
-      taxCountry: owner.taxCountry,
-      effectiveRate: taxResult.effectiveRate,
-      taxDetails: taxResult,
-    };
-  });
-
-  // Rounded at the boundary: these totals are per-owner tax figures, not display values.
-  const totalTax = sumMoney(shares.map((s) => s.taxAmount));
-  const totalNetDistributed = sumMoney(shares.map((s) => s.netShare));
+  const shares: OwnerDistributionShare[] = input.owners.map((owner) => ({
+    ownerId: owner.ownerId,
+    ownerName: owner.ownerName,
+    percentage: owner.percentage,
+    grossShare: netIncome * (owner.percentage / 100),
+  }));
 
   return {
     propertyId: input.propertyId,
@@ -132,10 +82,7 @@ export function calculateDistribution(input: DistributionInput): DistributionRes
     totalIncome: input.totalIncome,
     totalExpenses: input.totalExpenses,
     netIncome,
-    taxMode: input.taxMode,
     shares,
-    totalTax,
-    totalNetDistributed,
     version: 1,
     calculatedAt: new Date(),
     calculatedByUserId: input.calculatedByUserId,
@@ -196,7 +143,6 @@ export async function saveDistribution(
       propertyId: distribution.propertyId,
       periodStart: distribution.periodStart,
       periodEnd: distribution.periodEnd,
-      taxMode: taxModeToPrisma[distribution.taxMode] as "PRE_TAX" | "POST_TAX",
       totalIncome: distribution.totalIncome,
       totalExpenses: distribution.totalExpenses,
       netIncome: distribution.netIncome,
@@ -209,10 +155,6 @@ export async function saveDistribution(
           ownerId: share.ownerId,
           ownershipPercentage: share.percentage,
           grossShare: share.grossShare,
-          taxAmount: share.taxAmount,
-          netShare: share.netShare,
-          taxCountry: share.taxCountry,
-          taxRate: share.effectiveRate,
           owner: { connect: { id: share.ownerId } },
         })),
       },
@@ -280,21 +222,12 @@ export async function getDistributionHistory(
     totalIncome: d.totalIncome,
     totalExpenses: d.totalExpenses,
     netIncome: d.netIncome,
-    taxMode: (prismaToTaxMode[d.taxMode] || "pre-tax") as TaxMode,
     shares: d.shares.map((s) => ({
       ownerId: s.ownerId,
       ownerName: s.owner?.name || "Unknown",
       percentage: s.ownershipPercentage,
       grossShare: s.grossShare,
-      taxableIncome: s.grossShare,
-      taxAmount: s.taxAmount,
-      netShare: s.netShare,
-      taxCountry: s.taxCountry || "Portugal",
-      effectiveRate: s.taxRate || 0,
-      taxDetails: {} as TaxCalculationResult,
     })),
-    totalTax: sumMoney(d.shares.map((s) => s.taxAmount)),
-    totalNetDistributed: sumMoney(d.shares.map((s) => s.netShare)),
     version: d.version,
     calculatedAt: d.createdAt,
     calculatedByUserId: d.calculatedByUserId,
@@ -302,10 +235,7 @@ export async function getDistributionHistory(
 }
 
 /**
- * Get annual summary for tax reporting
- */
-/**
- * Annual tax summary for one owner.
+ * One owner's year: their share of each distribution, and the total they declare for IRS.
  *
  * `userId` is required for the same reason as getDistributionHistory — this ran as
  * `where: { ownerId }` against a query-string id and leaked any owner's gross income, tax
@@ -324,20 +254,14 @@ export async function getAnnualTaxSummary(
   ownerId: string;
   year: number;
   totalGrossIncome: number;
-  totalTaxPaid: number;
-  totalNetIncome: number;
   distributions: {
     propertyId: string;
     period: string;
     grossShare: number;
-    taxAmount: number;
-    netShare: number;
   }[];
 }> {
   interface ShareWithDistribution {
     grossShare: number;
-    taxAmount: number;
-    netShare: number;
     distribution: {
       propertyId: string;
       periodStart: Date;
@@ -367,65 +291,15 @@ export async function getAnnualTaxSummary(
     propertyId: s.distribution.propertyId,
     period: `${s.distribution.periodStart.toISOString().slice(0, 7)} - ${s.distribution.periodEnd.toISOString().slice(0, 7)}`,
     grossShare: s.grossShare,
-    taxAmount: s.taxAmount,
-    netShare: s.netShare,
   }));
 
   return {
     ownerId,
     year,
-    // These three feed generatePortugalTaxForm / generateSpainTaxForm — a year of shares
-    // summed as Floats drifts, and drift on a filed number is not a rounding curiosity.
+    // The owner declares this total — a year of shares summed as Floats drifts, and drift on a
+    // declared number is not a rounding curiosity.
     totalGrossIncome: sumMoney(shares.map((s: ShareWithDistribution) => s.grossShare)),
-    totalTaxPaid: sumMoney(shares.map((s: ShareWithDistribution) => s.taxAmount)),
-    totalNetIncome: sumMoney(shares.map((s: ShareWithDistribution) => s.netShare)),
     distributions,
-  };
-}
-
-/**
- * Generate tax form data for Portugal (Modelo 3 Anexo F)
- */
-export function generatePortugalTaxForm(
-  annualSummary: Awaited<ReturnType<typeof getAnnualTaxSummary>>,
-): {
-  form: string;
-  year: number;
-  fields: Record<string, number | string>;
-} {
-  return {
-    form: "Modelo 3 - Anexo F",
-    year: annualSummary.year,
-    fields: {
-      "Campo 401": annualSummary.totalGrossIncome, // Rendimentos brutos
-      "Campo 402": 0, // Despesas (already deducted)
-      "Campo 403": annualSummary.totalGrossIncome, // Rendimento líquido
-      "Campo 404": annualSummary.totalTaxPaid, // Imposto retido
-      NIF: "TO BE FILLED BY OWNER",
-    },
-  };
-}
-
-/**
- * Generate tax form data for Spain (Modelo 100)
- */
-export function generateSpainTaxForm(
-  annualSummary: Awaited<ReturnType<typeof getAnnualTaxSummary>>,
-): {
-  form: string;
-  year: number;
-  fields: Record<string, number | string>;
-} {
-  return {
-    form: "Modelo 100 - IRPF",
-    year: annualSummary.year,
-    fields: {
-      "Casilla 063": annualSummary.totalGrossIncome, // Rendimientos íntegros
-      "Casilla 064": 0, // Gastos deducibles
-      "Casilla 065": annualSummary.totalGrossIncome, // Rendimiento neto
-      "Casilla 595": annualSummary.totalTaxPaid, // Cuota íntegra
-      NIF: "TO BE FILLED BY OWNER",
-    },
   };
 }
 
@@ -434,6 +308,4 @@ export default {
   saveDistribution,
   getDistributionHistory,
   getAnnualTaxSummary,
-  generatePortugalTaxForm,
-  generateSpainTaxForm,
 };

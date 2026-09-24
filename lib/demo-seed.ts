@@ -47,9 +47,6 @@ export async function seedDemoData(userId: string): Promise<void> {
 
   await cleanup(() => prisma.receipt.deleteMany({ where: { userId } }), "receipts");
   await cleanup(() => prisma.expense.deleteMany({ where: { userId } }), "expenses");
-  // TaxFiling is unique on (userId, year, country, regime), so without this a second seed
-  // collides rather than replacing.
-  await cleanup(() => prisma.taxFiling.deleteMany({ where: { userId } }), "taxFilings");
   // Documents and the bank graph are created below but were never cleared, so re-seeding stacked
   // a fresh copy on top of the last one: measured across a single seed call, documents went
   // 54 → 60 and bank transactions 90 → 100 while every other table held steady. That made the
@@ -628,34 +625,6 @@ export async function seedDemoData(userId: string): Promise<void> {
         counterpartyName: tx.counterparty,
         counterpartyIban: null,
         reference: tx.ref,
-      },
-    });
-  }
-
-  // 11. Tax filings — one per year and status, so the list shows both `draft` and `final`.
-  const propertyIdsJson = JSON.stringify(dbProperties.map((p) => p.id));
-  for (const filing of [
-    { year: 2025, regime: "STANDARD", gross: 42000, expenses: 9800, status: "final" },
-    { year: 2026, regime: "STANDARD", gross: 18600, expenses: 4200, status: "draft" },
-  ]) {
-    const taxable = filing.gross - filing.expenses;
-    const taxDue = Math.round(taxable * 0.28 * 100) / 100;
-    await prisma.taxFiling.create({
-      data: {
-        userId,
-        year: filing.year,
-        country: "PT",
-        regime: filing.regime,
-        propertyIds: propertyIdsJson,
-        grossIncome: filing.gross,
-        allowableExpenses: filing.expenses,
-        taxableIncome: taxable,
-        taxDue,
-        effectiveRate: Math.round((taxDue / filing.gross) * 10000) / 100,
-        withholdingPaid: 0,
-        balanceDue: taxDue,
-        status: filing.status,
-        payload: JSON.stringify({ source: "demo-seed", year: filing.year }),
       },
     });
   }

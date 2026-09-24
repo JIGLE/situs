@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Plus, Zap, Calendar as CalendarIcon, FileText, Calculator } from "lucide-react";
+import { Plus, Zap, Calendar as CalendarIcon, FileText } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useCurrency } from "@/lib/contexts/currency-context";
@@ -34,8 +34,6 @@ import {
   type ExpenseFormData,
 } from "@/lib/schemas/expense.schema";
 import { cn } from "@/lib/utils/utils";
-import { countryLabel } from "@/lib/design/country-themes";
-import { TaxCalculator, TaxCalculationResult } from "@/lib/utils/tax-calculator";
 import { getExpenseCategoryColor } from "@/lib/design-tokens";
 import { LoadingState } from "@/components/ui/loading-state";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
@@ -43,22 +41,6 @@ import { useFormDialog } from "@/lib/hooks/use-form-dialog";
 import { csrfHeaders } from "@/lib/utils/api-client";
 import { httpError, useApiError } from "@/lib/utils/api-error";
 import { expenseCategoryKey } from "@/lib/utils/expense-labels";
-
-/**
- * The tax calculator's deduction breakdown is a closed set of camelCase keys. It was rendered by
- * de-camelCasing them, which is an English sentence built at runtime — and one of them,
- * `stressedZoneTier`, is a regime NAME cast to a number, so it reached `formatCurrency` and
- * printed "NaN €". Known keys get a translated label; anything else is skipped rather than
- * guessed at.
- */
-const DEDUCTION_KEYS = [
-  "expenses",
-  "maxDeductible",
-  "allowedDeduction",
-  "mortgageInterest",
-  "communityFees",
-  "stressedZoneReduction",
-] as const;
 
 export function FinancialsView(): React.ReactElement {
   const { state, addExpense, refreshData } = useApp();
@@ -73,7 +55,6 @@ export function FinancialsView(): React.ReactElement {
   const locale = useLocale();
 
   const [timeRange, setTimeRange] = useState("month"); // all, month, year
-  const [selectedCountry, setSelectedCountry] = useState<"PT" | "ES">("PT");
   const [receiptStatusFilter, setReceiptStatusFilter] = useState<"all" | "paid" | "pending">("all");
   const [isBulkGenerating, setIsBulkGenerating] = useState(false);
 
@@ -252,26 +233,6 @@ export function FinancialsView(): React.ReactElement {
       color: getCategoryColor(category),
     }),
   );
-
-  // Tax Calculations
-  const taxCalculation = useMemo((): TaxCalculationResult | null => {
-    if (timeRange !== "year") return null;
-
-    const annualIncome = metrics.totalIncome;
-    const annualExpenses = metrics.totalExpenses;
-
-    try {
-      return TaxCalculator.calculateTax({
-        country: selectedCountry,
-        regime: selectedCountry === "PT" ? "portugal_rendimentos" : "spain_inmuebles",
-        annualRentalIncome: annualIncome,
-        deductibleExpenses: annualExpenses,
-      });
-    } catch (error) {
-      console.error("Tax calculation error:", error);
-      return null;
-    }
-  }, [metrics, selectedCountry, timeRange]);
 
   const categories = EXPENSE_CATEGORIES;
 
@@ -610,122 +571,6 @@ export function FinancialsView(): React.ReactElement {
               </Dialog>
             </div>
           </div>
-
-          {/* Tax Calculation Section */}
-          {timeRange === "year" && taxCalculation && (
-            <Card className="bg-[var(--color-card-solid)] border-[var(--color-border)]">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-[var(--color-foreground)] flex items-center gap-2">
-                      <Calculator className="h-5 w-5" />
-                      {t("tax.heading", { country: countryLabel(selectedCountry, locale) })}
-                    </CardTitle>
-                    <CardDescription>{t("tax.description")}</CardDescription>
-                  </div>
-                  <Select
-                    value={selectedCountry}
-                    onValueChange={(value: "PT" | "ES") => setSelectedCountry(value)}
-                  >
-                    {/* Content-sized, like the range control above: `w-32` was measured against
-                        "Portugal" and has no room for a longer exonym. */}
-                    <SelectTrigger className="min-w-[8rem] w-auto" aria-label={t("filterCountry")}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="PT">{countryLabel("PT", locale)}</SelectItem>
-                      <SelectItem value="ES">{countryLabel("ES", locale)}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-[var(--color-muted-foreground)]">
-                      {t("tax.grossIncome")}
-                    </Label>
-                    <div className="text-lg font-semibold text-[var(--color-foreground)] tabular-nums">
-                      {formatCurrency(taxCalculation.grossIncome)}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-[var(--color-muted-foreground)]">
-                      {t("tax.taxableIncome")}
-                    </Label>
-                    <div className="text-lg font-semibold text-[var(--color-foreground)] tabular-nums">
-                      {formatCurrency(taxCalculation.taxableIncome)}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-[var(--color-muted-foreground)]">
-                      {t("tax.taxAmount")}
-                    </Label>
-                    <div className="text-lg font-semibold text-[var(--color-destructive)] tabular-nums">
-                      {formatCurrency(taxCalculation.taxAmount)}
-                    </div>
-                    <div className="text-xs text-[var(--color-muted-foreground)]">
-                      {t("tax.effectiveRate", { rate: taxCalculation.effectiveRate.toFixed(1) })}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-[var(--color-muted-foreground)]">
-                      {t("tax.quarterlyPayment")}
-                    </Label>
-                    <div className="text-base font-semibold text-[var(--color-warning)] tabular-nums">
-                      {formatCurrency(taxCalculation.quarterlyPayment)}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-[var(--color-muted-foreground)]">
-                      {t("tax.annualSettlement")}
-                    </Label>
-                    <div className="text-base font-semibold text-[var(--color-warning)] tabular-nums">
-                      {formatCurrency(taxCalculation.annualSettlement)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <Label className="text-sm font-medium text-[var(--color-muted-foreground)]">
-                    {t("tax.deductionsApplied")}
-                  </Label>
-                  <div className="mt-2 space-y-1">
-                    {DEDUCTION_KEYS.filter((key) =>
-                      Number.isFinite(taxCalculation.deductions.breakdown[key]),
-                    ).map((key) => (
-                      <div key={key} className="flex justify-between text-sm">
-                        <span className="text-[var(--color-muted-foreground)]">
-                          {t(`tax.deduction.${key}`)}
-                        </span>
-                        <span className="text-[var(--color-foreground)] tabular-nums">
-                          {formatCurrency(taxCalculation.deductions.breakdown[key])}
-                        </span>
-                      </div>
-                    ))}
-                    <div className="border-t border-[var(--color-border)] pt-1 mt-2 flex justify-between font-medium">
-                      <span className="text-[var(--color-muted-foreground)]">
-                        {t("tax.totalDeductions")}
-                      </span>
-                      <span className="text-[var(--color-success)] tabular-nums">
-                        {formatCurrency(taxCalculation.deductions.total)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 p-3 bg-[var(--color-popover)] rounded-md">
-                  <p className="text-xs text-[var(--color-muted-foreground)]">
-                    <strong>{t("tax.noteLabel")}:</strong>{" "}
-                    {t("tax.note", { country: countryLabel(selectedCountry, locale) })}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           <div className="space-y-4">
             {/* Income & Receipts table */}

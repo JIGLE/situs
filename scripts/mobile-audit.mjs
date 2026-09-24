@@ -236,7 +236,6 @@ const SURFACES = [
   // Account is a Settings section now; measure it where it lives rather than through the
   // /account redirect, so the surface id matches the URL that renders.
   { id: "account", path: "/settings?tab=account" },
-  { id: "compliance-tax-filing", path: "/compliance/tax-filing" },
   { id: "compliance-modelo179", path: "/compliance/modelo179" },
 ];
 

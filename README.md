@@ -63,14 +63,10 @@ is _derived_ from this ledger, never hand-set.
 ### 🇵🇹 Portugal
 
 - **Recibos de Renda Eletrónicos** — AT-compatible XML payload, NIF validation, 5-day deadline enforcement
-- **2026 IRS brackets** — 9 progressive bands (13.25% → 48%), plus the Renda Acessível flat 10% rate for rents ≤ €2,300/mo
-- **SAF-T PT export** — RSA-SHA1 signature with a hash chain over the emitted recibos
 
 ### 🇪🇸 Spain
 
 - **NRUA export** — Ventanilla Única Digital payload generation and registration tracking for 2026
-- **Ley de Vivienda 12/2023** — rent-cap validation, stressed-zone deductions (50/60/70/90% tiers), _grandes tenedores_ detection
-- **2026 IRPF brackets** — 6 progressive bands (19% → 47%)
 
 ### Security
 
@@ -161,8 +157,7 @@ Recommended in production:
 | `ENABLE_DEMO_LOGIN`  | `true` enables demo credentials that grant **ADMIN** — leave it unset in production                                                                                             |
 
 Integrations are opt-in and off by default — `ENABLE_STRIPE`, `ENABLE_OAUTH`,
-and `ENABLE_BILLING` (plan limits; self-hosted stays unlimited unless you turn it on). Portugal
-SAF-T signing adds `SAFT_SIGNING_KEY_PATH` and `SAFT_CERTIFICATE_NUMBER`.
+and `ENABLE_BILLING` (plan limits; self-hosted stays unlimited unless you turn it on).
 
 See [.env.example](.env.example) for the complete list.
 
