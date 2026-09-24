@@ -1,3 +1,42 @@
+// ── A comment written as JSX text ───────────────────────────────────────────
+//
+// Between JSX tags, `/* … */` and `// …` are not comments: they are text, and React renders them
+// on the page. Only `{/* … */}` is a comment there. Lint and type-check both passed one that was
+// left bare when a branch around it was unwrapped, and it would have printed above the Portfolio.
+//
+// This is `react/jsx-no-comment-textnodes`, written out here because `eslint-plugin-react`
+// supports ESLint only up to 9.
+const jsxNoCommentTextnodes = {
+  meta: {
+    type: "problem",
+    docs: { description: "Disallow comments written as JSX text, which render on the page" },
+    schema: [],
+    messages: {
+      commentAsText:
+        "This is JSX text, not a comment, so it renders on the page. Wrap it in braces: {/* … */}.",
+    },
+  },
+  create(context) {
+    const sourceCode = context.sourceCode;
+    return {
+      JSXText(node) {
+        // The source, not `node.value`: an entity such as `&#47;` is deliberate text.
+        const match = /^\s*\/(\/|\*)/m.exec(sourceCode.getText(node));
+        if (!match) return;
+        // Report the comment's own line. The text node starts on the line of the tag before it.
+        const start = node.range[0] + match.index + match[0].length - 2;
+        context.report({
+          loc: {
+            start: sourceCode.getLocFromIndex(start),
+            end: sourceCode.getLocFromIndex(start + 2),
+          },
+          messageId: "commentAsText",
+        });
+      },
+    };
+  },
+};
+
 module.exports = [
   // Ignore common build and dependency folders
   {
@@ -34,8 +73,10 @@ module.exports = [
       "@typescript-eslint": require("@typescript-eslint/eslint-plugin"),
       "react-hooks": require("eslint-plugin-react-hooks"),
       security: require("eslint-plugin-security"),
+      situs: { rules: { "jsx-no-comment-textnodes": jsxNoCommentTextnodes } },
     },
     rules: {
+      "situs/jsx-no-comment-textnodes": "error",
       // Relaxed rules for existing codebase - can be tightened over time
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": [
