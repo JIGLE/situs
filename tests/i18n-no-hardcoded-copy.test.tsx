@@ -209,6 +209,7 @@ describe("user-visible copy comes from the catalogue, not from literals", () => 
                 row("a1", "ALLOCATE_PAYMENT"),
                 row("a2", "UPLOAD_LEASE_CONTRACT"),
                 row("a3", "RETIRED_FEATURE_ACTION"),
+                row("a4", "EXTRACT_LEASE_CONTRACT"),
               ],
             }),
         }),
@@ -219,6 +220,8 @@ describe("user-visible copy comes from the catalogue, not from literals", () => 
 
     expect(await screen.findByText("Pagamento atribuído")).toBeInTheDocument();
     expect(screen.getByText("PDF do contrato carregado")).toBeInTheDocument();
+    // The record of a contract leaving the instance says where it went.
+    expect(screen.getByText("Contrato enviado à Anthropic para leitura")).toBeInTheDocument();
     // Rows outlive the code that wrote them; an action with no label keeps its stored code.
     expect(screen.getByText("RETIRED_FEATURE_ACTION")).toBeInTheDocument();
     expect(screen.queryByText(/ALLOCATE PAYMENT|UPLOAD LEASE CONTRACT/i)).not.toBeInTheDocument();

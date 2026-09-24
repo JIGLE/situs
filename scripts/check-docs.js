@@ -46,6 +46,14 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // DATA_PROTECTION §4 said nothing left the EEA. Contract import sends the PDFs to Anthropic.
+    pattern: /None are intended, and none are made/,
+    retired: "2026-09-24 (contract import)",
+    because:
+      "importing a lease from its contract sends the PDFs to Anthropic, in the United States, " +
+      "wherever contract import is configured",
+  },
+  {
     // DATA_PROTECTION §3's call-site table gained the contract, and its plaintext table said the
     // documents store held uploaded leases.
     pattern: /Two bank fields are deliberately|Whatever the operator uploaded/,

@@ -30,15 +30,16 @@ ever offered to other people.
 
 ## 2. Processing activities
 
-| Activity                            | Purpose                                     | Lawful basis                                         |
-| ----------------------------------- | ------------------------------------------- | ---------------------------------------------------- |
-| Property, unit and building records | Managing the portfolio                      | Legitimate interest (Art. 6(1)(f))                   |
-| Tenant and lease records            | Performing the tenancy agreement            | Contract (Art. 6(1)(b))                              |
-| Rent ledger, receipts, allocations  | Recording rent due and paid                 | Contract; legal obligation for the fiscal parts      |
-| Bank movement ingestion (PSD2)      | Reconciling rent against bank credits       | Consent, given at the bank under PSD2 (Art. 6(1)(a)) |
-| Fiscal filing (AT rent receipts)    | Statutory rent-income reporting             | Legal obligation (Art. 6(1)(c))                      |
-| Transactional email                 | Rent reminders, lease-expiry alerts         | Contract; legitimate interest                        |
-| Audit log                           | Accountability (Art. 5(2)), fraud detection | Legal obligation; legitimate interest                |
+| Activity                            | Purpose                                                                         | Lawful basis                                         |
+| ----------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Property, unit and building records | Managing the portfolio                                                          | Legitimate interest (Art. 6(1)(f))                   |
+| Tenant and lease records            | Performing the tenancy agreement                                                | Contract (Art. 6(1)(b))                              |
+| Rent ledger, receipts, allocations  | Recording rent due and paid                                                     | Contract; legal obligation for the fiscal parts      |
+| Bank movement ingestion (PSD2)      | Reconciling rent against bank credits                                           | Consent, given at the bank under PSD2 (Art. 6(1)(a)) |
+| Fiscal filing (AT rent receipts)    | Statutory rent-income reporting                                                 | Legal obligation (Art. 6(1)(c))                      |
+| Transactional email                 | Rent reminders, lease-expiry alerts                                             | Contract; legitimate interest                        |
+| Contract import (optional)          | Reading a signed contract into the lease, tenant and owner records it describes | Contract; legitimate interest                        |
+| Audit log                           | Accountability (Art. 5(2)), fraud detection                                     | Legal obligation; legitimate interest                |
 
 **No special-category data** (Art. 9) is processed by design. Nothing asks for health, beliefs,
 biometrics or the rest. Free-text fields — a bank remittance line, a receipt note — could
@@ -47,7 +48,8 @@ than a reason to treat the app as processing Article 9 data.
 
 **No automated decision-making with legal effect** (Art. 22). Bank matching scores a movement
 against a lease and, above 0.85, creates a draft receipt; below that a human decides. Nothing
-terminates a tenancy or refuses anyone anything.
+terminates a tenancy or refuses anyone anything. A contract's reading is a proposal in the same
+way: nothing it says is written until the owner has reviewed every field and confirmed.
 
 ## 3. Categories of data
 
@@ -93,15 +95,16 @@ before encryption still downloads, and `scripts/backfill-pii-encryption.js` encr
 
 Recorded here deliberately rather than left implicit:
 
-| Model                  | Field              | Why                                                                                                        |
-| ---------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `Tenant`, `Owner`      | `name`, `email`    | Needed for search, sorting and sending mail; encrypting would break every list view                        |
-| `LeaseParty`           | `name`             | Shown on the lease beside the main tenant; the NIF beside it is encrypted                                  |
-| `BankTransaction`      | `counterpartyName` | The matching engine reads it to score a movement against a lease                                           |
-| `BankTransaction`      | `reference`        | The remittance line. Read for reference-month parsing. **Free text: may contain anything the payer typed** |
-| `BankAccount`          | `ibanLast4`        | Four digits, displayed so a human can tell two accounts apart                                              |
-| `Property`, `Building` | address fields     | Personal data where a tenant lives there; core to the product                                              |
-| `Document`             | receipt archives   | The PDF kept when a receipt is emitted: the tenant's name, the property's address and the amount, on disk  |
+| Model                  | Field              | Why                                                                                                                                                         |
+| ---------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Tenant`, `Owner`      | `name`, `email`    | Needed for search, sorting and sending mail; encrypting would break every list view                                                                         |
+| `LeaseParty`           | `name`             | Shown on the lease beside the main tenant; the NIF beside it is encrypted                                                                                   |
+| `LeaseClause`          | `summary`, `quote` | What a contract import kept of a clause, in the contract's own words. Clauses on renewal, rent, termination and deposit rarely name anyone, but a quote can |
+| `BankTransaction`      | `counterpartyName` | The matching engine reads it to score a movement against a lease                                                                                            |
+| `BankTransaction`      | `reference`        | The remittance line. Read for reference-month parsing. **Free text: may contain anything the payer typed**                                                  |
+| `BankAccount`          | `ibanLast4`        | Four digits, displayed so a human can tell two accounts apart                                                                                               |
+| `Property`, `Building` | address fields     | Personal data where a tenant lives there; core to the product                                                                                               |
+| `Document`             | receipt archives   | The PDF kept when a receipt is emitted: the tenant's name, the property's address and the amount, on disk                                                   |
 
 `BankTransaction.rawData` preserves the imported row for re-matching, with the IBAN stripped
 before it is written (`redactRowForStorage`, `lib/services/bank/csv.ts`). It previously stored
@@ -112,24 +115,38 @@ clear here.
 
 A self-hosted instance shares data with a service only when that service is configured.
 
-| Recipient      | Receives                                                         | When                           | Location     |
-| -------------- | ---------------------------------------------------------------- | ------------------------------ | ------------ |
-| Enable Banking | Bank authorisation; returns account and transaction data         | Only where a bank is connected | EEA          |
-| Brevo          | Recipient address and message body of transactional mail we send | Only where email is configured | France (EEA) |
-| Portuguese AT  | Rent receipt filings                                             | Only on submission             | Portugal     |
+| Recipient      | Receives                                                                               | When                                                                     | Location      |
+| -------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------- |
+| Enable Banking | Bank authorisation; returns account and transaction data                               | Only where a bank is connected                                           | EEA           |
+| Brevo          | Recipient address and message body of transactional mail we send                       | Only where email is configured                                           | France (EEA)  |
+| Portuguese AT  | Rent receipt filings                                                                   | Only on submission                                                       | Portugal      |
+| Anthropic      | A lease contract and AT's proof of its registration, to be read; returns what they say | Only when the owner imports a contract, where `ANTHROPIC_API_KEY` is set | United States |
 
 **Enable Banking is the licensed AISP**, which is why the instance needs no PSD2 licence and no
 eIDAS certificate. Access is read-only account information: account details and transactions.
 There is no payment-initiation scope anywhere in the adapter, and adding one would be a
 different regulatory undertaking.
 
-**Third-country transfers.** None are intended, and none are made under the default
-configuration: Enable Banking and Brevo both operate in the EEA. Mail moved from
-SendGrid to Brevo partly for this reason — SendGrid's region depended on the account, so the
-transfer basis was the operator's to establish. It no longer is.
+**Third-country transfers.** One, made only where it is configured and only when it is used:
+importing a lease from its contract sends the PDFs to Anthropic, in the United States
+(`app/api/contracts/extract/route.ts`, `lib/services/contracts/claude-extractor.ts`). The
+documents carry everything a contract does: every party's name and NIF, a foreign party's
+document number, addresses, amounts and signatures.
 
-That holds only for the default. The transport is plain SMTP, so an operator who points
-`SMTP_HOST` at a non-EEA provider reintroduces the question, and it becomes theirs to answer.
+- **Without `ANTHROPIC_API_KEY`, nothing can be sent.** The Leases screen shows no import, and the
+  route answers 503 before it reads a byte.
+- **With it, each transfer is the owner's deliberate act.** The sheet says where the PDFs go
+  before the owner sends them. Each reading writes an `EXTRACT_LEASE_CONTRACT` audit row whatever
+  its outcome, because the documents have left either way. Nothing else is written until the
+  owner confirms, and the reading is not stored: what is kept is what the owner confirmed.
+- **The transfer basis is the operator's to establish**, under the terms of the Anthropic account
+  whose key the instance is given: its data processing terms and the transfer mechanism they rely
+  on. The app cannot see those terms.
+
+Nothing else leaves the EEA under the default configuration: Enable Banking and Brevo both
+operate there. Mail moved from SendGrid to Brevo partly for this reason, since SendGrid's region
+depended on the account. That holds only for the default. The transport is plain SMTP, so an
+operator who points `SMTP_HOST` at a non-EEA provider adds a transfer of their own to answer for.
 
 ## 5. Retention
 
@@ -202,6 +219,7 @@ instance and would need revisiting if Situs were offered as a service.
 | Audit trail on workflow mutations                                             | `lib/services/audit-log.ts`, `AuditLog`                                                                                           |
 | Debug endpoints restricted in production                                      | `/api/debug/db` and `/api/debug/db/seed` return 403; `/api/debug/db/init` needs a session and `INIT_SECRET` (`docs/SECURITY.md`)  |
 | Bank consent references                                                       | 256-bit random, user-scoped, constant-time compared, single-use, dropped once spent                                               |
+| Contract reading audited and rate-limited per owner                           | `app/api/contracts/extract/route.ts`: an `EXTRACT_LEASE_CONTRACT` row for every reading, and `EXTRACT_LIMIT`                      |
 | Private key handling                                                          | Enable Banking RSA key mounted as a file (`ENABLE_BANKING_PRIVATE_KEY_FILE`), keeping it out of `/proc/<pid>/environ`             |
 
 **Backups are the operator's responsibility.** `docs/DATABASE_STRATEGY.md` describes them; nothing
@@ -227,5 +245,7 @@ Listed rather than left for a reader to discover.
 - **`BankTransaction.reference` is free text held in plaintext** for two years. It is read by
   the matching engine, so encrypting it would cost the reference-month parsing that makes
   matching work. The mitigation is the retention period, not the storage.
+- **The transfer basis for contract reading is unconfirmed by the app**, per §4. It rests on the
+  terms of the operator's Anthropic account, which the instance cannot see.
 - **The SMTP host is not constrained** to the EEA. The default (Brevo) is French, but nothing
   stops `SMTP_HOST` pointing elsewhere, and the app does not check.

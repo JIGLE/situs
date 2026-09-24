@@ -61,6 +61,7 @@ lib/
     bank/               # CSV import + fingerprint dedupe + matching pipeline
       providers/        # PSD2 provider contract + registry + Enable Banking adapter + test fake
     receipts/           # Receipt document-lifecycle state machine + orchestration
+    contracts/          # Contract import: Claude reads a lease contract, the owner confirms
     tax/                # Tax connector find-or-create + submission-log service
   tax/connectors/       # The Portuguese TaxConnector (pt-at.ts) and its mode guard
   design/country-themes.ts  # PT/EU theme table
@@ -119,6 +120,16 @@ e2e/                    # Playwright E2E tests
   the provider's daily read budget **before** spending a call (a 429 costs the rest of the day) and
   marks a connection `expired` on `ConsentExpiredError`. `BankConnection.provider` is `psd2_<key>`
   for a real bank and `manual`/`csv` otherwise — never offer a sync to the latter.
+- **Contract import**: _Import from contract_ on Leases (`components/features/lease/contract-import.tsx`,
+  `?import=contract`). `POST /api/contracts/extract` sends the PDFs to Claude
+  (`lib/services/contracts/claude-extractor.ts`, behind the `ContractExtractor` interface) and
+  writes nothing but an `EXTRACT_LEASE_CONTRACT` audit row; its per-owner rate limit is tighter
+  because each call costs money. The reading is a proposal: the owner reviews every field beside
+  the words it came from, and `POST /api/contracts/import` writes the confirmed review in one
+  transaction (`import.ts`), linking matched records (`match.ts`, pure) and never editing them.
+  The sheet then stores the PDF through the lease's contract route. `draft.ts` and `review.ts` are
+  pure, and the import's Zod schema re-checks what the sheet checked. This is the instance's one
+  transfer outside the EEA (`docs/DATA_PROTECTION.md` §4).
 - **Receipt lifecycle**: `Receipt.status` is the money state (paid|pending); `Receipt.lifecycle` is
   the document state machine (`lib/services/receipts/lifecycle.ts`, pure): draft → review →
   emitted → submitted → accepted/rejected (rejected → review). Voiding is allowed from draft,
@@ -326,6 +337,9 @@ Optional:
   `ENABLE_BANKING_PRIVATE_KEY` inline locally; the file wins when both are set. Never base64 the
   key into a config field: a PEM is ~1,700 chars, ~2,272 as base64, over TrueNAS' 1,000-char cap.
   Without these the app is CSV-import-only and shows no connect button.
+- `ANTHROPIC_API_KEY` enables contract import; `ANTHROPIC_MODEL` overrides the model that reads.
+  Without the key the Leases screen shows no import and `/api/contracts/extract` answers 503. The
+  import route needs no key: it calls no one, and a review open when the key goes keeps working.
 - `CRON_SECRET` gates the three `/api/cron/*` endpoints (notifications, data retention, bank sync);
   each returns 503 while it is unset.
 - `METRICS_TOKEN` gates the counter endpoint, `/api/metrics`, in production; it answers 403 while

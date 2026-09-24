@@ -27,6 +27,8 @@ export const AUDIT_ACTION_KEY = {
   UPLOAD_LEASE_CONTRACT: "uploadLeaseContract",
   DOWNLOAD_LEASE_CONTRACT: "downloadLeaseContract",
   DELETE_LEASE_CONTRACT: "deleteLeaseContract",
+  EXTRACT_LEASE_CONTRACT: "extractLeaseContract",
+  IMPORT_LEASE_CONTRACT: "importLeaseContract",
   CREATE_UNIT: "createUnit",
   UPDATE_UNIT: "updateUnit",
   DELETE_UNIT: "deleteUnit",

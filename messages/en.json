@@ -249,6 +249,7 @@
       "email": "Email (SMTP)",
       "bank": "Bank movements",
       "bank_provider": "Bank provider",
+      "contract_reader": "Contract reading (Anthropic)",
       "tax": "Tax authority — {country}"
     },
     "shell": {
@@ -827,7 +828,8 @@
       },
       "atContract": "AT contract",
       "atContractVersion": "{number}, version {version}",
-      "notRecorded": "Not recorded"
+      "notRecorded": "Not recorded",
+      "clauses": "Contract clauses"
     },
     "unknown": "Unknown",
     "parties": {
@@ -846,6 +848,66 @@
       "version": "Contract version",
       "hint": "From the Portal das Finanças or the registration proof. Every receipt issued in Finanças names it.",
       "invalid": "Digits only."
+    },
+    "import": {
+      "button": "Import from contract",
+      "title": "Import a lease from its contract",
+      "description": "Situs reads the contract and fills in the lease for you to check. Nothing is saved until you confirm.",
+      "contractFile": "Signed contract (PDF)",
+      "proofFile": "AT proof of registration (PDF, optional)",
+      "transfer": "To be read, the PDFs are sent to Anthropic, in the United States.",
+      "read": "Read contract",
+      "reading": "Reading the contract. This can take a minute.",
+      "property": "Property",
+      "landlords": "Landlords",
+      "tenant": "Tenant",
+      "terms": "Terms",
+      "clauses": "Clauses",
+      "linkTo": "Link to",
+      "newProperty": "Create a new property",
+      "newTenant": "Create a new tenant",
+      "newOwner": "Create a new owner",
+      "matched": "Matches your records ({by})",
+      "source": "Page {page}: “{quote}”",
+      "notStated": "Not in the documents",
+      "share": "Share (%)",
+      "ownedNote": "A property that already has owners keeps its recorded shares.",
+      "problemsTitle": "Before confirming",
+      "confirm": "Confirm and create the lease",
+      "created": "Lease imported from its contract.",
+      "matchedBy": {
+        "matrix": "matriz article",
+        "address": "address",
+        "nif": "NIF",
+        "email": "email"
+      },
+      "problems": {
+        "property": "The new property needs a name and an address.",
+        "tenant": "The tenant needs a name.",
+        "rent": "The monthly rent must be more than 0.",
+        "dates": "The lease must end after it starts.",
+        "shares": "The shares total {total}%. They must make 100%.",
+        "email": "{name} needs an email address.",
+        "nif": "{name}: this NIF's check digit is wrong."
+      },
+      "errors": {
+        "not_configured": "Contract reading is not set up on this instance.",
+        "refused": "The contract could not be read: the model declined it.",
+        "too_long": "The contract is too long to read in one go.",
+        "unreadable": "The PDF could not be read. Try a clearer scan.",
+        "rejected": "Anthropic did not accept this instance's API key or model.",
+        "busy": "Too many readings for now. Try again later.",
+        "unavailable": "The reading service did not answer. Try again.",
+        "not_pdf": "That file is not a PDF.",
+        "too_large": "The PDF is too large.",
+        "email_taken": "A tenant or owner with that email already exists. Link to them instead."
+      },
+      "clauseKind": {
+        "renewal": "Renewal",
+        "rent_update": "Rent update",
+        "termination": "Termination and notice",
+        "deposit": "Deposit"
+      }
     }
   },
   "notifications": {
@@ -1580,6 +1642,8 @@
       "processorEnableBankingBody": "Licensed account information service provider. Receives your bank authorisation and returns account and transaction data. Only where you connect a bank.",
       "processorEmail": "Brevo",
       "processorEmailBody": "Delivers transactional email, and therefore sees the recipient address and the message. EU-based (France). Only where email is configured.",
+      "processorAnthropic": "Anthropic",
+      "processorAnthropicBody": "Reads a lease contract, and AT's proof of its registration, when you import a lease from them, so it sees everything those documents contain. Based in the United States, outside the EU. Only where contract import is configured, and only for the documents you choose to send.",
       "processorTax": "Portuguese Tax Authority (AT)",
       "processorTaxBody": "Receive the fiscal filings you choose to submit.",
       "contactTitle": "Contact",
@@ -1645,6 +1709,8 @@
     "uploadLeaseContract": "Contract PDF uploaded",
     "downloadLeaseContract": "Contract PDF downloaded",
     "deleteLeaseContract": "Contract PDF deleted",
+    "extractLeaseContract": "Contract sent to Anthropic to be read",
+    "importLeaseContract": "Lease imported from its contract",
     "createUnit": "Unit created",
     "updateUnit": "Unit updated",
     "deleteUnit": "Unit deleted",

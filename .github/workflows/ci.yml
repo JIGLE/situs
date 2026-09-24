@@ -364,6 +364,8 @@ jobs:
           demo-mode: "true"
           demo-login: "true"
           disable-rate-limit: "true"
+          # The contract-import surface is a sheet that exists only where a reader is configured.
+          contract-reader: "true"
 
       # `--seed` is not optional: without it the harness walks a bare database, and a table with
       # no rows cannot overflow. Every number this job produced before it was added described

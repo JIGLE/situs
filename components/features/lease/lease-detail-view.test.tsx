@@ -118,3 +118,47 @@ describe("LeaseDetailView in Portuguese", () => {
     expect(screen.queryByText(/2026-01-01|2026-12-31/)).not.toBeInTheDocument();
   });
 });
+
+/**
+ * What a contract import kept of the lease's clauses: each kind named in the reader's language,
+ * its summary, and the words it was read from with their page.
+ */
+describe("LeaseDetailView clauses", () => {
+  const pt = ptMessages.leases;
+
+  it("lists the imported clauses, in Portuguese", () => {
+    app.leases = [
+      {
+        ...lease,
+        clauses: [
+          {
+            id: "clause-1",
+            kind: "rent_update",
+            summary: "A renda é atualizada todos os anos.",
+            quote: "A renda será atualizada anualmente.",
+            page: 3,
+          },
+        ],
+      },
+    ];
+    renderWithProviders(<LeaseDetailView leaseId="lease-1" />, { initialLocale: "pt" });
+
+    expect(screen.getByText(pt.detail.clauses)).toBeInTheDocument();
+    expect(screen.getByText(pt.import.clauseKind.rent_update)).toBeInTheDocument();
+    expect(screen.getByText("A renda é atualizada todos os anos.")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        pt.import.source
+          .replace("{page}", "3")
+          .replace("{quote}", "A renda será atualizada anualmente."),
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("shows no clauses section for a lease typed in by hand", () => {
+    app.leases = [{ ...lease }];
+    renderWithProviders(<LeaseDetailView leaseId="lease-1" />, { initialLocale: "pt" });
+
+    expect(screen.queryByText(pt.detail.clauses)).not.toBeInTheDocument();
+  });
+});
