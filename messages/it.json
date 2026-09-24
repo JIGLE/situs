@@ -297,7 +297,7 @@
       "database": "Database",
       "session_user": "Account con sessione attiva",
       "pii": "Crittografia dati personali",
-      "email": "Email (SendGrid)",
+      "email": "Email (SMTP)",
       "billing": "Fatturazione abbonamento (Stripe)",
       "bank": "Movimenti bancari",
       "bank_provider": "Fornitore bancario",

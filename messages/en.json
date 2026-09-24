@@ -297,7 +297,7 @@
       "database": "Database",
       "session_user": "Signed-in account",
       "pii": "PII encryption",
-      "email": "Email (SendGrid)",
+      "email": "Email (SMTP)",
       "billing": "Subscription billing (Stripe)",
       "bank": "Bank movements",
       "bank_provider": "Bank provider",
