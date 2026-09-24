@@ -32,12 +32,12 @@ async function walk(dir) {
       const lines = content.split(/\r?\n/);
       // Skip the currency symbol definition file (it contains intentional mappings)
       const posix = p.replace(/\\/g, "/");
-      // A currency symbol table is the one place a "$" literal belongs. There are TWO of them —
-      // `lib/currency.ts` (CURRENCY_SYMBOL, 4 importers) and `lib/utils/currency.ts`
-      // (CURRENCY_SYMBOLS, 8 importers) — which is duplication worth collapsing, but that is a
-      // code change, not a checker change. The old exclusion named only the first, so the second
-      // was reported and this checker exited 1 forever, which is why nothing ran it.
-      if (/\/lib\/(utils\/)?currency\.(ts|js)$/.test(posix)) continue;
+      // A currency symbol table is the one place a "$" literal belongs: `lib/utils/currency.ts`
+      // (CURRENCY_SYMBOLS). There used to be a second, `lib/currency.ts`, deleted with the
+      // unreachable legacy pages that were its only importer. The old exclusion named only that
+      // one, so the real table was reported and this checker exited 1 forever, which is why
+      // nothing ran it.
+      if (/\/lib\/utils\/currency\.(ts|js)$/.test(posix)) continue;
       // Tests are not user-facing output. This rule exists to stop a hardcoded symbol reaching a
       // screen; a mock formatter asserting "$0.00" cannot.
       if (/\.(test|spec)\.(ts|tsx|js|jsx)$/.test(posix)) continue;
