@@ -20,8 +20,7 @@
       "occupied": "{count} occupati",
       "occupancy": "Tasso occupazione",
       "vacancySlots": "{count} posti liberi",
-      "runRate": "Entrate mensili",
-      "onMap": "{mapped}/{total} sulla mappa"
+      "runRate": "Entrate mensili"
     },
     "attention": {
       "label": "Attenzione",
@@ -561,11 +560,6 @@
       "description": "Carica documenti per tenere organizzati i registri di immobili, contratti e corrispondenza.",
       "action": "Carica Documento"
     },
-    "units": {
-      "title": "Nessuna unità ancora",
-      "description": "Aggiungi unità a questo immobile per monitorare spazi singoli, inquilini e contratti.",
-      "action": "Aggiungi Unità"
-    },
     "noResults": {
       "title": "Nessun risultato trovato",
       "description": "Prova a modificare la ricerca o i filtri."
@@ -636,7 +630,6 @@
     "colDate": "Data",
     "colStatus": "Stato",
     "tabs": {
-      "queue": "Da incassare",
       "receipts": "Ricevute",
       "rentMatrix": "Matrice canoni",
       "bank": "Movimenti bancari",
@@ -909,45 +902,6 @@
     "toastDeleted": "Proprietario eliminato correttamente",
     "deleteDescription": "Questo proprietario sarà rimosso definitivamente. L'azione non può essere annullata."
   },
-  "calendar": {
-    "months": {
-      "jan": "Gen",
-      "feb": "Feb",
-      "mar": "Mar",
-      "apr": "Apr",
-      "may": "Mag",
-      "jun": "Giu",
-      "jul": "Lug",
-      "aug": "Ago",
-      "sep": "Set",
-      "oct": "Ott",
-      "nov": "Nov",
-      "dec": "Dic"
-    },
-    "monthsFull": {
-      "january": "Gennaio",
-      "february": "Febbraio",
-      "march": "Marzo",
-      "april": "Aprile",
-      "may": "Maggio",
-      "june": "Giugno",
-      "july": "Luglio",
-      "august": "Agosto",
-      "september": "Settembre",
-      "october": "Ottobre",
-      "november": "Novembre",
-      "december": "Dicembre"
-    },
-    "weekdays": {
-      "sun": "Dom",
-      "mon": "Lun",
-      "tue": "Mar",
-      "wed": "Mer",
-      "thu": "Gio",
-      "fri": "Ven",
-      "sat": "Sab"
-    }
-  },
   "forms": {
     "fullName": "Nome completo",
     "email": "Email",
@@ -958,7 +912,6 @@
     "description": "Descrizione",
     "property": "Immobile",
     "tenant": "Inquilino",
-    "unit": "Unità",
     "type": "Tipo",
     "status": "Stato",
     "rent": "Affitto",
@@ -1016,14 +969,6 @@
     "postalCode": "Codice postale",
     "commercial": "Commerciale",
     "addressSearchFailed": "La ricerca dell'indirizzo non è riuscita.",
-    "map": {
-      "mapped": "Immobili sulla mappa",
-      "missingCoords": "Coordinate mancanti",
-      "source": "Fonte della mappa",
-      "empty": "Nessun immobile con coordinate",
-      "emptyHelp": "Verifica l'indirizzo dell'immobile o salva latitudine e longitudine per posizionarlo sulla mappa.",
-      "openDetails": "Apri dettaglio"
-    },
     "portfolio": {
       "subtitle": "Gestisci i tuoi immobili, l'occupazione e la copertura dei canoni.",
       "filterAssets": "Filtra asset…",
@@ -1214,7 +1159,6 @@
     "tabs": {
       "overview": "Panoramica",
       "money": "Finanze",
-      "units": "Unità",
       "audit": "Audit"
     },
     "stats": {
@@ -1284,37 +1228,6 @@
       "remove": "Rimuovi proprietario",
       "reachesFull": "Il totale arriverà esattamente al 100% ✓"
     }
-  },
-  "paymentMatrix": {
-    "title": "Matrice di Monitoraggio Pagamenti",
-    "subtitle": "Panoramica mensile dello stato dei pagamenti di tutti gli inquilini",
-    "detailed": "Dettagliato",
-    "heatmap": "Mappa di Calore",
-    "allStatus": "Tutti gli Stati",
-    "paid": "Pagato",
-    "pending": "In Attesa",
-    "overdue": "Scaduto",
-    "export": "Esporta",
-    "totalExpected": "Totale Previsto",
-    "forYear": "Per il {year}",
-    "totalReceived": "Totale Ricevuto",
-    "paidAmounts": "Importi pagati",
-    "outstanding": "Da Incassare",
-    "pendingPayments": "Pagamenti in sospeso",
-    "collectionRate": "Tasso di Riscossione",
-    "paymentSuccessRate": "Tasso di successo pagamenti",
-    "matrixTitle": "Matrice Pagamenti - {year}",
-    "legend": "Verde: Pagato • Giallo: In attesa • Rosso: Scaduto • Grigio: Nessun pagamento dovuto",
-    "tenant": "Inquilino",
-    "total": "Totale",
-    "perMonth": "/mese",
-    "ofExpected": "su {amount}",
-    "cellTooltip": "{status} il {date} — {amount}",
-    "overdueTooltip": "Pagamento scaduto",
-    "noPaymentTooltip": "Nessun pagamento",
-    "noPaymentDue": "Nessun pagamento dovuto",
-    "noTenantsYet": "Ancora Nessun Inquilino",
-    "addTenantsToTrack": "Aggiungi inquilini per iniziare a monitorare i pagamenti"
   },
   "notificationCenter": {
     "title": "Notifiche",
@@ -1645,7 +1558,7 @@
       "acceptanceTitle": "Accettazione",
       "acceptanceBody": "Creando un account o utilizzando questa istanza di Situs accettate i presenti termini. Se non li accettate, non utilizzatela.",
       "serviceTitle": "Che cos'è il servizio",
-      "serviceBody": "Situs è un software di gestione immobiliare per locatori e amministratori in Portogallo: immobili, unità, inquilini, contratti, ricevute, spese, manutenzione e adempimenti fiscali. È fornito così com'è. Assiste negli adempimenti fiscali; non li assolve e non sostituisce un commercialista.",
+      "serviceBody": "Situs è un software di gestione immobiliare per locatori e amministratori in Portogallo: immobili, inquilini, contratti, ricevute, spese, manutenzione e adempimenti fiscali. È fornito così com'è. Assiste negli adempimenti fiscali; non li assolve e non sostituisce un commercialista.",
       "accountsTitle": "Account",
       "accounts1": "I dati di registrazione devono essere esatti.",
       "accounts2": "Siete responsabili della riservatezza delle vostre credenziali.",

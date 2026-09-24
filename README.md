@@ -56,7 +56,7 @@ is _derived_ from this ledger, never hand-set.
 
 ### Portfolio and operations
 
-- **Properties, units, buildings, tenants, owners** — with a structural portfolio tree and role-based access
+- **Properties, buildings, tenants, owners** — with a structural portfolio tree and role-based access
 - **Leases** — lifecycle, renewals, expiry alerts, bilingual PDF templates
 - **i18n** — Portuguese, English, Spanish, Italian (full parity, enforced by test — `npm run i18n:check:strict` counts them, so this line does not)
 

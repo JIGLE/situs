@@ -66,9 +66,9 @@ test.describe("Confirmation Dialog UI – Authenticated", () => {
    * confirmation is an `alertdialog`.
    *
    * NOTE: there is no property-delete test here because there is no property-delete UI. The route
-   * exists and is auth-guarded (see above), but `deleteProperty` is not wired to any component —
-   * only units have a delete affordance. The old test asserted against an affordance that does
-   * not exist, which is the other half of why it could only ever skip.
+   * exists and is auth-guarded (see above), but `deleteProperty` is not wired to any component.
+   * The old test asserted against an affordance that does not exist, which is the other half of
+   * why it could only ever skip.
    */
   const openTenantDeleteConfirmation = async (page: import("@playwright/test").Page) => {
     await page.goto("/people");

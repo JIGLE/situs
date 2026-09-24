@@ -28,8 +28,6 @@ export interface Document {
   fileSize: number;
   propertyId?: string;
   propertyName?: string;
-  unitId?: string;
-  unitNumber?: string;
   ownerId?: string;
   ownerName?: string;
   tenantId?: string;
@@ -47,7 +45,6 @@ export interface CreateDocumentData {
   mimeType: string;
   fileContent: Buffer | string;
   propertyId?: string;
-  unitId?: string;
   ownerId?: string;
   tenantId?: string;
   expiresAt?: string | null;
@@ -136,7 +133,6 @@ export const documentService = {
       where: { id, userId },
       include: {
         property: { select: { name: true } },
-        unit: { select: { number: true } },
         owner: { select: { name: true } },
         tenant: { select: { name: true } },
       },
@@ -155,8 +151,6 @@ export const documentService = {
       fileSize: doc.fileSize,
       propertyId: doc.propertyId || undefined,
       propertyName: doc.property?.name,
-      unitId: doc.unitId || undefined,
-      unitNumber: doc.unit?.number,
       ownerId: doc.ownerId || undefined,
       ownerName: doc.owner?.name,
       tenantId: doc.tenantId || undefined,
@@ -213,14 +207,12 @@ export const documentService = {
         storagePath,
         fileSize,
         propertyId: data.propertyId || null,
-        unitId: data.unitId || null,
         ownerId: data.ownerId || null,
         tenantId: data.tenantId || null,
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
       },
       include: {
         property: { select: { name: true } },
-        unit: { select: { number: true } },
         owner: { select: { name: true } },
         tenant: { select: { name: true } },
       },
@@ -237,8 +229,6 @@ export const documentService = {
       fileSize: doc.fileSize,
       propertyId: doc.propertyId || undefined,
       propertyName: doc.property?.name,
-      unitId: doc.unitId || undefined,
-      unitNumber: doc.unit?.number,
       ownerId: doc.ownerId || undefined,
       ownerName: doc.owner?.name,
       tenantId: doc.tenantId || undefined,

@@ -65,7 +65,6 @@ const UNUSED_ALLOWLIST = new Set([
  * them and `globals.css` does not define them. Without this they read as "used but not defined".
  */
 const UNDEFINED_ALLOWLIST = [
-  /^leaflet-/, // Leaflet injects its own stylesheet
   /^rdp-/, // react-day-picker
   /^recharts-/,
   /^swiper-/,

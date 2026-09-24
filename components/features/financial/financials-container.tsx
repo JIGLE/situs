@@ -11,7 +11,6 @@ import { useApp } from "@/lib/contexts/app-context";
 import { useCurrency } from "@/lib/contexts/currency-context";
 import { getActiveLease } from "@/lib/utils/lease-helpers";
 import { cn } from "@/lib/utils/utils";
-import { PaymentMatrixView } from "./payment-matrix-view";
 import { ReceiptsView } from "./receipts-view";
 import { RentRollView } from "./rent-roll-view";
 import { YearlyRentMatrix } from "./yearly-rent-matrix";
@@ -22,11 +21,11 @@ import { FinancialsView } from "./financials-view";
 import { BadgeEuro, FileText, Grid3X3, Landmark, Plus, Receipt } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-type PaymentTab = "queue" | "receipts" | "rent-matrix" | "bank" | "rent-roll" | "tax";
+type PaymentTab = "receipts" | "rent-matrix" | "bank" | "rent-roll" | "tax";
 
 export function FinancialsContainer() {
   const t = useTranslations("payments");
-  const [activeTab, setActiveTab] = useTabPersistence("payments", "queue");
+  const [activeTab, setActiveTab] = useTabPersistence("payments", "rent-matrix");
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -38,7 +37,7 @@ export function FinancialsContainer() {
   // `ReceiptsView` (which owns the record-payment dialog) only mounts while the Receipts
   // tab is the active TabsContent — Radix unmounts inactive tab panels by default. The
   // header "Record payment" button used to poke a ref, which silently no-op'd whenever
-  // another tab (e.g. the default "Due & Overdue" queue) was active. Instead: switch to
+  // another tab (e.g. the default rent matrix) was active. Instead: switch to
   // the Receipts tab and raise a signal that `ReceiptsView` opens itself from — robust to
   // the tab-mount + `router.replace` re-render that `setActiveTab` triggers.
   const [pendingRecordPayment, setPendingRecordPayment] = useState(
@@ -55,7 +54,6 @@ export function FinancialsContainer() {
   useEffect(() => {
     if (
       tabParam === "receipts" ||
-      tabParam === "queue" ||
       tabParam === "rent-matrix" ||
       tabParam === "bank" ||
       tabParam === "rent-roll" ||
@@ -119,13 +117,17 @@ export function FinancialsContainer() {
 
   /** Tab set as data, so the bar and its mobile select can never drift apart. */
   const paymentTabs: { value: PaymentTab; label: string; icon: LucideIcon }[] = [
-    { value: "queue", label: t("tabs.queue"), icon: Grid3X3 },
     { value: "receipts", label: t("tabs.receipts"), icon: Receipt },
     { value: "rent-matrix", label: t("tabs.rentMatrix"), icon: Grid3X3 },
     { value: "bank", label: t("tabs.bank"), icon: Landmark },
     { value: "rent-roll", label: t("tabs.rentRoll"), icon: BadgeEuro },
     { value: "tax", label: t("tabs.tax"), icon: FileText },
   ];
+  // A tab stored before it was removed (localStorage, a `?view=` bookmark) would otherwise
+  // select no panel and leave the page blank below the stat cards.
+  const visibleTab: PaymentTab = paymentTabs.some(({ value }) => value === activeTab)
+    ? (activeTab as PaymentTab)
+    : "rent-matrix";
 
   return (
     <div className="space-y-6">
@@ -162,7 +164,7 @@ export function FinancialsContainer() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <button
           type="button"
-          onClick={() => setActiveTab("queue")}
+          onClick={() => setActiveTab("rent-matrix")}
           className={cn(
             "panel p-4 text-left transition-colors hover:border-[var(--color-border-hover)]",
             metrics.overdueAmount > 0 &&
@@ -219,18 +221,17 @@ export function FinancialsContainer() {
       </div>
 
       <Tabs
-        value={activeTab}
+        value={visibleTab}
         onValueChange={(value) => setActiveTab(value as PaymentTab)}
         className="space-y-6"
       >
         {/* One source for both renderings. Responsive rule 4 is a space test, and this bar fails
-            it: six triggers overflowed their container by 444px at 390px, so the last three were
-            reachable only by discovering a horizontal scroll. Below `md` it gives way to a
-            select. */}
+            it: at 390px its triggers overflow their container, so the last ones were reachable
+            only by discovering a horizontal scroll. Below `md` it gives way to a select. */}
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <TabsMobileSelect
             className="md:hidden"
-            value={activeTab}
+            value={visibleTab}
             onValueChange={(value) => setActiveTab(value as PaymentTab)}
             items={paymentTabs.map(({ value, label }) => ({ value, label }))}
             aria-label={t("title")}
@@ -244,10 +245,6 @@ export function FinancialsContainer() {
             ))}
           </TabsList>
         </div>
-
-        <TabsContent value="queue" className="mt-0">
-          <PaymentMatrixView />
-        </TabsContent>
 
         <TabsContent value="receipts" className="mt-0 space-y-4">
           <ReceiptAutomationQueue />

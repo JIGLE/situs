@@ -44,7 +44,6 @@ async function handlePut(
   await assertOwnsRelations(userId, {
     propertyId: body.propertyId,
     tenantId: body.tenantId,
-    unitId: body.unitId,
   });
 
   const updateData: Record<string, unknown> = { ...body };

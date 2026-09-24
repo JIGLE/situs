@@ -118,10 +118,10 @@ describe("seed cleanup covers everything the seed creates", () => {
 
   /**
    * Cascade-covered: deleting the property takes these with it, so an explicit delete would be
-   * redundant rather than missing. Verified against prisma/schema.prisma — Unit and Lease are
+   * redundant rather than missing. Verified against prisma/schema.prisma — Lease is
    * `onDelete: Cascade` from Property, RentPeriod from Lease and Property both.
    */
-  const CASCADES_FROM_PROPERTY = new Set(["unit", "lease", "rentPeriod"]);
+  const CASCADES_FROM_PROPERTY = new Set(["lease", "rentPeriod"]);
 
   it("finds both sets (an empty sweep would pass vacuously)", () => {
     // Anchored on records every seed has, not on a count: the floor was 10 when the seed cleaned

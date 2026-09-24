@@ -14,7 +14,6 @@ import {
   Briefcase,
   DollarSign,
   FileSpreadsheet,
-  Home,
 } from "lucide-react";
 import { Button } from "./button";
 import { cn } from "@/lib/utils/utils";
@@ -33,8 +32,7 @@ export interface EmptyStateIllustrationProps {
     | "expenses"
     | "invoices"
     | "contracts"
-    | "documents"
-    | "units";
+    | "documents";
   /** Alias for type (backwards compatibility) */
   entityType?:
     | "properties"
@@ -48,8 +46,7 @@ export interface EmptyStateIllustrationProps {
     | "expenses"
     | "invoices"
     | "contracts"
-    | "documents"
-    | "units";
+    | "documents";
   /** Title override (defaults based on type) */
   title?: string;
   /** Description override (defaults based on type) */
@@ -137,11 +134,6 @@ const emptyStateMeta: Record<
     icon: FileText,
     gradient: "from-sky-500/20 to-cyan-500/20",
     accentColor: "text-sky-400",
-  },
-  units: {
-    icon: Home,
-    gradient: "from-emerald-500/20 to-green-500/20",
-    accentColor: "text-emerald-400",
   },
 };
 

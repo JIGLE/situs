@@ -46,6 +46,16 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // The removed ARTIFACTS and the two sentences that listed them. The Completed Features list
+    // in ROADMAP.md still names "Units" and the "Property Map": it is a record of what was built.
+    pattern:
+      /with map view|[Pp]roperties, units, buildings|\/api\/units|property-map\.tsx|react-leaflet|payment-matrix-view/,
+    retired: "2026-09-24 (simplification, step 4)",
+    because:
+      "the property map, the receipt-based payment matrix and the Unit model were removed; " +
+      "Finance opens on the ledger's rent matrix",
+  },
+  {
     // The removed ARTIFACTS. "Stripe" alone is left alone: the ROADMAP rows that record this
     // removal name it.
     pattern:
