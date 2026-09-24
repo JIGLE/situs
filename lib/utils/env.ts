@@ -27,6 +27,12 @@ const envSchema = z.object({
 
   // PII encryption key (AES-256-GCM, 32-byte hex)
   PII_ENCRYPTION_KEY: z.string().min(64).optional(),
+
+  // Reading lease contracts with Claude (lib/services/contracts/). Optional: without a key the
+  // import is off, and leases are entered by hand.
+  // Empty means unset, as .env.example ships them.
+  ANTHROPIC_API_KEY: z.string().optional(),
+  ANTHROPIC_MODEL: z.string().optional(),
 });
 
 // Validate environment variables

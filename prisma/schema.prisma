@@ -41,6 +41,7 @@ model User {
   paymentAllocations     PaymentAllocation[]
   leases                 Lease[]
   leaseParties           LeaseParty[]
+  leaseClauses           LeaseClause[]
   owners                 Owner[]
   emailLogs              EmailLog[]
   documents              Document[]
@@ -610,12 +611,13 @@ model Lease {
   updatedAt           DateTime    @updatedAt
 
   // Relations
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property    Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property    Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   expenses    Expense[]
   rentPeriods RentPeriod[]
   parties     LeaseParty[]
+  clauses     LeaseClause[]
 
   @@index([userId])
   @@index([propertyId])
@@ -657,6 +659,35 @@ model LeaseParty {
 enum LeasePartyRole {
   tenant
   guarantor
+}
+
+// What the signed contract says about renewal, rent updates, termination and the deposit, read
+// from it when the lease is imported: a summary, and the contract's own words. Kept for the
+// notices those clauses govern. Terms rather than parties, so held in clear (DATA_PROTECTION §3).
+model LeaseClause {
+  id        String          @id @default(cuid())
+  userId    String
+  leaseId   String
+  kind      LeaseClauseKind
+  summary   String
+  quote     String
+  // The contract's page the quote is on, counting from 1; null when it was not given.
+  page      Int?
+  createdAt DateTime        @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lease Lease @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([leaseId])
+  @@map("lease_clauses")
+}
+
+enum LeaseClauseKind {
+  renewal
+  rent_update
+  termination
+  deposit
 }
 
 model Document {

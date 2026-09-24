@@ -365,6 +365,27 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
             </div>
           )}
 
+          {lease.clauses && lease.clauses.length > 0 && (
+            <div className="mt-6 pt-4 border-t border-[var(--color-border)]">
+              <span className="text-sm text-[var(--color-muted-foreground)]">{t("clauses")}</span>
+              <ul className="mt-2 space-y-3 text-sm">
+                {lease.clauses.map((clause) => (
+                  <li key={clause.id}>
+                    <p className="font-medium">{tLease(`import.clauseKind.${clause.kind}`)}</p>
+                    <p>{clause.summary}</p>
+                    <p className="text-xs text-[var(--color-muted-foreground)]">
+                      {clause.page ? (
+                        tLease("import.source", { page: clause.page, quote: clause.quote })
+                      ) : (
+                        <q>{clause.quote}</q>
+                      )}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {lease.contractFileName && (
             <div className="mt-6 pt-4 border-t border-[var(--color-border)]">
               <Button

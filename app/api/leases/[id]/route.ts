@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { handleOptions, requireOwnerAccess } from "@/lib/services/auth/auth-middleware";
 import {
   createErrorResponse,
@@ -14,7 +15,12 @@ import { updateLeaseSchema } from "@/lib/schemas/lease.schema";
 const leaseInclude = {
   property: { select: { name: true, address: true } },
   tenant: { select: { name: true, email: true } },
-};
+  // What a contract import kept of its clauses. Plain text, not PII, so an include reads it whole.
+  clauses: {
+    select: { id: true, kind: true, summary: true, quote: true, page: true },
+    orderBy: { createdAt: "asc" },
+  },
+} satisfies Prisma.LeaseInclude;
 
 async function handlePut(
   request: NextRequest,

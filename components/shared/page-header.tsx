@@ -15,7 +15,7 @@ export function PageHeader({ title, description, children }: PageHeaderProps) {
         </h2>
         {description && <p className="text-[var(--color-muted-foreground)]">{description}</p>}
       </div>
-      {children && <div className="flex items-center gap-2">{children}</div>}
+      {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
     </div>
   );
 }
