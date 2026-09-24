@@ -13,17 +13,18 @@ interface Props {
 export default async function LandingPage({ params }: Props) {
   const { locale } = await params;
 
-  // Authenticated visitors go straight to the app.
+  // Authenticated visitors go straight to the app. Only the session read sits in the try:
+  // redirect() works by throwing, and when it was inside, the catch swallowed it and every
+  // signed-in visitor got the landing page.
+  let signedIn = false;
   try {
     const { getServerSession } = await import("next-auth/next");
     const { getAuthOptions } = await import("@/lib/services/auth/auth");
-    const session = await getServerSession(getAuthOptions());
-    if (session?.user) {
-      redirect("/dashboard");
-    }
+    signedIn = Boolean((await getServerSession(getAuthOptions()))?.user);
   } catch {
     // Session check failed — render the public landing normally.
   }
+  if (signedIn) redirect("/dashboard");
 
   const tFooter = await getTranslations("footer");
 
