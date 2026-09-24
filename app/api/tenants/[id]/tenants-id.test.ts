@@ -2,11 +2,11 @@ import { describe, it, expect, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { GET as getTenantById, PUT as updateTenant, DELETE as deleteTenant } from "./route";
 
-// Mock auth middleware
+// Mock auth middleware. The route admits owners only, as its collection does.
 vi.mock("@/lib/services/auth/auth-middleware", () => ({
-  requireAuth: vi.fn(async (req) => {
+  requireOwnerAccess: vi.fn(async (req) => {
     if (req.headers.get("Authorization") === "Bearer valid-token") {
-      return { userId: "user-123", email: "user@example.com" };
+      return { userId: "user-123", scopeUserId: "user-123", email: "user@example.com" };
     }
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,

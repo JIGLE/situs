@@ -26,9 +26,6 @@ export const createTenantSchema = tenantSchema.omit({
   lastPayment: true,
 });
 
-export const updateTenantSchema = tenantSchema.partial();
-
 export type Tenant = z.infer<typeof tenantSchema>;
 export type TenantFormData = z.infer<typeof tenantSchema>;
 export type CreateTenant = z.infer<typeof createTenantSchema>;
-export type UpdateTenant = z.infer<typeof updateTenantSchema>;

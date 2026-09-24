@@ -1,14 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
-const { requireAuthMock, listRentReceiptsMock, createRentReceiptMock, logAuditMock } = vi.hoisted(
-  () => ({
+const { requireAuthMock, listRentReceiptsMock, createRentReceiptMock, logAuditMock, prismaMock } =
+  vi.hoisted(() => ({
     requireAuthMock: vi.fn(),
     listRentReceiptsMock: vi.fn(),
     createRentReceiptMock: vi.fn(),
     logAuditMock: vi.fn(),
-  }),
-);
+    prismaMock: {
+      tenant: { findFirst: vi.fn() },
+      property: { findFirst: vi.fn() },
+      lease: { findFirst: vi.fn() },
+    },
+  }));
 
 vi.mock("@/lib/services/auth/auth-middleware", () => ({
   requireAuth: requireAuthMock,
@@ -23,6 +27,8 @@ vi.mock("@/lib/services/audit-log", () => ({
   logAudit: logAuditMock,
 }));
 
+vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prismaMock }));
+
 import { GET, POST } from "./route";
 
 describe("Compliance rent receipts route", () => {
@@ -30,6 +36,9 @@ describe("Compliance rent receipts route", () => {
     vi.clearAllMocks();
     requireAuthMock.mockResolvedValue({ userId: "user-321" });
     logAuditMock.mockResolvedValue(undefined);
+    prismaMock.tenant.findFirst.mockResolvedValue({ id: "owned" });
+    prismaMock.property.findFirst.mockResolvedValue({ id: "owned" });
+    prismaMock.lease.findFirst.mockResolvedValue({ id: "owned" });
   });
 
   it("audits GET /api/compliance/rent-receipts", async () => {
@@ -78,5 +87,62 @@ describe("Compliance rent receipts route", () => {
         resourceType: "RentReceipt",
       }),
     );
+  });
+
+  // A receipt is filed against a tenant, a property and optionally a lease, and those ids came from
+  // the body unchecked: a caller could file a legal Recibo de Renda — the document the XML for AT
+  // is built from — against another landlord's tenant and property.
+  describe("POST: the records a receipt is filed against", () => {
+    const valid = {
+      tenantId: "cjld2cjxh0000qzrmn831i7rn",
+      propertyId: "cjld2cyuq0000t3rmniod1foy",
+      leaseId: "cjld2d5nl0000u9rmkkm2yj1z",
+      landlordNif: "123456789",
+      propertyAddress: "Rua Augusta 12, Lisboa",
+      rentAmount: 950,
+      paymentDate: "2026-03-01T00:00:00.000Z",
+      periodStart: "2026-03-01T00:00:00.000Z",
+      periodEnd: "2026-03-31T00:00:00.000Z",
+    };
+    beforeEach(() => {
+      // `clearAllMocks` keeps implementations, and the case above leaves a failed creation behind.
+      createRentReceiptMock.mockResolvedValue({
+        success: true,
+        receiptId: "rr-1",
+        receiptNumber: "RR-2026-0001",
+      });
+    });
+
+    const post = () =>
+      POST(
+        new NextRequest("http://localhost:3000/api/compliance/rent-receipts", {
+          method: "POST",
+          body: JSON.stringify(valid),
+        }),
+      );
+
+    it.each([
+      ["tenant", prismaMock.tenant],
+      ["property", prismaMock.property],
+      ["lease", prismaMock.lease],
+    ])("refuses a %s the caller does not own", async (_label, model) => {
+      model.findFirst.mockResolvedValue(null);
+
+      const response = await post();
+
+      expect(response.status).toBe(404);
+      expect(createRentReceiptMock).not.toHaveBeenCalled();
+    });
+
+    it("files against records the caller owns", async () => {
+      const response = await post();
+
+      expect(response.status).toBe(201);
+
+      expect(prismaMock.tenant.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: valid.tenantId, userId: "user-321" } }),
+      );
+      expect(createRentReceiptMock).toHaveBeenCalledTimes(1);
+    });
   });
 });

@@ -42,9 +42,7 @@ export const propertySchema = z.object({
 });
 
 export const createPropertySchema = propertySchema.omit({ status: true });
-export const updatePropertySchema = propertySchema.partial();
 
 export type PropertyFormData = z.infer<typeof propertySchema>;
 export type Property = z.infer<typeof propertySchema>;
 export type CreateProperty = z.infer<typeof createPropertySchema>;
-export type UpdateProperty = z.infer<typeof updatePropertySchema>;

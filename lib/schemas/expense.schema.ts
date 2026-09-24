@@ -109,9 +109,7 @@ export const expenseSchema = z.object({
 });
 
 export const createExpenseSchema = expenseSchema;
-export const updateExpenseSchema = expenseSchema.partial();
 
 export type Expense = z.infer<typeof expenseSchema>;
 export type ExpenseFormData = z.infer<typeof expenseSchema>;
 export type CreateExpense = z.infer<typeof createExpenseSchema>;
-export type UpdateExpense = z.infer<typeof updateExpenseSchema>;

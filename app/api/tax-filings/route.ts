@@ -15,7 +15,9 @@ const filingSchema = z.object({
   effectiveRate: z.number().min(0).max(1),
   withholdingPaid: z.number().nonnegative(),
   balanceDue: z.number(),
-  status: z.enum(["draft", "final"]).default("draft"),
+  // No default: this schema serves the update half of the upsert too, where a default would turn
+  // every save that leaves `status` out into a revert to draft. The create half defaults below.
+  status: z.enum(["draft", "final"]).optional(),
   notes: z.array(z.string()).optional(),
   payload: z.string(),
 });
@@ -53,6 +55,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     create: {
       userId: authResult.userId,
       ...rest,
+      status: rest.status ?? "draft",
       propertyIds: JSON.stringify(propertyIds),
       notes: notes ? JSON.stringify(notes) : null,
     },

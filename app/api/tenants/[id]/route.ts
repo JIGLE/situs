@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireAuth, handleOptions } from "@/lib/services/auth/auth-middleware";
+import { handleOptions, requireOwnerAccess } from "@/lib/services/auth/auth-middleware";
 import {
   createErrorResponse,
   createSuccessResponse,
@@ -29,7 +29,7 @@ async function handleGet(
   request: NextRequest,
   context?: { params?: Record<string, string> | Promise<Record<string, string>> },
 ): Promise<Response> {
-  const authResult = await requireAuth(request);
+  const authResult = await requireOwnerAccess(request);
   if (authResult instanceof Response) return authResult;
 
   const { userId } = authResult;
@@ -59,7 +59,7 @@ async function handlePut(
   request: NextRequest,
   context?: { params?: Record<string, string> | Promise<Record<string, string>> },
 ): Promise<Response> {
-  const authResult = await requireAuth(request);
+  const authResult = await requireOwnerAccess(request);
   if (authResult instanceof Response) return authResult;
 
   const { userId } = authResult;
@@ -113,7 +113,7 @@ async function handleDelete(
   request: NextRequest,
   context?: { params?: Record<string, string> | Promise<Record<string, string>> },
 ): Promise<Response> {
-  const authResult = await requireAuth(request);
+  const authResult = await requireOwnerAccess(request);
   if (authResult instanceof Response) return authResult;
 
   const { userId } = authResult;

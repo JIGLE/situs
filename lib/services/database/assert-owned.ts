@@ -34,6 +34,8 @@ export async function assertOwnsRelations(
     ownerId?: string | null;
     /** A unit has no `userId` of its own; it belongs to whoever owns its property. */
     unitId?: string | null;
+    leaseId?: string | null;
+    buildingId?: string | null;
   },
 ): Promise<void> {
   const prisma = getPrismaClient();
@@ -75,6 +77,24 @@ export async function assertOwnsRelations(
         .then((row) => {
           if (!row) throw new ResourceNotFoundError("Unit not found");
         }),
+    );
+  }
+
+  if (refs.leaseId) {
+    const id = refs.leaseId;
+    checks.push(
+      prisma.lease.findFirst({ where: { id, userId }, select: { id: true } }).then((row) => {
+        if (!row) throw new ResourceNotFoundError("Lease not found");
+      }),
+    );
+  }
+
+  if (refs.buildingId) {
+    const id = refs.buildingId;
+    checks.push(
+      prisma.building.findFirst({ where: { id, userId }, select: { id: true } }).then((row) => {
+        if (!row) throw new ResourceNotFoundError("Building not found");
+      }),
     );
   }
 
