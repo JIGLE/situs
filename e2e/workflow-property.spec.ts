@@ -37,12 +37,12 @@ test.describe("Critical Path: Property management", () => {
     const dialog = await openCreatePropertyDialog(page);
 
     // Fill form. "Full Address Search" is now just "Address", with Country / Postal code / City
-    // as separate inputs beneath it. Postal code is format-validated ("Invalid postal code
-    // format") so it cannot be skipped. Bedrooms and bathrooms moved behind an "Add details"
-    // disclosure and are not required to create a property, so they are left out.
+    // as separate inputs beneath it. Postal code is left blank on purpose: it is optional, and a
+    // blank one used to fail its format check, so a property could not be saved without one.
+    // Bedrooms and bathrooms moved behind an "Add details" disclosure and are not required to
+    // create a property, so they are left out.
     await page.getByLabel("Property Name").fill(propertyName);
     await page.getByLabel(/^address/i).fill("123 Test St");
-    await page.getByLabel("Postal code").fill("1000-001");
     await page.getByLabel("City").fill("Lisbon");
     await page.getByLabel(/monthly rent/i).fill("1500");
 

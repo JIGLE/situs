@@ -84,6 +84,7 @@ async function handlePost(request: NextRequest): Promise<Response> {
         ? sanitizeForDatabase(validatedData.streetAddress)
         : undefined,
       city: validatedData.city ? sanitizeForDatabase(validatedData.city) : undefined,
+      zipCode: validatedData.zipCode || undefined,
       bedrooms: sanitizeNumber(validatedData.bedrooms, 0, 0, 20),
       bathrooms: sanitizeNumber(validatedData.bathrooms, 0, 0, 20),
       rent: sanitizeNumber(validatedData.rent, 0, 0),
