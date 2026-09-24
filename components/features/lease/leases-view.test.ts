@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { leaseSchema } from "@/lib/schemas/lease.schema";
 
 /**
  * The tax-regime filter offered two values a lease can never hold.
@@ -54,6 +55,17 @@ describe("LeasesView tax-regime filter", () => {
       expect(offered, `leases can hold "${value}" but the filter cannot select it`).toContain(
         value,
       );
+    }
+  });
+
+  // The same drift one layer down: the filter, the Select and the seed agreed with each other, and
+  // the schema that validates the form did not, so the Portuguese option could never be saved.
+  it("only writes regimes the lease schema accepts", () => {
+    for (const value of writableRegimes()) {
+      expect(
+        leaseSchema.shape.taxRegime.safeParse(value).success,
+        `the form writes "${value}", which the lease schema rejects`,
+      ).toBe(true);
     }
   });
 

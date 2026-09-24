@@ -3,9 +3,12 @@ import { requireAuth, handleOptions } from "@/lib/services/auth/auth-middleware"
 import {
   createErrorResponse,
   createSuccessResponse,
+  parseBody,
   withErrorHandler,
 } from "@/lib/utils/error-handling";
 import { getPrismaClient } from "@/lib/services/database/database";
+import { assertOwnsRelations } from "@/lib/services/database/assert-owned";
+import { updateLeaseSchema } from "@/lib/schemas/lease.schema";
 
 const leaseInclude = {
   property: { select: { name: true, address: true } },
@@ -31,11 +34,25 @@ async function handlePut(
 
   const json = await request.json();
 
-  let updateData: Record<string, unknown> = { ...json };
+  // The lease's own terms, and only those the request sent. The body used to be spread into the
+  // update whole, so a request could write any column — `userId` included, which moved the lease
+  // into another account — and the renewal screen's round trip sent relation objects back.
+  const body = parseBody(json, updateLeaseSchema);
 
-  if (json.startDate) updateData.startDate = new Date(json.startDate);
-  if (json.endDate) updateData.endDate = new Date(json.endDate);
+  // The same check POST makes: a lease binds a tenant to a property and drives the rent ledger,
+  // so re-pointing one at records the caller does not own writes into another landlord's books.
+  await assertOwnsRelations(userId, {
+    propertyId: body.propertyId,
+    tenantId: body.tenantId,
+    unitId: body.unitId,
+  });
 
+  const updateData: Record<string, unknown> = { ...body };
+
+  if (body.startDate) updateData.startDate = new Date(body.startDate);
+  if (body.endDate) updateData.endDate = new Date(body.endDate);
+
+  // Read off the raw body, as POST does: the upload is not one of the lease's terms.
   if (json.contractFile) {
     const contractBuffer = Buffer.from(json.contractFile, "base64");
     updateData.contractFile = contractBuffer;
