@@ -85,15 +85,6 @@ export default async function TermsPage() {
             <p>{t("terms.bankBody")}</p>
           </Section>
 
-          <Section title={t("terms.paymentTitle")}>
-            <ul className="ml-4 list-disc space-y-2">
-              <li>{t("terms.payment1")}</li>
-              <li>{t("terms.payment2")}</li>
-              <li>{t("terms.payment3")}</li>
-              <li>{t("terms.payment4")}</li>
-            </ul>
-          </Section>
-
           <Section title={t("terms.liabilityTitle")}>
             <p>{t("terms.liabilityBody")}</p>
           </Section>

@@ -46,7 +46,6 @@ beforeEach(() => {
   process.env.PII_ENCRYPTION_KEY = "x".repeat(64);
   delete process.env.ALLOW_UNENCRYPTED_PII;
   delete process.env.SMTP_HOST;
-  delete process.env.STRIPE_SECRET_KEY;
 });
 
 describe("nothing simulated is ever reported as ok", () => {
@@ -142,19 +141,6 @@ describe("configuration checks", () => {
     // Waived is worse than absent: the app starts and silently stores plaintext IBANs and NIFs.
     expect(waived.severity).toBe("error");
     expect(waived.detail).toMatch(/plaintext/i);
-  });
-
-  it("treats absent Stripe as ok, because self-hosted is unlimited by design", async () => {
-    const billing = find((await getSystemStatus("u")).checks, "billing")!;
-    expect(billing.severity).toBe("ok");
-    expect(billing.state).toBe("disabled");
-  });
-
-  it("warns when Stripe is half-configured", async () => {
-    process.env.STRIPE_SECRET_KEY = "sk_test_x";
-    const billing = find((await getSystemStatus("u")).checks, "billing")!;
-    expect(billing.severity).toBe("warning");
-    expect(billing.detail).toMatch(/STRIPE_PRICE_ID_PRO/);
   });
 });
 

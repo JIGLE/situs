@@ -30,13 +30,7 @@ const UTILITY = "bg|text|border|ring|from|to|via|fill|stroke|shadow|divide|outli
 const PATTERN = new RegExp(`\\b(?:${UTILITY})-(?:${COLOR_FAMILIES})-[0-9]{2,3}\\b`, "g");
 
 // Files where multi-color literals are intentional (illustrations, dev tooling).
-const ALLOWLIST = [
-  "empty-state-illustrations",
-  "scenario-runner",
-  "opengraph-image",
-  // Marketing landing page — intentionally brand-tinted, not token-driven.
-  path.join("app", "[locale]", "page.tsx"),
-];
+const ALLOWLIST = ["empty-state-illustrations", "scenario-runner", "opengraph-image"];
 
 /**
  * Baseline count — the ratchet ceiling for `--strict`. Lower this as you migrate.
@@ -75,7 +69,8 @@ const ALLOWLIST = [
 // 235 → 211 on 2026-09-24. Removing the IRS summaries took 16 with the tax rules view and the
 // fiscal-profile card; the other 8 were slack, since main already measured 227.
 // 211 → 199 the same day: the Modelo 179 view took 12 when Spain's compliance went.
-const BASELINE = 199;
+// 199 → 186: the landing's language chooser took 12 and the billing panel 1.
+const BASELINE = 186;
 
 function walk(dir, acc) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

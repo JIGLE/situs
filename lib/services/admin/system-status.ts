@@ -49,15 +49,7 @@ export type StatusSeverity = "ok" | "simulated" | "warning" | "error";
 
 /** What a check is about. Its label is `admin.check.<kind>` in the message catalogues. */
 export type StatusCheckKind =
-  | "schema"
-  | "database"
-  | "session_user"
-  | "pii"
-  | "email"
-  | "billing"
-  | "bank"
-  | "bank_provider"
-  | "tax";
+  "schema" | "database" | "session_user" | "pii" | "email" | "bank" | "bank_provider" | "tax";
 
 export interface StatusCheck {
   /** The kind; a per-country tax check is `tax:<country>`. */
@@ -423,32 +415,6 @@ function emailCheck(): StatusCheck {
       };
 }
 
-function billingCheck(): StatusCheck {
-  if (!envSet("STRIPE_SECRET_KEY")) {
-    return {
-      id: "billing",
-      group: "integration",
-      severity: "ok",
-      state: "disabled",
-      // Not a fault. Self-hosted instances are unlimited by design, so an absent Stripe key is
-      // the expected configuration rather than something to fix.
-      detail: "No Stripe key — subscription billing is off and plan limits are not enforced.",
-    };
-  }
-
-  const missing = ["STRIPE_PRICE_ID_PRO", "STRIPE_PRICE_ID_BUSINESS"].filter((v) => !envSet(v));
-  return missing.length === 0
-    ? { id: "billing", group: "integration", severity: "ok", state: "configured" }
-    : {
-        id: "billing",
-        group: "integration",
-        severity: "warning",
-        state: "incomplete",
-        detail: `Stripe is configured but ${missing.join(" and ")} ${missing.length === 1 ? "is" : "are"} missing.`,
-        remedy: "Checkout will fail for the affected plans until these are set.",
-      };
-}
-
 /**
  * The signed-in user's own row. Sessions are JWTs and Google OAuth has no PrismaAdapter, so the
  * id every owned record foreign-keys against is written into the token once, at sign-in. Sign in
@@ -500,7 +466,7 @@ export async function getSystemStatus(userId: string): Promise<SystemStatus> {
     bankProviderCheck(),
   ]);
 
-  const checks: StatusCheck[] = [encryptionCheck(), emailCheck(), billingCheck()];
+  const checks: StatusCheck[] = [encryptionCheck(), emailCheck()];
   for (const result of results) {
     if (result.status !== "fulfilled") continue;
     if (Array.isArray(result.value)) checks.push(...result.value);

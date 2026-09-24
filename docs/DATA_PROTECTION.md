@@ -101,7 +101,6 @@ A self-hosted instance shares data with a service only when that service is conf
 | Recipient      | Receives                                                         | When                           | Location     |
 | -------------- | ---------------------------------------------------------------- | ------------------------------ | ------------ |
 | Enable Banking | Bank authorisation; returns account and transaction data         | Only where a bank is connected | EEA          |
-| Stripe         | Subscription billing details                                     | Only where billing is enabled  | EEA          |
 | Brevo          | Recipient address and message body of transactional mail we send | Only where email is configured | France (EEA) |
 | Portuguese AT  | Rent receipt filings                                             | Only on submission             | Portugal     |
 
@@ -111,7 +110,7 @@ There is no payment-initiation scope anywhere in the adapter, and adding one wou
 different regulatory undertaking.
 
 **Third-country transfers.** None are intended, and none are made under the default
-configuration: Enable Banking, Brevo and Stripe all operate in the EEA. Mail moved from
+configuration: Enable Banking and Brevo both operate in the EEA. Mail moved from
 SendGrid to Brevo partly for this reason — SendGrid's region depended on the account, so the
 transfer basis was the operator's to establish. It no longer is.
 
@@ -172,18 +171,18 @@ instance and would need revisiting if Situs were offered as a service.
 
 ## 7. Security measures
 
-| Measure                                                                       | Where                                                                                                                                 |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| AES-256-GCM at rest for the fields in §3                                      | `lib/utils/pii-encryption.ts`                                                                                                         |
-| Refuses to start in production without `PII_ENCRYPTION_KEY`                   | `instrumentation.ts` runs `lib/utils/env.ts` at startup; `encryptPII` returns plaintext without a key                                 |
-| Per-request CSP nonce, HSTS, frame/content-type/referrer/permissions policies | `proxy.ts`, on every response                                                                                                         |
-| `userId` scoping on API routes                                                | `requireAuth` / `requireOwnerAccess`                                                                                                  |
-| Rate limiting                                                                 | `lib/utils/rate-limit.ts` (`withRateLimit`) and `lib/middleware/rate-limit.ts` (the Stripe webhook, TOTP verify) — `docs/SECURITY.md` |
-| Registration closed by default                                                | `lib/services/auth/registration.ts` — the first account owns the instance; every other email is refused before any row is written     |
-| Audit trail on workflow mutations                                             | `lib/services/audit-log.ts`, `AuditLog`                                                                                               |
-| Debug endpoints restricted in production                                      | `/api/debug/db` and `/api/debug/db/seed` return 403; `/api/debug/db/init` needs a session and `INIT_SECRET` (`docs/SECURITY.md`)      |
-| Bank consent references                                                       | 256-bit random, user-scoped, constant-time compared, single-use, dropped once spent                                                   |
-| Private key handling                                                          | Enable Banking RSA key mounted as a file (`ENABLE_BANKING_PRIVATE_KEY_FILE`), keeping it out of `/proc/<pid>/environ`                 |
+| Measure                                                                       | Where                                                                                                                             |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| AES-256-GCM at rest for the fields in §3                                      | `lib/utils/pii-encryption.ts`                                                                                                     |
+| Refuses to start in production without `PII_ENCRYPTION_KEY`                   | `instrumentation.ts` runs `lib/utils/env.ts` at startup; `encryptPII` returns plaintext without a key                             |
+| Per-request CSP nonce, HSTS, frame/content-type/referrer/permissions policies | `proxy.ts`, on every response                                                                                                     |
+| `userId` scoping on API routes                                                | `requireAuth` / `requireOwnerAccess`                                                                                              |
+| Rate limiting                                                                 | `lib/utils/rate-limit.ts` (`withRateLimit`) and `lib/middleware/rate-limit.ts` (TOTP verify) — `docs/SECURITY.md`                 |
+| Registration closed by default                                                | `lib/services/auth/registration.ts` — the first account owns the instance; every other email is refused before any row is written |
+| Audit trail on workflow mutations                                             | `lib/services/audit-log.ts`, `AuditLog`                                                                                           |
+| Debug endpoints restricted in production                                      | `/api/debug/db` and `/api/debug/db/seed` return 403; `/api/debug/db/init` needs a session and `INIT_SECRET` (`docs/SECURITY.md`)  |
+| Bank consent references                                                       | 256-bit random, user-scoped, constant-time compared, single-use, dropped once spent                                               |
+| Private key handling                                                          | Enable Banking RSA key mounted as a file (`ENABLE_BANKING_PRIVATE_KEY_FILE`), keeping it out of `/proc/<pid>/environ`             |
 
 **Backups are the operator's responsibility.** `docs/DATABASE_STRATEGY.md` describes them; nothing
 in the application schedules one. Availability and restorability (Art. 32(1)(c)) are not provided by the application.

@@ -76,14 +76,11 @@
       "security": "Security & privacy",
       "integrations": "Integrations",
       "system": "System",
-      "billing": "Billing",
       "heading": "Settings",
       "subtitle": "Manage your preferences and account settings",
       "sectionsLabel": "Settings sections",
       "toastSaved": "Settings saved",
-      "toastSubscription": "Subscription updated — thank you.",
       "loadFailed": "Couldn't load your settings.",
-      "toastCanceled": "Checkout canceled",
       "toastSaveFailed": "Couldn't save your settings.",
       "appearance": "Appearance",
       "groups": {
@@ -181,13 +178,6 @@
       "emailService": "Email service",
       "refresh": "Refresh",
       "systemUnavailable": "Couldn't fetch system information.",
-      "billing": "Subscription & billing",
-      "billingDescription": "Manage your plan, usage and payment details",
-      "currentPlan": "Current plan",
-      "properties": "Properties",
-      "upgradePro": "Upgrade to Pro",
-      "upgradeBusiness": "Upgrade to Business",
-      "billingFailed": "Couldn't load your billing information.",
       "bankConnectionsHelp": "Accounts feeding the Finance › Bank Movements inbox",
       "noBankConnection": "No bank connection yet — import a CSV statement from Finance › Bank Movements to create one.",
       "taxConnectorsHelp": "Full submission history lives in Finance › Tax Summary — this is a status glance",
@@ -195,9 +185,6 @@
       "classifierHelp": "Keyword-based type detection across all four locales — ambiguous or unlinked results land in Documents › Review Required",
       "active": "active",
       "uptimeValue": "{hours}h {minutes}m",
-      "planStatus": "Status: {status}",
-      "movesToFree": "Moves to Free on {date}",
-      "manageBilling": "Manage billing",
       "bankConnectCta": "Connect a bank",
       "bankPickerTitle": "Connect a bank",
       "bankPickerHelp": "You will be sent to your bank to authorise read-only access to your account. Situs never sees your banking password.",
@@ -261,7 +248,6 @@
       "session_user": "Signed-in account",
       "pii": "PII encryption",
       "email": "Email (SMTP)",
-      "billing": "Subscription billing (Stripe)",
       "bank": "Bank movements",
       "bank_provider": "Bank provider",
       "tax": "Tax authority — {country}"
@@ -603,27 +589,6 @@
     "exportCsv": "Export as CSV",
     "exportJson": "Export as JSON"
   },
-  "landing": {
-    "eyebrow": "Rental operations in Portugal",
-    "signIn": "Sign in",
-    "hero2": "Property income, receipts and tax evidence under control.",
-    "subtitle2": "Situs helps owners track rent payments, allocate late transfers to the correct reference month, emit receipts, archive documents, manage expenses and prepare tax-ready evidence across EU property portfolios.",
-    "heroCta": {
-      "tryIt": "Try it",
-      "join": "Join"
-    },
-    "localeControl": {
-      "language": "Language",
-      "countryTheme": "Country theme",
-      "searchCountry": "Search country…",
-      "noMatch": "No match.",
-      "comingSoon": "Soon",
-      "jumpAria": "Jump to the end of the sequence"
-    },
-    "countries": {
-      "pt": "Portugal"
-    }
-  },
   "errors": {
     "notFound": {
       "title": "Page not found",
@@ -652,7 +617,6 @@
       "notAllowed": "You don't have permission to do that.",
       "notFound": "That record no longer exists. It may have been deleted.",
       "conflict": "Someone else changed this while you were editing. Reload and try again.",
-      "planLimit": "Your plan doesn't include this. Upgrade to continue.",
       "tooMany": "Too many requests. Wait a moment and try again.",
       "serverError": "The server had a problem. Try again in a moment.",
       "securityTokenExpired": "Your security token expired. Refresh the page and try again."
@@ -1321,11 +1285,6 @@
       "reachesFull": "Total will reach exactly 100% ✓"
     }
   },
-  "footer": {
-    "copyright": "© {year} Situs. All rights reserved.",
-    "privacy": "Privacy Policy",
-    "terms": "Terms of Service"
-  },
   "paymentMatrix": {
     "title": "Payment Tracking Matrix",
     "subtitle": "Monthly payment status overview for all tenants",
@@ -1429,9 +1388,7 @@
   },
   "language": {
     "label": "Language",
-    "change": "Change language",
-    "chooseTitle": "Choose your language",
-    "chooseHelp": "Pick a language to continue. You can change it later."
+    "change": "Change language"
   },
   "auth": {
     "loading": "Loading…",
@@ -1644,8 +1601,6 @@
       "collectPropertyBody": "Addresses, lease terms, rent amounts, tenant contact details, tax identification numbers, and documents you upload.",
       "collectBank": "Bank account data",
       "collectBankBody": "Where you connect a bank: the account name and IBAN, and for each movement its date, amount, counterparty name, counterparty IBAN, and the free-text reference your bank supplies.",
-      "collectPayment": "Payment data",
-      "collectPaymentBody": "Subscription billing is handled by Stripe. Card numbers never reach this instance.",
       "useTitle": "How we use it",
       "use1": "To run the service: recording properties, leases, tenants and rent.",
       "use2": "To reconcile rent against bank movements, which is what a connected bank account is for.",
@@ -1679,8 +1634,6 @@
       "processorsIntro": "A self-hosted instance shares data with a service only when you have configured that service.",
       "processorEnableBanking": "Enable Banking",
       "processorEnableBankingBody": "Licensed account information service provider. Receives your bank authorisation and returns account and transaction data. Only where you connect a bank.",
-      "processorStripe": "Stripe",
-      "processorStripeBody": "Subscription billing, EU data centre. Only where billing is enabled.",
       "processorEmail": "Brevo",
       "processorEmailBody": "Delivers transactional email, and therefore sees the recipient address and the message. EU-based (France). Only where email is configured.",
       "processorTax": "Portuguese Tax Authority (AT)",
@@ -1707,11 +1660,6 @@
       "use5": "Impersonate any person or organisation.",
       "bankTitle": "Bank connections",
       "bankBody": "Where you connect a bank account, you authorise read-only access at your own bank under PSD2. You are responsible for connecting only accounts you are entitled to access. The connection can be revoked at your bank or by removing it here, and it expires on its own; expiry stops the feed and nothing else.",
-      "paymentTitle": "Payment",
-      "payment1": "Paid plans are billed monthly in advance, at prices shown inclusive of applicable VAT.",
-      "payment2": "Subscriptions renew automatically unless cancelled before the renewal date.",
-      "payment3": "Refunds for unused full months are at the operator's discretion, except where the law requires otherwise.",
-      "payment4": "Pricing changes take 30 days' notice; continued use after that date is acceptance.",
       "liabilityTitle": "Liability",
       "liabilityBody": "To the extent the law permits, the operator is not liable for indirect or consequential loss, for lost profit, or for loss of data beyond the most recent backup. Nothing here limits liability that cannot lawfully be limited.",
       "ipTitle": "Intellectual property",

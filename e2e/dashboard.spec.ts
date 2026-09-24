@@ -53,7 +53,7 @@ test.describe("Dashboard", () => {
     // `/language|idioma|en|pt/i`, which was broad enough to match several controls and failed
     // with a strict mode violation. It could not have worked regardless: `LanguageSelector` is
     // not rendered anywhere in the authenticated desktop shell — only in the mobile "More" sheet
-    // (components/ui/mobile-nav.tsx:194), the auth pages and the landing page. On desktop the
+    // (components/ui/mobile-nav.tsx:194) and the auth pages. On desktop the
     // control lives in Settings › Appearance, so test it where it actually is.
     await page.goto("/settings?tab=appearance");
     await settle(page);

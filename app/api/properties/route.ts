@@ -16,8 +16,6 @@ import { propertySchema } from "@/lib/schemas/property.schema";
 import { getPaginationFromRequest, createPaginatedResponse } from "@/lib/utils/pagination";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { ZodError } from "zod";
-import { canCreateProperty } from "@/lib/billing/subscription-service";
-import { PlanLimitError } from "@/lib/utils/error-handling";
 
 // GET /api/properties - Get all properties for the authenticated user (with pagination)
 async function handleGet(request: NextRequest): Promise<Response> {
@@ -89,11 +87,6 @@ async function handlePost(request: NextRequest): Promise<Response> {
       bathrooms: sanitizeNumber(validatedData.bathrooms, 0, 0, 20),
       rent: sanitizeNumber(validatedData.rent, 0, 0),
     };
-
-    const prisma = getPrismaClient();
-    if (!(await canCreateProperty(prisma, scopeUserId))) {
-      throw new PlanLimitError("Upgrade your plan to add more properties");
-    }
 
     const property = await propertyService.create(scopeUserId, sanitizedData);
     return createSuccessResponse(property, 201);

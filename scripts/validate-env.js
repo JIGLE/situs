@@ -38,7 +38,6 @@ function requireVarIf(condition, name, message) {
 // ── validation rules ─────────────────────────────────────────────────────
 const isProd = process.env.NODE_ENV === "production";
 const oauthEnabled = process.env.ENABLE_OAUTH === "true";
-const billingEnabled = process.env.ENABLE_BILLING === "true";
 
 // Always required
 requireVar("NEXTAUTH_URL", "Full URL where the app is hosted (e.g. https://your.domain.com)");
@@ -60,18 +59,6 @@ if (process.env.NEXTAUTH_SECRET && process.env.NEXTAUTH_SECRET.length < 32) {
 // OAuth credentials
 requireVarIf(oauthEnabled, "GOOGLE_CLIENT_ID", "Required when ENABLE_OAUTH=true");
 requireVarIf(oauthEnabled, "GOOGLE_CLIENT_SECRET", "Required when ENABLE_OAUTH=true");
-
-// Subscription billing — plan-limit enforcement needs real Stripe Prices to sell.
-requireVarIf(
-  billingEnabled,
-  "STRIPE_PRICE_ID_PRO",
-  "Required when ENABLE_BILLING=true (create a Price in Stripe Dashboard)",
-);
-requireVarIf(
-  billingEnabled,
-  "STRIPE_PRICE_ID_BUSINESS",
-  "Required when ENABLE_BILLING=true (create a Price in Stripe Dashboard)",
-);
 
 // Non-critical services. Mail goes out over SMTP (lib/services/email/transport.ts); without a host
 // the instance starts and simply does not send.

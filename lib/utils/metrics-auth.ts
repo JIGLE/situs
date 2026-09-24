@@ -2,13 +2,12 @@ import { NextResponse } from "next/server";
 import { timingSafeEqualString } from "@/lib/utils/security";
 
 /**
- * The bearer check for the three counter endpoints: `/api/metrics`, `/api/monitoring/metrics` and
- * `/api/monitoring/landing`. The proxy lets all three through without a session, because a
- * scraper has none; this is what stands in front of them instead.
+ * The bearer check for the counter endpoint, `/api/metrics`. The proxy lets it through without a
+ * session, because a scraper has none; this is what stands in front of it instead.
  *
- * They used to take `INIT_SECRET`, each through its own copy of this check. That secret also opens
- * `/api/debug/db/init`, so a scrape config held more than read access to counters. `METRICS_TOKEN`
- * opens nothing but these.
+ * The counter endpoints used to take `INIT_SECRET`, each through its own copy of this check. That
+ * secret also opens `/api/debug/db/init`, so a scrape config held more than read access to
+ * counters. `METRICS_TOKEN` opens nothing else.
  *
  * - Development: open, as the counters always were.
  * - Production: `Authorization: Bearer $METRICS_TOKEN`, compared in constant time.

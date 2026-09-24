@@ -25,7 +25,7 @@ const PROOF_KEYS = [
   { k: "03", label: "auditLabel", note: "auditNote" },
 ] as const;
 
-/** Left brand panel: Portal mark orbited by dashed rings, mirroring the landing hero. */
+/** Left brand panel: Portal mark orbited by dashed rings. */
 function BrandPanel() {
   const t = useTranslations("auth.brand");
 

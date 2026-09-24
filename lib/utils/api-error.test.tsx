@@ -53,7 +53,6 @@ describe("useApiError", () => {
   it("maps each status to the sentence that tells the user what to do", () => {
     const cases: [number, string][] = [
       [401, api.signedOut],
-      [402, api.planLimit],
       [403, api.notAllowed],
       [404, api.notFound],
       [409, api.conflict],

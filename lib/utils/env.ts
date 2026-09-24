@@ -22,12 +22,8 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   // Feature flags (use 'true' to enable)
-  ENABLE_STRIPE: z.string().optional(),
   ENABLE_OAUTH: z.string().optional(),
   ENABLE_DEMO_LOGIN: z.string().optional(),
-  // Enforce subscription plan limits (e.g. property count). Off by default so
-  // self-hosted instances are never limited.
-  ENABLE_BILLING: z.string().optional(),
 
   // PII encryption key (AES-256-GCM, 32-byte hex)
   PII_ENCRYPTION_KEY: z.string().min(64).optional(),

@@ -69,17 +69,11 @@ function resolveLocale(request: NextRequest): string {
  * /api/ready             — Readiness probe; never touches the database
  * /api/info              — Version, commit and build time baked into the image
  * /api/csrf-token        — Issues the CSRF cookie (GET only)
- * /api/monitoring/**     — Database probe and landing beacon; its metrics and landing counters
- *                          want `Bearer $METRICS_TOKEN` in production, and errors answers only in
- *                          development
+ * /api/monitoring/**     — Database probe, and an error list that answers only in development
  * /api/metrics           — Prometheus scrape. A scraper has no session; the route checks
  *                          `Authorization: Bearer $METRICS_TOKEN` itself in production.
- * /api/webhooks/**       — Provider callbacks: Stripe verifies its signature, Brevo (which signs
- *                          nothing) a shared secret
- * /api/billing/checkout  — Browser-navigable pricing CTA (GET). Self-guards:
- *                          redirects unauthenticated visitors to sign-in and
- *                          requires a session to create a Checkout Session, so
- *                          it must not be 401'd by the proxy first.
+ * /api/webhooks/**       — Brevo's delivery events, checked against a shared secret because Brevo
+ *                          signs nothing
  */
 function isPublicApiRoute(pathname: string): boolean {
   return (
@@ -90,8 +84,7 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname === "/api/csrf-token" ||
     pathname.startsWith("/api/monitoring") ||
     pathname === "/api/metrics" ||
-    pathname.startsWith("/api/webhooks") ||
-    pathname === "/api/billing/checkout"
+    pathname.startsWith("/api/webhooks")
   );
 }
 
@@ -145,8 +138,8 @@ function applySecurityHeaders(response: NextResponse, nonce: string): void {
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     "img-src 'self' data: blob: https:",
     "font-src 'self' data: https://fonts.gstatic.com",
-    `connect-src 'self' https://accounts.google.com https://api.stripe.com https://nominatim.openstreetmap.org${isDev ? " http://localhost:*" : ""}`,
-    "frame-src 'self' https://accounts.google.com https://js.stripe.com",
+    `connect-src 'self' https://accounts.google.com https://nominatim.openstreetmap.org${isDev ? " http://localhost:*" : ""}`,
+    "frame-src 'self' https://accounts.google.com",
     "object-src 'none'",
     "media-src 'self'",
     "worker-src 'self' blob:",
@@ -236,7 +229,7 @@ export async function proxy(request: NextRequest) {
   // Set when an authenticated portal page needs the CSRF cookie seeded. It is applied to
   // whatever response this function ends up building — returning `NextResponse.next()` here
   // instead would skip the locale rewrite below, and `/dashboard` would route as
-  // `[locale] = "dashboard"`, i.e. the landing page.
+  // `[locale] = "dashboard"`, i.e. the root page.
   let seedCsrfCookie = false;
 
   const isMainPortalPage =
@@ -340,6 +333,25 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // `/` has no page of its own: a signed-in owner belongs on the dashboard, anyone else on
+  // sign-in. It is answered here, with a 307 before anything renders, because the page cannot do
+  // it reliably. `app/[locale]/loading.tsx` puts `app/[locale]/page.tsx` behind a Suspense
+  // boundary, so the response is already streaming when the page runs, and Next can then send
+  // its `redirect()` only as a client-side meta refresh: the visitor watched the loading screen at
+  // `/` first, and the smoke test, reading the URL after the load event, saw `/`.
+  //
+  // After the legacy `?tab=` redirects above, which exist for old bookmarks of `/`, and for the
+  // bare path only: `/pt` still takes the 308 below, which keeps its language in the cookie, and
+  // comes back here as `/`.
+  if (pathname === "/") {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const response = NextResponse.redirect(
+      new URL(token ? "/dashboard" : "/auth/signin", request.nextUrl.origin),
+    );
+    applySecurityHeaders(response, nonce);
+    return response;
+  }
+
   // Check if pathname already starts with a supported locale
   const pathnameHasLocale = locales.some(
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
@@ -348,17 +360,18 @@ export async function proxy(request: NextRequest) {
   /**
    * On the standalone server — the one the Dockerfile runs and the one CI boots — this proxy
    * runs AGAIN on the path it rewrote to. That makes the two branches below, each correct on
-   * its own, mutually recursive: `/` is rewritten to `/pt`, the second pass sees a locale
-   * prefix and 308s it back to `/`, and the browser gives up with ERR_TOO_MANY_REDIRECTS on
-   * the home page. Under `next start` there is no second pass, which is why every local check
-   * missed it. It is invisible to the mobile-audit ratchet too: an unreachable surface lands
-   * in `failedToLoad`, and BASELINE does not include that key, so the gate stays green while
-   * the front door is shut.
+   * its own, mutually recursive: `/privacy` is rewritten to `/pt/privacy`, the second pass sees
+   * a locale prefix and 308s it back to `/privacy`, and the browser gives up with
+   * ERR_TOO_MANY_REDIRECTS. It was found on the home page, which took this rewrite until `/`
+   * began redirecting above. Under `next start` there is no second pass, which is why every
+   * local check missed it. It is invisible to the mobile-audit ratchet too: an unreachable
+   * surface lands in `failedToLoad`, and BASELINE does not include that key, so the gate stays
+   * green while the front door is shut.
    *
    * Suppressing only the 308 is not enough. The second pass then takes the rewrite branch
-   * instead and asks for `/pt/pt`, then `/pt/pt/pt`, until the request simply never answers —
-   * which is what the first attempt at this fix actually produced. The second pass has to do
-   * nothing at all.
+   * instead and asks for `/pt/pt/privacy`, then `/pt/pt/pt/privacy`, until the request simply
+   * never answers — which is what the first attempt at this fix actually produced. The second
+   * pass has to do nothing at all.
    *
    * A client can set this header on its own request. That costs it the locale rewrite and
    * earns it a 404, and nothing more: every auth, portal and rate-limit check above this

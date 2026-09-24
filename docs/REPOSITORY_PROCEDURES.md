@@ -141,8 +141,8 @@ npm run verify:ci    # type-check → lint → format:check → hygiene → secu
 ```
 
 One result is known and expected. It is not caused by your change and should not be
-re-diagnosed each session: **three DB-backed integration suites fail locally** — `pii-extension`,
-`bank-connection`, `product-events` — because Prisma's agent guard blocks `prisma db push` under an
+re-diagnosed each session: **two DB-backed integration suites fail locally** — `pii-extension` and
+`bank-connection` — because Prisma's agent guard blocks `prisma db push` under an
 AI session. They run in CI. **Never set `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`.**
 
 `security:audit` has no expected failure. If it reports an advisory, check whether clean `main`

@@ -50,13 +50,6 @@ export class DatabaseError extends Error {
   }
 }
 
-export class PlanLimitError extends Error {
-  constructor(message: string = "Upgrade your plan to continue") {
-    super(message);
-    this.name = "PlanLimitError";
-  }
-}
-
 // Logger utility
 export class Logger {
   static log(level: "info" | "warn" | "error", message: string, data?: unknown): void {
@@ -129,9 +122,6 @@ export function createErrorResponse(
   } else if (error instanceof DatabaseError) {
     message = "Database operation failed";
     status = 500;
-  } else if (error instanceof PlanLimitError) {
-    message = error.message;
-    status = 402;
   }
 
   return new NextResponse(

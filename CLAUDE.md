@@ -6,26 +6,25 @@ Situs — **Situs // Sovereign Capital System** — is self-hosted property mana
 and property managers in **Portugal**. The product is one loop: bank movement → match →
 allocate → receipt → tax filing → audit trail. Around it sit the records the loop runs on
 (properties, units, buildings, owners, tenants, leases, expenses) and the compliance substrate (PII
-encryption, GDPR export and retention, the Article 30 record, the legal pages). Stripe serves the
-app's own subscription billing only; rent reaches the ledger as a matched bank movement, never as a
-card payment.
+encryption, GDPR export and retention, the Article 30 record, the legal pages). It is one owner's
+instance, shared with co-owners, not a product to sell: there is no billing and no landing page, and
+rent reaches the ledger as a matched bank movement, never as a card payment.
 
 The version lives in `package.json`. Never copy it into prose.
 
 ## Tech Stack
 
-| Layer      | Technology                                            |
-| ---------- | ----------------------------------------------------- |
-| Framework  | Next.js 16 (App Router, TypeScript strict)            |
-| Database   | Prisma ORM + SQLite (via better-sqlite3)              |
-| Auth       | NextAuth.js v4 (Google OAuth + credentials)           |
-| UI         | shadcn/ui + Tailwind CSS v4 + Radix UI + Framer       |
-| Validation | Zod v4                                                |
-| Email      | SMTP (Brevo by default; any provider)                 |
-| Testing    | Vitest (unit/integration) + Playwright (E2E)          |
-| i18n       | next-intl (PT / EN / ES / IT)                         |
-| Billing    | Stripe (app subscriptions only; rent arrives by bank) |
-| Deploy     | Docker / TrueNAS SCALE (Custom App)                   |
+| Layer      | Technology                                      |
+| ---------- | ----------------------------------------------- |
+| Framework  | Next.js 16 (App Router, TypeScript strict)      |
+| Database   | Prisma ORM + SQLite (via better-sqlite3)        |
+| Auth       | NextAuth.js v4 (Google OAuth + credentials)     |
+| UI         | shadcn/ui + Tailwind CSS v4 + Radix UI + Framer |
+| Validation | Zod v4                                          |
+| Email      | SMTP (Brevo by default; any provider)           |
+| Testing    | Vitest (unit/integration) + Playwright (E2E)    |
+| i18n       | next-intl (PT / EN / ES / IT)                   |
+| Deploy     | Docker / TrueNAS SCALE (Custom App)             |
 
 ## Key Commands
 
@@ -316,7 +315,7 @@ requires public reachability.
 
 Optional:
 
-- `SMTP_HOST` (+ `SMTP_PORT`/`SMTP_USER`/`SMTP_PASS`), `STRIPE_SECRET_KEY`, `REDIS_URL`.
+- `SMTP_HOST` (+ `SMTP_PORT`/`SMTP_USER`/`SMTP_PASS`), `REDIS_URL`.
 - Live bank connection: `ENABLE_BANKING_APPLICATION_ID` plus the RSA key —
   `ENABLE_BANKING_PRIVATE_KEY_FILE` pointing at a mounted `.pem` for a real deployment, or
   `ENABLE_BANKING_PRIVATE_KEY` inline locally; the file wins when both are set. Never base64 the
@@ -324,11 +323,8 @@ Optional:
   Without these the app is CSV-import-only and shows no connect button.
 - `CRON_SECRET` gates the three `/api/cron/*` endpoints (notifications, data retention, bank sync);
   each returns 503 while it is unset.
-- `METRICS_TOKEN` gates the counter endpoints (`/api/metrics`, `/api/monitoring/metrics`,
-  `/api/monitoring/landing`) in production; each answers 403 while it is unset.
-- Subscription billing (Free/Pro/Business tiers): `STRIPE_PRICE_ID_PRO`,
-  `STRIPE_PRICE_ID_BUSINESS`, `STRIPE_TRIAL_DAYS_PRO`, `ENABLE_BILLING` (plan limits; off by
-  default, so self-hosted instances are unlimited).
+- `METRICS_TOKEN` gates the counter endpoint, `/api/metrics`, in production; it answers 403 while
+  it is unset.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

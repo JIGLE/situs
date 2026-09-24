@@ -28,7 +28,6 @@ const FORCED_STATUS: Record<string, number> = {
   ResourceNotFoundError: 404,
   ForbiddenError: 403,
   DatabaseError: 500,
-  PlanLimitError: 402,
 };
 
 // Opening of the call, up to the `(` that starts the constructor arguments. Deliberately simple:
@@ -95,7 +94,7 @@ describe("app/api error status consistency", () => {
       mismatches,
       `The status argument is ignored when it conflicts with the error type.\n` +
         `Use the type that resolves to the status you want — ResourceNotFoundError for 404,\n` +
-        `AuthorizationError/ForbiddenError for 403, PlanLimitError for 402.\n` +
+        `AuthorizationError/ForbiddenError for 403.\n` +
         `A plain Error honours the status but replaces the message with "Internal server error".\n\n` +
         mismatches.join("\n"),
     ).toEqual([]);
