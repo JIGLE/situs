@@ -14,7 +14,9 @@
  *
  *   3. RETIRED CLAIMS — sentences known to be false stay deleted. `V1_CHECKLIST` said "No live
  *      bank connection exists" for one merge after it stopped being true, because a claim about
- *      what exists has an expiry and nothing was watching it.
+ *      what exists has an expiry and nothing was watching it. The example configuration an
+ *      operator copies from (`.env.example`, `docker-compose*.yml`) is scanned too: while only
+ *      `.md` was, `SENDGRID_API_KEY` stayed in docker-compose.yml three weeks after it was retired.
  *
  * WHY IT FAILS WHEN IT CANNOT RUN. A checker that finds no files and exits 0 is the repo's
  * signature bug — the green-but-inert job, four instances of it so far. If the index is missing or
@@ -444,6 +446,15 @@ function tracked() {
   return out.split("\n").filter(Boolean);
 }
 
+/** Example configuration, checked for retired claims only: it has no links and no index. */
+function trackedConfig() {
+  const out = execFileSync("git", ["ls-files", ".env.example", "docker-compose*.yml"], {
+    cwd: ROOT,
+    encoding: "utf8",
+  });
+  return out.split("\n").filter(Boolean);
+}
+
 function exists(p) {
   try {
     fs.statSync(path.join(ROOT, p));
@@ -460,6 +471,11 @@ const failures = [];
 const files = tracked();
 if (files.length === 0) {
   console.error("✖ No tracked .md files found. The scan cannot have run correctly.");
+  process.exit(1);
+}
+const configFiles = trackedConfig();
+if (!configFiles.includes(".env.example")) {
+  console.error("✖ .env.example is not tracked. The configuration scan cannot have run.");
   process.exit(1);
 }
 if (!exists(INDEX)) {
@@ -509,7 +525,7 @@ for (const file of docsFiles) {
 
 // ---------------------------------------------------------------- 3. retired claims
 
-for (const file of files) {
+for (const file of [...files, ...configFiles]) {
   const lines = fs.readFileSync(path.join(ROOT, file), "utf8").split("\n");
   lines.forEach((line, i) => {
     for (const claim of RETIRED_CLAIMS) {
@@ -526,6 +542,7 @@ for (const file of files) {
 
 console.log("\nDocumentation hygiene\n");
 console.log(`  ${files.length} tracked .md files`);
+console.log(`  ${configFiles.length} example configuration files (${configFiles.join(", ")})`);
 console.log(`  ${linksChecked} relative links checked`);
 console.log(`  ${docsFiles.length} files under docs/, ${INDEX_EXEMPT.size} exempt from the index`);
 console.log(`  ${RETIRED_CLAIMS.length} retired claims watched\n`);

@@ -12,8 +12,6 @@ import { randomInt } from "crypto";
 
 const log = logger.child("email-service");
 
-// SendGrid client is optional and lazily loaded when configured
-
 export interface EmailData {
   to: string | string[];
   from: string;

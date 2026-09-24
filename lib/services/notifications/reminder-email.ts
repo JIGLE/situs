@@ -6,7 +6,7 @@
  * now only ever wrote an in-app Notification row — the reminder never left
  * the app, so a landlord who wasn't already looking at the dashboard had no
  * way to be pulled back in. This module sends the same reminder as a
- * localized email via the existing SendGrid layer (lib/services/email),
+ * localized email through the existing mail layer (lib/services/email, SMTP),
  * gated on the landlord's own notification preferences
  * (UserSettings.emailNotifications / .taxReminderNotifications — already
  * modeled and editable in Settings, just never wired to an actual send).
