@@ -88,6 +88,13 @@ export const receiptService = {
       Omit<Receipt, "id" | "userId" | "createdAt" | "updatedAt" | "tenantName" | "propertyName">
     >,
   ): Promise<Receipt> {
+    // The same check `create` makes, for the same reason: this update `include`s the full tenant
+    // and property, so an unchecked id re-pointed the receipt AND echoed back a stranger's records.
+    await assertOwnsRelations(userId, {
+      tenantId: data.tenantId,
+      propertyId: data.propertyId,
+    });
+
     const receipt = await getPrismaClient().receipt.update({
       where: { id, userId },
       data: {

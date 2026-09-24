@@ -1,5 +1,6 @@
 import { PropertyType } from "@prisma/client";
 import { getPrismaClient } from "../database";
+import { assertOwnsRelations } from "../assert-owned";
 import { Property } from "@/lib/types";
 
 export const propertyService = {
@@ -54,6 +55,9 @@ export const propertyService = {
     userId: string,
     data: Omit<Property, "id" | "userId" | "createdAt" | "updatedAt">,
   ): Promise<Property> {
+    // A property can be filed under a building; the id comes from the request.
+    await assertOwnsRelations(userId, { buildingId: data.buildingId });
+
     const property = await getPrismaClient().property.create({
       data: {
         userId,
@@ -103,6 +107,8 @@ export const propertyService = {
     id: string,
     data: Partial<Omit<Property, "id" | "userId" | "createdAt" | "updatedAt">>,
   ): Promise<Property> {
+    await assertOwnsRelations(userId, { buildingId: data.buildingId });
+
     const property = await getPrismaClient().property.update({
       where: { id, userId },
       data: {

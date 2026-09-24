@@ -9,9 +9,7 @@ export const ownerSchema = z.object({
 });
 
 export const createOwnerSchema = ownerSchema;
-export const updateOwnerSchema = ownerSchema.partial();
 
 export type Owner = z.infer<typeof ownerSchema>;
 export type OwnerFormData = z.infer<typeof ownerSchema>;
 export type CreateOwner = z.infer<typeof createOwnerSchema>;
-export type UpdateOwner = z.infer<typeof updateOwnerSchema>;

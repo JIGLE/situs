@@ -97,6 +97,10 @@ export const tenantService = {
     id: string,
     data: Partial<Omit<Tenant, "id" | "userId" | "createdAt" | "updatedAt" | "propertyName">>,
   ): Promise<Tenant> {
+    // As in `create`: the update `include`s the property, so an unchecked id would echo back a
+    // property the caller has no claim to.
+    await assertOwnsRelations(userId, { propertyId: data.propertyId });
+
     const tenant = await getPrismaClient().tenant.update({
       where: { id, userId },
       data: {

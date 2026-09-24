@@ -8,8 +8,6 @@ export const buildingSchema = z.object({
 });
 
 export const createBuildingSchema = buildingSchema;
-export const updateBuildingSchema = buildingSchema.partial();
 
 export type BuildingFormData = z.infer<typeof buildingSchema>;
 export type CreateBuilding = z.infer<typeof createBuildingSchema>;
-export type UpdateBuilding = z.infer<typeof updateBuildingSchema>;

@@ -6,6 +6,7 @@ import {
   withErrorHandler,
 } from "@/lib/utils/error-handling";
 import { getPrismaClient } from "@/lib/services/database/database";
+import { assertOwnsRelations } from "@/lib/services/database/assert-owned";
 import { sanitizeForDatabase, sanitizeNumber } from "@/lib/utils/sanitize";
 import { isMockMode } from "@/lib/config/data-mode";
 import { z } from "zod";
@@ -117,6 +118,9 @@ async function handlePut(
     };
 
     const validatedData = updateExpenseSchema.parse(sanitizedBody);
+
+    // POST checks the property an expense is booked against; moving it to another must too.
+    await assertOwnsRelations(userId, { propertyId: validatedData.propertyId });
 
     const updateData: Record<string, unknown> = { ...validatedData };
     if (validatedData.date) {

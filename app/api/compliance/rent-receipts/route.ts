@@ -11,6 +11,7 @@ import { createRentReceipt, listRentReceipts } from "@/lib/compliance/rent-recei
 import { logAudit } from "@/lib/services/audit-log";
 import { withErrorHandler } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
+import { assertOwnsRelations } from "@/lib/services/database/assert-owned";
 import type { RentReceiptInput } from "@/lib/compliance/rent-receipts-pt";
 
 // ─── Request body schema ────────────────────────────────────────────────────
@@ -88,6 +89,15 @@ async function handlePost(request: NextRequest): Promise<NextResponse> {
     );
   }
   const body = parsed.data;
+
+  // The receipt is filed against these records and the XML for AT is built from it. None of the
+  // three ids was checked, so a caller could file a Recibo de Renda against another landlord's
+  // tenant and property.
+  await assertOwnsRelations(userId, {
+    tenantId: body.tenantId,
+    propertyId: body.propertyId,
+    leaseId: body.leaseId,
+  });
 
   const input: RentReceiptInput = {
     userId,
