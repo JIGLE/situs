@@ -70,7 +70,6 @@
     "imageConsent": "Mostrar Imagen de Perfil",
     "imageConsentDesc": "Permitir mostrar tu imagen de perfil de Google en la app (compatible con RGPD).",
     "taxProfile": "Perfil Fiscal",
-    "taxRegimeMutuallyExclusive": "RNH e IFICI son mutuamente excluyentes — solo uno puede estar activo a la vez.",
     "nav": {
       "account": "Cuenta",
       "notifications": "Notificaciones",
@@ -700,8 +699,6 @@
     "expiring": "Por vencer",
     "terminated": "Terminado",
     "rendaAcessivel": "Programa Renda Acessível (PT)",
-    "priorContractRent": "Alquiler del Contrato Anterior",
-    "stressedZone": "Zona de Mercado Residencial Tensionado",
     "contractUpload": "Subir Contrato",
     "contractDownload": "Descargar Contrato",
     "offerRenewal": "Ofrecer Renovación",

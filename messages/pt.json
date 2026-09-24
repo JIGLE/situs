@@ -70,7 +70,6 @@
     "imageConsent": "Exibir Imagem do Perfil",
     "imageConsentDesc": "Permitir a exibição da sua imagem de perfil do Google no app (compatível com GDPR).",
     "taxProfile": "Perfil Fiscal",
-    "taxRegimeMutuallyExclusive": "RNH e IFICI são mutuamente exclusivos — apenas um pode estar ativo de cada vez.",
     "nav": {
       "account": "Conta",
       "notifications": "Notificações",
@@ -700,8 +699,6 @@
     "expiring": "A expirar",
     "terminated": "Terminado",
     "rendaAcessivel": "Programa Renda Acessível",
-    "priorContractRent": "Renda do Contrato Anterior",
-    "stressedZone": "Zona de Habitação Tensionada",
     "contractUpload": "Carregar Contrato",
     "contractDownload": "Descarregar Contrato",
     "offerRenewal": "Oferecer Renovação",

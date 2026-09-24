@@ -299,7 +299,7 @@ model Receipt {
   // rows self-backfill to "emitted" via the default.
   rentPeriodId   String?
   referenceMonth String? // "YYYY-MM" denormalized for queue/list display
-  // draft|review|emitted|submitted|accepted|rejected|exported|voided — Zod-validated
+  // draft|review|emitted|submitted|accepted|rejected|voided — Zod-validated
   // (Migration C, lib/services/receipts/lifecycle.ts). Legacy rows self-backfill to "emitted".
   lifecycle      String        @default("emitted")
   source         String        @default("manual") // manual|automation

@@ -14,7 +14,7 @@ import { transitionReceipt } from "@/lib/services/receipts/service";
 export const runtime = "nodejs";
 
 // PUT /api/receipts/[id]/lifecycle — advance a receipt's document state
-// (draft→review→emitted→(PT)submitted→accepted|rejected; →voided; →(ES)exported).
+// (draft→review→emitted→submitted→accepted|rejected; →voided).
 async function handlePut(
   request: NextRequest,
   context?: { params?: Record<string, string> | Promise<Record<string, string>> },
