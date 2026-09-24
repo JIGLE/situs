@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders, screen, waitFor } from "@/tests/helpers/render-with-providers";
 import enMessages from "@/messages/en.json";
+import ptMessages from "@/messages/pt.json";
 import { LeaseDetailView } from "./lease-detail-view";
 
 const { app, toast, lease } = vi.hoisted(() => ({
@@ -81,5 +82,38 @@ describe("LeaseDetailView renewal", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(app.updateLease).not.toHaveBeenCalled();
     expect(app.refreshData).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * Asserted in Portuguese because asserting English cannot catch hardcoded English: the renewal and
+ * edit buttons were literal English strings, and the tax regime printed its stored value.
+ */
+describe("LeaseDetailView in Portuguese", () => {
+  const pt = ptMessages.leases;
+
+  it("names the renewal and edit actions in the reader's language", () => {
+    app.leases = [{ ...lease, renewalStatus: null }];
+    renderWithProviders(<LeaseDetailView leaseId="lease-1" />, { initialLocale: "pt" });
+
+    expect(screen.getByRole("button", { name: pt.offerRenewal })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: ptMessages.actions.edit })).toBeInTheDocument();
+    expect(screen.queryByText(/Offer Renewal|^\s*Edit\s*$/)).not.toBeInTheDocument();
+  });
+
+  it("names the withdraw action in the reader's language", () => {
+    app.leases = [{ ...lease, renewalStatus: "offered" }];
+    renderWithProviders(<LeaseDetailView leaseId="lease-1" />, { initialLocale: "pt" });
+
+    expect(screen.getByRole("button", { name: pt.detail.withdrawOffer })).toBeInTheDocument();
+    expect(screen.queryByText(/Withdraw Offer/)).not.toBeInTheDocument();
+  });
+
+  it("shows the tax regime's label, not its stored value", () => {
+    app.leases = [{ ...lease, taxRegime: "portugal_rendimentos" }];
+    renderWithProviders(<LeaseDetailView leaseId="lease-1" />, { initialLocale: "pt" });
+
+    expect(screen.getByText(pt.taxRegimePt)).toBeInTheDocument();
+    expect(screen.queryByText("portugal_rendimentos")).not.toBeInTheDocument();
   });
 });

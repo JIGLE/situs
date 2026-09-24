@@ -1028,6 +1028,7 @@
       "terminateWarning": "Rescindir un contrato es permanente y no se puede deshacer. El contrato quedará marcado como rescindido y el inquilino dejará de tener un contrato activo.",
       "terminate": "Rescindir contrato",
       "renewalTitle": "Proponer renovación del contrato",
+      "withdrawOffer": "Retirar Propuesta",
       "proposedRent": "Alquiler mensual propuesto",
       "newStartDate": "Nueva fecha de inicio",
       "newEndDate": "Nueva fecha de fin",

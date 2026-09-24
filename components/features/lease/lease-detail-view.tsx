@@ -32,6 +32,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useApp } from "@/lib/contexts/app-context";
 import { useToast } from "@/lib/contexts/toast-context";
+import { taxRegimeKey } from "@/lib/utils/lease-labels";
 import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { EntityLink } from "@/components/shared/entity-link";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
@@ -97,6 +98,7 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
   const daysUntilExpiry = Math.ceil(
     (new Date(lease.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
   );
+  const regimeKey = taxRegimeKey(lease.taxRegime);
   const totalPaid = relatedReceipts
     .filter((r) => r.status === "paid")
     .reduce((sum, r) => sum + r.amount, 0);
@@ -228,7 +230,7 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
             <>
               {!lease.renewalStatus || lease.renewalStatus === "declined" ? (
                 <Button variant="outline" size="sm" onClick={handleRenew}>
-                  <RotateCcw className="h-4 w-4 mr-1" /> Offer Renewal
+                  <RotateCcw className="h-4 w-4 mr-1" /> {tLease("offerRenewal")}
                 </Button>
               ) : lease.renewalStatus === "offered" ? (
                 <Button
@@ -237,13 +239,13 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
                   onClick={handleRenewalWithdraw}
                   className="text-[var(--color-muted-foreground)]"
                 >
-                  <XCircle className="h-4 w-4 mr-1" /> Withdraw Offer
+                  <XCircle className="h-4 w-4 mr-1" /> {t("withdrawOffer")}
                 </Button>
               ) : null}
             </>
           )}
           <Button variant="outline" size="sm" onClick={handleEdit}>
-            <Edit className="h-4 w-4 mr-1" /> Edit
+            <Edit className="h-4 w-4 mr-1" /> {tActions("edit")}
           </Button>
         </div>
       </div>
@@ -322,7 +324,10 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
                 <span className="text-[var(--color-muted-foreground)]">
                   {tLease("field.taxRegime")}
                 </span>
-                <p className="font-medium mt-1">{lease.taxRegime}</p>
+                <p className="font-medium mt-1">
+                  {/* A value no current regime matches is shown as stored, not hidden. */}
+                  {regimeKey ? tLease(regimeKey) : lease.taxRegime}
+                </p>
               </div>
             )}
             <div>
