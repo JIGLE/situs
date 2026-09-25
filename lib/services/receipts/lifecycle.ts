@@ -34,6 +34,16 @@ export const ARCHIVE_ON_STATES: ReadonlySet<ReceiptLifecycleState> = new Set([
 /** Terminal states — the lifecycle never leaves these via this state machine. */
 export const TERMINAL_STATES: ReadonlySet<ReceiptLifecycleState> = new Set(["accepted", "voided"]);
 
+/**
+ * States in which the receipt has gone to Finanças. Situs keeps these as the record of that
+ * submission: deleting one here would not void it at AT, which only the Portal can do.
+ */
+export const FILED_STATES: ReadonlySet<ReceiptLifecycleState> = new Set(["submitted", "accepted"]);
+
+export function isFiled(lifecycle: string | null | undefined): boolean {
+  return FILED_STATES.has(lifecycle as ReceiptLifecycleState);
+}
+
 export function isValidState(value: string): value is ReceiptLifecycleState {
   return Object.prototype.hasOwnProperty.call(TRANSITIONS, value);
 }

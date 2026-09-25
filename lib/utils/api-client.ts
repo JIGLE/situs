@@ -16,6 +16,8 @@ interface ApiResponse<T = unknown> {
   message?: string;
   /** Set by `createErrorResponse` for a `ValidationError` — which input was rejected. */
   field?: string;
+  /** Set by `createErrorResponse` for a `ConflictError` — which rule refused the request. */
+  reason?: string;
 }
 
 /**
@@ -148,7 +150,12 @@ export async function apiFetch<T = unknown>(
 
       const errorMessage = errorData.error || errorData.message || "API request failed";
       const error = new Error(errorMessage);
-      const typedError = error as Error & { status: number; detail?: string; field?: string };
+      const typedError = error as Error & {
+        status: number;
+        detail?: string;
+        field?: string;
+        reason?: string;
+      };
       typedError.status = response.status;
       if ((errorData as ApiResponse & { detail?: string }).detail) {
         typedError.detail = (errorData as ApiResponse & { detail?: string }).detail;
@@ -159,6 +166,10 @@ export async function apiFetch<T = unknown>(
       // and is never displayed — see `lib/utils/api-error.ts`.
       if (errorData.field) {
         typedError.field = errorData.field;
+      }
+      // The same for a 409's `reason`: the rule that refused, which `useApiError` can say.
+      if (errorData.reason) {
+        typedError.reason = errorData.reason;
       }
 
       // For 503 (service unavailable), retry once after a short delay
