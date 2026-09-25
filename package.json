@@ -132,7 +132,7 @@
     "prettier": "^3.9.8",
     "prisma": "^7.10.0",
     "tailwindcss": "^4",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vite": "^8",
     "vitest": "^5.0.1"
   },
