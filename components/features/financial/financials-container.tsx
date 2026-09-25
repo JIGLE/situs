@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsMobileSelect, TabsTrigger } from "@/components/ui/tabs";
@@ -21,7 +21,12 @@ import { FinancialsView } from "./financials-view";
 import { BadgeEuro, FileText, Grid3X3, Landmark, Plus, Receipt } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-type PaymentTab = "receipts" | "rent-matrix" | "bank" | "rent-roll" | "tax";
+const PAYMENT_TABS = ["receipts", "rent-matrix", "bank", "rent-roll", "tax"] as const;
+type PaymentTab = (typeof PAYMENT_TABS)[number];
+
+function isPaymentTab(value: string | null): value is PaymentTab {
+  return (PAYMENT_TABS as readonly (string | null)[]).includes(value);
+}
 
 export function FinancialsContainer() {
   const t = useTranslations("payments");
@@ -31,7 +36,8 @@ export function FinancialsContainer() {
   const pathname = usePathname();
   const tenantId = searchParams.get("tenantId") ?? undefined;
   const propertyId = searchParams.get("propertyId") ?? undefined;
-  const tabParam = searchParams.get("tab") as PaymentTab | "overview" | null;
+  const tabParam = searchParams.get("tab");
+  const recordPaymentLink = searchParams.get("action") === "record-payment";
   const { state } = useApp();
   const { formatCurrency } = useCurrency();
   // `ReceiptsView` (which owns the record-payment dialog) only mounts while the Receipts
@@ -40,35 +46,29 @@ export function FinancialsContainer() {
   // another tab (e.g. the default rent matrix) was active. Instead: switch to
   // the Receipts tab and raise a signal that `ReceiptsView` opens itself from — robust to
   // the tab-mount + `router.replace` re-render that `setActiveTab` triggers.
-  const [pendingRecordPayment, setPendingRecordPayment] = useState(
-    () => searchParams.get("action") === "record-payment",
-  );
+  const [pendingRecordPayment, setPendingRecordPayment] = useState(() => recordPaymentLink);
 
-  // If we arrived via the ?action=record-payment deep link, drop the param once consumed.
+  // Links into Finance carry two one-shot parameters: `?tab=` picks a tab, and
+  // `?action=record-payment` opens the payment form. A link is followed once, when it arrives,
+  // and both parameters are then dropped from the address, the tab moving to `?view=`, which the
+  // tab hook keeps. The effect runs only when a link's parameters change, never when the tab
+  // does: applied after every tab change, `?tab=` pulled the page back to its tab each time the
+  // owner picked another one.
+  const followLink = useEffectEvent(() => {
+    const target = tabParam === "overview" ? "tax" : tabParam;
+    // A `view` beside the `tab` means the owner picked a tab before the address caught up.
+    const apply = isPaymentTab(target) && searchParams.get("view") === null;
+    if (apply) setActiveTab(target);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("tab");
+    if (recordPaymentLink) params.delete("action");
+    if (apply) params.set("view", target);
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  });
   useEffect(() => {
-    if (pendingRecordPayment && searchParams.get("action") === "record-payment") {
-      router.replace(pathname);
-    }
-  }, [pendingRecordPayment, router, pathname, searchParams]);
-
-  useEffect(() => {
-    if (
-      tabParam === "receipts" ||
-      tabParam === "rent-matrix" ||
-      tabParam === "bank" ||
-      tabParam === "rent-roll" ||
-      tabParam === "tax"
-    ) {
-      if (tabParam !== activeTab) {
-        setActiveTab(tabParam);
-      }
-      return;
-    }
-
-    if (tabParam === "overview" && activeTab !== "tax") {
-      setActiveTab("tax");
-    }
-  }, [activeTab, setActiveTab, tabParam]);
+    if (tabParam !== null || recordPaymentLink) followLink();
+  }, [tabParam, recordPaymentLink]);
 
   const metrics = useMemo(() => {
     const now = new Date();
@@ -125,9 +125,7 @@ export function FinancialsContainer() {
   ];
   // A tab stored before it was removed (localStorage, a `?view=` bookmark) would otherwise
   // select no panel and leave the page blank below the stat cards.
-  const visibleTab: PaymentTab = paymentTabs.some(({ value }) => value === activeTab)
-    ? (activeTab as PaymentTab)
-    : "rent-matrix";
+  const visibleTab: PaymentTab = isPaymentTab(activeTab) ? activeTab : "rent-matrix";
 
   return (
     <div className="space-y-6">
