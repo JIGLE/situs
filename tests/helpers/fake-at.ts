@@ -76,6 +76,11 @@ const parser = new XMLParser({
   parseTagValue: false,
 });
 
+/** A parsed XML element's children, or none: the request is untrusted input. */
+function node(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
+}
+
 function unpad(block: Buffer): Buffer {
   // RSA PKCS#1 v1.5: 0x00 0x02, nonzero padding, 0x00, then the message.
   if (block[0] !== 0x00 || block[1] !== 0x02) throw new Error("bad padding");
@@ -161,10 +166,9 @@ export async function startFakeAt(pki: TestPki, options: FakeAtOptions): Promise
       rejectUnauthorized: true,
     },
     async (req, res) => {
-      const doc = parser.parse(await readBody(req)) as Record<string, any>;
-      const envelope = doc.Envelope ?? {};
-      const token = envelope.Header?.Security?.UsernameToken ?? {};
-      const [operation, fields] = Object.entries(envelope.Body ?? {})[0] ?? ["", {}];
+      const envelope = node(node(parser.parse(await readBody(req))).Envelope);
+      const token = node(node(node(envelope.Header).Security).UsernameToken);
+      const [operation, fields] = Object.entries(node(envelope.Body))[0] ?? ["", {}];
       const response = operation.replace(/Request$/, "Response");
 
       const result = authenticate(token);
