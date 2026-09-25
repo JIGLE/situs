@@ -1,6 +1,16 @@
 import { getPrismaClient } from "../database";
 import { assertOwnsRelations } from "../assert-owned";
 import { Receipt } from "@/lib/types";
+import { reverseAllocationsForReceipt } from "@/lib/services/allocation/service";
+import { isFiled } from "@/lib/services/receipts/lifecycle";
+
+/** A receipt that went to Finanças stays: deleting it here would not void it at AT. */
+export class ReceiptFiledError extends Error {
+  constructor() {
+    super("A receipt submitted to Finanças cannot be deleted");
+    this.name = "ReceiptFiledError";
+  }
+}
 
 export const receiptService = {
   async getAll(userId: string): Promise<Receipt[]> {
@@ -121,7 +131,33 @@ export const receiptService = {
     };
   },
 
+  /**
+   * Delete a receipt and take its payment off the rent ledger, in one transaction.
+   *
+   * `PaymentAllocation.receipt` is `onDelete: SetNull`, so a bare delete left every allocation
+   * live: the month the receipt paid still read paid with no receipt behind it, and no alert
+   * chased it. The reversal is the one a void runs, so the allocation rows stay as history and
+   * the months and the tenant's status are recomputed. It has to come first: once the receipt is
+   * gone, its allocations no longer name it.
+   *
+   * A bank movement the receipt came from goes back to the inbox, since its money is no longer
+   * allocated to anything and would otherwise sit matched to nothing, out of sight.
+   */
   async delete(userId: string, id: string): Promise<void> {
-    await getPrismaClient().receipt.delete({ where: { id, userId } });
+    const prisma = getPrismaClient();
+    const { lifecycle } = await prisma.receipt.findUniqueOrThrow({
+      where: { id, userId },
+      select: { lifecycle: true },
+    });
+    if (isFiled(lifecycle)) throw new ReceiptFiledError();
+
+    await prisma.$transaction(async (tx) => {
+      await reverseAllocationsForReceipt(id, "Receipt deleted", tx);
+      await tx.bankTransaction.updateMany({
+        where: { receiptId: id, userId },
+        data: { status: "needs_review" },
+      });
+      await tx.receipt.delete({ where: { id, userId } });
+    });
   },
 };

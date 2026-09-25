@@ -8,6 +8,7 @@ import {
 } from "@/lib/utils/error-handling";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { assertOwnsRelations } from "@/lib/services/database/assert-owned";
+import { assertLeaseHasNoHistory } from "@/lib/services/database/history";
 import { partiesByLease, replaceLeaseParties } from "@/lib/services/database/lease-parties";
 import { updateLeaseSchema } from "@/lib/schemas/lease.schema";
 
@@ -88,6 +89,8 @@ async function handleDelete(
   }
   if (!id) return createErrorResponse(new Error("Invalid request: missing id"), 400, request);
 
+  // Refused while money is recorded against it; its rent months alone go with it.
+  await assertLeaseHasNoHistory(userId, id);
   await prisma.lease.delete({ where: { id, userId } });
 
   return createSuccessResponse({ message: "Lease deleted successfully" });

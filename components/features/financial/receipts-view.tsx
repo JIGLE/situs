@@ -47,6 +47,7 @@ import { useApp } from "@/lib/contexts/app-context";
 import { Receipt } from "@/lib/types";
 import { receiptSchema, type ReceiptFormData } from "@/lib/schemas/receipt.schema";
 import { RECEIPT_TYPE_KEY } from "@/lib/utils/receipt-labels";
+import { isFiled } from "@/lib/services/receipts/lifecycle";
 import { useToast } from "@/lib/contexts/toast-context";
 import { useFormDialog } from "@/lib/hooks/use-form-dialog";
 import jsPDF from "jspdf";
@@ -79,7 +80,7 @@ export interface ReceiptsViewRef {
 
 export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
   function ReceiptsView(props, ref) {
-    const { state, addReceipt, updateReceipt, deleteReceipt } = useApp();
+    const { state, addReceipt, updateReceipt, deleteReceipt, refreshData } = useApp();
     const { receipts, tenants, properties, loading } = state;
     const { success, error: showError } = useToast();
     const t = useTranslations("financial.receipts");
@@ -186,7 +187,13 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
       }));
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = (receipt: Receipt) => {
+      // The route refuses these too; saying why here spares a round trip that could only answer
+      // with a generic conflict.
+      if (isFiled(receipt.lifecycle)) {
+        showError(t("deleteFiled"));
+        return;
+      }
       confirmDialog.confirm(
         {
           title: t("deleteDialog.title"),
@@ -195,8 +202,10 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
           variant: "destructive",
         },
         async () => {
-          await deleteReceipt(id);
+          await deleteReceipt(receipt.id);
           success(t("toastDeleted"));
+          // The delete moved the rent ledger: the month it paid and the tenant's payment status.
+          await refreshData();
         },
       );
     };
@@ -521,7 +530,7 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="text-destructive"
-                                onClick={() => handleDelete(receipt.id)}
+                                onClick={() => handleDelete(receipt)}
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
                                 {t("delete")}

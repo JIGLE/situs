@@ -612,6 +612,9 @@
       "notAllowed": "You don't have permission to do that.",
       "notFound": "That record no longer exists. It may have been deleted.",
       "conflict": "Someone else changed this while you were editing. Reload and try again.",
+      "tenantHasHistory": "This tenant has a lease or payments recorded, so Situs keeps them for your records. End the lease instead.",
+      "propertyHasHistory": "This property has leases, payments or expenses recorded, so Situs keeps it for your tax records.",
+      "leaseHasHistory": "Payments are recorded against this lease, so Situs keeps it for your records. End the lease instead.",
       "tooMany": "Too many requests. Wait a moment and try again.",
       "serverError": "The server had a problem. Try again in a moment.",
       "securityTokenExpired": "Your security token expired. Refresh the page and try again."
@@ -1094,9 +1097,10 @@
       "pdfFailed": "Couldn't generate the PDF. Try again.",
       "deleteDialog": {
         "title": "Delete receipt",
-        "description": "This receipt will be permanently removed. This action cannot be undone.",
+        "description": "The receipt is removed and its payment comes off the rent ledger, so the month it paid reads unpaid again. A bank movement it came from goes back to Finance › Bank movements. This can't be undone.",
         "confirmLabel": "Delete receipt"
       },
+      "deleteFiled": "This receipt was submitted to Finanças, so it stays as the record of that submission. To cancel it, void it in the Portal das Finanças.",
       "pdf": {
         "heading": "PAYMENT RECEIPT",
         "number": "Receipt #",
@@ -1124,9 +1128,6 @@
     "recurringTemplate": "Recurring template",
     "recurringToggleDesc": "Automatically generate this expense on a schedule",
     "recurrenceEndPlaceholder": "Leave blank for never",
-    "bulkGenerate": "Generate this month's receipts",
-    "bulkGenerateSuccess": "Generated {count} receipts. {skipped} already existed.",
-    "bulkGenerateEmpty": "All receipts for this month already exist.",
     "expense": "Expense",
     "paymentReceived": "Payment received",
     "rentRoll": {
@@ -1160,8 +1161,6 @@
     },
     "timeRange": "Time range",
     "filterReceiptStatus": "Filter receipts by status",
-    "generating": "Generating…",
-    "bulkGenerateFailed": "Couldn't generate receipts. Try again.",
     "unknownProperty": "Unknown property",
     "noFinancialData": "No financial data yet",
     "noFinancialDataDesc": "Start by adding receipts or expenses to track your cash flow",

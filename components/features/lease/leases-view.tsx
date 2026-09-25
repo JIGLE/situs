@@ -188,14 +188,17 @@ export function LeasesView(): React.ReactElement {
     schema: leaseSchema,
     initialData: initialFormData,
     onComplete: async (data) => {
-      const leaseData = { ...data, status: "active" as const };
+      // Only a new lease starts active. An edit sends no status, so the lease keeps its own:
+      // stamping "active" on every save brought an ended lease back to life whenever anyone
+      // corrected a date or a note on it. (Renewing reaches this as an edit of an active lease.)
+      const { status: _formStatus, ...terms } = data;
 
       let saved: Lease;
       if (editingLease) {
-        saved = await updateLease(editingLease.id, leaseData);
+        saved = await updateLease(editingLease.id, terms);
         success(t("toast.updated"));
       } else {
-        saved = await addLease(leaseData);
+        saved = await addLease({ ...terms, status: "active" as const });
         success(t("toast.created"));
       }
 

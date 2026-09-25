@@ -612,6 +612,9 @@
       "notAllowed": "No tiene permiso para realizar esta acción.",
       "notFound": "Ese registro ya no existe. Es posible que se haya eliminado.",
       "conflict": "Alguien ha modificado esto mientras editaba. Recargue e inténtelo de nuevo.",
+      "tenantHasHistory": "Este inquilino tiene un contrato o pagos registrados, así que Situs lo conserva en sus registros. Finalice el contrato en lugar de eliminarlo.",
+      "propertyHasHistory": "Esta propiedad tiene contratos, pagos o gastos registrados, así que Situs la conserva para su historial fiscal.",
+      "leaseHasHistory": "Hay pagos registrados en este contrato, así que Situs lo conserva en sus registros. Finalice el contrato en lugar de eliminarlo.",
       "tooMany": "Demasiadas solicitudes. Espere un momento e inténtelo de nuevo.",
       "serverError": "El servidor ha tenido un problema. Inténtelo de nuevo en unos momentos.",
       "securityTokenExpired": "Su token de seguridad ha caducado. Actualice la página e inténtelo de nuevo."
@@ -1094,9 +1097,10 @@
       "pdfFailed": "No se ha podido generar el PDF. Inténtalo de nuevo.",
       "deleteDialog": {
         "title": "Eliminar recibo",
-        "description": "Este recibo se eliminará de forma permanente. Esta acción no se puede deshacer.",
+        "description": "El recibo se elimina y su pago sale del registro de rentas, así que el mes que pagaba vuelve a quedar pendiente. El movimiento bancario del que procede vuelve a Finanzas › Movimientos bancarios. Esta acción no se puede deshacer.",
         "confirmLabel": "Eliminar recibo"
       },
+      "deleteFiled": "Este recibo se presentó en Finanças, así que queda como registro de esa presentación. Para anularlo, hazlo en el Portal das Finanças.",
       "pdf": {
         "heading": "RECIBO DE PAGO",
         "number": "Recibo n.º",
@@ -1124,9 +1128,6 @@
     "recurringTemplate": "Plantilla recurrente",
     "recurringToggleDesc": "Generar este gasto automáticamente según un horario definido",
     "recurrenceEndPlaceholder": "Dejar vacío para nunca terminar",
-    "bulkGenerate": "Generar recibos del mes",
-    "bulkGenerateSuccess": "Generados {count} recibos. {skipped} ya existían.",
-    "bulkGenerateEmpty": "Todos los recibos de este mes ya existen.",
     "expense": "Gasto",
     "paymentReceived": "Pago recibido",
     "rentRoll": {
@@ -1160,8 +1161,6 @@
     },
     "timeRange": "Intervalo de tiempo",
     "filterReceiptStatus": "Filtrar recibos por estado",
-    "generating": "Generando…",
-    "bulkGenerateFailed": "No se han podido generar los recibos. Inténtalo de nuevo.",
     "unknownProperty": "Inmueble desconocido",
     "noFinancialData": "Aún no hay datos financieros",
     "noFinancialDataDesc": "Empieza añadiendo recibos o gastos para seguir tu flujo de caja",

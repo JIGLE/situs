@@ -104,6 +104,12 @@ e2e/                    # Playwright E2E tests
   Waterfall invariant: fill the oldest not-fully-allocated period first
   (`lib/services/allocation/engine.ts`, pure). `Tenant.paymentStatus` is derived from the ledger —
   never write it from an API route.
+- **Deletes keep money history**: a tenant, property or lease with leases, receipts, rent months,
+  live allocations, expenses or AT filings recorded against it is refused, since every one of those
+  cascades from it in the schema (`lib/services/database/history.ts`). The refusal is a
+  `ConflictError`: a 409 whose `reason` `apiFetch` keeps and `useApiError` turns into a sentence. A
+  lease with nothing paid against it can still be deleted; a tenancy otherwise stops by ending its
+  lease.
 - **Bank matching**: a live provider sync → fingerprint dedupe (idempotent) → fuzzy-duplicate
   check → reconciliation rules → weighted confidence scoring (`lib/services/matching/engine.ts`,
   pure). ≥0.85 auto-allocates via a draft `Receipt` (`source: "automation"`); anything lower waits
@@ -125,7 +131,9 @@ e2e/                    # Playwright E2E tests
   the document state machine (`lib/services/receipts/lifecycle.ts`, pure): draft → review →
   emitted → submitted → accepted/rejected (rejected → review). Voiding is allowed from draft,
   review and emitted only. Reaching emitted/accepted archives a PDF `Document`; voiding
-  soft-reverses live `PaymentAllocation` rows.
+  soft-reverses live `PaymentAllocation` rows. Deleting a receipt reverses them too, in the delete's
+  own transaction (`receiptService.delete`), because `PaymentAllocation.receipt` is `SetNull`; a
+  `submitted` or `accepted` receipt cannot be deleted.
 - **Receipt archive**, the one surviving use of `Document`: the archive's `description` carries
   `situs-receipt-archive:<receiptId>` — a convention, not a foreign key, and the only link between
   a receipt and the proof of its filing. Resolve it through `findExistingArchive`

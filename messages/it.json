@@ -612,6 +612,9 @@
       "notAllowed": "Non hai il permesso di eseguire questa azione.",
       "notFound": "Questo record non esiste più. Potrebbe essere stato eliminato.",
       "conflict": "Qualcun altro ha modificato questo elemento mentre lo stavi modificando. Ricarica e riprova.",
+      "tenantHasHistory": "Questo inquilino ha un contratto o dei pagamenti registrati, quindi Situs lo conserva nei tuoi registri. Termina il contratto invece di eliminarlo.",
+      "propertyHasHistory": "Questo immobile ha contratti, pagamenti o spese registrati, quindi Situs lo conserva per il tuo storico fiscale.",
+      "leaseHasHistory": "Ci sono pagamenti registrati su questo contratto, quindi Situs lo conserva nei tuoi registri. Termina il contratto invece di eliminarlo.",
       "tooMany": "Troppe richieste. Attendi un momento e riprova.",
       "serverError": "Il server ha riscontrato un problema. Riprova tra poco.",
       "securityTokenExpired": "Il token di sicurezza è scaduto. Aggiorna la pagina e riprova."
@@ -1094,9 +1097,10 @@
       "pdfFailed": "Impossibile generare il PDF. Riprova.",
       "deleteDialog": {
         "title": "Elimina ricevuta",
-        "description": "Questa ricevuta sarà rimossa definitivamente. L'azione non può essere annullata.",
+        "description": "La ricevuta viene eliminata e il pagamento esce dal registro degli affitti, quindi il mese che pagava torna da pagare. Il movimento bancario da cui proviene torna in Finanza › Movimenti bancari. Questa azione non può essere annullata.",
         "confirmLabel": "Elimina ricevuta"
       },
+      "deleteFiled": "Questa ricevuta è stata inviata alle Finanças, quindi resta come registro di quell'invio. Per annullarla, usa il Portal das Finanças.",
       "pdf": {
         "heading": "RICEVUTA DI PAGAMENTO",
         "number": "Ricevuta n.",
@@ -1124,9 +1128,6 @@
     "recurringTemplate": "Modello ricorrente",
     "recurringToggleDesc": "Genera automaticamente questa spesa secondo una pianificazione",
     "recurrenceEndPlaceholder": "Lascia vuoto per non terminare mai",
-    "bulkGenerate": "Genera le ricevute di questo mese",
-    "bulkGenerateSuccess": "Generate {count} ricevute. {skipped} già esistenti.",
-    "bulkGenerateEmpty": "Tutte le ricevute di questo mese esistono già.",
     "expense": "Spesa",
     "paymentReceived": "Pagamento ricevuto",
     "rentRoll": {
@@ -1160,8 +1161,6 @@
     },
     "timeRange": "Intervallo di tempo",
     "filterReceiptStatus": "Filtra le ricevute per stato",
-    "generating": "Generazione…",
-    "bulkGenerateFailed": "Impossibile generare le ricevute. Riprova.",
     "unknownProperty": "Immobile sconosciuto",
     "noFinancialData": "Ancora nessun dato finanziario",
     "noFinancialDataDesc": "Inizia aggiungendo ricevute o spese per monitorare il flusso di cassa",
