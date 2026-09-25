@@ -104,7 +104,7 @@ Recorded here deliberately rather than left implicit:
 | `Document`             | receipt archives   | The PDF kept when a receipt is emitted: the tenant's name, the property's address and the amount, on disk  |
 
 `BankTransaction.rawData` preserves the imported row for re-matching, with the IBAN stripped
-before it is written (`redactRowForStorage`, `lib/services/bank/csv.ts`). It previously stored
+before it is written (`redactRowForStorage`, `lib/services/bank/rows.ts`). It previously stored
 the row verbatim, which meant the IBAN was written encrypted into its own column and again in
 clear here.
 

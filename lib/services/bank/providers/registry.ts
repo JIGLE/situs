@@ -9,12 +9,13 @@ import { enableBankingProvider } from "./enablebanking";
  * is a registration rather than a rewrite.
  *
  * `BankConnection.provider` stores `psd2_<key>` — the prefix distinguishes a live provider
- * connection from the `manual` and `csv` rows the import pipeline find-or-creates, which matters
- * because those two must never be offered a sync button or counted as a live feed.
+ * connection from the `manual` rows the import pipeline find-or-creates and the `csv` ones earlier
+ * versions made, which matters because those two must never be offered a sync button or counted
+ * as a live feed.
  *
  * Registration is not configuration: an adapter listed here is still only OFFERED once it reports
- * `isConfigured()`, so an instance with no credentials sees the CSV-only view rather than a connect
- * button that can only fail.
+ * `isConfigured()`, so an instance with no credentials sees how to configure one rather than a
+ * connect button that can only fail.
  *
  * Everything downstream of this map — consent, sync, the budget, the encrypted IBAN at rest — is
  * provider-agnostic and covered by tests that use a fake provider rather than a vendor.
@@ -23,7 +24,7 @@ const PROVIDERS: Record<string, BankDataProvider> = {
   enablebanking: enableBankingProvider,
 };
 
-/** Prefix marking a connection as belonging to a real provider rather than manual/CSV import. */
+/** Prefix marking a connection as belonging to a real provider rather than a manual/CSV row. */
 export const PSD2_PREFIX = "psd2_";
 
 /** `BankConnection.provider` value for a provider key. */

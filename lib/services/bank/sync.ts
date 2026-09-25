@@ -2,10 +2,10 @@
  * Pulling movements from a connected bank.
  *
  * This module is deliberately thin. It decides WHEN a provider may be called and WHERE the rows
- * land; it does not decide what a row means. Once `fetchTransactions` returns `BankCsvRow[]`, the
+ * land; it does not decide what a row means. Once `fetchTransactions` returns `BankRow[]`, the
  * rows go straight into `importBankRows`, which already owns fingerprint dedupe, the fuzzy
  * duplicate window, reconciliation rules, confidence scoring and the 0.85 auto-allocation
- * threshold. A synced movement is therefore indistinguishable from an uploaded one downstream,
+ * threshold. A synced movement is therefore indistinguishable from any other downstream,
  * which is the property that makes a live connection safe to add to a working ledger.
  */
 

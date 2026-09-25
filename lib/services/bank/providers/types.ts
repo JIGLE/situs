@@ -2,11 +2,11 @@
  * Situs bank data provider contract — PSD2 account information (AIS).
  *
  * A provider's job is narrow on purpose: authenticate, walk the consent flow, and hand back
- * transactions as `BankCsvRow[]`. It does NOT match, dedupe, score or allocate — that pipeline
+ * transactions as `BankRow[]`. It does NOT match, dedupe, score or allocate — that pipeline
  * already exists in `lib/services/bank/import.ts` and is exercised by its own tests. Returning
- * the same row shape CSV import produces is what lets a live connection reuse all of it, so a
- * provider gets the fingerprint dedupe, the reconciliation rules, the confidence engine and the
- * 0.85 auto-allocation threshold for free, and behaves identically to a hand-uploaded statement.
+ * the one row shape the import takes is what lets a live connection reuse all of it, so a provider
+ * gets the fingerprint dedupe, the reconciliation rules, the confidence engine and the 0.85
+ * auto-allocation threshold for free.
  *
  * WHY THIS FILE HAS NO RUNTIME IMPORTS, AND MUST KEEP NONE.
  *
@@ -17,7 +17,7 @@
  * this module stays type-only — `import type` is fine, a value import is not.
  */
 
-import type { BankCsvRow } from "../csv";
+import type { BankRow } from "../rows";
 
 /** A bank the provider can connect to, for the institution picker. */
 export interface Institution {
@@ -206,7 +206,7 @@ export interface BankDataProvider {
    * Transactions for one account, in the shape the import pipeline already consumes.
    * Throws `ConsentExpiredError` once the consent lapses.
    */
-  fetchTransactions(accountRef: string, since?: Date): Promise<BankCsvRow[]>;
+  fetchTransactions(accountRef: string, since?: Date): Promise<BankRow[]>;
 
   /**
    * Read-only self-check for the operator. Optional: a provider that cannot introspect its own

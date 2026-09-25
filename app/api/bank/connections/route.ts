@@ -25,7 +25,7 @@ export const runtime = "nodejs";
  *
  * `providersConfigured` is the list the UI must consult before offering to connect anything. It
  * is empty both when no adapter ships — the current state — and when one ships without
- * credentials, and the UI treats those the same way: CSV import only.
+ * credentials, and the UI treats those the same way: no connect button, and how to configure one.
  */
 async function handleGet(request: NextRequest): Promise<Response> {
   const authResult = await requireOwnerAccess(request);

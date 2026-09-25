@@ -170,7 +170,7 @@ test("deleting a receipt takes its payment off the ledger, and its movement back
     const reference = `undo ${STAMP}`;
     const summary = await postJson<{ imported: number; needsReview: number }>(
       request,
-      "/api/bank/import",
+      "/api/debug/bank/movements",
       {
         rows: [
           {

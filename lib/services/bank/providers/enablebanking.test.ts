@@ -171,8 +171,8 @@ describe("reading the key from a file", () => {
   });
 
   it("reports an unreadable path as a configuration error naming the path", () => {
-    // Not "unconfigured". A misconfigured instance that looks identical to a deliberately
-    // CSV-only one is the failure this whole session keeps running into.
+    // Not "unconfigured". A misconfigured instance that looks identical to one deliberately
+    // left without a bank feed is the failure this whole session keeps running into.
     process.env.ENABLE_BANKING_APPLICATION_ID = APP_ID;
     process.env.ENABLE_BANKING_PRIVATE_KEY_FILE = path.join(dir, "does-not-exist.pem");
 

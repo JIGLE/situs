@@ -20,7 +20,7 @@ import { logAudit } from "@/lib/services/audit-log";
 import { encryptPII } from "@/lib/utils/pii-encryption";
 import { allocateReceipt } from "@/lib/services/allocation/service";
 import { isTestConnection } from "@/lib/services/bank/consent";
-import { redactRowForStorage } from "@/lib/services/bank/csv";
+import { redactRowForStorage } from "@/lib/services/bank/rows";
 import {
   classifyMatch,
   findPossibleDuplicate,
@@ -29,7 +29,7 @@ import {
   type LeaseCandidate,
   type TransactionInput,
 } from "@/lib/services/matching/engine";
-import type { BankCsvRow } from "./csv";
+import type { BankRow } from "./rows";
 
 const EPSILON = 0.005;
 
@@ -265,7 +265,7 @@ async function createReceiptAndAllocate(
   return receipt.id;
 }
 
-/** Where imported rows land. Omitted for CSV and manual entry, which share one synthetic account. */
+/** Where imported rows land. Omitted for manual entry, which uses one synthetic account. */
 export interface ImportTarget {
   connectionId: string;
   bankAccountId: string;
@@ -276,15 +276,16 @@ export interface ImportTarget {
  * counted and skipped via the fingerprint unique constraint.
  *
  * `target` is what lets a live provider sync reuse this whole pipeline. Without it the rows go to
- * the find-or-created "Manual import" connection, as CSV and manual entry have always done; with
- * it they are attributed to the connection and account the movements actually came from. Nothing
- * else differs — a synced movement gets the same fingerprint dedupe, reconciliation rules,
- * confidence scoring and 0.85 auto-allocation threshold as an uploaded one, which is the point.
+ * the find-or-created "Manual import" connection, as manual entry always has (in development and
+ * E2E, through `/api/debug/bank/movements`); with it they are attributed to the connection and
+ * account the movements actually came from. Nothing else differs — a synced movement gets the same
+ * fingerprint dedupe, reconciliation rules, confidence scoring and 0.85 auto-allocation threshold
+ * as a manually entered one.
  */
 export async function importBankRows(
   userId: string,
-  rows: BankCsvRow[],
-  jobType: "csv_import" | "manual_entry" | "api_sync" = "csv_import",
+  rows: BankRow[],
+  jobType: "manual_entry" | "api_sync" = "manual_entry",
   target?: ImportTarget,
 ): Promise<ImportSummary> {
   const prisma = getPrismaClient();

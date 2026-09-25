@@ -12,7 +12,7 @@
  * that silently drifts from the interface it stands in for is worse than no fake.
  */
 
-import type { BankCsvRow } from "../csv";
+import type { BankRow } from "../rows";
 import type {
   BankDataProvider,
   ConsentLink,
@@ -29,7 +29,7 @@ export interface FakeProviderOptions {
   dailyReadBudget?: number;
   institutions?: Institution[];
   accounts?: ProviderAccount[];
-  transactions?: BankCsvRow[];
+  transactions?: BankRow[];
 }
 
 export interface FakeProvider extends BankDataProvider {
@@ -82,7 +82,7 @@ export function createFakeProvider(options: FakeProviderOptions = {}): FakeProvi
       return accounts;
     },
 
-    async fetchTransactions(accountRef: string, since?: Date): Promise<BankCsvRow[]> {
+    async fetchTransactions(accountRef: string, since?: Date): Promise<BankRow[]> {
       fetchCalls.push({ accountRef, since });
       return transactions;
     },

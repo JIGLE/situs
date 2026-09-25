@@ -12,7 +12,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
  *
  * `continue` is doing a lot of work there. It skips the BankTransaction insert, the automation
  * Receipt, and the call to allocateReceipt. Delete those four lines and every existing test in
- * the repo still passes, while a second import of the same CSV silently doubles a tenant's
+ * the repo still passes, while a second sync of the same movements silently doubles a tenant's
  * paid months.
  *
  * WHY THE MOCK HOLDS STATE. `bankTransaction` is backed by a Map keyed on fingerprint, so
@@ -117,7 +117,7 @@ vi.mock("@/lib/services/allocation/service", () => ({ allocateReceipt: allocateR
 vi.mock("@/lib/utils/pii-encryption", () => ({ encryptPII: (v: string) => `enc:${v}` }));
 
 import { importBankRows, hashIban } from "./import";
-import type { BankCsvRow } from "./csv";
+import type { BankRow } from "./rows";
 
 const USER_ID = "user-1";
 const LEASE_ID = "lease-1";
@@ -126,7 +126,7 @@ const TENANT_IBAN = "PT50000201231234567890154";
 const KNOWN_IBAN_HASH = hashIban(TENANT_IBAN);
 
 /** One month's rent from a known tenant — the row a landlord's statement actually contains. */
-const rentRow: BankCsvRow = {
+const rentRow: BankRow = {
   bookingDate: "2026-06-01",
   amount: 1250,
   counterpartyName: "Maria Silva",
@@ -233,7 +233,7 @@ describe("importBankRows — a test connection never allocates", () => {
 
 describe("importBankRows — duplicates inside a single batch", () => {
   it("dedupes a row against one earlier in the same file", async () => {
-    // A statement exported twice into one CSV, or a copy-paste error. Row 2's findUnique has to
+    // A movement a provider returns twice in one page, or a copy-paste error. Row 2's findUnique has to
     // see what row 1's create just wrote — the guard cannot rely on a pre-loop snapshot.
     const summary = await importBankRows(USER_ID, [rentRow, rentRow]);
 
