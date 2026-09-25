@@ -1124,9 +1124,6 @@
     "recurringTemplate": "Plantilla recurrente",
     "recurringToggleDesc": "Generar este gasto automáticamente según un horario definido",
     "recurrenceEndPlaceholder": "Dejar vacío para nunca terminar",
-    "bulkGenerate": "Generar recibos del mes",
-    "bulkGenerateSuccess": "Generados {count} recibos. {skipped} ya existían.",
-    "bulkGenerateEmpty": "Todos los recibos de este mes ya existen.",
     "expense": "Gasto",
     "paymentReceived": "Pago recibido",
     "rentRoll": {
@@ -1160,8 +1157,6 @@
     },
     "timeRange": "Intervalo de tiempo",
     "filterReceiptStatus": "Filtrar recibos por estado",
-    "generating": "Generando…",
-    "bulkGenerateFailed": "No se han podido generar los recibos. Inténtalo de nuevo.",
     "unknownProperty": "Inmueble desconocido",
     "noFinancialData": "Aún no hay datos financieros",
     "noFinancialDataDesc": "Empieza añadiendo recibos o gastos para seguir tu flujo de caja",
