@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 
 import { handleOptions, requireOwnerAccess } from "@/lib/services/auth/auth-middleware";
 import {
-  createErrorResponse,
+  ValidationError,
   createSuccessResponse,
   parseBody,
   withErrorHandler,
@@ -14,7 +14,8 @@ import { transitionReceipt } from "@/lib/services/receipts/service";
 export const runtime = "nodejs";
 
 // PUT /api/receipts/[id]/lifecycle — advance a receipt's document state
-// (draft→review→emitted→submitted→accepted|rejected; →voided).
+// (draft→review→emitted→submitted→accepted|rejected; →voided). A refusal is typed by the service
+// (404, or 409 with a `reason`), and anything else is a server error, never a bad request.
 async function handlePut(
   request: NextRequest,
   context?: { params?: Record<string, string> | Promise<Record<string, string>> },
@@ -28,18 +29,18 @@ async function handlePut(
     const resolved = context.params instanceof Promise ? await context.params : context.params;
     id = resolved?.id;
   }
-  if (!id) return createErrorResponse(new Error("Invalid request: missing id"), 400, request);
+  if (!id) throw new ValidationError("Invalid request: missing id");
 
-  const body = parseBody(await request.json(), receiptLifecycleTransitionSchema);
-
-  try {
-    const outcome = await transitionReceipt(scopeUserId, id, body.to, {
-      voidReason: body.voidReason,
-    });
-    return createSuccessResponse(outcome);
-  } catch (error) {
-    return createErrorResponse(error as Error, 400, request);
-  }
+  // A body that is not JSON is the caller's mistake; `withErrorHandler` would answer its
+  // SyntaxError as a server error.
+  const raw: unknown = await request.json().catch(() => {
+    throw new ValidationError("Invalid request: the body is not JSON");
+  });
+  const body = parseBody(raw, receiptLifecycleTransitionSchema);
+  const outcome = await transitionReceipt(scopeUserId, id, body.to, {
+    voidReason: body.voidReason,
+  });
+  return createSuccessResponse(outcome);
 }
 
 export const PUT = withErrorHandler(withRateLimit(handlePut));

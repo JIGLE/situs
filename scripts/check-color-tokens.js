@@ -74,7 +74,8 @@ const ALLOWLIST = ["empty-state-illustrations", "scenario-runner", "opengraph-im
 // receipt-based payment matrix, removed with it, already drew with tokens.
 // 148 → 133: "Ocupação e renda" took its 15 raw emeralds, yellows and reds when it was folded
 // into the rent matrix.
-const BASELINE = 133;
+// 133 → 131: the receipt cards' orange "maintenance" badge went with them.
+const BASELINE = 131;
 
 function walk(dir, acc) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

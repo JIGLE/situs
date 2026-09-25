@@ -218,6 +218,7 @@ const SURFACES = [
   { id: "people", path: "/people" },
   { id: "detail-tenant", path: "/people?detail=tenant:{tenantId}", overlay: true },
   { id: "financials", path: "/financials" },
+  { id: "financials-receipts", path: "/financials?tab=receipts" },
   { id: "financials-bank", path: "/financials?tab=bank" },
   { id: "financials-tax", path: "/financials?tab=tax" },
   // A lease's month in the rent matrix, opened by its address: `?month=<leaseId>:<yyyy-mm>`.

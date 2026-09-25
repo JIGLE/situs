@@ -38,6 +38,7 @@ import { AuditTrail as AuditTrailForError } from "@/components/shared/audit-trai
 import { DraftBanner } from "@/components/ui/multi-step-form";
 import { BankMovementsInbox } from "@/components/features/financial/bank-movements-inbox";
 import { YearlyRentMatrix } from "@/components/features/financial/yearly-rent-matrix";
+import { ReceiptsView } from "@/components/features/financial/receipts-view";
 import ptMessages from "@/messages/pt.json";
 
 vi.mock("@/lib/contexts/currency-context", () => ({
@@ -317,6 +318,16 @@ describe("user-visible copy comes from the catalogue, not from literals", () => 
     expect(
       screen.getByRole("button", { name: /^janeiro de \d{4}: Em atraso/ }),
     ).toBeInTheDocument();
+  });
+
+  it("lists the month's receipts in Portuguese", () => {
+    // Its cards were titled "Receipt #" followed by nothing, and each badge printed the stored
+    // type with a capital letter: "Rent".
+    renderWithProviders(<ReceiptsView />, { initialLocale: "pt" });
+
+    expect(screen.getByText(/^1 recibo · 0 por emitir/)).toBeInTheDocument();
+    expect(screen.getAllByText("Sem mês de renda").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Receipt #|^Rent$/)).not.toBeInTheDocument();
   });
 
   it("offers to restore a form draft in Portuguese", () => {

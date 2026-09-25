@@ -99,6 +99,10 @@ export interface Receipt {
    * (`lib/services/receipts/lifecycle.ts`); `status` is the money state.
    */
   lifecycle?: string;
+  /** The rent month the payment was allocated to, "YYYY-MM"; null when it paid none. */
+  referenceMonth?: string | null;
+  /** "automation" for a receipt a matched bank movement created, "manual" otherwise. */
+  source?: string;
   description?: string;
   createdAt: string;
   updatedAt: string;

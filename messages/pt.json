@@ -693,7 +693,10 @@
       "bankMovementNotIgnored": "Só um movimento ignorado pode ser reposto.",
       "tooMany": "Demasiados pedidos. Aguarde um momento e tente novamente.",
       "serverError": "O servidor teve um problema. Tente novamente dentro de momentos.",
-      "securityTokenExpired": "O seu token de segurança expirou. Atualize a página e tente novamente."
+      "securityTokenExpired": "O seu token de segurança expirou. Atualize a página e tente novamente.",
+      "receiptTransitionNotAllowed": "Este recibo já não está numa fase que o permita. Atualize a lista e tente de novo.",
+      "receiptFilingMissing": "Associe primeiro este recibo à sua declaração nas Finanças.",
+      "receiptSubmissionRefused": "As Finanças recusaram este recibo."
     }
   },
   "payments": {
@@ -1140,15 +1143,8 @@
     "vendorVat": "NIF do Fornecedor",
     "expenseDeductibilityNote": "Apenas indicativo – confirme a dedutibilidade com o seu TOC.",
     "receipts": {
-      "title": "Recibos",
-      "descriptionTenant": "Registe pagamentos e recibos do inquilino selecionado.",
-      "descriptionProperty": "Registe pagamentos e recibos do imóvel selecionado.",
-      "descriptionOwner": "Registe pagamentos, emita recibos e exporte confirmações em PDF.",
-      "addReceipt": "Adicionar recibo",
       "editTitle": "Editar recibo",
-      "createTitle": "Adicionar recibo",
       "editDescription": "Atualize os dados do recibo",
-      "createDescription": "Crie um novo recibo de pagamento",
       "tenant": "Inquilino",
       "selectTenant": "Selecione o inquilino",
       "property": "Imóvel",
@@ -1162,7 +1158,6 @@
       "typeOther": "Outro",
       "descriptionOptional": "Descrição (opcional)",
       "submitUpdate": "Atualizar recibo",
-      "submitCreate": "Criar recibo",
       "options": "Opções do recibo",
       "edit": "Editar recibo",
       "delete": "Eliminar recibo",
@@ -1199,7 +1194,35 @@
         "accepted": "Aceite",
         "rejected": "Rejeitado",
         "voided": "Anulado"
-      }
+      },
+      "monthSummary": "{count, plural, one {# recibo} other {# recibos}} · {toIssue} por emitir · {total}",
+      "issueSelected": "Emitir {count}",
+      "issueDialog": {
+        "title": "Emitir {count, plural, one {# recibo} other {# recibos}}?",
+        "description": "Cada recibo passa a Emitido e o PDF fica arquivado. Um recibo emitido já não volta a rascunho, mas pode ser anulado.",
+        "confirmLabel": "Emitir"
+      },
+      "issued": "{count, plural, one {# recibo emitido} other {# recibos emitidos}}.",
+      "issueFailed": "Não foi possível emitir:",
+      "emptyMonth": "Sem recibos em {month}.",
+      "selectAll": "Selecionar todos os que se podem emitir",
+      "selectOne": "Selecionar o recibo de {receipt}",
+      "rentMonth": "Mês de renda",
+      "received": "Recebido",
+      "state": "Estado",
+      "sourceHeader": "Origem",
+      "source": {
+        "bank": "Banco",
+        "manual": "Manual"
+      },
+      "noRentMonth": "Sem mês de renda",
+      "void": "Anular",
+      "voidDialog": {
+        "title": "Anular este recibo?",
+        "description": "O recibo fica anulado e o pagamento sai do mês que pagou, que volta a ficar por pagar.",
+        "confirmLabel": "Anular"
+      },
+      "toastVoided": "Recibo anulado."
     },
     "isRecurring": "Despesa recorrente",
     "recurrenceRule": "Repetição",
@@ -1615,7 +1638,6 @@
     "required": "Obrigatório",
     "accept": "Aceitar",
     "correct": "Corrigir…",
-    "emit": "Emitir",
     "contract": "Contrato",
     "noSubmissionLog": "Ainda sem registos de submissão.",
     "noScheduledWork": "Sem trabalhos de manutenção agendados ou pendentes.",
