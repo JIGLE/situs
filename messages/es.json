@@ -1489,6 +1489,8 @@
     "connectorModeUnsupported": "Sin enviar",
     "connectorModeSimulatedHelp": "Simulado — no se transmite nada a {authority}. No existe una conexión real.",
     "connectorModeUnsupportedHelp": "El modo \"{mode}\" no es compatible, por lo que no se envía nada. Vuelva a configurar el conector en sandbox o review.",
+    "connectorModeTest": "Servicio de pruebas",
+    "connectorModeTestHelp": "Se conecta al servicio de pruebas de la {authority}: nada de lo que se envía allí tiene valor fiscal.",
     "connectorLastSubmission": "Último: {date}",
     "connectorNoSubmissions": "Aún sin envíos",
     "loading": "Cargando…",

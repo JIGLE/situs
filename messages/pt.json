@@ -1489,6 +1489,8 @@
     "connectorModeUnsupported": "Sem submissão",
     "connectorModeSimulatedHelp": "Simulado — nada é transmitido à {authority}. Não existe ligação real.",
     "connectorModeUnsupportedHelp": "O modo \"{mode}\" não é suportado, por isso nada está a ser submetido. Defina o conector novamente para sandbox ou review.",
+    "connectorModeTest": "Serviço de testes",
+    "connectorModeTestHelp": "Liga ao serviço de testes da {authority}: nada do que lá é enviado tem valor fiscal.",
     "connectorLastSubmission": "Última: {date}",
     "connectorNoSubmissions": "Ainda sem submissões",
     "loading": "A carregar…",

@@ -5,7 +5,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { Landmark, Layers, ScanLine } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate as formatDateWithLocale } from "@/lib/utils/format-date";
-import { MODE_KIND_STYLES, authorityName, modeKind } from "@/lib/tax/connectors/presentation";
+import { authorityName } from "@/lib/tax/connectors/presentation";
+import { useConnectorMode } from "@/components/shared/connector-mode";
 import { BankConnectPanel, type BankConnectionRow } from "./bank-connect-panel";
 
 interface TaxConnector {
@@ -17,9 +18,9 @@ interface TaxConnector {
   lastSubmissionAt: string | null;
 }
 
-// Mode styling comes from lib/tax/connectors/presentation.ts so this surface and the Finance
-// tax dashboard cannot drift apart. The old table styled `live` as SUCCESS — green — when it
-// is the one mode the connector refuses to act in.
+// A mode is put into words by useConnectorMode, shared with the Finance tax dashboard so the two
+// cannot drift apart. The old table styled `live` as SUCCESS — green — when it is the one mode
+// the connector refuses to act in.
 
 /**
  * Read-only status summary for the three Situs automation layers — a
@@ -29,9 +30,7 @@ interface TaxConnector {
  */
 export function SettingsIntegrations() {
   const t = useTranslations("settings.panel");
-  // Connector mode wording lives in `common` because the Finance tax dashboard shows the same
-  // strings; duplicating them into settings.panel would let the two surfaces drift.
-  const tc = useTranslations("common");
+  const connectorMode = useConnectorMode();
   const locale = useLocale();
   const [connections, setConnections] = useState<BankConnectionRow[]>([]);
   const [providersConfigured, setProvidersConfigured] = useState<string[]>([]);
@@ -114,9 +113,7 @@ export function SettingsIntegrations() {
                       {c.country} — {authorityName(c.country)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {modeKind(c.mode) === "simulated"
-                        ? tc("connectorModeSimulatedHelp", { authority: authorityName(c.country) })
-                        : tc("connectorModeUnsupportedHelp", { mode: c.mode })}
+                      {connectorMode.help(c.mode, c.country)}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {t("lastSubmission", {
@@ -125,11 +122,9 @@ export function SettingsIntegrations() {
                     </p>
                   </div>
                   <span
-                    className={`inline-block rounded-full px-2 py-0.5 text-xs ${MODE_KIND_STYLES[modeKind(c.mode)]}`}
+                    className={`inline-block rounded-full px-2 py-0.5 text-xs ${connectorMode.badgeClass(c.mode)}`}
                   >
-                    {modeKind(c.mode) === "simulated"
-                      ? tc("connectorModeSimulated")
-                      : tc("connectorModeUnsupported")}
+                    {connectorMode.label(c.mode)}
                   </span>
                 </div>
               ))}

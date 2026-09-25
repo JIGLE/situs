@@ -1,12 +1,12 @@
 import { logSubmission } from "@/lib/services/tax/connector-service";
-import { SIMULATED_MODES } from "./modes";
+import { SIMULATED_MODES, TEST_MODES } from "./modes";
 import type { TaxConnectorResult } from "./types";
 
 /**
  * The only modes a connector may act in.
  *
- * No country has a live tax-authority integration. Every connector simulates the round trip,
- * so simulating is opt-in per mode and everything else fails closed.
+ * No country has a live tax-authority integration. Simulating is opt-in per mode, a test mode
+ * reaches only the authority's test service, and everything else fails closed.
  *
  * WHY THIS IS SHARED RATHER THAN PER-CONNECTOR. The Portugal connector shipped without this
  * check: `submit()` and `poll()` ran their simulation regardless of `connector.mode`, so
@@ -52,9 +52,13 @@ export async function refuseUnsupportedMode(
 
   if (SIMULATED_MODES.has(connector.mode)) return null;
 
-  const responseBody =
-    `Connector mode "${connector.mode}" is not supported: there is no live ${authority} ` +
-    `integration. Nothing was submitted. Set the connector back to "sandbox" or "review".`;
+  // The test mode reaches the authority's test service to check credentials and fetch receipts.
+  // Issuing through it is not built, so a receipt in this mode is refused like any other.
+  const responseBody = TEST_MODES.has(connector.mode)
+    ? `Connector mode "${connector.mode}" checks credentials and fetches receipts at the ` +
+      `${authority}'s test service; it does not issue receipts. Nothing was submitted.`
+    : `Connector mode "${connector.mode}" is not supported: there is no live ${authority} ` +
+      `integration. Nothing was submitted. Set the connector back to "sandbox" or "review".`;
 
   await logSubmission({
     userId,

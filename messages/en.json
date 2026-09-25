@@ -1489,6 +1489,8 @@
     "connectorModeUnsupported": "Not submitting",
     "connectorModeSimulatedHelp": "Simulated — nothing is transmitted to the {authority}. No live connection exists.",
     "connectorModeUnsupportedHelp": "Mode \"{mode}\" is not supported, so nothing is being submitted. Set the connector back to sandbox or review.",
+    "connectorModeTest": "Test service",
+    "connectorModeTestHelp": "Connects to the {authority}'s test service: nothing sent there counts for tax.",
     "connectorLastSubmission": "Last: {date}",
     "connectorNoSubmissions": "No submissions yet",
     "loading": "Loading…",
