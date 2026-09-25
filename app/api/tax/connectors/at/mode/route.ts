@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { handleOptions, requireOwnerAccess } from "@/lib/services/auth/auth-middleware";
 import { getAtConnection, setAtMode } from "@/lib/services/tax/at-connection";
 import { atModeSchema } from "@/lib/schemas/at-connection.schema";
-import { createSuccessResponse, parseBody, withErrorHandler } from "@/lib/utils/error-handling";
+import { createSuccessResponse, parseJsonBody, withErrorHandler } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 
 export const runtime = "nodejs";
@@ -18,7 +18,7 @@ async function handlePut(request: NextRequest): Promise<Response> {
   if (authResult instanceof Response) return authResult;
   const { scopeUserId } = authResult;
 
-  const { mode } = parseBody(await request.json(), atModeSchema);
+  const { mode } = await parseJsonBody(request, atModeSchema);
   await setAtMode(scopeUserId, mode);
   return createSuccessResponse(await getAtConnection(scopeUserId));
 }

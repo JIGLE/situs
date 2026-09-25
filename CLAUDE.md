@@ -63,6 +63,7 @@ lib/
     receipts/           # Receipt document-lifecycle state machine + orchestration
     tax/                # Tax connector find-or-create + submission-log service
   tax/connectors/       # The Portuguese TaxConnector (pt-at.ts) and its mode guard
+  tax/at/               # AT's webservice client: WS-Security header, SOAP, mutual TLS, files
   design/country-themes.ts  # PT/EU theme table
 prisma/schema.prisma    # Database schema — source of truth
 messages/               # en.json, pt.json, es.json, it.json
@@ -91,7 +92,10 @@ e2e/                    # Playwright E2E tests
   and never decrypted: matching uses `ibanHash`, display uses `ibanLast4`. Do not add it to
   `PII_FIELDS` — the extension would then decrypt it on every read. `Lease.contractFile` (bytes)
   is encrypted by its own route, `app/api/leases/[id]/contract` (`encryptFile`), and the client's
-  global `omit` leaves it out of every other lease read. The extension transforms only the
+  global `omit` leaves it out of every other lease read. `TaxAuthorityConnector.credentialsRef`
+  (the AT Portal sub-user and its password) is encrypted and decrypted only in
+  `lib/services/tax/at-connection.ts`, which refuses to store it when `encryptPII` would write
+  plaintext; no read returns the password. The extension transforms only the
   top-level model a query names, never a nested `create` or `include`, so a PII model is written
   and read through its own delegate (`LeaseParty` via `lib/services/database/lease-parties.ts`).
   **Required in production**: without the key `encryptPII` writes plaintext and only warns, so
@@ -138,10 +142,15 @@ e2e/                    # Playwright E2E tests
   (`lib/services/receipts/service.ts`), never by rebuilding the marker.
   `GET /api/receipts/[id]/archive` exposes it; the Receipts dropdown serves that PDF before the
   client-side jsPDF copy.
-- **Tax connectors**: one `TaxAuthorityConnector` row per `[userId, connectorKey]`; `mode` is
-  sandbox, review or live. No live AT integration exists, and `lib/tax/connectors/mode-guard.ts`
-  makes `live` fail closed, so going live is a code change, not a row edit. Every call appends an
-  immutable `TaxSubmissionLog` row (`GET /api/tax/connectors`, Finance › Tax Summary).
+- **Tax connectors**: one `TaxAuthorityConnector` row per `[userId, connectorKey]`. Sandbox and
+  review simulate, transmitting nothing. `test` reaches AT's test service through `lib/tax/at/`
+  (mutual TLS with the certificate AT signed, a WS-Security header, SOAP), and there only checks
+  credentials and fetches receipts: issuing through it is not built, so
+  `lib/tax/connectors/mode-guard.ts` refuses a receipt in it. No production AT integration exists,
+  and the guard makes every other mode, `live` included, fail closed, so going live is a code
+  change, not a row edit. The owner sets the mode and the Portal sub-user in Settings ›
+  Integrations (`lib/services/tax/at-connection.ts`). Every call appends an immutable
+  `TaxSubmissionLog` row (`GET /api/tax/connectors`, Finance › Tax Summary).
 - **Alert generation**: `lib/services/notifications/notification-automation.ts` reads the rent
   ledger. `payment_due` (D-5) and `payment_overdue` (D+1/D+7) come from `RentPeriod` and quote the
   OUTSTANDING balance, so a part-paid month is chased for its balance; `rent_receipt_due` comes
@@ -338,6 +347,10 @@ Optional:
   each returns 503 while it is unset.
 - `METRICS_TOKEN` gates the counter endpoint, `/api/metrics`, in production; it answers 403 while
   it is unset.
+- AT connection: `AT_CLIENT_CERT_FILE` and `AT_CLIENT_KEY_FILE`, the SSL certificate AT signed
+  and its key, and `AT_AUTH_PUBLIC_KEY_FILE`, AT's authentication public key. Mounted files, read
+  on every call (`lib/tax/at/config.ts`), never inlined. Without them nothing reaches AT and the
+  test mode is refused; `/admin` warns 30 days before the certificate's 12 months run out.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

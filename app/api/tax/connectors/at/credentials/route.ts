@@ -7,7 +7,7 @@ import {
   saveAtCredentials,
 } from "@/lib/services/tax/at-connection";
 import { atCredentialsSchema } from "@/lib/schemas/at-connection.schema";
-import { createSuccessResponse, parseBody, withErrorHandler } from "@/lib/utils/error-handling";
+import { createSuccessResponse, parseJsonBody, withErrorHandler } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 
 export const runtime = "nodejs";
@@ -24,7 +24,7 @@ async function handlePut(request: NextRequest): Promise<Response> {
   if (authResult instanceof Response) return authResult;
   const { scopeUserId } = authResult;
 
-  const input = parseBody(await request.json(), atCredentialsSchema);
+  const input = await parseJsonBody(request, atCredentialsSchema);
   await saveAtCredentials(scopeUserId, input);
   return createSuccessResponse(await getAtConnection(scopeUserId));
 }

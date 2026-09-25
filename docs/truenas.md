@@ -339,6 +339,7 @@ self-hosted instance collecting rent by bank transfer needs none of them.
 | SMTP           | optional  | outbound email, any provider. Unset, email is simply not sent                                             |
 | Redis          | optional  | shared counters for one of the rate limiters (`docs/SECURITY.md`). Unset, every limiter counts in process |
 | Google OAuth   | optional  | sign-in. Credentials sign-in works without it                                                             |
+| Finanças (AT)  | optional  | AT's rent-receipt service, test service only for now. Unset, nothing reaches AT                           |
 
 Required in every case: `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, and
 `PII_ENCRYPTION_KEY` in production.
@@ -362,6 +363,42 @@ Settings › Integrations and `/admin` say so with a **Reconnect** action.
 
 To exercise the flow without a real account, use a Sandbox application and its Mock ASPSP — see
 _Recording the transaction shape_ above.
+
+## Finanças (AT)
+
+Situs reaches AT's rent-receipt webservice with three files AT provides. All optional: without them
+Settings › Integrations shows each as missing, and nothing reaches AT. For now only AT's **test**
+service is reachable; filing for real comes after a successful test run.
+
+| Variable                  | File                                                                         |
+| ------------------------- | ---------------------------------------------------------------------------- |
+| `AT_CLIENT_CERT_FILE`     | the SSL certificate AT signed for this instance, PEM or DER                  |
+| `AT_CLIENT_KEY_FILE`      | its private key, PEM, without a passphrase                                   |
+| `AT_AUTH_PUBLIC_KEY_FILE` | AT's authentication public key, as AT sent it: a certificate or a public key |
+
+Put them in the secrets folder the Enable Banking key uses, and mount it the same way (steps 1 to 3
+of _The private key goes in a file_ above): `chown 1001:1001` and `chmod 400` each file. Then set
+the three variables to their paths inside the app, such as `/app/secrets/at-cert.pem`. Unlike the
+Enable Banking key they are read on every call, so a renewed certificate counts once it is in
+place, without a restart.
+
+**If AT's test kit is a `.pfx` or `.p12`** (the certificate and key in one file, under a password),
+split it once into the two PEM files, in the TrueNAS shell:
+
+```bash
+cd /mnt/POOL/situs/secrets
+openssl pkcs12 -in kit.pfx -clcerts -nokeys -out at-cert.pem
+openssl pkcs12 -in kit.pfx -nocerts -nodes -out at-key.pem
+```
+
+OpenSSL 3 refuses an older `.pfx` with "unsupported algorithm"; add `-legacy` to both commands.
+`-nodes` writes the key without a passphrase, which Situs needs; `chmod 400` is what protects it.
+
+The instance must be able to reach `servicos.portaldasfinancas.gov.pt` on port 709, AT's test
+service. Then, in **Settings › Integrations › Finanças (AT)**: enter the Portal sub-user
+(`NIF/n`) and its password, choose _AT's test service_ as the mode, and press **Check**.
+`/admin`'s _AT certificate_ check says whether the files read, and warns 30 days before the
+certificate's 12 months run out.
 
 ## Google OAuth
 
