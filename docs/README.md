@@ -34,8 +34,7 @@ archived; `git log --diff-filter=D --name-only` finds them.
 
 - [Email retry logic](EMAIL_RETRY_LOGIC.md)
 
-Bank movements — CSV import, and a live PSD2 feed through Enable Banking when the instance is
-configured for one — are documented in [truenas.md](truenas.md#bank-movements) and `CLAUDE.md`,
+Bank movements, which arrive through a live PSD2 feed from Enable Banking, are documented in [truenas.md](truenas.md#bank-movements) and `CLAUDE.md`,
 because setup is deployment-shaped rather than integration-shaped.
 
 ## UX and accessibility

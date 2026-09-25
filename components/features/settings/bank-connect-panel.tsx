@@ -86,8 +86,8 @@ interface Props {
  *
  * Everything here is gated on `providersConfigured`, which answers two questions at once now
  * that no adapter ships: whether this build contains a provider at all, and whether this instance
- * has credentials for it. Either way the answer is the CSV-only view rather than a button that
- * can only fail.
+ * has credentials for it. Either way the answer is how to configure one rather than a button
+ * that can only fail.
  */
 export function BankConnectPanel({ connections, providersConfigured, loading, onRefresh }: Props) {
   const t = useTranslations("settings.panel");
@@ -314,7 +314,7 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
             {t("bankNoProviderTitle")}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">{t("bankNoProviderBody")}</p>
-          <p className="mt-2 text-sm text-muted-foreground">{t("bankNoProviderCsv")}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{t("bankNoProviderManual")}</p>
         </div>
       )}
 

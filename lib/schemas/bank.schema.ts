@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** One normalized movement row — the shape lib/services/bank/csv.ts produces. */
+/** One bank movement — a `BankRow` (lib/services/bank/rows.ts). */
 export const bankRowSchema = z.object({
   bookingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "bookingDate must be YYYY-MM-DD"),
   valueDate: z
@@ -16,15 +16,10 @@ export const bankRowSchema = z.object({
   reference: z.string().max(500).optional(),
 });
 
-/** POST /api/bank/import — raw CSV text or pre-parsed rows (manual entry). */
-export const bankImportSchema = z
-  .object({
-    csv: z.string().max(1_000_000).optional(),
-    rows: z.array(bankRowSchema).max(1000).optional(),
-  })
-  .refine((body) => !!body.csv || (body.rows && body.rows.length > 0), {
-    message: "Provide csv text or rows",
-  });
+/** POST /api/debug/bank/movements — movements to import, in development and E2E only. */
+export const debugBankMovementsSchema = z.object({
+  rows: z.array(bankRowSchema).min(1).max(1000),
+});
 
 /** PUT /api/bank/transactions/[id] — inbox row actions. */
 export const bankTransactionActionSchema = z
@@ -36,7 +31,6 @@ export const bankTransactionActionSchema = z
     message: "reassign requires a leaseId",
   });
 
-export type BankImportInput = z.infer<typeof bankImportSchema>;
 export type BankTransactionActionInput = z.infer<typeof bankTransactionActionSchema>;
 
 /**

@@ -192,7 +192,7 @@ test("Critical Path: a bank movement becomes a filed receipt, and the audit trai
       needsReview: number;
     }>(
       request,
-      "/api/bank/import",
+      "/api/debug/bank/movements",
       {
         rows: [
           {
@@ -341,7 +341,7 @@ test("Critical Path: a bank movement becomes a filed receipt, and the audit trai
   await test.step("next month's transfer auto-matches on the IBAN it just learned", async () => {
     const summary = await postJson<{ imported: number; autoMatched: number }>(
       request,
-      "/api/bank/import",
+      "/api/debug/bank/movements",
       {
         rows: [
           {
@@ -367,7 +367,7 @@ test("Critical Path: a bank movement becomes a filed receipt, and the audit trai
   await test.step("re-importing the same statement changes nothing", async () => {
     const summary = await postJson<{ imported: number; duplicates: number; autoMatched: number }>(
       request,
-      "/api/bank/import",
+      "/api/debug/bank/movements",
       {
         rows: [
           {

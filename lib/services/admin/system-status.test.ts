@@ -64,12 +64,15 @@ describe("nothing simulated is ever reported as ok", () => {
     expect(pt.detail).toMatch(/simulated|nothing is transmitted/i);
   });
 
-  it("marks the bank simulated when no bank is connected", async () => {
+  // A live connection is the only way movements arrive since the CSV import went, so none
+  // connected is a warning with a remedy, not a simulation to note and ignore.
+  it("warns when no bank is connected, and says where to connect one", async () => {
     const { checks } = await getSystemStatus("user-1");
     const bank = find(checks, "bank")!;
 
-    expect(bank.severity).toBe("simulated");
+    expect(bank.severity).toBe("warning");
     expect(bank.detail).toMatch(/no bank is connected/i);
+    expect(bank.remedy).toMatch(/Settings › Integrations/);
   });
 
   it("escalates an unsupported connector mode to error, because the symptom is silence", async () => {
@@ -229,7 +232,7 @@ describe("the signed-in account resolves to a real user row", () => {
 
 /**
  * The distinction this section exists for: an instance whose credentials work but which can reach
- * no banks used to look exactly like one with no credentials at all — both reported "manual only"
+ * no banks used to look exactly like one with no credentials at all — both reported "no bank"
  * by `bankCheck`, which reads connections rather than capability. Diagnosing that in the field
  * took five exchanges and a shell session.
  *
@@ -251,13 +254,14 @@ describe("the bank provider check reports capability, not connections", () => {
     return provider;
   }
 
-  it("calls an instance with no credentials simulated, never a fault", async () => {
-    // CSV-only is a legitimate way to run this. Reporting it as a warning would train operators
-    // to ignore the row.
+  it("warns on an instance with no credentials, because no bank movement can arrive", async () => {
+    // It was `simulated` while CSV import made running without a provider a complete way to
+    // use the app. With the import gone, nothing reaches the ledger from a bank.
     const { checks } = await getSystemStatus("user-1");
     const check = find(checks, "bank_provider");
     expect(check?.state).toBe("not_configured");
-    expect(check?.severity).toBe("simulated");
+    expect(check?.severity).toBe("warning");
+    expect(check?.detail).toMatch(/can't be imported/);
   });
 
   it("warns when the credentials work but no bank is offered", async () => {
@@ -358,14 +362,15 @@ describe("the bank check reports what is actually connected", () => {
     expect(bank.detail).toMatch(/Banco BPI/);
   });
 
-  it("is simulated when only manual/CSV connections exist", async () => {
+  it("warns when only an older manual or CSV connection exists", async () => {
     prismaMock.bankConnection.findMany.mockResolvedValue([
       { provider: "manual", status: "active", lastSyncAt: null, institutionName: "Manual import" },
     ]);
 
     const { checks } = await getSystemStatus("user-1");
     const bank = find(checks, "bank")!;
-    expect(bank.severity).toBe("simulated");
+    expect(bank.severity).toBe("warning");
+    expect(bank.state).toBe("not_connected");
     expect(bank.detail).not.toMatch(/no live bank connection exists/i);
   });
 

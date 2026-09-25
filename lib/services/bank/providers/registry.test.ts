@@ -24,8 +24,8 @@ afterEach(() => {
 describe("the provider registry", () => {
   it("ships Enable Banking registered but not configured without credentials", () => {
     // Registration and configuration are different questions. The adapter is compiled in; an
-    // instance with no application id and key must still get the CSV-only view rather than a
-    // connect button whose only possible outcome is failure.
+    // instance with no application id and key must still get how to configure one rather than
+    // a connect button whose only possible outcome is failure.
     delete process.env.ENABLE_BANKING_APPLICATION_ID;
     delete process.env.ENABLE_BANKING_PRIVATE_KEY;
     expect(registeredProviders().map((p) => p.key)).toContain("enablebanking");
