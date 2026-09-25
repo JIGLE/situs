@@ -1094,9 +1094,10 @@
       "pdfFailed": "Não foi possível gerar o PDF. Tente novamente.",
       "deleteDialog": {
         "title": "Eliminar recibo",
-        "description": "Este recibo será removido definitivamente. Esta ação não pode ser anulada.",
+        "description": "O recibo é removido e o pagamento sai do registo de rendas, pelo que o mês que pagava volta a ficar por pagar. O movimento bancário de onde veio regressa a Finanças › Movimentos bancários. Esta ação não pode ser anulada.",
         "confirmLabel": "Eliminar recibo"
       },
+      "deleteFiled": "Este recibo foi submetido às Finanças e fica como registo dessa submissão. Para o anular, use o Portal das Finanças.",
       "pdf": {
         "heading": "RECIBO DE PAGAMENTO",
         "number": "Recibo n.º",

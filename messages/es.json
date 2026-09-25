@@ -1094,9 +1094,10 @@
       "pdfFailed": "No se ha podido generar el PDF. Inténtalo de nuevo.",
       "deleteDialog": {
         "title": "Eliminar recibo",
-        "description": "Este recibo se eliminará de forma permanente. Esta acción no se puede deshacer.",
+        "description": "El recibo se elimina y su pago sale del registro de rentas, así que el mes que pagaba vuelve a quedar pendiente. El movimiento bancario del que procede vuelve a Finanzas › Movimientos bancarios. Esta acción no se puede deshacer.",
         "confirmLabel": "Eliminar recibo"
       },
+      "deleteFiled": "Este recibo se presentó en Finanças, así que queda como registro de esa presentación. Para anularlo, hazlo en el Portal das Finanças.",
       "pdf": {
         "heading": "RECIBO DE PAGO",
         "number": "Recibo n.º",

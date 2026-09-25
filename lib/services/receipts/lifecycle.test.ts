@@ -5,6 +5,7 @@ import {
   TERMINAL_STATES,
   canTransition,
   evaluateTransition,
+  isFiled,
   isValidState,
   nextStates,
 } from "./lifecycle";
@@ -99,5 +100,21 @@ describe("ARCHIVE_ON_STATES / TERMINAL_STATES", () => {
 
   it("terminal states are exactly accepted and voided", () => {
     expect([...TERMINAL_STATES].sort()).toEqual(["accepted", "voided"]);
+  });
+});
+
+describe("isFiled", () => {
+  // The states in which Finanças has the receipt: Situs keeps these, and deleting one is refused.
+  it("is true only once the receipt has gone to Finanças", () => {
+    expect(isFiled("submitted")).toBe(true);
+    expect(isFiled("accepted")).toBe(true);
+    for (const s of ["draft", "review", "emitted", "rejected", "voided"]) {
+      expect(isFiled(s)).toBe(false);
+    }
+  });
+
+  it("is false for a receipt with no lifecycle, as rows older than it have", () => {
+    expect(isFiled(undefined)).toBe(false);
+    expect(isFiled(null)).toBe(false);
   });
 });
