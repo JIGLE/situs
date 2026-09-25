@@ -1,6 +1,7 @@
 import { PropertyType } from "@prisma/client";
 import { getPrismaClient } from "../database";
 import { assertOwnsRelations } from "../assert-owned";
+import { assertPropertyHasNoHistory } from "../history";
 import { Property } from "@/lib/types";
 
 export const propertyService = {
@@ -152,7 +153,9 @@ export const propertyService = {
     };
   },
 
+  /** Refused while the property has history (`lib/services/database/history.ts`). */
   async delete(userId: string, id: string): Promise<void> {
+    await assertPropertyHasNoHistory(userId, id);
     await getPrismaClient().property.delete({ where: { id, userId } });
   },
 };

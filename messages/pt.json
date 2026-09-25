@@ -612,6 +612,9 @@
       "notAllowed": "Não tem permissão para efetuar esta ação.",
       "notFound": "Esse registo já não existe. Pode ter sido eliminado.",
       "conflict": "Alguém alterou isto enquanto estava a editar. Recarregue e tente novamente.",
+      "tenantHasHistory": "Este inquilino tem um contrato ou pagamentos registados, por isso o Situs mantém-no nos seus registos. Termine o contrato em vez de o eliminar.",
+      "propertyHasHistory": "Este imóvel tem contratos, pagamentos ou despesas registados, por isso o Situs mantém-no para o seu histórico fiscal.",
+      "leaseHasHistory": "Há pagamentos registados neste contrato, por isso o Situs mantém-no nos seus registos. Termine o contrato em vez de o eliminar.",
       "tooMany": "Demasiados pedidos. Aguarde um momento e tente novamente.",
       "serverError": "O servidor teve um problema. Tente novamente dentro de momentos.",
       "securityTokenExpired": "O seu token de segurança expirou. Atualize a página e tente novamente."

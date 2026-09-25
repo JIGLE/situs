@@ -136,3 +136,23 @@ describe("apiFetch CSRF header", () => {
     await expect(apiFetch("/api/things", null, "POST", {})).rejects.toMatchObject({ status: 403 });
   });
 });
+
+describe("apiFetch: a refused request", () => {
+  it("keeps the route's reason on the error, so the screen can say why", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        statusText: "Conflict",
+        json: async () => ({ error: "kept", reason: "tenant_has_history" }),
+      }),
+    );
+
+    await expect(apiFetch("/api/tenants/t-1", "tok", "DELETE")).rejects.toMatchObject({
+      status: 409,
+      reason: "tenant_has_history",
+    });
+  });
+});

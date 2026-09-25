@@ -21,10 +21,11 @@ import { z } from "zod";
 import ptMessages from "@/messages/pt.json";
 
 /** Shapes an error the way `apiFetch` does when a response comes back not-ok. */
-function apiError(message: string, status?: number, field?: string): Error {
-  const err = new Error(message) as Error & { status?: number; field?: string };
+function apiError(message: string, status?: number, field?: string, reason?: string): Error {
+  const err = new Error(message) as Error & { status?: number; field?: string; reason?: string };
   if (status !== undefined) err.status = status;
   if (field !== undefined) err.field = field;
+  if (reason !== undefined) err.reason = reason;
   return err;
 }
 
@@ -87,6 +88,21 @@ describe("useApiError", () => {
 
   it("falls back to generic for a non-Error value", () => {
     expect(messageFor("just a string")).toBe(api.generic);
+  });
+
+  // A 409 says only that something conflicted. Deleting a tenant with a lease is refused with a
+  // reason, and "someone else changed this" would send the owner looking for someone.
+  it("says why a refusal refused, from the reason the route gave", () => {
+    const kept = (reason: string) => messageFor(apiError("kept", 409, undefined, reason));
+    expect(kept("tenant_has_history")).toBe(api.tenantHasHistory);
+    expect(kept("property_has_history")).toBe(api.propertyHasHistory);
+    expect(kept("lease_has_history")).toBe(api.leaseHasHistory);
+  });
+
+  it("falls back to the status for a reason it has no sentence for", () => {
+    expect(messageFor(apiError("x", 409, undefined, "something_new"))).toBe(api.conflict);
+    // Not an inherited property either: a Map lookup, not an object's.
+    expect(messageFor(apiError("x", 409, undefined, "constructor"))).toBe(api.conflict);
   });
 });
 

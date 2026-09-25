@@ -37,6 +37,17 @@ const STATUS_KEY: Partial<
   429: "tooMany",
 };
 
+/**
+ * A refusal's `reason` → the key under `errors.api` that explains it. A status says a request
+ * conflicted; the reason says with what, which is the part a person can act on. A Map, so a reason
+ * such as "constructor" finds nothing rather than an inherited property.
+ */
+const REASON_KEY = new Map<string, "tenantHasHistory" | "propertyHasHistory" | "leaseHasHistory">([
+  ["tenant_has_history", "tenantHasHistory"],
+  ["property_has_history", "propertyHasHistory"],
+  ["lease_has_history", "leaseHasHistory"],
+]);
+
 type FormsCatalogue = (typeof en)["forms"];
 /** A field with its own label under `forms` (not a nested group such as a sub-form's keys). */
 type FormFieldKey = {
@@ -51,7 +62,7 @@ function isFormField(
   return forms !== undefined && typeof forms[field] === "string";
 }
 
-type ApiErrorShape = Error & { status?: number; field?: string };
+type ApiErrorShape = Error & { status?: number; field?: string; reason?: string };
 
 /**
  * Build an error that remembers which HTTP status produced it.
@@ -96,6 +107,9 @@ export function useApiError(): (err: unknown) => string {
       // No status means the request never got an answer: a dropped connection, DNS, an aborted
       // fetch. "Something went wrong" is true but useless; naming the connection is actionable.
       if (api && status === undefined) return t("offline");
+
+      const reasonKey = api?.reason ? REASON_KEY.get(api.reason) : undefined;
+      if (reasonKey) return t(reasonKey);
 
       if (status === 400 || status === 422) {
         const field = api?.field;

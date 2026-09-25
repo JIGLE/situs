@@ -1,6 +1,7 @@
 import { getPrismaClient } from "../database";
 import { Tenant } from "@/lib/types";
 import { assertOwnsRelations } from "../assert-owned";
+import { assertTenantHasNoHistory } from "../history";
 
 export const tenantService = {
   async getAll(userId: string): Promise<Tenant[]> {
@@ -138,7 +139,9 @@ export const tenantService = {
     };
   },
 
+  /** Refused while the tenant has history (`lib/services/database/history.ts`). */
   async delete(userId: string, id: string): Promise<void> {
+    await assertTenantHasNoHistory(userId, id);
     await getPrismaClient().tenant.delete({ where: { id, userId } });
   },
 };
