@@ -43,6 +43,10 @@ test("Critical Path: a bank movement lands in the inbox", async ({ page, request
   await page.goto("/financials?tab=bank");
   await settle(page);
 
-  await expect(page.getByText(reference).first()).toBeVisible({ timeout: 10000 });
+  // The inbox renders a table from `md` up and cards below it, both in the DOM with one hidden, so
+  // the first match can be the hidden copy. Only a visible one counts.
+  await expect(page.getByText(reference).filter({ visible: true }).first()).toBeVisible({
+    timeout: 10000,
+  });
   await expect(page.getByRole("button", { name: /import csv/i })).toHaveCount(0);
 });
