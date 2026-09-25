@@ -149,6 +149,7 @@ export async function startFakeAt(pki: TestPki, options: FakeAtOptions): Promise
       return { code: 18 };
     }
     const expected = createHash("sha1")
+      // codeql[js/insufficient-password-hash] The stand-in checks AT's protocol digest (manual §4.1) as AT does; nothing is stored.
       .update(Buffer.concat([key, Buffer.from(created), Buffer.from(password)]))
       .digest();
     if (!digest.equals(expected)) return { code: 18 };

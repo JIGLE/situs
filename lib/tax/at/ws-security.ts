@@ -81,6 +81,7 @@ export function buildUsernameToken(login: AtLogin, options: TokenOptions): Usern
   const created = createdTimestamp(options.now ?? new Date());
   const password = Buffer.from(login.password, "utf8");
   const digest = createHash("sha1")
+    // codeql[js/insufficient-password-hash, js/weak-cryptographic-algorithm] AT's protocol (manual §4.1) fixes this digest as SHA-1 of key, Created and password. It is not a stored password hash: it travels only AES-encrypted under a key used once, to AT, over mutual TLS.
     .update(Buffer.concat([key, Buffer.from(created, "utf8"), password]))
     .digest();
 
