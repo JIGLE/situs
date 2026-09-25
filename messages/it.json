@@ -713,7 +713,6 @@
       "receipts": "Ricevute",
       "rentMatrix": "Matrice canoni",
       "bank": "Movimenti bancari",
-      "rentRoll": "Occupazione e canone",
       "tax": "Riepilogo fiscale"
     },
     "overdueRent": "Canone scaduto",
@@ -1191,7 +1190,16 @@
         "thanks": "Grazie per il pagamento."
       },
       "pdfDownload": "Scarica PDF",
-      "pdfGenerating": "Preparazione…"
+      "pdfGenerating": "Preparazione…",
+      "lifecycle": {
+        "draft": "Bozza",
+        "review": "In revisione",
+        "emitted": "Emessa",
+        "submitted": "Inviata",
+        "accepted": "Accettata",
+        "rejected": "Rifiutata",
+        "voided": "Annullata"
+      }
     },
     "isRecurring": "Spesa ricorrente",
     "recurrenceRule": "Ripeti",
@@ -1206,14 +1214,6 @@
     "recurrenceEndPlaceholder": "Lascia vuoto per non terminare mai",
     "expense": "Spesa",
     "paymentReceived": "Pagamento ricevuto",
-    "rentRoll": {
-      "heading": "Prospetto canoni",
-      "empty": "Nessun contratto attivo in questo periodo.",
-      "expected": "Previsto",
-      "received": "Ricevuto",
-      "delta": "Differenza",
-      "totals": "Totali"
-    },
     "bank": {
       "allMovements": "Tutti",
       "needsReview": "Da rivedere",
@@ -1295,6 +1295,33 @@
       "submit": "Crea spesa",
       "toastCreated": "Spesa registrata",
       "toastUpdated": "Spesa aggiornata"
+    },
+    "matrix": {
+      "cellLabel": "{month}: {status}, pagati {paid} su {due}",
+      "yearTotal": "Anno",
+      "received": "Incassato",
+      "ofExpected": "su {amount}",
+      "empty": "Nessun mese di canone nel {year}. Ogni contratto crea i suoi mesi quando viene registrato.",
+      "noPeriod": "Questo contratto non ha un mese di canone qui: non era ancora iniziato o era già finito.",
+      "due": "Canone",
+      "paid": "Pagato",
+      "owed": "Da pagare",
+      "payments": "Pagamenti",
+      "noPayments": "Ancora nulla pagato per questo mese.",
+      "coversOlderFirst": "Un pagamento registrato ora copre prima {month}, il mese più vecchio ancora da pagare.",
+      "recordPayment": "Registra pagamento"
+    },
+    "recordPayment": {
+      "title": "Registra pagamento",
+      "description": "Denaro ricevuto senza movimento bancario, come i contanti. Copre prima il mese più vecchio ancora da pagare del contratto.",
+      "lease": "Contratto",
+      "chooseLease": "Scegli il contratto",
+      "leaseRequired": "Scegli il contratto a cui appartiene questo pagamento.",
+      "amount": "Importo (€)",
+      "amountRequired": "Inserisci un importo maggiore di zero.",
+      "dateRequired": "Inserisci la data in cui è arrivato il denaro.",
+      "submit": "Registra pagamento",
+      "recorded": "Pagamento registrato."
     }
   },
   "propertyDetail": {

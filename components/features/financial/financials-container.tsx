@@ -13,16 +13,16 @@ import { useCurrency } from "@/lib/contexts/currency-context";
 import { getActiveLease } from "@/lib/utils/lease-helpers";
 import { cn } from "@/lib/utils/utils";
 import { ReceiptsView } from "./receipts-view";
-import { RentRollView } from "./rent-roll-view";
 import { YearlyRentMatrix } from "./yearly-rent-matrix";
 import { BankMovementsInbox } from "./bank-movements-inbox";
 import { ReceiptAutomationQueue } from "./receipt-automation-queue";
 import { TaxConnectorDashboard } from "./tax-connector-dashboard";
 import { FinancialsView } from "./financials-view";
-import { BadgeEuro, FileText, Grid3X3, Landmark, Plus, Receipt } from "lucide-react";
+import { RecordPaymentDialog } from "./record-payment-dialog";
+import { FileText, Grid3X3, Landmark, Plus, Receipt } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-const PAYMENT_TABS = ["receipts", "rent-matrix", "bank", "rent-roll", "tax"] as const;
+const PAYMENT_TABS = ["receipts", "rent-matrix", "bank", "tax"] as const;
 type PaymentTab = (typeof PAYMENT_TABS)[number];
 
 function isPaymentTab(value: string | null): value is PaymentTab {
@@ -44,13 +44,11 @@ export function FinancialsContainer() {
   // Held here rather than in the inbox: Radix unmounts an inactive tab, and the Bank tab's count
   // has to show while another tab is open.
   const { summary: bankSummary, refresh: refreshBankSummary } = useBankInboxSummary();
-  // `ReceiptsView` (which owns the record-payment dialog) only mounts while the Receipts
-  // tab is the active TabsContent — Radix unmounts inactive tab panels by default. The
-  // header "Record payment" button used to poke a ref, which silently no-op'd whenever
-  // another tab (e.g. the default rent matrix) was active. Instead: switch to
-  // the Receipts tab and raise a signal that `ReceiptsView` opens itself from — robust to
-  // the tab-mount + `router.replace` re-render that `setActiveTab` triggers.
-  const [pendingRecordPayment, setPendingRecordPayment] = useState(() => recordPaymentLink);
+  // Registar pagamento opens where the owner is. The form used to live in the Receipts tab, so
+  // the header button switched tabs first, and a link carrying `?action=record-payment` did too.
+  const [recordingPayment, setRecordingPayment] = useState(() => recordPaymentLink);
+  // Bumped when a payment is recorded here, so the rent matrix reads the ledger again.
+  const [ledgerVersion, setLedgerVersion] = useState(0);
 
   // Links into Finance carry two one-shot parameters: `?tab=` picks a tab, and
   // `?action=record-payment` opens the payment form. A link is followed once, when it arrives,
@@ -135,7 +133,6 @@ export function FinancialsContainer() {
       icon: Landmark,
       badge: bankSummary?.toReview || undefined,
     },
-    { value: "rent-roll", label: t("tabs.rentRoll"), icon: BadgeEuro },
     { value: "tax", label: t("tabs.tax"), icon: FileText },
   ];
   // A tab stored before it was removed (localStorage, a `?view=` bookmark) would otherwise
@@ -161,13 +158,7 @@ export function FinancialsContainer() {
               { key: "status", label: t("colStatus") },
             ]}
           />
-          <Button
-            onClick={() => {
-              setPendingRecordPayment(true);
-              setActiveTab("receipts");
-            }}
-            className="gap-2"
-          >
+          <Button onClick={() => setRecordingPayment(true)} className="gap-2">
             <Plus className="h-4 w-4" />
             {t("recordPayment")}
           </Button>
@@ -269,21 +260,16 @@ export function FinancialsContainer() {
           <ReceiptsView
             tenantId={tenantId}
             propertyId={propertyId}
-            openDialogSignal={pendingRecordPayment}
-            onDialogOpened={() => setPendingRecordPayment(false)}
+            onRecordPayment={() => setRecordingPayment(true)}
           />
         </TabsContent>
 
         <TabsContent value="rent-matrix" className="mt-0">
-          <YearlyRentMatrix />
+          <YearlyRentMatrix ledgerVersion={ledgerVersion} />
         </TabsContent>
 
         <TabsContent value="bank" className="mt-0">
           <BankMovementsInbox summary={bankSummary} onChanged={refreshBankSummary} />
-        </TabsContent>
-
-        <TabsContent value="rent-roll" className="mt-0">
-          <RentRollView />
         </TabsContent>
 
         <TabsContent value="tax" className="mt-0 space-y-4">
@@ -291,6 +277,13 @@ export function FinancialsContainer() {
           <FinancialsView />
         </TabsContent>
       </Tabs>
+
+      <RecordPaymentDialog
+        open={recordingPayment}
+        onOpenChange={setRecordingPayment}
+        preset={{ tenantId, propertyId }}
+        onRecorded={() => setLedgerVersion((v) => v + 1)}
+      />
     </div>
   );
 }

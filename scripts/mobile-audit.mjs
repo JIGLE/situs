@@ -220,6 +220,12 @@ const SURFACES = [
   { id: "financials", path: "/financials" },
   { id: "financials-bank", path: "/financials?tab=bank" },
   { id: "financials-tax", path: "/financials?tab=tax" },
+  // A lease's month in the rent matrix, opened by its address: `?month=<leaseId>:<yyyy-mm>`.
+  {
+    id: "financials-month",
+    path: "/financials?tab=rent-matrix&month={leaseId}:{thisMonth}",
+    overlay: true,
+  },
   { id: "leases", path: "/leases" },
   { id: "detail-lease", path: "/leases?detail=lease:{leaseId}", overlay: true },
   { id: "buildings", path: "/buildings" },
@@ -676,6 +682,13 @@ async function login(page) {
   await page.waitForURL((url) => !url.pathname.startsWith("/auth/"), { timeout: 20000 });
 }
 
+/**
+ * Placeholders that name no record, filled in beside the ids. They stay out of `resolveIds`, whose
+ * "no record ids at all" check would never fire if one of its values were always set. The skip
+ * check reads a path's first placeholder, so a path starts with a record's.
+ */
+const dateTokens = () => ({ thisMonth: new Date().toISOString().slice(0, 7) });
+
 /** Pull real record ids so the `?modal=` overlays are measured with genuine content. */
 async function resolveIds(page) {
   // Every branch here used to return a bare `null`, so a 500 from an endpoint and an
@@ -734,7 +747,8 @@ async function auditSurface(context, surface, theme, ids) {
     if (r.status() === 429) rateLimited++;
   });
 
-  const path = surface.path.replace(/\{(\w+)\}/g, (_m, key) => ids[key] ?? "");
+  const tokens = { ...ids, ...dateTokens() };
+  const path = surface.path.replace(/\{(\w+)\}/g, (_m, key) => tokens[key] ?? "");
   const url = `${BASE}${path}`;
 
   const result = {

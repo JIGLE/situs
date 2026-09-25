@@ -713,7 +713,6 @@
       "receipts": "Receipts",
       "rentMatrix": "Rent matrix",
       "bank": "Bank movements",
-      "rentRoll": "Occupancy & rent",
       "tax": "Tax summary"
     },
     "overdueRent": "Overdue rent",
@@ -1191,7 +1190,16 @@
         "thanks": "Thank you for your payment."
       },
       "pdfDownload": "Download PDF",
-      "pdfGenerating": "Preparing…"
+      "pdfGenerating": "Preparing…",
+      "lifecycle": {
+        "draft": "Draft",
+        "review": "In review",
+        "emitted": "Issued",
+        "submitted": "Submitted",
+        "accepted": "Accepted",
+        "rejected": "Rejected",
+        "voided": "Voided"
+      }
     },
     "isRecurring": "Repeating expense",
     "recurrenceRule": "Repeat",
@@ -1206,14 +1214,6 @@
     "recurrenceEndPlaceholder": "Leave blank for never",
     "expense": "Expense",
     "paymentReceived": "Payment received",
-    "rentRoll": {
-      "heading": "Rent Roll",
-      "empty": "No active leases for this period.",
-      "expected": "Expected",
-      "received": "Received",
-      "delta": "Delta",
-      "totals": "Totals"
-    },
     "bank": {
       "allMovements": "All movements",
       "needsReview": "Needs review",
@@ -1295,6 +1295,33 @@
       "submit": "Create Expense",
       "toastCreated": "Expense recorded",
       "toastUpdated": "Expense updated"
+    },
+    "matrix": {
+      "cellLabel": "{month}: {status}, {paid} of {due} paid",
+      "yearTotal": "Year",
+      "received": "Received",
+      "ofExpected": "of {amount}",
+      "empty": "No rent months in {year}. A lease creates its months when it is added.",
+      "noPeriod": "This lease has no rent month here: it had not started yet, or had already ended.",
+      "due": "Rent",
+      "paid": "Paid",
+      "owed": "Owed",
+      "payments": "Payments",
+      "noPayments": "Nothing paid towards this month yet.",
+      "coversOlderFirst": "A payment recorded now settles {month} first: the oldest month still owed.",
+      "recordPayment": "Record payment"
+    },
+    "recordPayment": {
+      "title": "Record payment",
+      "description": "Money received without a bank movement, such as cash. It settles the lease's oldest unpaid month first.",
+      "lease": "Lease",
+      "chooseLease": "Choose the lease",
+      "leaseRequired": "Choose the lease this payment belongs to.",
+      "amount": "Amount (€)",
+      "amountRequired": "Enter an amount above zero.",
+      "dateRequired": "Enter the date the money arrived.",
+      "submit": "Record payment",
+      "recorded": "Payment recorded."
     }
   },
   "propertyDetail": {

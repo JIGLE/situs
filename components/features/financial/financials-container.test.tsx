@@ -23,7 +23,6 @@ vi.mock("@/lib/contexts/app-context", () => ({
 }));
 
 vi.mock("./receipts-view", () => ({ ReceiptsView: () => <p>receipts panel</p> }));
-vi.mock("./rent-roll-view", () => ({ RentRollView: () => <p>rent roll panel</p> }));
 vi.mock("./yearly-rent-matrix", () => ({ YearlyRentMatrix: () => <p>rent matrix panel</p> }));
 vi.mock("./bank-movements-inbox", () => ({ BankMovementsInbox: () => <p>bank panel</p> }));
 vi.mock("./receipt-automation-queue", () => ({ ReceiptAutomationQueue: () => null }));
@@ -58,6 +57,27 @@ describe("FinancialsContainer", () => {
     render(<FinancialsContainer />);
 
     expect(await screen.findByText("rent matrix panel")).toBeInTheDocument();
+  });
+
+  it("opens the rent matrix for a stored tab that was folded into it", async () => {
+    // "Ocupação e renda" became the matrix's totals row; an owner who last left it open lands
+    // on the matrix rather than on a blank page.
+    localStorage.setItem("tab-payments", "rent-roll");
+
+    render(<FinancialsContainer />);
+
+    expect(await screen.findByText("rent matrix panel")).toBeInTheDocument();
+  });
+
+  it("opens Record payment where the owner is, without changing tab", async () => {
+    const user = userEvent.setup();
+    render(<FinancialsContainer />);
+    expect(await screen.findByText("rent matrix panel")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Record payment" }));
+
+    expect(await screen.findByRole("dialog", { name: "Record payment" })).toBeInTheDocument();
+    expect(screen.getByText("rent matrix panel")).toBeInTheDocument();
   });
 
   it("still restores a stored tab that exists", async () => {
