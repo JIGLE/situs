@@ -61,6 +61,7 @@ export type AuditAction =
   | "CONFIRM_MATCH"
   | "OVERRIDE_MATCH"
   | "IGNORE_TRANSACTION"
+  | "RESTORE_TRANSACTION"
   | "APPLY_RECONCILIATION_RULE"
   // Live bank connection (PSD2 account information)
   | "BANK_CONNECTION_CREATED"

@@ -52,6 +52,7 @@ export const AUDIT_ACTION_KEY = {
   CONFIRM_MATCH: "confirmMatch",
   OVERRIDE_MATCH: "overrideMatch",
   IGNORE_TRANSACTION: "ignoreTransaction",
+  RESTORE_TRANSACTION: "restoreTransaction",
   APPLY_RECONCILIATION_RULE: "applyReconciliationRule",
   BANK_CONNECTION_CREATED: "bankConnectionCreated",
   BANK_CONNECTION_DELETED: "bankConnectionDeleted",

@@ -16,7 +16,14 @@ const INBOX_STATUSES = [
   "duplicate",
 ] as const;
 
-// GET /api/bank/transactions?status=needs_review — the movements inbox.
+/** Money in (`in`) or money out (`out`, which includes reversals). Anything else: both. */
+function directionFilter(direction: string | null) {
+  if (direction === "in") return { amount: { gt: 0 } };
+  if (direction === "out") return { amount: { lte: 0 } };
+  return {};
+}
+
+// GET /api/bank/transactions?status=needs_review&direction=in — the movements inbox.
 async function handleGet(request: NextRequest): Promise<Response> {
   const authResult = await requireOwnerAccess(request);
   if (authResult instanceof Response) return authResult;
@@ -28,7 +35,11 @@ async function handleGet(request: NextRequest): Promise<Response> {
 
   const prisma = getPrismaClient();
   const transactions = await prisma.bankTransaction.findMany({
-    where: { userId: scopeUserId, ...(status ? { status } : {}) },
+    where: {
+      userId: scopeUserId,
+      ...(status ? { status } : {}),
+      ...directionFilter(url.searchParams.get("direction")),
+    },
     orderBy: [{ bookingDate: "desc" }, { createdAt: "desc" }],
     take: 200,
     select: {

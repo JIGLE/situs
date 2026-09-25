@@ -214,7 +214,10 @@
       "bankNoProviderBody": "This instance has no Enable Banking credentials, so movements cannot be imported automatically. Set ENABLE_BANKING_APPLICATION_ID and ENABLE_BANKING_PRIVATE_KEY_FILE pointing at the mounted .pem, then restart.",
       "bankNoProviderManual": "Until then no bank movements arrive. A payment can still be recorded by hand, in Finance › Receipts.",
       "systemStatusMovedHelp": "Instance health moved to the admin area, which is separate from the app.",
-      "openAdmin": "Open admin"
+      "openAdmin": "Open admin",
+      "bankConsentUntil": "Consent valid until {date}",
+      "bankConsentEnding": "Consent ends {date}: reconnect before then to keep syncing",
+      "bankConsentEnded": "Consent ended {date}"
     },
     "at": {
       "title": "Finanças (AT)",
@@ -540,7 +543,8 @@
     "streakMonths": "{count} months in a row with rent fully collected",
     "oneItemNeedsAttention": "1 item needs your attention",
     "itemsNeedAttention": "{count} items need your attention",
-    "setupComplete": "Setup complete"
+    "setupComplete": "Setup complete",
+    "bankReviewAlert": "{count, plural, one {# bank movement to review} other {# bank movements to review}}"
   },
   "onboarding": {
     "gettingStarted": "Getting Started",
@@ -683,6 +687,10 @@
       "atCredentialsMissing": "Save the AT sub-user and its password first.",
       "atCredentialsUnreadable": "The saved AT password can no longer be read, because the encryption key has changed. Enter it again.",
       "atTestModeRequired": "Switch the connection to AT's test service first.",
+      "bankOutflowNotRent": "Money going out can't be confirmed as rent.",
+      "bankLeaseRequired": "Choose the contract this payment belongs to, with Assign.",
+      "bankMovementHasReceipt": "This movement already paid a receipt. Delete that receipt first to change it.",
+      "bankMovementNotIgnored": "Only an ignored movement can be restored.",
       "tooMany": "Too many requests. Wait a moment and try again.",
       "serverError": "The server had a problem. Try again in a moment.",
       "securityTokenExpired": "Your security token expired. Refresh the page and try again."
@@ -1225,7 +1233,43 @@
       "reference": "Reference",
       "amount": "Amount",
       "match": "Match",
-      "filterStatus": "Filter movements by status"
+      "filterStatus": "Filter movements by status",
+      "outgoing": "Money out",
+      "restore": "Restore",
+      "actions": "Actions",
+      "emptyReview": "Nothing waiting for review. New movements arrive with each sync.",
+      "status": {
+        "needsReview": "Needs review",
+        "autoMatched": "Matched automatically",
+        "confirmed": "Confirmed",
+        "ignored": "Ignored",
+        "imported": "Imported",
+        "duplicate": "Duplicate"
+      },
+      "signals": {
+        "ibanMatch": "Known IBAN",
+        "nameMatch": "Name matches",
+        "amountExact": "Same as the rent",
+        "amountMultiple": "Several months' rent",
+        "amountRemainder": "What is still owed",
+        "referenceHit": "Reference matches",
+        "possibleDuplicate": "Possible duplicate",
+        "negativeAmount": "Money out",
+        "ambiguousCandidates": "More than one contract fits",
+        "testConnectionNotAllocated": "Test connection: not allocated",
+        "rule": "Rule: {name}",
+        "referenceConflict": "The reference names {reference}; the oldest unpaid month is {expected}"
+      },
+      "toast": {
+        "confirmed": "{tenant}'s payment confirmed: a receipt was created.",
+        "ignored": "Movement ignored. It stays under Ignored.",
+        "restored": "Movement back under Needs review."
+      },
+      "sync": {
+        "noBank": "No bank connected. Movements arrive from a bank connected in Settings › Integrations.",
+        "reconnect": "Reconnect in Settings",
+        "done": "Synced: {imported, plural, =0 {no new movements} one {# new movement} other {# new movements}}."
+      }
     },
     "timeRange": "Time range",
     "filterReceiptStatus": "Filter receipts by status",
@@ -1739,6 +1783,7 @@
     "confirmMatch": "Match confirmed",
     "overrideMatch": "Match reassigned",
     "ignoreTransaction": "Movement ignored",
+    "restoreTransaction": "Movement back to review",
     "applyReconciliationRule": "Reconciliation rule applied",
     "bankConnectionCreated": "Bank connected",
     "bankConnectionDeleted": "Test bank connection deleted",

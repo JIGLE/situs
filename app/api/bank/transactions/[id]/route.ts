@@ -13,7 +13,7 @@ import { applyTransactionAction } from "@/lib/services/bank/import";
 
 export const runtime = "nodejs";
 
-// PUT /api/bank/transactions/[id] — confirm | reassign | ignore a movement.
+// PUT /api/bank/transactions/[id] — confirm | reassign | ignore | restore a movement.
 async function handlePut(
   request: NextRequest,
   context?: { params?: Record<string, string> | Promise<Record<string, string>> },
@@ -31,12 +31,11 @@ async function handlePut(
 
   const body = parseBody(await request.json(), bankTransactionActionSchema);
 
-  try {
-    const result = await applyTransactionAction(scopeUserId, id, body.action, body.leaseId);
-    return createSuccessResponse(result);
-  } catch (error) {
-    return createErrorResponse(error as Error, 400, request);
-  }
+  // The service refuses with typed errors (404, or 409 with a `reason`), which
+  // `withErrorHandler` answers as themselves. Catching them here and answering 400 turned
+  // every refusal into "Internal server error", and the inbox into "no connection".
+  const result = await applyTransactionAction(scopeUserId, id, body.action, body.leaseId);
+  return createSuccessResponse(result);
 }
 
 export const PUT = withErrorHandler(withRateLimit(handlePut));

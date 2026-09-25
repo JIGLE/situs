@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Landmark, Layers, ScanLine } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AtConnectionPanel } from "./at-connection-panel";
-import { BankConnectPanel, type BankConnectionRow } from "./bank-connect-panel";
+import { useBankConnections } from "@/lib/hooks/use-bank-connections";
+import { BankConnectPanel } from "./bank-connect-panel";
 
 /**
  * The instance's outside connections: the bank, Finanças, and document classification. Each card
@@ -15,33 +15,7 @@ import { BankConnectPanel, type BankConnectionRow } from "./bank-connect-panel";
 export function SettingsIntegrations() {
   const t = useTranslations("settings.panel");
   const tAt = useTranslations("settings.at");
-  const [connections, setConnections] = useState<BankConnectionRow[]>([]);
-  const [providersConfigured, setProvidersConfigured] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  // Bumped after a connect or a sync so the list reflects what just happened.
-  const [reloadToken, setReloadToken] = useState(0);
-  const refresh = useCallback(() => setReloadToken((n) => n + 1), []);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const bankRes = await fetch("/api/bank/connections", { credentials: "include" });
-        if (!cancelled && bankRes.ok) {
-          const body = await bankRes.json();
-          setConnections(body?.data?.connections ?? []);
-          setProvidersConfigured(body?.data?.providersConfigured ?? []);
-        }
-      } catch {
-        // Best-effort status view — leave empty on failure
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [reloadToken]);
+  const { connections, providersConfigured, loading, reload } = useBankConnections();
 
   return (
     <div className="space-y-6">
@@ -58,7 +32,7 @@ export function SettingsIntegrations() {
             connections={connections}
             providersConfigured={providersConfigured}
             loading={loading}
-            onRefresh={refresh}
+            onRefresh={reload}
           />
         </CardContent>
       </Card>

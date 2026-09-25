@@ -21,18 +21,12 @@ import {
 } from "@/components/ui/select";
 import { apiFetch } from "@/lib/utils/api-client";
 import { useCsrf } from "@/lib/contexts/csrf-context";
-
-export interface BankConnectionRow {
-  id: string;
-  provider: string;
-  institutionName: string;
-  status: string;
-  lastSyncAt: string | null;
-  consentExpiresAt: string | null;
-  isProvider: boolean;
-  canSync: boolean;
-  remainingBudget: number | null;
-}
+import {
+  BANK_SYNC_PROBLEM_KEY,
+  useBankSync,
+  type BankConnectionRow,
+} from "@/lib/hooks/use-bank-connections";
+import { formatDate } from "@/lib/utils/format-date";
 
 interface Institution {
   id: string;
@@ -93,6 +87,7 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
   const t = useTranslations("settings.panel");
   const locale = useLocale();
   const { token: csrfToken } = useCsrf();
+  const syncNow = useBankSync();
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [country, setCountry] = useState<string>(COUNTRIES[0]);
@@ -200,35 +195,19 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
     setBusyId(connection.id);
     setError(null);
     setNotice(null);
-    try {
-      await apiFetch(`/api/bank/connections/${connection.id}/sync`, csrfToken, "POST", {});
+    const outcome = await syncNow(connection.id);
+    if (outcome.ok) {
       setNotice(t("bankSyncDone"));
       onRefresh();
-    } catch (err) {
-      // The budget and the expired consent are different problems with different remedies, so
-      // they must not collapse into one "try again" that is wrong for both.
-      const status = (err as { status?: number })?.status;
-      setError(
-        status === 429
-          ? t("bankSyncBudgetSpent")
-          : status === 409
-            ? t("bankSyncConsentExpired")
-            : t("bankSyncFailed"),
-      );
-    } finally {
-      setBusyId(null);
+    } else {
+      setError(t(BANK_SYNC_PROBLEM_KEY[outcome.problem]));
     }
+    setBusyId(null);
   }
 
   function statusLabel(status: string): string {
     const key = STATUS_LABEL_KEYS[status as keyof typeof STATUS_LABEL_KEYS];
     return key ? t(key) : status.replace(/_/g, " ");
-  }
-
-  function formatDate(value: string | null): string {
-    if (!value) return t("bankNeverSynced");
-    const d = new Date(value);
-    return isNaN(d.getTime()) ? t("bankNeverSynced") : d.toLocaleDateString(locale);
   }
 
   return (
@@ -263,11 +242,18 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
                   {c.institutionName}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {t("bankLastSync", { date: formatDate(c.lastSyncAt) })}
+                  {t("bankLastSync", {
+                    date: formatDate(c.lastSyncAt, locale, t("bankNeverSynced")),
+                  })}
                   {c.canSync && c.remainingBudget !== null
                     ? ` · ${t("bankSyncsLeft", { count: c.remainingBudget })}`
                     : ""}
                 </p>
+                {c.consentExpiresAt ? (
+                  <p className="text-xs text-muted-foreground">
+                    {t("bankConsentUntil", { date: formatDate(c.consentExpiresAt, locale) })}
+                  </p>
+                ) : null}
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
