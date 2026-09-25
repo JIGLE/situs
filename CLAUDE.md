@@ -104,6 +104,12 @@ e2e/                    # Playwright E2E tests
   Waterfall invariant: fill the oldest not-fully-allocated period first
   (`lib/services/allocation/engine.ts`, pure). `Tenant.paymentStatus` is derived from the ledger —
   never write it from an API route.
+- **Deletes keep money history**: a tenant, property or lease with leases, receipts, rent months,
+  live allocations, expenses or AT filings recorded against it is refused, since every one of those
+  cascades from it in the schema (`lib/services/database/history.ts`). The refusal is a
+  `ConflictError`: a 409 whose `reason` `apiFetch` keeps and `useApiError` turns into a sentence. A
+  lease with nothing paid against it can still be deleted; a tenancy otherwise stops by ending its
+  lease.
 - **Bank matching**: CSV/manual import or a live provider sync → fingerprint dedupe (idempotent) →
   fuzzy-duplicate check → reconciliation rules → weighted confidence scoring
   (`lib/services/matching/engine.ts`, pure). ≥0.85 auto-allocates via a draft `Receipt`

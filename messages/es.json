@@ -612,6 +612,9 @@
       "notAllowed": "No tiene permiso para realizar esta acción.",
       "notFound": "Ese registro ya no existe. Es posible que se haya eliminado.",
       "conflict": "Alguien ha modificado esto mientras editaba. Recargue e inténtelo de nuevo.",
+      "tenantHasHistory": "Este inquilino tiene un contrato o pagos registrados, así que Situs lo conserva en sus registros. Finalice el contrato en lugar de eliminarlo.",
+      "propertyHasHistory": "Esta propiedad tiene contratos, pagos o gastos registrados, así que Situs la conserva para su historial fiscal.",
+      "leaseHasHistory": "Hay pagos registrados en este contrato, así que Situs lo conserva en sus registros. Finalice el contrato en lugar de eliminarlo.",
       "tooMany": "Demasiadas solicitudes. Espere un momento e inténtelo de nuevo.",
       "serverError": "El servidor ha tenido un problema. Inténtelo de nuevo en unos momentos.",
       "securityTokenExpired": "Su token de seguridad ha caducado. Actualice la página e inténtelo de nuevo."

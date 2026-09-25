@@ -40,6 +40,23 @@ export class ForbiddenError extends Error {
   }
 }
 
+/**
+ * The request is valid, but what the record holds forbids it: 409.
+ *
+ * `reason` names the rule, and goes to the client in the envelope. `useApiError`
+ * (`lib/utils/api-error.ts`) turns the reasons it knows into a sentence in the user's language;
+ * the English `message` is a log, as every other error message here is.
+ */
+export class ConflictError extends Error {
+  constructor(
+    message: string,
+    public reason: string,
+  ) {
+    super(message);
+    this.name = "ConflictError";
+  }
+}
+
 export class DatabaseError extends Error {
   constructor(
     message: string,
@@ -119,6 +136,9 @@ export function createErrorResponse(
   } else if (error instanceof ForbiddenError) {
     message = error.message;
     status = 403;
+  } else if (error instanceof ConflictError) {
+    message = error.message;
+    status = 409;
   } else if (error instanceof DatabaseError) {
     message = "Database operation failed";
     status = 500;
@@ -128,6 +148,7 @@ export function createErrorResponse(
     JSON.stringify({
       error: message,
       ...(error instanceof ValidationError && error.field && { field: error.field }),
+      ...(error instanceof ConflictError && { reason: error.reason }),
     }),
     {
       status,

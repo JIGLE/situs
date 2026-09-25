@@ -612,6 +612,9 @@
       "notAllowed": "You don't have permission to do that.",
       "notFound": "That record no longer exists. It may have been deleted.",
       "conflict": "Someone else changed this while you were editing. Reload and try again.",
+      "tenantHasHistory": "This tenant has a lease or payments recorded, so Situs keeps them for your records. End the lease instead.",
+      "propertyHasHistory": "This property has leases, payments or expenses recorded, so Situs keeps it for your tax records.",
+      "leaseHasHistory": "Payments are recorded against this lease, so Situs keeps it for your records. End the lease instead.",
       "tooMany": "Too many requests. Wait a moment and try again.",
       "serverError": "The server had a problem. Try again in a moment.",
       "securityTokenExpired": "Your security token expired. Refresh the page and try again."

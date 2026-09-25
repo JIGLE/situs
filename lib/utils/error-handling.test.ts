@@ -9,6 +9,7 @@ import {
   ForbiddenError,
   DatabaseError,
   Logger,
+  ConflictError,
   createErrorResponse,
   createSuccessResponse,
   withErrorHandler,
@@ -167,6 +168,12 @@ describe("createErrorResponse", () => {
     const res = createErrorResponse(new ValidationError("bad"));
     const body = await parseBody(res);
     expect("field" in body).toBe(false);
+  });
+
+  it("ConflictError → 409, with its reason for the client to say", async () => {
+    const res = createErrorResponse(new ConflictError("kept", "tenant_has_history"), 500);
+    expect(res.status).toBe(409);
+    expect(await parseBody(res)).toEqual({ error: "kept", reason: "tenant_has_history" });
   });
 
   it("AuthenticationError → 401", async () => {
