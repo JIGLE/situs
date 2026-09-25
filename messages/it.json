@@ -1094,9 +1094,10 @@
       "pdfFailed": "Impossibile generare il PDF. Riprova.",
       "deleteDialog": {
         "title": "Elimina ricevuta",
-        "description": "Questa ricevuta sarà rimossa definitivamente. L'azione non può essere annullata.",
+        "description": "La ricevuta viene eliminata e il pagamento esce dal registro degli affitti, quindi il mese che pagava torna da pagare. Il movimento bancario da cui proviene torna in Finanza › Movimenti bancari. Questa azione non può essere annullata.",
         "confirmLabel": "Elimina ricevuta"
       },
+      "deleteFiled": "Questa ricevuta è stata inviata alle Finanças, quindi resta come registro di quell'invio. Per annullarla, usa il Portal das Finanças.",
       "pdf": {
         "heading": "RICEVUTA DI PAGAMENTO",
         "number": "Ricevuta n.",

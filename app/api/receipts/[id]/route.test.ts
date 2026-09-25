@@ -8,12 +8,14 @@ import { NextRequest } from "next/server";
  * `receiptService.create` has checked these since the ownership sweep; `update` never did.
  */
 
-const { prismaMock } = vi.hoisted(() => ({
+const { prismaMock, allocation } = vi.hoisted(() => ({
   prismaMock: {
-    receipt: { findUnique: vi.fn(), update: vi.fn() },
+    receipt: { findUnique: vi.fn(), findUniqueOrThrow: vi.fn(), update: vi.fn(), delete: vi.fn() },
     tenant: { findFirst: vi.fn() },
     property: { findFirst: vi.fn() },
+    $transaction: vi.fn(),
   },
+  allocation: { reverseAllocationsForReceipt: vi.fn() },
 }));
 
 vi.mock("@/lib/services/auth/auth-middleware", () => ({
@@ -22,8 +24,9 @@ vi.mock("@/lib/services/auth/auth-middleware", () => ({
   handleOptions: vi.fn(),
 }));
 vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prismaMock }));
+vi.mock("@/lib/services/allocation/service", () => allocation);
 
-import { PUT } from "./route";
+import { DELETE, PUT } from "./route";
 
 const stored = {
   id: "rec-1",
@@ -92,5 +95,88 @@ describe("PUT /api/receipts/[id]", () => {
 
     expect(res.status).toBe(200);
     expect(prismaMock.receipt.update.mock.calls[0][0].data.status).toBeUndefined();
+  });
+});
+
+/**
+ * `PaymentAllocation.receipt` is `onDelete: SetNull`, so deleting a receipt used to leave its
+ * allocations live: the month it paid still read paid, with no receipt behind it, and no alert
+ * chased it. The delete now reverses them first, in the same transaction, the way a void does.
+ */
+describe("DELETE /api/receipts/[id]", () => {
+  const calls: string[] = [];
+  const tx = {
+    bankTransaction: {
+      updateMany: vi.fn(async () => {
+        calls.push("movement back to the inbox");
+        return { count: 1 };
+      }),
+    },
+    receipt: {
+      delete: vi.fn(async () => {
+        calls.push("delete");
+      }),
+    },
+  };
+
+  const del = () =>
+    DELETE(new NextRequest("http://localhost:3000/api/receipts/rec-1", { method: "DELETE" }), {
+      params: Promise.resolve({ id: "rec-1" }),
+    });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    calls.length = 0;
+    prismaMock.receipt.findUnique.mockResolvedValue(stored);
+    prismaMock.receipt.findUniqueOrThrow.mockResolvedValue({ lifecycle: "emitted" });
+    prismaMock.$transaction.mockImplementation(async (fn: (client: typeof tx) => unknown) =>
+      fn(tx),
+    );
+    allocation.reverseAllocationsForReceipt.mockImplementation(async () => {
+      calls.push("reverse");
+      return 1;
+    });
+  });
+
+  it("takes the payment off the ledger before the receipt goes, in one transaction", async () => {
+    const res = await del();
+
+    expect(res.status).toBe(200);
+    // Joins the delete's transaction rather than opening its own.
+    expect(allocation.reverseAllocationsForReceipt).toHaveBeenCalledWith(
+      "rec-1",
+      "Receipt deleted",
+      tx,
+    );
+    expect(tx.bankTransaction.updateMany).toHaveBeenCalledWith({
+      where: { receiptId: "rec-1", userId: "user-1" },
+      data: { status: "needs_review" },
+    });
+    expect(tx.receipt.delete).toHaveBeenCalledWith({ where: { id: "rec-1", userId: "user-1" } });
+    // Reversal first: once the receipt is gone, its allocations no longer name it.
+    expect(calls).toEqual(["reverse", "movement back to the inbox", "delete"]);
+    expect(prismaMock.receipt.delete).not.toHaveBeenCalled();
+  });
+
+  it.each(["submitted", "accepted"])(
+    "refuses a receipt that is %s at Finanças, and changes nothing",
+    async (lifecycle) => {
+      prismaMock.receipt.findUniqueOrThrow.mockResolvedValue({ lifecycle });
+
+      const res = await del();
+
+      expect(res.status).toBe(409);
+      expect(prismaMock.$transaction).not.toHaveBeenCalled();
+      expect(allocation.reverseAllocationsForReceipt).not.toHaveBeenCalled();
+    },
+  );
+
+  it("answers 404 for a receipt the caller does not have", async () => {
+    prismaMock.receipt.findUnique.mockResolvedValue(null);
+
+    const res = await del();
+
+    expect(res.status).toBe(404);
+    expect(prismaMock.$transaction).not.toHaveBeenCalled();
   });
 });

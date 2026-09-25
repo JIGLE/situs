@@ -1094,9 +1094,10 @@
       "pdfFailed": "Couldn't generate the PDF. Try again.",
       "deleteDialog": {
         "title": "Delete receipt",
-        "description": "This receipt will be permanently removed. This action cannot be undone.",
+        "description": "The receipt is removed and its payment comes off the rent ledger, so the month it paid reads unpaid again. A bank movement it came from goes back to Finance › Bank movements. This can't be undone.",
         "confirmLabel": "Delete receipt"
       },
+      "deleteFiled": "This receipt was submitted to Finanças, so it stays as the record of that submission. To cancel it, void it in the Portal das Finanças.",
       "pdf": {
         "heading": "PAYMENT RECEIPT",
         "number": "Receipt #",

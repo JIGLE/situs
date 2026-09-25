@@ -1,1 +1,1 @@
-export { receiptService } from "./service";
+export { receiptService, ReceiptFiledError } from "./service";

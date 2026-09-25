@@ -5,7 +5,7 @@ import {
   createSuccessResponse,
   withErrorHandler,
 } from "@/lib/utils/error-handling";
-import { receiptService } from "@/lib/services/database/receipt";
+import { ReceiptFiledError, receiptService } from "@/lib/services/database/receipt";
 import { sanitizeForDatabase, sanitizeNumber } from "@/lib/utils/sanitize";
 import { z } from "zod";
 import { updateReceiptSchema } from "@/lib/schemas/receipt.schema";
@@ -119,6 +119,8 @@ async function handleDelete(
     await receiptService.delete(userId, id);
     return createSuccessResponse({ message: "Receipt deleted successfully" });
   } catch (error) {
+    // Filed at Finanças: it stays as the record of that submission, and only the Portal voids it.
+    if (error instanceof ReceiptFiledError) return createErrorResponse(error, 409, request);
     return createErrorResponse(error as Error, 500, request);
   }
 }

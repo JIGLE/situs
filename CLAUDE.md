@@ -123,7 +123,9 @@ e2e/                    # Playwright E2E tests
   the document state machine (`lib/services/receipts/lifecycle.ts`, pure): draft → review →
   emitted → submitted → accepted/rejected (rejected → review). Voiding is allowed from draft,
   review and emitted only. Reaching emitted/accepted archives a PDF `Document`; voiding
-  soft-reverses live `PaymentAllocation` rows.
+  soft-reverses live `PaymentAllocation` rows. Deleting a receipt reverses them too, in the delete's
+  own transaction (`receiptService.delete`), because `PaymentAllocation.receipt` is `SetNull`; a
+  `submitted` or `accepted` receipt cannot be deleted.
 - **Receipt archive**, the one surviving use of `Document`: the archive's `description` carries
   `situs-receipt-archive:<receiptId>` — a convention, not a foreign key, and the only link between
   a receipt and the proof of its filing. Resolve it through `findExistingArchive`

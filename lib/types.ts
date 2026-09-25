@@ -94,6 +94,11 @@ export interface Receipt {
   date: string;
   type: "rent" | "deposit" | "maintenance" | "other";
   status: "paid" | "pending";
+  /**
+   * The document state, a `ReceiptLifecycleState` stored as text
+   * (`lib/services/receipts/lifecycle.ts`); `status` is the money state.
+   */
+  lifecycle?: string;
   description?: string;
   createdAt: string;
   updatedAt: string;
