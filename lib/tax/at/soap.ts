@@ -18,6 +18,13 @@ export const SOAP_ENV_NS = "http://schemas.xmlsoap.org/soap/envelope/";
  */
 export const ARRENDAMENTO_NS = "http://at.gov.pt/arrendamento/";
 
+/** SOAP 1.1's SOAPAction per operation: empty until the WSDL names them, as many servers accept. */
+export const SOAP_ACTIONS = {
+  registarDadosContrato: "",
+  emitirRecibo: "",
+  obterRecibo: "",
+} as const;
+
 export function envelope(securityHeader: string, body: string): string {
   return (
     `<?xml version="1.0" encoding="UTF-8"?>` +
