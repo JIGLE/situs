@@ -29,12 +29,29 @@ test.describe("Dashboard", () => {
     await page.goto("/dashboard");
     await settle(page);
 
+    // On a phone Portfolio sits under "More": Leases holds its place in the bottom bar. Decided by
+    // the viewport, not by whether the link happens to be visible, so a missing link still fails.
+    if ((page.viewportSize()?.width ?? 1280) < 768) {
+      await page.getByRole("button", { name: /^more$/i }).click();
+    }
     const portfolioLink = page.getByRole("link", { name: /portfolio/i }).first();
     await expect(portfolioLink).toBeVisible();
     await portfolioLink.click();
 
     // Assert the destination, not the word that matched the link.
     await expect(page).toHaveURL((url) => url.pathname === "/portfolio");
+  });
+
+  // Leases was hidden from both layouts, so the screen where leases are created had no way in.
+  test("should navigate to Leases section", async ({ page }) => {
+    await page.goto("/dashboard");
+    await settle(page);
+
+    const leasesLink = page.getByRole("link", { name: "Leases", exact: true }).first();
+    await expect(leasesLink).toBeVisible();
+    await leasesLink.click();
+
+    await expect(page).toHaveURL((url) => url.pathname === "/leases");
   });
 
   test("should navigate to People section", async ({ page }) => {

@@ -3,7 +3,13 @@ import path from "node:path";
 
 import { describe, it, expect } from "vitest";
 
-import { canAccessPortalPath, normalizePortalPath } from "./access";
+import {
+  canAccessPortalPath,
+  getPortalNavigation,
+  getPrimaryMobileNavigation,
+  getSecondaryMobileNavigation,
+  normalizePortalPath,
+} from "./access";
 
 /**
  * `normalizePortalPath` used to take `segments[1]`, hardcoding the assumption that a language
@@ -138,5 +144,26 @@ describe("redirect-only routes survive the portal access guard", () => {
     // reachable, and it must name the page they actually go to.
     expect(normalizePortalPath("/buildings")).toBe("/portfolio");
     expect(normalizePortalPath("/contracts")).toBe("/leases");
+  });
+});
+
+/**
+ * Leases was a `hidden` item, "reached from" pages that no longer linked to it, so the screen
+ * where leases are created and edited had no way in on either layout.
+ */
+describe("where Leases sits in the navigation", () => {
+  it("has a row in the rail, after Portfolio", () => {
+    const keys = getPortalNavigation().flatMap((group) => group.items.map((item) => item.key));
+    expect(keys.indexOf("leases")).toBe(keys.indexOf("properties") + 1);
+  });
+
+  it("takes Portfolio's place in the phone's bottom bar, with Portfolio under More", () => {
+    expect(getPrimaryMobileNavigation().map((item) => item.key)).toEqual([
+      "dashboard",
+      "leases",
+      "financials",
+      "people",
+    ]);
+    expect(getSecondaryMobileNavigation().map((item) => item.key)).toContain("properties");
   });
 });

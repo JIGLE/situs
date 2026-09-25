@@ -381,22 +381,31 @@ export function LeasesView(): React.ReactElement {
     URL.revokeObjectURL(url);
   };
 
-  // Auto-open wizard when navigating from LeaseDetailView with ?action=edit|renew&id=X
+  // Open the wizard from a link elsewhere:
+  // - `?action=edit|renew&id=X` (lease detail, tenant modal) edits lease X;
+  // - `?action=create&tenantId=Y` is the tenant modal's "Add lease". It starts a new lease with
+  //   that tenant chosen, and their property when they have one. This case was never handled, so
+  //   the button landed on the list and did nothing.
   useEffect(() => {
     const action = searchParams.get("action");
-    const id = searchParams.get("id");
-    if (!action || !id || loading) return;
-    const target = leases.find((l) => l.id === id);
-    if (!target) return;
-    if (action === "edit") {
+    if (!action || loading) return;
+    if (action === "create") {
+      const tenant = tenants.find((t) => t.id === searchParams.get("tenantId"));
+      setEditingLease(null);
+      wizard.updateFormData({ tenantId: tenant?.id ?? "", propertyId: tenant?.propertyId ?? "" });
+      setContractFile(null);
+      setWizardOpen(true);
+    } else if (action === "edit" || action === "renew") {
+      const target = leases.find((l) => l.id === searchParams.get("id"));
+      if (!target) return;
       handleEdit(target);
-    } else if (action === "renew") {
-      handleEdit(target);
+    } else {
+      return;
     }
     // Clear the query params after opening
     router.replace("/leases");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, leases, loading]);
+  }, [searchParams, leases, tenants, loading]);
 
   const handleDownloadContract = async (lease: Lease) => {
     try {
