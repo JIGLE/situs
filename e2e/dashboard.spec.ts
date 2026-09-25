@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { revealPortfolioLink } from "./helpers/nav";
 import { settle } from "./helpers/wait";
 
 test.use({ storageState: "playwright/.auth/user.json" });
@@ -29,11 +30,7 @@ test.describe("Dashboard", () => {
     await page.goto("/dashboard");
     await settle(page);
 
-    // On a phone Portfolio sits under "More": Leases holds its place in the bottom bar. Decided by
-    // the viewport, not by whether the link happens to be visible, so a missing link still fails.
-    if ((page.viewportSize()?.width ?? 1280) < 768) {
-      await page.getByRole("button", { name: /^more$/i }).click();
-    }
+    await revealPortfolioLink(page);
     const portfolioLink = page.getByRole("link", { name: /portfolio/i }).first();
     await expect(portfolioLink).toBeVisible();
     await portfolioLink.click();
