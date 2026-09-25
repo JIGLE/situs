@@ -49,10 +49,8 @@ export interface PortalNavGroup {
 // moved from `/maintenance` to `/operations` in PR 10b-1, Intelligence from `/analytics` to
 // `/intelligence` in PR 10b-3 (old paths 301, plus `/insights` and `/reports` which the
 // Intelligence tabs absorbed). Finance still serves from `/financials` — that route rename
-// is unscoped/deferred. Consolidated surfaces (Reports, Compliance/Tax Filing,
-// Messages, Leases, Vendors) are kept as `hidden` items so their routes stay permitted by
-// `canAccessPortalPath` (which ignores `hidden`) and existing deep links keep working — they
-// are reached from within their new home pillar rather than occupying their own rail row.
+// is unscoped/deferred. A surface folded into another is kept as a `hidden` item, so its route
+// stays permitted by `canAccessPortalPath` (which ignores `hidden`) and deep links keep working.
 export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
   {
     group: "Core",
@@ -67,11 +65,22 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         mobilePrimary: true,
       },
       {
+        // In the rail, but not the phone's bottom bar: Leases holds that place, and Portfolio is
+        // one tap away under "More".
         key: "properties",
         href: "/portfolio",
         label: "Portfolio",
         labelKey: "navigation.portfolio",
         icon: Building2,
+      },
+      {
+        // Hidden until 25 September, "reached from" pages that no longer linked to it, so the
+        // screen where leases are created and edited had no way in.
+        key: "leases",
+        href: "/leases",
+        label: "Leases",
+        labelKey: "navigation.leases",
+        icon: FileText,
         mobilePrimary: true,
       },
       {
@@ -121,18 +130,9 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
   },
   {
     // Hidden group: routes that no longer own a rail row but must stay reachable/permitted.
-    // Reached from within their new home pillar (Intelligence, People, Property detail).
     group: "Hidden",
     groupLabelKey: "navigation.systemGroup",
     items: [
-      {
-        key: "leases",
-        href: "/leases",
-        label: "Leases",
-        labelKey: "navigation.leases",
-        icon: FileText,
-        hidden: true,
-      },
       {
         // Folded into Settings as its Account section; `/account` redirects there. Kept here
         // so `canAccessPortalPath` still permits the old URL.

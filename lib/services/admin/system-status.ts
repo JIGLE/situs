@@ -390,20 +390,20 @@ async function bankCheck(userId: string): Promise<StatusCheck> {
           `${orphaned.map((c) => c.institutionName).join(", ")} was connected with a bank data ` +
           `provider this build no longer ships, so it cannot sync.${since}`,
         remedy:
-          "Import statements by CSV in Finance › Bank Movements. The movements already imported " +
+          "Connect the bank again in Settings › Integrations. The movements already imported " +
           "are unaffected.",
       };
     }
 
+    // A warning, not `simulated`: a live connection is the only way bank movements reach an
+    // instance since the CSV import went, so none connected means none arrive.
     return {
       id: "bank",
       group: "integration",
-      severity: "simulated",
-      state: "manual_only",
-      detail:
-        "Manual / CSV import only — no bank is connected on this account." +
-        (since || " No imports yet."),
-      remedy: "Connect a bank in Settings › Integrations to import movements automatically.",
+      severity: "warning",
+      state: "not_connected",
+      detail: "No bank is connected on this account, so no bank movements arrive." + since,
+      remedy: "Connect a bank in Settings › Integrations.",
     };
   } catch {
     return {
@@ -426,7 +426,8 @@ async function bankCheck(userId: string): Promise<StatusCheck> {
  *
  * Four distinguishable states, because they have four different remedies:
  *
- *   - not_configured  — deliberate. CSV-only is a valid way to run this, never a fault.
+ *   - not_configured  — no credentials, so no bank movements can arrive. Payments can still be
+ *                       recorded by hand, which is why this is a warning and not an error.
  *   - misconfigured   — a key path that will not open. The detail names the PATH, never the key;
  *                       `EnableBankingConfigError` is written to be safe to surface for exactly
  *                       this reason, and it otherwise reaches only the container log.
@@ -461,9 +462,13 @@ async function bankProviderCheck(): Promise<StatusCheck> {
     return {
       id: "bank_provider",
       group: "integration",
-      severity: "simulated",
+      severity: "warning",
       state: "not_configured",
-      detail: "No bank data provider credentials on this instance — CSV import only.",
+      detail:
+        "No bank data provider credentials on this instance, so bank movements can't be imported.",
+      remedy:
+        "Set ENABLE_BANKING_APPLICATION_ID and ENABLE_BANKING_PRIVATE_KEY_FILE, then restart " +
+        "(docs/truenas.md).",
     };
   }
 

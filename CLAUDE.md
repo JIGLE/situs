@@ -58,7 +58,7 @@ lib/
     database/database.ts  # getPrismaClient() — the Prisma singleton, PII extension applied
     allocation/         # Pure reference-month waterfall engine + Prisma orchestration
     matching/           # Pure bank-movement-to-lease confidence scoring engine
-    bank/               # CSV import + fingerprint dedupe + matching pipeline
+    bank/               # Import pipeline: fingerprint dedupe + matching; live provider sync
       providers/        # PSD2 provider contract + registry + Enable Banking adapter + test fake
     receipts/           # Receipt document-lifecycle state machine + orchestration
     tax/                # Tax connector find-or-create + submission-log service
@@ -114,17 +114,19 @@ e2e/                    # Playwright E2E tests
   `ConflictError`: a 409 whose `reason` `apiFetch` keeps and `useApiError` turns into a sentence. A
   lease with nothing paid against it can still be deleted; a tenancy otherwise stops by ending its
   lease.
-- **Bank matching**: CSV/manual import or a live provider sync → fingerprint dedupe (idempotent) →
-  fuzzy-duplicate check → reconciliation rules → weighted confidence scoring
-  (`lib/services/matching/engine.ts`, pure). ≥0.85 auto-allocates via a draft `Receipt`
-  (`source: "automation"`); anything lower waits in the Bank Movements inbox (Finance tab) for a
-  human to confirm, reassign or ignore.
+- **Bank matching**: a live provider sync → fingerprint dedupe (idempotent) → fuzzy-duplicate
+  check → reconciliation rules → weighted confidence scoring (`lib/services/matching/engine.ts`,
+  pure). ≥0.85 auto-allocates via a draft `Receipt` (`source: "automation"`); anything lower waits
+  in the Bank Movements inbox (Finance tab) for a human to confirm, reassign or ignore. The live
+  connection is the only way movements arrive: there is no file import. E2E and development feed
+  the same `importBankRows` through `POST /api/debug/bank/movements`, which answers 403 unless
+  `ALLOW_DEMO_MODE` is set or the server runs in development.
 - **Live bank connection**: PSD2 account information through Enable Banking
   (`lib/services/bank/providers/`). Enable Banking is the licensed AISP, so an instance needs no
   PSD2 licence or eIDAS certificate; its free _restricted production_ mode covers accounts you
   whitelist as your own. Every request carries a JWT the app signs with the application's RSA key.
-  A provider only returns `BankCsvRow[]`; `importBankRows`' `target` routes them to the right
-  connection and account, so a synced movement behaves exactly like an uploaded one. Consent
+  A provider only returns `BankRow[]` (`lib/services/bank/rows.ts`); `importBankRows`' `target`
+  routes them to the right connection and account. Consent
   (`consent.ts`) is an unguessable reference, scoped to the caller, single-use. `sync.ts` checks
   the provider's daily read budget **before** spending a call (a 429 costs the rest of the day) and
   marks a connection `expired` on `ConsentExpiredError`. `BankConnection.provider` is `psd2_<key>`
@@ -342,7 +344,8 @@ Optional:
   `ENABLE_BANKING_PRIVATE_KEY_FILE` pointing at a mounted `.pem` for a real deployment, or
   `ENABLE_BANKING_PRIVATE_KEY` inline locally; the file wins when both are set. Never base64 the
   key into a config field: a PEM is ~1,700 chars, ~2,272 as base64, over TrueNAS' 1,000-char cap.
-  Without these the app is CSV-import-only and shows no connect button.
+  Without these no bank movements arrive and the app shows no connect button; a payment can
+  still be recorded by hand.
 - `CRON_SECRET` gates the three `/api/cron/*` endpoints (notifications, data retention, bank sync);
   each returns 503 while it is unset.
 - `METRICS_TOKEN` gates the counter endpoint, `/api/metrics`, in production; it answers 403 while

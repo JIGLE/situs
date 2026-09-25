@@ -32,8 +32,8 @@ flowchart LR
     E --> F[Audit trail]
 ```
 
-A bank movement — imported from CSV, entered by hand or synced from a live bank connection —
-becomes a scored match against a lease; the allocation engine fills
+A bank movement, synced from a live bank connection, becomes a scored match against a lease;
+the allocation engine fills
 the **oldest unpaid month first**; that writes a receipt, which drives a document lifecycle, which
 feeds the tax connector — and every step appends to an immutable audit log. Tenant payment status
 is _derived_ from this ledger, never hand-set.
@@ -49,7 +49,7 @@ is _derived_ from this ledger, never hand-set.
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Reference-month ledger** | One `RentPeriod` row per lease per month. Status is recomputed inside the same transaction as every allocation write — it can never drift from the money.                                                                                   |
 | **Waterfall allocation**   | Always fills the oldest not-fully-allocated period first, so partial payments can't silently skip a month. Pure engine, independently tested.                                                                                               |
-| **Bank matching**          | CSV/manual import or a live PSD2 sync → fingerprint dedupe (idempotent) → fuzzy-duplicate check → reconciliation rules → weighted confidence score. ≥ 0.85 auto-allocates; anything lower waits in the Bank Movements inbox for a human.    |
+| **Bank matching**          | A live PSD2 sync → fingerprint dedupe (idempotent) → fuzzy-duplicate check → reconciliation rules → weighted confidence score. ≥ 0.85 auto-allocates; anything lower waits in the Bank Movements inbox for a human.                         |
 | **Receipt lifecycle**      | Money state (`paid`/`pending`) is kept separate from the _document_ state machine: draft → review → emitted → submitted → accepted/rejected. A receipt can be voided from draft, review or emitted; voiding soft-reverses live allocations. |
 | **Tax connectors**         | One connector row per user and key. Sandbox and review simulate; test checks credentials and fetches receipts at AT's test service. No live AT integration exists, so live fails closed. Every call appends an immutable log row.           |
 | **Audit trail**            | Scoped per-record or account-wide, persisted on every workflow mutation.                                                                                                                                                                    |
@@ -120,7 +120,7 @@ lib/
   services/
     allocation/        → reference-month waterfall engine (pure) + orchestration
     matching/          → bank-movement→lease confidence scoring (pure)
-    bank/              → CSV import, fingerprint dedupe, matching pipeline
+    bank/              → import pipeline, fingerprint dedupe, matching, live sync
     receipts/          → receipt document-lifecycle state machine (pure)
     tax/               → connector find-or-create + submission log
   tax/connectors/      → the Portuguese TaxConnector

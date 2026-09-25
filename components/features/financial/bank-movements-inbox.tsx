@@ -4,17 +4,9 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { httpError, useApiError } from "@/lib/utils/api-error";
-import { Check, Upload, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -22,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { useApp } from "@/lib/contexts/app-context";
 import { csrfHeaders } from "@/lib/utils/api-client";
 import { RenderTable } from "@/components/ui/table";
@@ -50,15 +41,6 @@ interface InboxRow {
   receiptId: string | null;
   bankAccount: { label: string };
   suggestedLease: { tenantName: string; propertyName: string } | null;
-}
-
-interface ImportSummary {
-  imported: number;
-  duplicates: number;
-  autoMatched: number;
-  needsReview: number;
-  errors: string[];
-  parseErrors: string[];
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -89,9 +71,6 @@ const FILTERS = [
   { value: "ignored", labelKey: "ignored" },
 ] as const;
 
-const CSV_PLACEHOLDER = `Date,Amount,Counterparty,IBAN,Reference
-2026-07-01,850.00,Maria Silva,PT50...,renda 07/2026`;
-
 function formatReasons(raw: string | null): string {
   if (!raw) return "";
   try {
@@ -114,10 +93,6 @@ export function BankMovementsInbox(): React.ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [reassigningId, setReassigningId] = useState<string | null>(null);
-  const [importOpen, setImportOpen] = useState(false);
-  const [csvText, setCsvText] = useState("");
-  const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<ImportSummary | null>(null);
 
   const leaseOptions = useMemo(
     () =>
@@ -183,29 +158,6 @@ export function BankMovementsInbox(): React.ReactElement {
     },
     [filter, load, apiError],
   );
-
-  const runImport = useCallback(async () => {
-    setImporting(true);
-    setImportResult(null);
-    setError(null);
-    try {
-      const res = await fetch("/api/bank/import", {
-        method: "POST",
-        credentials: "include",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ csv: csvText }),
-      });
-      const body = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(body?.error ?? `Import failed (${res.status})`);
-      setImportResult(body?.data ?? null);
-      setCsvText("");
-      await load(filter);
-    } catch (err) {
-      setError(apiError(err));
-    } finally {
-      setImporting(false);
-    }
-  }, [csvText, filter, load, apiError]);
 
   /**
    * Match suggestion and row actions, shared by the table cell and the mobile card so the two
@@ -335,61 +287,6 @@ export function BankMovementsInbox(): React.ReactElement {
               ))}
             </SelectContent>
           </Select>
-          <Dialog
-            open={importOpen}
-            onOpenChange={(open) => {
-              setImportOpen(open);
-              if (!open) setImportResult(null);
-            }}
-          >
-            <DialogTrigger asChild>
-              <Button size="sm" className="h-8 rounded-none">
-                <Upload className="mr-1.5 h-3.5 w-3.5" />
-                {t("importCsv")}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="rounded-none sm:max-w-xl">
-              <DialogHeader>
-                <DialogTitle>{t("importTitle")}</DialogTitle>
-                <DialogDescription>
-                  Paste CSV rows exported from your bank. Recognized columns: date, amount,
-                  counterparty, IBAN, reference — comma or semicolon separated. Exact duplicates are
-                  skipped automatically.
-                </DialogDescription>
-              </DialogHeader>
-              <Textarea
-                value={csvText}
-                onChange={(e) => setCsvText(e.target.value)}
-                placeholder={CSV_PLACEHOLDER}
-                rows={8}
-                className="rounded-none font-mono text-xs"
-              />
-              {importResult ? (
-                <div className="border border-[var(--color-border)] px-3 py-2 text-xs">
-                  <span className="font-medium">
-                    {importResult.imported} imported · {importResult.autoMatched} auto-matched ·{" "}
-                    {importResult.needsReview} to review · {importResult.duplicates} duplicates
-                    skipped
-                  </span>
-                  {[...importResult.parseErrors, ...importResult.errors].map((msg, i) => (
-                    <span key={i} className="block text-[var(--semantic-warning-readable)]">
-                      {msg}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-              <div className="flex justify-end">
-                <Button
-                  size="sm"
-                  className="rounded-none"
-                  onClick={() => void runImport()}
-                  disabled={importing || csvText.trim().length === 0}
-                >
-                  {importing ? "Importing…" : "Import"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
@@ -403,8 +300,7 @@ export function BankMovementsInbox(): React.ReactElement {
         <p className="p-6 text-sm text-[var(--color-muted-foreground)]">Loading…</p>
       ) : rows.length === 0 ? (
         <p className="p-6 text-sm text-[var(--color-muted-foreground)]">
-          No bank movements{filter !== "all" ? " with this status" : ""}. Import a CSV from your
-          bank to start matching payments to reference months.
+          {filter === "all" ? t("empty") : t("emptyFiltered")}
         </p>
       ) : (
         <RenderTable

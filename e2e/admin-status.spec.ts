@@ -58,19 +58,16 @@ test.describe("Admin › System status (/admin/status)", () => {
       timeout: 20000,
     });
 
-    // `manual / csv import only`, not the looser `csv import only` this used to say. Two check
-    // details in `lib/services/admin/system-status.ts` contain the shorter phrase — `bank`
-    // ("Manual / CSV import only — no bank is connected on this account.") and `bank_provider`
-    // ("No bank data provider credentials on this instance — CSV import only.") — so the loose
-    // regex is a strict-mode violation here. It was never ambiguous before only because the test
-    // was running against `/admin`, which lists check NAMES and not their details.
+    // The `bank` check's own words, matched whole. `bank_provider`'s detail also says bank
+    // movements can't arrive ("No bank data provider credentials on this instance, so bank
+    // movements can't be imported."), so a looser phrase is a strict-mode violation here.
     //
     // Targeted rather than `.first()`. The next test uses `.first()` and that idiom is exactly
-    // what lets an ambiguous match pass without anyone noticing, which is the defect this whole
-    // spec change exists to remove. `bank` is the right one of the two: the disclosure asserted
-    // above says "Bank connections are separate … and the check below says which", and `bank` is
-    // the check that says which. `bank_provider` reports instance configuration, a different claim.
-    await expect(page.getByText(/manual \/ csv import only/i)).toBeVisible();
+    // what lets an ambiguous match pass without anyone noticing. `bank` is the right one of the
+    // two: the disclosure asserted above says "Bank connections are separate … and the check below
+    // says which", and `bank` is the check that says which. `bank_provider` reports instance
+    // configuration, a different claim. CI connects no bank, so this is the state it shows.
+    await expect(page.getByText(/no bank is connected on this account/i)).toBeVisible();
   });
 
   test("reports every check group", async ({ page }) => {

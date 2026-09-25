@@ -65,6 +65,18 @@ const RETIRED_CLAIMS = [
       "document leaves the instance",
   },
   {
+    // The owner's decision: the live bank connection covers what the statement import did. The
+    // bare word "csv" stays allowed, since `manual` and `csv` connection rows from before remain
+    // and the docs name them; these are the phrasings that offered the import or described it as
+    // current, and the paths that named it.
+    pattern:
+      /CSV import (only|works)|CSV-import-only|CSV-only|imported from CSV|CSV\/manual import|Manual \/ CSV import|lib\/services\/bank\/csv|parseBankCsv|BankCsvRow|\/api\/bank\/import/i,
+    retired: "2026-09-25 (no bank CSV import)",
+    because:
+      "bank CSV import was removed: a live bank connection is the only way movements arrive, " +
+      "and a payment without one is recorded by hand",
+  },
+  {
     // DATA_PROTECTION §3's call-site table gained the contract, and its plaintext table said the
     // documents store held uploaded leases.
     pattern: /Two bank fields are deliberately|Whatever the operator uploaded/,

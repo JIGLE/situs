@@ -103,12 +103,9 @@ the header is ignored entirely. Getting it wrong lets a caller pick their own ra
 
 ## Bank movements
 
-Two ways in, and the pipeline downstream is identical either way — an imported movement gets the
-same fingerprint dedupe, reconciliation rules, confidence scoring and 0.85 auto-allocation
-threshold a synced one does.
-
-**CSV import** works with no setup at all: Finance › Bank Movements, upload a statement exported
-from your bank.
+One way in: a live connection. Without one no bank movements arrive, and a payment can still be
+recorded by hand in Finance › Receipts. Every synced movement goes through fingerprint dedupe,
+reconciliation rules, confidence scoring and the 0.85 auto-allocation threshold.
 
 **A live connection** uses [Enable Banking](https://enablebanking.com/docs/), who hold the AISP
 licence — so this instance needs no PSD2 licence and no eIDAS certificate of its own. Their
@@ -264,8 +261,8 @@ Open **Settings › Integrations** in Situs:
 - a box headed **"Bank connection not configured"** — the app did not get both values. A variable is
   unset or misspelled, or the app has not restarted.
 
-**`/admin` is not the check here.** It will still say _"Manual / CSV import only — no bank is
-connected on this account"_, and that is correct: it reports which banks you have connected, not
+**`/admin` is not the check here.** It will still say _"No bank is connected on this account"_,
+and that is correct: it reports which banks you have connected, not
 whether credentials are present. It only changes after you complete step 7 and connect one.
 
 #### 7. Register the redirect URL, then connect
@@ -292,7 +289,7 @@ your banking password.
 | The bank refuses the redirect                     | Step 7 — the registered URL does not match `NEXTAUTH_URL` exactly.                                        |
 
 An unreadable path is treated as a **configuration error**, not as "no bank provider configured" —
-a misconfigured instance and a deliberately CSV-only one must not look the same. The message names
+a misconfigured instance and one deliberately left without a bank feed must not look the same. The message names
 the path but not the key, and it reaches the container log rather than the browser, because error
 detail is deliberately not returned to clients.
 
@@ -335,7 +332,7 @@ self-hosted instance collecting rent by bank transfer needs none of them.
 
 | Service        | Required? | What it is for                                                                                            |
 | -------------- | --------- | --------------------------------------------------------------------------------------------------------- |
-| Enable Banking | optional  | live bank movements. Unset, CSV import covers it                                                          |
+| Enable Banking | optional  | live bank movements. Unset, none arrive; payments are recorded by hand                                    |
 | SMTP           | optional  | outbound email, any provider. Unset, email is simply not sent                                             |
 | Redis          | optional  | shared counters for one of the rate limiters (`docs/SECURITY.md`). Unset, every limiter counts in process |
 | Google OAuth   | optional  | sign-in. Credentials sign-in works without it                                                             |

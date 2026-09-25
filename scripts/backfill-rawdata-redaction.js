@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * Strip `counterpartyIban` from BankTransaction.rawData on rows written before
- * lib/services/bank/csv.ts gained redactRowForStorage().
+ * redactRowForStorage() existed (now lib/services/bank/rows.ts).
  *
  * The import wrote the IBAN twice: AES-256-GCM encrypted into `counterpartyIban`, and again
  * in clear inside `rawData`, an ordinary unencrypted column. Fixing the write site stops new

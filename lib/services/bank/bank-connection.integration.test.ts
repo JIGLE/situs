@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import type { BankCsvRow } from "./csv";
+import type { BankRow } from "./rows";
 
 /**
  * The live bank connection, end to end, against a real SQLite file.
@@ -44,7 +44,7 @@ describe("live bank connection — real Prisma client + real SQLite file", () =>
    * — were asserted through an adapter that could change under them. A fake implementing the
    * published contract keeps the subject of the test the thing being tested.
    */
-  const ROWS: BankCsvRow[] = [
+  const ROWS: BankRow[] = [
     {
       bookingDate: "2026-08-01",
       amount: 750,
@@ -63,7 +63,7 @@ describe("live bank connection — real Prisma client + real SQLite file", () =>
   const REMOTE_ACCOUNT_ID = "remote-account-1";
   const IBAN = "PT50000201231234567890154";
 
-  let transactionRows: BankCsvRow[] = ROWS;
+  let transactionRows: BankRow[] = ROWS;
   let failTransactionsWith: Error | null = null;
   let unregister: (() => void) | null = null;
 

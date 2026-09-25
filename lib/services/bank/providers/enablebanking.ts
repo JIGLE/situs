@@ -23,7 +23,7 @@
 import crypto from "crypto";
 import { readFileSync } from "node:fs";
 
-import type { BankCsvRow } from "../csv";
+import type { BankRow } from "../rows";
 import type {
   BankDataProvider,
   ConsentLink,
@@ -112,8 +112,8 @@ interface EbSessionAccount {
 
 /**
  * Raised when the instance is *trying* to be configured and cannot be — a named path that will
- * not open, or a key that will not parse. Distinct from "no credentials set", which is a valid
- * state (CSV-only) rather than a fault, and which must keep looking like one on `/admin`.
+ * not open, or a key that will not parse. Distinct from "no credentials set", an instance that
+ * simply has no bank feed, which `/admin` reports as a warning rather than a fault.
  */
 export class EnableBankingConfigError extends Error {
   constructor(message: string) {
@@ -191,7 +191,7 @@ function credentials(): { applicationId: string; privateKey: string } | null {
  * Whether this instance is configured to offer Enable Banking connections.
  *
  * A configuration ERROR is not "unconfigured": it propagates, so the operator sees the path that
- * will not open rather than a silent CSV-only fallback that looks like a deliberate choice.
+ * will not open rather than a silent "not configured" that looks like a deliberate choice.
  */
 export function isEnableBankingConfigured(): boolean {
   return credentials() !== null;
@@ -312,7 +312,7 @@ export function decodeInstitutionId(id: string): { country: string; name: string
  * `scripts/enablebanking-check.mjs` against a real account and replace the fixtures in the test
  * with what it records.
  */
-export function mapTransaction(tx: EnableBankingTransaction): BankCsvRow | null {
+export function mapTransaction(tx: EnableBankingTransaction): BankRow | null {
   const rawAmount = tx.transaction_amount?.amount;
   const parsed = rawAmount === undefined ? NaN : Number(rawAmount);
   const bookingDate = tx.booking_date ?? tx.value_date;
@@ -516,8 +516,8 @@ export const enableBankingProvider: BankDataProvider = {
     );
   },
 
-  async fetchTransactions(accountRef: string, since?: Date): Promise<BankCsvRow[]> {
-    const rows: BankCsvRow[] = [];
+  async fetchTransactions(accountRef: string, since?: Date): Promise<BankRow[]> {
+    const rows: BankRow[] = [];
     let continuationKey: string | undefined;
 
     // Paging is not optional. Enable Banking returns a `continuation_key` whenever more remains,

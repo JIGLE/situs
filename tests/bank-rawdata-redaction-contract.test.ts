@@ -19,7 +19,7 @@ import { join } from "node:path";
  * has to sit over the source.
  *
  * Scope note: this checks the ASSIGNMENT, not the helper. `redactRowForStorage` has its own
- * tests in `lib/services/bank/csv.test.ts`, including that the IBAN survives nowhere in the
+ * tests in `lib/services/bank/rows.test.ts`, including that the IBAN survives nowhere in the
  * serialised string.
  */
 const ROOT = join(import.meta.dirname, "..");
