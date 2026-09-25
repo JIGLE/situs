@@ -37,15 +37,7 @@ export function useTabPersistence(
       }
 
       setActiveTabState(tab);
-
-      // Update localStorage (client only)
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem(`tab-${moduleId}`, tab);
-        } catch {
-          // ignore quota errors
-        }
-      }
+      rememberTab(moduleId, tab);
 
       // Update URL without page reload
       const params = new URLSearchParams(searchParams.toString());
@@ -82,13 +74,24 @@ export function useTabPersistence(
     }
   }, [activeTab, moduleId, searchParams]);
 
-  // Sync with URL changes (e.g., browser back/forward)
+  // Follow the address when `view` itself changes: browser back/forward, or a link that sets it.
+  // Only a change of `view` counts. Comparing it with the tab on every render undid a click for as
+  // long as the router took to write the new `view`, so the tab snapped back, then forward again.
+  // Following does not store the tab: `view` is shared by every tabbed screen on the page (a
+  // `?detail=` overlay opens over another page), so only a click here is this screen's choice.
+  const urlTab = searchParams.get("view");
   useEffect(() => {
-    const urlTab = searchParams.get("view");
-    if (urlTab && urlTab !== activeTab) {
-      setActiveTabState(urlTab);
-    }
-  }, [searchParams, activeTab]);
+    if (urlTab) setActiveTabState(urlTab);
+  }, [urlTab]);
 
   return [activeTab, setActiveTab];
+}
+
+function rememberTab(moduleId: string, tab: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(`tab-${moduleId}`, tab);
+  } catch {
+    // ignore quota errors
+  }
 }
