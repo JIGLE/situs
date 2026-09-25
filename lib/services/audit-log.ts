@@ -75,6 +75,12 @@ export type AuditAction =
   | "ARCHIVE_RECEIPT"
   | "VOID_RECEIPT"
   | "TRANSITION_RECEIPT_LIFECYCLE"
+  // The AT connection: the Portal sub-user Situs signs in as, the connector's mode, and a receipt
+  // fetched from AT (it names the tenant, so reading it is recorded).
+  | "SET_TAX_CREDENTIALS"
+  | "REMOVE_TAX_CREDENTIALS"
+  | "SET_TAX_CONNECTOR_MODE"
+  | "FETCH_AT_RECEIPT"
   // Situs Documents/OCR (Migration D)
   | "OCR_CLASSIFY_DOCUMENT"
   | "OCR_EXTRACTION_REVIEWED"

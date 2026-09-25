@@ -124,5 +124,4 @@ export function securityHeaderXml(token: UsernameToken): string {
   );
 }
 
-/** `<NIF>/<sub-user>`: nine digits, a slash, and one to four more. */
-export const AT_USERNAME = /^\d{9}\/\d{1,4}$/;
+export { AT_USERNAME } from "./username";

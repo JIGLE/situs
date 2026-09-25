@@ -20,9 +20,13 @@ export async function ensureConnector(userId: string, country: string, connector
 export interface LogSubmissionInput {
   userId: string;
   connectorId: string;
-  subjectType: "rent_receipt";
+  /**
+   * `connector` for a check of the connection itself; `at_receipt` for a receipt fetched from AT,
+   * whose id is `<contract>/<receipt>`.
+   */
+  subjectType: "rent_receipt" | "connector" | "at_receipt";
   subjectId: string;
-  action: "validate" | "submit" | "poll" | "cancel";
+  action: "validate" | "submit" | "poll" | "cancel" | "check" | "fetch";
   mode: string;
   status: "success" | "error" | "pending";
   responseCode?: string;
