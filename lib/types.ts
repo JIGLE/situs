@@ -149,8 +149,6 @@ export interface Lease {
   atContractVersion?: number | null;
   /** Co-tenants and guarantors: everyone on the lease besides its main tenant. */
   parties?: LeaseParty[];
-  /** The clauses a contract import kept, each summarised with the words it came from. */
-  clauses?: LeaseClause[];
   status: "active" | "expiring" | "expired" | "terminated" | "pending" | "draft";
   autoRenew: boolean;
   renewalNoticeDays: number;
@@ -164,15 +162,6 @@ export interface Lease {
   renewalEndDate?: string | null;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface LeaseClause {
-  id: string;
-  kind: "renewal" | "rent_update" | "termination" | "deposit";
-  summary: string;
-  quote: string;
-  /** The contract's page the quote is on, when the reading gave one. */
-  page?: number | null;
 }
 
 export interface LeaseParty {

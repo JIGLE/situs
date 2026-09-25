@@ -65,7 +65,6 @@ import { wasReported } from "@/lib/utils/api-error";
 import { downloadContract, uploadContract } from "./lease-contract";
 import { MAX_CONTRACT_BYTES, MAX_CONTRACT_MB } from "@/lib/utils/contract-file";
 import { LeasePartiesEditor, leasePartiesInvalid } from "./lease-parties-editor";
-import { ContractImport } from "./contract-import";
 import { useMultiStepForm, StepConfig } from "@/lib/hooks/use-multi-step-form";
 import {
   MultiStepFormContainer,
@@ -650,8 +649,6 @@ export function LeasesView(): React.ReactElement {
               { key: "status", label: t("field.status") },
             ]}
           />
-
-          <ContractImport />
 
           {/* Multi-Step Wizard Dialog */}
           <Dialog

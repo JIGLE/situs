@@ -142,19 +142,6 @@ describe("configuration checks", () => {
     expect(waived.severity).toBe("error");
     expect(waived.detail).toMatch(/plaintext/i);
   });
-
-  it("reports contract reading from the key alone: a choice, not a fault, when it is off", async () => {
-    vi.stubEnv("ANTHROPIC_API_KEY", "");
-    const off = find((await getSystemStatus("u")).checks, "contract_reader")!;
-    expect(off).toMatchObject({ severity: "simulated", state: "not_configured" });
-
-    vi.stubEnv("ANTHROPIC_API_KEY", "sk-ant-test");
-    vi.stubEnv("ANTHROPIC_MODEL", "claude-sonnet-5");
-    const on = find((await getSystemStatus("u")).checks, "contract_reader")!;
-    expect(on).toMatchObject({ severity: "ok", state: "configured" });
-    expect(on.detail).toContain("claude-sonnet-5");
-    vi.unstubAllEnvs();
-  });
 });
 
 describe("the page survives its own probes failing", () => {

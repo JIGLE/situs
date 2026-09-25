@@ -258,10 +258,6 @@ async function main() {
       ALLOW_DEMO_MODE: "true",
       ENABLE_DEMO_LOGIN: "true",
       E2E_DISABLE_RATE_LIMIT: "true",
-      // Makes the Leases screen offer contract import, so its sheet is measured. Never sent: the
-      // audit opens the sheet and reads no contract. A key set in the shell is overridden too, so
-      // an audit cannot spend it.
-      ANTHROPIC_API_KEY: "audit-placeholder-never-sent",
       NODE_ENV: "production",
       PORT: String(PORT),
       // Loopback, not 0.0.0.0. This server has demo credentials login and an open seed
