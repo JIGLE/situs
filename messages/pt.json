@@ -1124,9 +1124,6 @@
     "recurringTemplate": "Modelo recorrente",
     "recurringToggleDesc": "Gerar automaticamente esta despesa num horário definido",
     "recurrenceEndPlaceholder": "Deixar vazio para nunca terminar",
-    "bulkGenerate": "Gerar recibos do mês",
-    "bulkGenerateSuccess": "Gerados {count} recibos. {skipped} já existiam.",
-    "bulkGenerateEmpty": "Todos os recibos deste mês já existem.",
     "expense": "Despesa",
     "paymentReceived": "Pagamento recebido",
     "rentRoll": {
@@ -1160,8 +1157,6 @@
     },
     "timeRange": "Intervalo de tempo",
     "filterReceiptStatus": "Filtrar recibos por estado",
-    "generating": "A gerar…",
-    "bulkGenerateFailed": "Não foi possível gerar os recibos. Tente novamente.",
     "unknownProperty": "Imóvel desconhecido",
     "noFinancialData": "Ainda sem dados financeiros",
     "noFinancialDataDesc": "Comece por adicionar recibos ou despesas para acompanhar o fluxo de caixa",

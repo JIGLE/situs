@@ -1124,9 +1124,6 @@
     "recurringTemplate": "Modello ricorrente",
     "recurringToggleDesc": "Genera automaticamente questa spesa secondo una pianificazione",
     "recurrenceEndPlaceholder": "Lascia vuoto per non terminare mai",
-    "bulkGenerate": "Genera le ricevute di questo mese",
-    "bulkGenerateSuccess": "Generate {count} ricevute. {skipped} già esistenti.",
-    "bulkGenerateEmpty": "Tutte le ricevute di questo mese esistono già.",
     "expense": "Spesa",
     "paymentReceived": "Pagamento ricevuto",
     "rentRoll": {
@@ -1160,8 +1157,6 @@
     },
     "timeRange": "Intervallo di tempo",
     "filterReceiptStatus": "Filtra le ricevute per stato",
-    "generating": "Generazione…",
-    "bulkGenerateFailed": "Impossibile generare le ricevute. Riprova.",
     "unknownProperty": "Immobile sconosciuto",
     "noFinancialData": "Ancora nessun dato finanziario",
     "noFinancialDataDesc": "Inizia aggiungendo ricevute o spese per monitorare il flusso di cassa",

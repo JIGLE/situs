@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Plus, Zap, Calendar as CalendarIcon, FileText } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, FileText } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useCurrency } from "@/lib/contexts/currency-context";
@@ -26,7 +26,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useApp } from "@/lib/contexts/app-context";
-import { useToast } from "@/lib/contexts/toast-context";
 import {
   expenseSchema,
   EXPENSE_CATEGORIES,
@@ -38,16 +37,12 @@ import { getExpenseCategoryColor } from "@/lib/design-tokens";
 import { LoadingState } from "@/components/ui/loading-state";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
 import { useFormDialog } from "@/lib/hooks/use-form-dialog";
-import { csrfHeaders } from "@/lib/utils/api-client";
-import { httpError, useApiError } from "@/lib/utils/api-error";
 import { expenseCategoryKey } from "@/lib/utils/expense-labels";
 
 export function FinancialsView(): React.ReactElement {
-  const { state, addExpense, refreshData } = useApp();
+  const { state, addExpense } = useApp();
   const { properties, receipts, expenses, loading } = state;
   const { formatCurrency, currencySymbol } = useCurrency();
-  const { success: toastSuccess, error: toastError } = useToast();
-  const resolveError = useApiError();
   const t = useTranslations("financial");
   const tCategories = useTranslations("financial.categories");
   const tStatus = useTranslations("status");
@@ -56,7 +51,6 @@ export function FinancialsView(): React.ReactElement {
 
   const [timeRange, setTimeRange] = useState("month"); // all, month, year
   const [receiptStatusFilter, setReceiptStatusFilter] = useState<"all" | "paid" | "pending">("all");
-  const [isBulkGenerating, setIsBulkGenerating] = useState(false);
 
   const dialog = useFormDialog<ExpenseFormData>({
     schema: expenseSchema,
@@ -236,38 +230,6 @@ export function FinancialsView(): React.ReactElement {
 
   const categories = EXPENSE_CATEGORIES;
 
-  const handleBulkGenerate = async () => {
-    const month = new Date().toISOString().slice(0, 7); // YYYY-MM
-    setIsBulkGenerating(true);
-    try {
-      const res = await fetch("/api/receipts/bulk", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ month }),
-      });
-      if (!res.ok) {
-        toastError(resolveError(httpError(res.status)));
-        return;
-      }
-      const data = (await res.json()) as {
-        data: { generated: import("@/lib/types").Receipt[]; skipped: number; errors: string[] };
-      };
-      const { generated, skipped } = data.data;
-      if (generated.length === 0) {
-        toastSuccess(t("bulkGenerateEmpty"));
-      } else {
-        toastSuccess(t("bulkGenerateSuccess", { count: generated.length, skipped }));
-        // The route has already written and allocated every one of them, so this only reloads.
-        // Handing each to `addReceipt` instead POSTed it to /api/receipts and wrote it again.
-        await refreshData();
-      }
-    } catch {
-      toastError(t("bulkGenerateFailed"));
-    } finally {
-      setIsBulkGenerating(false);
-    }
-  };
-
   return (
     <>
       {loading ? (
@@ -337,16 +299,6 @@ export function FinancialsView(): React.ReactElement {
                   <SelectItem value="year">{t("thisYear")}</SelectItem>
                 </SelectContent>
               </Select>
-
-              <Button
-                variant="outline"
-                onClick={handleBulkGenerate}
-                disabled={isBulkGenerating}
-                className="flex items-center gap-2"
-              >
-                <Zap className="w-4 h-4" />
-                {isBulkGenerating ? t("generating") : t("bulkGenerate")}
-              </Button>
 
               <Dialog open={dialog.isOpen} onOpenChange={(open) => !open && dialog.closeDialog()}>
                 <DialogTrigger asChild>

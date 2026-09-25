@@ -1124,9 +1124,6 @@
     "recurringTemplate": "Recurring template",
     "recurringToggleDesc": "Automatically generate this expense on a schedule",
     "recurrenceEndPlaceholder": "Leave blank for never",
-    "bulkGenerate": "Generate this month's receipts",
-    "bulkGenerateSuccess": "Generated {count} receipts. {skipped} already existed.",
-    "bulkGenerateEmpty": "All receipts for this month already exist.",
     "expense": "Expense",
     "paymentReceived": "Payment received",
     "rentRoll": {
@@ -1160,8 +1157,6 @@
     },
     "timeRange": "Time range",
     "filterReceiptStatus": "Filter receipts by status",
-    "generating": "Generating…",
-    "bulkGenerateFailed": "Couldn't generate receipts. Try again.",
     "unknownProperty": "Unknown property",
     "noFinancialData": "No financial data yet",
     "noFinancialDataDesc": "Start by adding receipts or expenses to track your cash flow",

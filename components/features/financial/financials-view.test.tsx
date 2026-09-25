@@ -1,23 +1,11 @@
-import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
-import userEvent from "@testing-library/user-event";
-import {
-  renderWithProviders as render,
-  screen,
-  waitFor,
-} from "@/tests/helpers/render-with-providers";
+import { afterEach, describe, it, expect, vi } from "vitest";
+import { renderWithProviders as render, screen } from "@/tests/helpers/render-with-providers";
 import enMessages from "@/messages/en.json";
-import ptMessages from "@/messages/pt.json";
 import { FinancialsView } from "./financials-view";
 
-// Shared with the mocks below, so a test can see what the screen asked the app and the toasts for.
-const { app, toast } = vi.hoisted(() => ({
-  app: {
-    receipts: [] as unknown[],
-    addExpense: vi.fn(),
-    addReceipt: vi.fn(),
-    refreshData: vi.fn(),
-  },
-  toast: { success: vi.fn(), error: vi.fn() },
+// Shared with the mock below, so a test can choose the receipts the screen holds.
+const { app } = vi.hoisted(() => ({
+  app: { receipts: [] as unknown[], addExpense: vi.fn() },
 }));
 
 // Mock the currency hook
@@ -45,12 +33,8 @@ vi.mock("@/lib/contexts/app-context", () => ({
       },
     },
     addExpense: app.addExpense,
-    addReceipt: app.addReceipt,
-    refreshData: app.refreshData,
   }),
 }));
-
-vi.mock("@/lib/contexts/toast-context", () => ({ useToast: () => toast }));
 
 vi.mock("@/lib/hooks/use-form-dialog", () => ({
   useFormDialog: () => ({
@@ -98,77 +82,36 @@ describe("FinancialsView", () => {
   });
 });
 
-describe("FinancialsView: generating this month's receipts", () => {
-  const receipt = {
-    id: "rec-0",
-    userId: "user-1",
-    tenantId: "tenant-1",
-    tenantName: "Ana Costa",
-    propertyId: "prop-1",
-    propertyName: "Rua Augusta 12",
-    amount: 950,
-    date: "2026-02-01",
-    type: "rent",
-    status: "paid",
-    createdAt: "2026-02-01",
-    updatedAt: "2026-02-01",
-  };
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    // Any receipt at all, so the screen renders past its empty state to the button.
-    app.receipts = [receipt];
-  });
-
+describe("FinancialsView: a month with receipts", () => {
   afterEach(() => {
-    vi.unstubAllGlobals();
     app.receipts = [];
   });
 
-  // The route writes and allocates every receipt it generates. The screen then handed each one to
-  // `addReceipt`, which POSTs to /api/receipts and wrote it a second time: every generated month
-  // was billed twice, in the list and in every total that sums receipts.
-  it("reloads what the route wrote instead of writing it again", async () => {
-    const generated = [
-      { ...receipt, id: "rec-1" },
-      { ...receipt, id: "rec-2" },
+  it("totals the month's income from the receipts it holds", () => {
+    // The 15th, so "this month" holds it whatever the runner's timezone.
+    const now = new Date();
+    const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-15`;
+    app.receipts = [
+      {
+        id: "rec-1",
+        userId: "user-1",
+        tenantId: "tenant-1",
+        tenantName: "Ana Costa",
+        propertyId: "prop-1",
+        propertyName: "Rua Augusta 12",
+        amount: 950,
+        date,
+        type: "rent",
+        status: "paid",
+        createdAt: date,
+        updatedAt: date,
+      },
     ];
-    const fetchMock = vi.fn(
-      async () =>
-        new Response(JSON.stringify({ data: { generated, skipped: 0, errors: [] } }), {
-          status: 200,
-        }),
-    );
-    vi.stubGlobal("fetch", fetchMock);
-    const user = userEvent.setup();
     render(<FinancialsView />);
 
-    await user.click(screen.getByRole("button", { name: enMessages.financial.bulkGenerate }));
-
-    await waitFor(() => expect(app.refreshData).toHaveBeenCalledTimes(1));
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/receipts/bulk",
-      expect.objectContaining({ method: "POST" }),
+    expect(screen.getByText(enMessages.financial.totalIncome, { exact: false })).toHaveTextContent(
+      `${enMessages.financial.totalIncome} $950.00`,
     );
-    expect(app.addReceipt).not.toHaveBeenCalled();
-  });
-
-  it("reports a failed run in the app's language, not the server's", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(
-        async () =>
-          new Response(JSON.stringify({ error: "Database operation failed" }), { status: 500 }),
-      ),
-    );
-    const user = userEvent.setup();
-    render(<FinancialsView />, { initialLocale: "pt" });
-
-    await user.click(screen.getByRole("button", { name: ptMessages.financial.bulkGenerate }));
-
-    await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith(ptMessages.errors.api.serverError),
-    );
-    expect(app.refreshData).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: enMessages.financial.addExpense })).toBeEnabled();
   });
 });
