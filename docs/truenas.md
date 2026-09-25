@@ -90,14 +90,12 @@ the header is ignored entirely. Getting it wrong lets a caller pick their own ra
 
 ### Optional
 
-| Variable                                    | Notes                                                                                                                          |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `ENABLE_DEMO_LOGIN`                         | `true` enables demo credentials that grant **ADMIN**. Leave unset in production.                                               |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Enables Google sign-in — see below                                                                                             |
-| `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`       | Email delivery over SMTP (Brevo, Resend, SES — any provider)                                                                   |
-| `AUTO_DB_INIT`, `AUTO_DB_SCHEMA_SYNC`       | Both default `true`; set `false` to manage schema yourself                                                                     |
-| `ANTHROPIC_API_KEY`                         | Enables _Import from contract_ on Leases, which sends the PDFs to Anthropic (US) to be read — see `docs/DATA_PROTECTION.md` §4 |
-| `ANTHROPIC_MODEL`                           | The model that reads contracts. Leave unset for the default (`DEFAULT_CONTRACT_MODEL`, `lib/services/contracts/extractor.ts`)  |
+| Variable                                    | Notes                                                                            |
+| ------------------------------------------- | -------------------------------------------------------------------------------- |
+| `ENABLE_DEMO_LOGIN`                         | `true` enables demo credentials that grant **ADMIN**. Leave unset in production. |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Enables Google sign-in — see below                                               |
+| `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`       | Email delivery over SMTP (Brevo, Resend, SES — any provider)                     |
+| `AUTO_DB_INIT`, `AUTO_DB_SCHEMA_SYNC`       | Both default `true`; set `false` to manage schema yourself                       |
 
 > `NEXT_PUBLIC_ENABLE_DEMO_LOGIN` no longer exists. The sign-in form now resolves demo
 > availability from `ENABLE_DEMO_LOGIN` on the server per request, so one variable controls both

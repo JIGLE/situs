@@ -46,12 +46,14 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
-    // DATA_PROTECTION §4 said nothing left the EEA. Contract import sends the PDFs to Anthropic.
-    pattern: /None are intended, and none are made/,
-    retired: "2026-09-24 (contract import)",
+    // #413 read lease contracts with Claude. The owner wants no AI API in Situs, and a free-form
+    // contract cannot be read reliably without one, so the import was removed.
+    pattern:
+      /ANTHROPIC_API_KEY|ANTHROPIC_MODEL|Import from contract|\/api\/contracts\/|contract_reader|claude-extractor|LeaseClause/,
+    retired: "2026-09-25 (no AI APIs)",
     because:
-      "importing a lease from its contract sends the PDFs to Anthropic, in the United States, " +
-      "wherever contract import is configured",
+      "contract import with Claude was removed: leases are entered through their form, and no " +
+      "document leaves the instance",
   },
   {
     // DATA_PROTECTION §3's call-site table gained the contract, and its plaintext table said the

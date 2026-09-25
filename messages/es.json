@@ -249,7 +249,6 @@
       "email": "Correo (SMTP)",
       "bank": "Movimientos bancarios",
       "bank_provider": "Proveedor bancario",
-      "contract_reader": "Lectura de contratos (Anthropic)",
       "tax": "Autoridad fiscal — {country}"
     },
     "shell": {
@@ -828,8 +827,7 @@
       },
       "atContract": "Contrato en la AT",
       "atContractVersion": "{number}, versión {version}",
-      "notRecorded": "No registrado",
-      "clauses": "Cláusulas del contrato"
+      "notRecorded": "No registrado"
     },
     "unknown": "Desconocido",
     "parties": {
@@ -848,66 +846,6 @@
       "version": "Versión del contrato",
       "hint": "Figura en el Portal das Finanças o en el justificante de registro. Todos los recibos emitidos en Finanças lo indican.",
       "invalid": "Solo dígitos."
-    },
-    "import": {
-      "button": "Importar del contrato",
-      "title": "Importar un contrato de alquiler",
-      "description": "Situs lee el contrato y rellena el alquiler para que lo revises. No se guarda nada hasta que confirmes.",
-      "contractFile": "Contrato firmado (PDF)",
-      "proofFile": "Justificante de registro en la AT (PDF, opcional)",
-      "transfer": "Para leerlos, los PDF se envían a Anthropic, en Estados Unidos.",
-      "read": "Leer contrato",
-      "reading": "Leyendo el contrato. Puede tardar un minuto.",
-      "property": "Inmueble",
-      "landlords": "Arrendadores",
-      "tenant": "Inquilino",
-      "terms": "Condiciones",
-      "clauses": "Cláusulas",
-      "linkTo": "Vincular a",
-      "newProperty": "Crear un inmueble nuevo",
-      "newTenant": "Crear un inquilino nuevo",
-      "newOwner": "Crear un propietario nuevo",
-      "matched": "Coincide con sus registros ({by})",
-      "source": "Página {page}: «{quote}»",
-      "notStated": "No figura en los documentos",
-      "share": "Cuota (%)",
-      "ownedNote": "Un inmueble que ya tiene propietarios conserva las cuotas registradas.",
-      "problemsTitle": "Antes de confirmar",
-      "confirm": "Confirmar y crear el contrato",
-      "created": "Contrato importado.",
-      "matchedBy": {
-        "matrix": "artículo matricial",
-        "address": "dirección",
-        "nif": "NIF",
-        "email": "correo"
-      },
-      "problems": {
-        "property": "El nuevo inmueble necesita nombre y dirección.",
-        "tenant": "El inquilino necesita un nombre.",
-        "rent": "El alquiler mensual debe ser mayor que 0.",
-        "dates": "El contrato debe terminar después de empezar.",
-        "shares": "Las cuotas suman {total}%. Deben sumar 100%.",
-        "email": "{name} necesita una dirección de correo.",
-        "nif": "{name}: el dígito de control de este NIF no es correcto."
-      },
-      "errors": {
-        "not_configured": "La lectura de contratos no está configurada en esta instancia.",
-        "refused": "No se pudo leer el contrato: el modelo lo rechazó.",
-        "too_long": "El contrato es demasiado largo para leerlo de una vez.",
-        "unreadable": "No se pudo leer el PDF. Pruebe con un escaneo más nítido.",
-        "rejected": "Anthropic no aceptó la clave de API o el modelo de esta instancia.",
-        "busy": "Demasiadas lecturas por ahora. Inténtelo más tarde.",
-        "unavailable": "El servicio de lectura no respondió. Inténtelo de nuevo.",
-        "not_pdf": "Ese archivo no es un PDF.",
-        "too_large": "El PDF es demasiado grande.",
-        "email_taken": "Ya existe un inquilino o propietario con ese correo. Vincúlelo en lugar de crear otro."
-      },
-      "clauseKind": {
-        "renewal": "Renovación",
-        "rent_update": "Actualización de la renta",
-        "termination": "Resolución y preaviso",
-        "deposit": "Fianza"
-      }
     }
   },
   "notifications": {
@@ -1642,8 +1580,6 @@
       "processorEnableBankingBody": "Proveedor autorizado de servicios de información sobre cuentas. Recibe su autorización bancaria y devuelve datos de cuenta y de movimientos. Solo si conecta un banco.",
       "processorEmail": "Brevo",
       "processorEmailBody": "Entrega el correo transaccional y, por tanto, ve la dirección del destinatario y el mensaje. Con sede en la UE (Francia). Solo si el correo está configurado.",
-      "processorAnthropic": "Anthropic",
-      "processorAnthropicBody": "Lee un contrato de arrendamiento, y el justificante de su registro en la AT, cuando importa un contrato a partir de ellos, por lo que ve todo lo que contienen esos documentos. Con sede en Estados Unidos, fuera de la UE. Solo donde la importación de contratos esté configurada, y solo para los documentos que decida enviar.",
       "processorTax": "Autoridad Tributaria portuguesa (AT)",
       "processorTaxBody": "Reciben las declaraciones fiscales que usted decida presentar.",
       "contactTitle": "Contacto",
@@ -1709,8 +1645,6 @@
     "uploadLeaseContract": "PDF del contrato subido",
     "downloadLeaseContract": "PDF del contrato descargado",
     "deleteLeaseContract": "PDF del contrato eliminado",
-    "extractLeaseContract": "Contrato enviado a Anthropic para su lectura",
-    "importLeaseContract": "Contrato importado",
     "createUnit": "Unidad creada",
     "updateUnit": "Unidad actualizada",
     "deleteUnit": "Unidad eliminada",

@@ -127,9 +127,6 @@ export default async function PrivacyPage() {
                 {t("privacy.processorEnableBankingBody")}
               </Term>
               <Term label={t("privacy.processorEmail")}>{t("privacy.processorEmailBody")}</Term>
-              <Term label={t("privacy.processorAnthropic")}>
-                {t("privacy.processorAnthropicBody")}
-              </Term>
               <Term label={t("privacy.processorTax")}>{t("privacy.processorTaxBody")}</Term>
             </ul>
           </Section>

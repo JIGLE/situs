@@ -14,14 +14,6 @@ export const MAX_CONTRACT_BYTES = 20 * 1024 * 1024;
 /** The limit in megabytes, as the form states it. */
 export const MAX_CONTRACT_MB = MAX_CONTRACT_BYTES / (1024 * 1024);
 
-/**
- * AT's proof of a contract's registration, read beside the contract on import. It is a page or
- * two; with the contract's cap, one reading stays under Anthropic's 32 MB request limit once
- * base64 grows both by a third.
- */
-export const MAX_PROOF_BYTES = 3 * 1024 * 1024;
-export const MAX_PROOF_MB = MAX_PROOF_BYTES / (1024 * 1024);
-
 /** The name to store: the uploaded file's, without a path or control characters, ending `.pdf`. */
 export function contractFileName(header: string | null, leaseId: string): string {
   let name = "";

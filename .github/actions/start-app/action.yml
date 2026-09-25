@@ -58,13 +58,6 @@ inputs:
       limit otherwise fail the tail of the run with 429s that read as product bugs.
     required: false
     default: "false"
-  contract-reader:
-    description: >-
-      "true" sets a placeholder ANTHROPIC_API_KEY, so the Leases screen offers contract import
-      and the mobile audit can measure its sheet. The key is never sent: nothing in a job that
-      sets this reads a contract, and a real call would fail on the placeholder.
-    required: false
-    default: "false"
   wait-timeout:
     description: "Milliseconds to wait for the app to answer."
     required: false
@@ -107,7 +100,6 @@ runs:
         ALLOW_DEMO_MODE: ${{ inputs.demo-mode }}
         ENABLE_DEMO_LOGIN: ${{ inputs.demo-login }}
         E2E_DISABLE_RATE_LIMIT: ${{ inputs.disable-rate-limit }}
-        ANTHROPIC_API_KEY: ${{ inputs.contract-reader == 'true' && 'ci-placeholder-never-sent' || '' }}
         PII_ENCRYPTION_KEY: ${{ env.PII_ENCRYPTION_KEY }}
         NODE_ENV: production
         PORT: "3000"

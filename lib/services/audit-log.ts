@@ -32,10 +32,6 @@ export type AuditAction =
   | "UPLOAD_LEASE_CONTRACT"
   | "DOWNLOAD_LEASE_CONTRACT"
   | "DELETE_LEASE_CONTRACT"
-  // A contract sent to Anthropic to be read (nothing written but this row), and a reading the
-  // owner confirmed and wrote.
-  | "EXTRACT_LEASE_CONTRACT"
-  | "IMPORT_LEASE_CONTRACT"
   | "CREATE_UNIT"
   | "UPDATE_UNIT"
   | "DELETE_UNIT"

@@ -63,7 +63,6 @@
     ]
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.128.0",
     "@next-auth/prisma-adapter": "^1.0.7",
     "@prisma/adapter-better-sqlite3": "^7.10.0",
     "@prisma/client": "^7.10.0",

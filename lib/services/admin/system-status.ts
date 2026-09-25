@@ -37,7 +37,6 @@ import {
   PSD2_PREFIX,
 } from "@/lib/services/bank/providers/registry";
 import { authorityName, modeKind } from "@/lib/tax/connectors/presentation";
-import { contractReaderConfigured, contractReaderModel } from "@/lib/services/contracts/extractor";
 
 /**
  * - `ok` — working as designed.
@@ -50,15 +49,7 @@ export type StatusSeverity = "ok" | "simulated" | "warning" | "error";
 
 /** What a check is about. Its label is `admin.check.<kind>` in the message catalogues. */
 export type StatusCheckKind =
-  | "schema"
-  | "database"
-  | "session_user"
-  | "pii"
-  | "email"
-  | "bank"
-  | "bank_provider"
-  | "contract_reader"
-  | "tax";
+  "schema" | "database" | "session_user" | "pii" | "email" | "bank" | "bank_provider" | "tax";
 
 export interface StatusCheck {
   /** The kind; a per-country tax check is `tax:<country>`. */
@@ -425,30 +416,6 @@ function emailCheck(): StatusCheck {
 }
 
 /**
- * Reading lease contracts with Claude. Optional, and the one integration that sends documents
- * outside the EEA, so "not configured" is a choice rather than a fault. Derived from the
- * configuration alone: a probe would be a paid request on every visit to this page.
- */
-function contractReaderCheck(): StatusCheck {
-  return contractReaderConfigured()
-    ? {
-        id: "contract_reader",
-        group: "integration",
-        severity: "ok",
-        state: "configured",
-        detail: `Reads with ${contractReaderModel()}. Contracts go to Anthropic only when imported.`,
-      }
-    : {
-        id: "contract_reader",
-        group: "integration",
-        severity: "simulated",
-        state: "not_configured",
-        detail:
-          "No Anthropic API key: leases are entered by hand, and no contract leaves the instance.",
-      };
-}
-
-/**
  * The signed-in user's own row. Sessions are JWTs and Google OAuth has no PrismaAdapter, so the
  * id every owned record foreign-keys against is written into the token once, at sign-in. Sign in
  * while the database is unreachable and the token can end up carrying the OAuth provider's id
@@ -499,7 +466,7 @@ export async function getSystemStatus(userId: string): Promise<SystemStatus> {
     bankProviderCheck(),
   ]);
 
-  const checks: StatusCheck[] = [encryptionCheck(), emailCheck(), contractReaderCheck()];
+  const checks: StatusCheck[] = [encryptionCheck(), emailCheck()];
   for (const result of results) {
     if (result.status !== "fulfilled") continue;
     if (Array.isArray(result.value)) checks.push(...result.value);

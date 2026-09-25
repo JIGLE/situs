@@ -222,10 +222,6 @@ const SURFACES = [
   { id: "financials-tax", path: "/financials?tab=tax" },
   { id: "leases", path: "/leases" },
   { id: "detail-lease", path: "/leases?detail=lease:{leaseId}", overlay: true },
-  // The contract-import sheet, on its first step. It opens only where a reader is configured, so
-  // the server under audit carries a placeholder ANTHROPIC_API_KEY (audit-server.mjs, and the
-  // start-app action's `contract-reader` input in CI). Nothing is read, so nothing is sent.
-  { id: "contract-import", path: "/leases?import=contract", overlay: true },
   { id: "buildings", path: "/buildings" },
   { id: "contracts", path: "/contracts" },
   { id: "settings", path: "/settings" },
