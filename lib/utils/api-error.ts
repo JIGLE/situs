@@ -53,6 +53,10 @@ const REASON_KEY = new Map<
   | "atCredentialsMissing"
   | "atCredentialsUnreadable"
   | "atTestModeRequired"
+  | "bankOutflowNotRent"
+  | "bankLeaseRequired"
+  | "bankMovementHasReceipt"
+  | "bankMovementNotIgnored"
 >([
   ["tenant_has_history", "tenantHasHistory"],
   ["property_has_history", "propertyHasHistory"],
@@ -63,6 +67,10 @@ const REASON_KEY = new Map<
   ["at_credentials_missing", "atCredentialsMissing"],
   ["at_credentials_unreadable", "atCredentialsUnreadable"],
   ["at_test_mode_required", "atTestModeRequired"],
+  ["bank_outflow_not_rent", "bankOutflowNotRent"],
+  ["bank_lease_required", "bankLeaseRequired"],
+  ["bank_movement_has_receipt", "bankMovementHasReceipt"],
+  ["bank_movement_not_ignored", "bankMovementNotIgnored"],
 ]);
 
 type FormsCatalogue = (typeof en)["forms"];

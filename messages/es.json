@@ -214,7 +214,10 @@
       "bankNoProviderBody": "Esta instancia no tiene credenciales de Enable Banking, así que los movimientos no pueden importarse automáticamente. Define ENABLE_BANKING_APPLICATION_ID y ENABLE_BANKING_PRIVATE_KEY_FILE apuntando al .pem montado y reinicia.",
       "bankNoProviderManual": "Mientras tanto no llegan movimientos bancarios. Un pago se puede seguir registrando a mano, en Finanzas › Recibos.",
       "systemStatusMovedHelp": "El estado de la instancia se movió al área de administración, separada de la aplicación.",
-      "openAdmin": "Abrir administración"
+      "openAdmin": "Abrir administración",
+      "bankConsentUntil": "Consentimiento válido hasta el {date}",
+      "bankConsentEnding": "El consentimiento termina el {date}: vuelve a conectar antes para seguir sincronizando",
+      "bankConsentEnded": "El consentimiento terminó el {date}"
     },
     "at": {
       "title": "Finanças (AT)",
@@ -540,7 +543,8 @@
     "streakMonths": "{count} meses seguidos con el alquiler totalmente cobrado",
     "oneItemNeedsAttention": "1 elemento necesita tu atención",
     "itemsNeedAttention": "{count} elementos necesitan tu atención",
-    "setupComplete": "Configuración completa"
+    "setupComplete": "Configuración completa",
+    "bankReviewAlert": "{count, plural, one {# movimiento bancario por revisar} other {# movimientos bancarios por revisar}}"
   },
   "onboarding": {
     "gettingStarted": "Primeros Pasos",
@@ -683,6 +687,10 @@
       "atCredentialsMissing": "Guarde primero el subusuario de la AT y su contraseña.",
       "atCredentialsUnreadable": "La contraseña de la AT guardada ya no se puede leer, porque la clave de cifrado ha cambiado. Introdúzcala de nuevo.",
       "atTestModeRequired": "Cambie primero la conexión al servicio de pruebas de la AT.",
+      "bankOutflowNotRent": "Una salida de dinero no puede confirmarse como renta.",
+      "bankLeaseRequired": "Elige el contrato al que pertenece este pago, con Asignar.",
+      "bankMovementHasReceipt": "Este movimiento ya generó un recibo. Borra primero ese recibo para cambiarlo.",
+      "bankMovementNotIgnored": "Solo un movimiento ignorado puede restaurarse.",
       "tooMany": "Demasiadas solicitudes. Espere un momento e inténtelo de nuevo.",
       "serverError": "El servidor ha tenido un problema. Inténtelo de nuevo en unos momentos.",
       "securityTokenExpired": "Su token de seguridad ha caducado. Actualice la página e inténtelo de nuevo."
@@ -1207,11 +1215,11 @@
       "totals": "Totales"
     },
     "bank": {
-      "allMovements": "Todos los movimientos",
-      "needsReview": "Requiere revisión",
-      "autoMatched": "Conciliado automáticamente",
-      "confirmed": "Confirmado",
-      "ignored": "Ignorado",
+      "allMovements": "Todos",
+      "needsReview": "Por revisar",
+      "autoMatched": "Automáticos",
+      "confirmed": "Confirmados",
+      "ignored": "Ignorados",
       "noSuggestion": "Sin sugerencia",
       "assignToLease": "Asignar a contrato…",
       "cancelReassign": "Cancelar reasignación",
@@ -1220,12 +1228,48 @@
       "ignore": "Ignorar",
       "empty": "Aún no hay movimientos bancarios. Llegan cuando un banco conectado se sincroniza: conecta uno en Configuración › Integraciones.",
       "emptyFiltered": "No hay movimientos bancarios con este estado.",
-      "booked": "Fecha valor",
+      "booked": "Fecha de operación",
       "counterparty": "Contraparte",
       "reference": "Referencia",
       "amount": "Importe",
       "match": "Coincidencia",
-      "filterStatus": "Filtrar movimientos por estado"
+      "filterStatus": "Filtrar movimientos por estado",
+      "outgoing": "Salidas",
+      "restore": "Restaurar",
+      "actions": "Acciones",
+      "emptyReview": "Nada pendiente de revisión. Los movimientos nuevos llegan con cada sincronización.",
+      "status": {
+        "needsReview": "Por revisar",
+        "autoMatched": "Asociado automáticamente",
+        "confirmed": "Confirmado",
+        "ignored": "Ignorado",
+        "imported": "Importado",
+        "duplicate": "Duplicado"
+      },
+      "signals": {
+        "ibanMatch": "IBAN conocido",
+        "nameMatch": "El nombre coincide",
+        "amountExact": "Igual a la renta",
+        "amountMultiple": "Varias rentas",
+        "amountRemainder": "El importe pendiente",
+        "referenceHit": "La referencia coincide",
+        "possibleDuplicate": "Posible duplicado",
+        "negativeAmount": "Salida de dinero",
+        "ambiguousCandidates": "Más de un contrato posible",
+        "testConnectionNotAllocated": "Conexión de prueba: no asignado",
+        "rule": "Regla: {name}",
+        "referenceConflict": "La referencia indica {reference}; el mes impagado más antiguo es {expected}"
+      },
+      "toast": {
+        "confirmed": "Pago de {tenant} confirmado: se ha creado un recibo.",
+        "ignored": "Movimiento ignorado. Queda en Ignorados.",
+        "restored": "Movimiento de nuevo en Por revisar."
+      },
+      "sync": {
+        "noBank": "Ningún banco conectado. Los movimientos llegan de un banco conectado en Configuración › Integraciones.",
+        "reconnect": "Reconectar en Configuración",
+        "done": "Sincronizado: {imported, plural, =0 {ningún movimiento nuevo} one {# movimiento nuevo} other {# movimientos nuevos}}."
+      }
     },
     "timeRange": "Intervalo de tiempo",
     "filterReceiptStatus": "Filtrar recibos por estado",
@@ -1739,6 +1783,7 @@
     "confirmMatch": "Conciliación confirmada",
     "overrideMatch": "Conciliación reasignada",
     "ignoreTransaction": "Movimiento ignorado",
+    "restoreTransaction": "Movimiento devuelto a revisión",
     "applyReconciliationRule": "Regla de conciliación aplicada",
     "bankConnectionCreated": "Banco conectado",
     "bankConnectionDeleted": "Conexión bancaria de prueba eliminada",

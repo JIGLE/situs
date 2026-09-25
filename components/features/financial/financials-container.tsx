@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsMobileSelect, TabsTrigger } from "@/co
 import { Button } from "@/components/ui/button";
 import { ExportButton } from "@/components/ui/export-button";
 import { useTabPersistence } from "@/lib/hooks/use-tab-persistence";
+import { useBankInboxSummary } from "@/lib/hooks/use-bank-inbox-summary";
 import { useApp } from "@/lib/contexts/app-context";
 import { useCurrency } from "@/lib/contexts/currency-context";
 import { getActiveLease } from "@/lib/utils/lease-helpers";
@@ -34,6 +35,9 @@ export function FinancialsContainer() {
   const tabParam = searchParams.get("tab") as PaymentTab | "overview" | null;
   const { state } = useApp();
   const { formatCurrency } = useCurrency();
+  // Held here rather than in the inbox: Radix unmounts an inactive tab, and the Bank tab's count
+  // has to show while another tab is open.
+  const { summary: bankSummary, refresh: refreshBankSummary } = useBankInboxSummary();
   // `ReceiptsView` (which owns the record-payment dialog) only mounts while the Receipts
   // tab is the active TabsContent — Radix unmounts inactive tab panels by default. The
   // header "Record payment" button used to poke a ref, which silently no-op'd whenever
@@ -116,10 +120,21 @@ export function FinancialsContainer() {
       : t("desc");
 
   /** Tab set as data, so the bar and its mobile select can never drift apart. */
-  const paymentTabs: { value: PaymentTab; label: string; icon: LucideIcon }[] = [
+  const paymentTabs: {
+    value: PaymentTab;
+    label: string;
+    icon: LucideIcon;
+    /** A count of work waiting there, shown only when there is some. */
+    badge?: number;
+  }[] = [
     { value: "receipts", label: t("tabs.receipts"), icon: Receipt },
     { value: "rent-matrix", label: t("tabs.rentMatrix"), icon: Grid3X3 },
-    { value: "bank", label: t("tabs.bank"), icon: Landmark },
+    {
+      value: "bank",
+      label: t("tabs.bank"),
+      icon: Landmark,
+      badge: bankSummary?.toReview || undefined,
+    },
     { value: "rent-roll", label: t("tabs.rentRoll"), icon: BadgeEuro },
     { value: "tax", label: t("tabs.tax"), icon: FileText },
   ];
@@ -233,14 +248,19 @@ export function FinancialsContainer() {
             className="md:hidden"
             value={visibleTab}
             onValueChange={(value) => setActiveTab(value as PaymentTab)}
-            items={paymentTabs.map(({ value, label }) => ({ value, label }))}
+            items={paymentTabs.map(({ value, label, badge }) => ({ value, label, badge }))}
             aria-label={t("title")}
           />
           <TabsList className="flex w-full max-w-full justify-start gap-1 overflow-x-auto max-md:hidden">
-            {paymentTabs.map(({ value, label, icon: Icon }) => (
+            {paymentTabs.map(({ value, label, icon: Icon, badge }) => (
               <TabsTrigger key={value} value={value} className="flex shrink-0 items-center gap-2">
                 <Icon className="h-4 w-4 shrink-0" />
                 <span className="whitespace-nowrap">{label}</span>
+                {badge ? (
+                  <span className="ml-1 rounded-full bg-[var(--color-muted)] px-2 py-0.5 text-xs tabular-nums">
+                    {badge}
+                  </span>
+                ) : null}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -261,7 +281,7 @@ export function FinancialsContainer() {
         </TabsContent>
 
         <TabsContent value="bank" className="mt-0">
-          <BankMovementsInbox />
+          <BankMovementsInbox summary={bankSummary} onChanged={refreshBankSummary} />
         </TabsContent>
 
         <TabsContent value="rent-roll" className="mt-0">

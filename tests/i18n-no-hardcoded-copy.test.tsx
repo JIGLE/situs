@@ -36,6 +36,7 @@ import { FinancialsView } from "@/components/features/financial/financials-view"
 import { TaxConnectorDashboard } from "@/components/features/financial/tax-connector-dashboard";
 import { AuditTrail as AuditTrailForError } from "@/components/shared/audit-trail";
 import { DraftBanner } from "@/components/ui/multi-step-form";
+import { BankMovementsInbox } from "@/components/features/financial/bank-movements-inbox";
 import ptMessages from "@/messages/pt.json";
 
 vi.mock("@/lib/contexts/currency-context", () => ({
@@ -59,8 +60,11 @@ vi.mock("@/lib/contexts/app-context", () => ({
   useApp: () => ({
     addExpense: vi.fn(),
     addReceipt: vi.fn(),
+    refreshData: vi.fn(),
     state: {
       loading: false,
+      leases: [],
+      tenants: [],
       properties: [{ id: "p1", name: "Rua A, 1" }],
       receipts: [
         {
@@ -222,6 +226,53 @@ describe("user-visible copy comes from the catalogue, not from literals", () => 
     // Rows outlive the code that wrote them; an action with no label keeps its stored code.
     expect(screen.getByText("RETIRED_FEATURE_ACTION")).toBeInTheDocument();
     expect(screen.queryByText(/ALLOCATE PAYMENT|UPLOAD LEASE CONTRACT/i)).not.toBeInTheDocument();
+  });
+
+  it("renders the bank inbox in Portuguese", async () => {
+    // It opened under an English heading ("Bank movements · matching inbox"), labelled each
+    // movement with a code (AUTO, CONF, REVIEW) and listed its match signals with their
+    // underscores turned into spaces: "iban match · amount exact".
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) =>
+        Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve(
+              url.startsWith("/api/bank/connections")
+                ? { data: { connections: [], providersConfigured: [] } }
+                : {
+                    data: [
+                      {
+                        id: "txn-1",
+                        amount: 850,
+                        currency: "EUR",
+                        bookingDate: "2026-09-01T12:00:00.000Z",
+                        valueDate: null,
+                        counterpartyName: "ANA",
+                        reference: null,
+                        status: "needs_review",
+                        suggestedLeaseId: null,
+                        matchConfidence: null,
+                        matchReasons: JSON.stringify({ reasons: ["name_match"], warnings: [] }),
+                        duplicateOfId: null,
+                        receiptId: null,
+                        bankAccount: { label: "Conta" },
+                        suggestedLease: null,
+                      },
+                    ],
+                  },
+            ),
+        }),
+      ),
+    );
+
+    renderWithProviders(<BankMovementsInbox />, { initialLocale: "pt" });
+
+    expect((await screen.findAllByText("Nome coincide")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("A rever").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Sem sugestão").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/matching inbox|REVIEW|name match/)).not.toBeInTheDocument();
   });
 
   it("offers to restore a form draft in Portuguese", () => {

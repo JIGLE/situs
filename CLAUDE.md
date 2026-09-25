@@ -117,7 +117,9 @@ e2e/                    # Playwright E2E tests
 - **Bank matching**: a live provider sync → fingerprint dedupe (idempotent) → fuzzy-duplicate
   check → reconciliation rules → weighted confidence scoring (`lib/services/matching/engine.ts`,
   pure). ≥0.85 auto-allocates via a draft `Receipt` (`source: "automation"`); anything lower waits
-  in the Bank Movements inbox (Finance tab) for a human to confirm, reassign or ignore. The live
+  in the Bank Movements inbox (Finance tab) for a human to confirm, reassign or ignore. Money going
+  out waits too, under its own filter, and is never counted as work (`lib/utils/bank-inbox.ts`,
+  `GET /api/bank/transactions/summary`). The live
   connection is the only way movements arrive: there is no file import. E2E and development feed
   the same `importBankRows` through `POST /api/debug/bank/movements`, which answers 403 unless
   `ALLOW_DEMO_MODE` is set or the server runs in development.

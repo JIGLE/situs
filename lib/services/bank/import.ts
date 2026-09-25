@@ -17,6 +17,7 @@ import crypto from "crypto";
 
 import { getPrismaClient } from "@/lib/services/database/database";
 import { logAudit } from "@/lib/services/audit-log";
+import { ConflictError, ResourceNotFoundError } from "@/lib/utils/error-handling";
 import { encryptPII } from "@/lib/utils/pii-encryption";
 import { allocateReceipt } from "@/lib/services/allocation/service";
 import { isTestConnection } from "@/lib/services/bank/consent";
@@ -559,13 +560,17 @@ export async function importBankRows(
   return summary;
 }
 
-export type TransactionAction = "confirm" | "reassign" | "ignore";
+export type TransactionAction = "confirm" | "reassign" | "ignore" | "restore";
 
 /**
  * Inbox row actions. `confirm` accepts the suggestion; `reassign` overrides it
- * with an explicit lease (audited as OVERRIDE_MATCH); `ignore` parks the row.
- * Confirm/reassign create the automation Receipt and run the waterfall unless
- * the movement already has one (idempotent).
+ * with an explicit lease (audited as OVERRIDE_MATCH); `ignore` parks the row;
+ * `restore` takes an ignored row back to review. Confirm/reassign create the
+ * automation Receipt and run the waterfall unless the movement already has one
+ * (idempotent).
+ *
+ * A refusal is a typed error with a `reason`, so the inbox can say why in the
+ * owner's language instead of reporting a lost connection.
  */
 export async function applyTransactionAction(
   userId: string,
@@ -577,12 +582,42 @@ export async function applyTransactionAction(
   const txn = await prisma.bankTransaction.findFirst({
     where: { id: transactionId, userId },
   });
-  if (!txn) throw new Error("Transaction not found");
-  if (txn.status === "matched_confirmed" && action !== "ignore") {
-    return { status: txn.status, receiptId: txn.receiptId };
+  if (!txn) throw new ResourceNotFoundError("Bank movement");
+
+  if (action === "restore") {
+    if (txn.status !== "ignored") {
+      throw new ConflictError(
+        "Only an ignored movement can go back to review",
+        "bank_movement_not_ignored",
+      );
+    }
+    // A receipt made from it would stay allocated behind a movement waiting for review again.
+    if (txn.receiptId) {
+      throw new ConflictError("This movement already has a receipt", "bank_movement_has_receipt");
+    }
+    await prisma.bankTransaction.update({
+      where: { id: txn.id },
+      data: { status: "needs_review" },
+    });
+    await logAudit({
+      userId,
+      action: "RESTORE_TRANSACTION",
+      resourceType: "bank_transaction",
+      resourceId: txn.id,
+    });
+    return { status: "needs_review", receiptId: null };
   }
 
   if (action === "ignore") {
+    // Ignoring a movement that paid a receipt would leave that receipt allocated behind a
+    // movement marked as nothing. Deleting the receipt sends the movement back to review first.
+    if (txn.receiptId) {
+      throw new ConflictError(
+        "A movement with a receipt cannot be ignored",
+        "bank_movement_has_receipt",
+      );
+    }
+    if (txn.status === "ignored") return { status: "ignored", receiptId: null };
     await prisma.bankTransaction.update({
       where: { id: txn.id },
       data: { status: "ignored" },
@@ -594,18 +629,26 @@ export async function applyTransactionAction(
       resourceId: txn.id,
       details: { previousStatus: txn.status },
     });
-    return { status: "ignored", receiptId: txn.receiptId };
+    return { status: "ignored", receiptId: null };
+  }
+
+  if (txn.status === "matched_confirmed") {
+    return { status: txn.status, receiptId: txn.receiptId };
   }
 
   const targetLeaseId = action === "reassign" ? leaseId : (leaseId ?? txn.suggestedLeaseId);
-  if (!targetLeaseId) throw new Error("A lease is required to confirm this movement");
-  if (txn.amount <= 0) throw new Error("Outflows cannot be allocated as rent");
+  if (!targetLeaseId) {
+    throw new ConflictError("A lease is required to confirm this movement", "bank_lease_required");
+  }
+  if (txn.amount <= 0) {
+    throw new ConflictError("Outflows cannot be allocated as rent", "bank_outflow_not_rent");
+  }
 
   const lease = await prisma.lease.findFirst({
     where: { id: targetLeaseId, userId },
     select: { id: true },
   });
-  if (!lease) throw new Error("Lease not found");
+  if (!lease) throw new ResourceNotFoundError("Lease");
 
   let receiptId = txn.receiptId;
   if (!receiptId) {

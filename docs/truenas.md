@@ -354,9 +354,10 @@ curl -X POST -H "Authorization: Bearer $CRON_SECRET" \
 The same secret gates `/api/cron/notifications` and `/api/cron/data-retention`; all three return
 503 while it is unset, so nothing runs on a schedule until you set it.
 
-Consents expire — 90 days by default, and a bank can revoke one sooner. When that happens the
-connection is marked expired, syncing stops rather than quietly returning nothing, and both
-Settings › Integrations and `/admin` say so with a **Reconnect** action.
+Consents expire — 90 days by default, and a bank can revoke one sooner. The Finance inbox shows
+when each consent ends, and warns 14 days before. When one expires the connection is marked
+expired, syncing stops rather than quietly returning nothing, and Settings › Integrations, the
+Finance inbox and `/admin` say so, with a way to reconnect.
 
 To exercise the flow without a real account, use a Sandbox application and its Mock ASPSP — see
 _Recording the transaction shape_ above.

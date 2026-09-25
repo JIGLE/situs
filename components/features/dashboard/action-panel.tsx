@@ -11,10 +11,12 @@ import {
   ChevronRight,
   Clock,
   Flame,
+  Landmark,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils/utils";
 import { useApp } from "@/lib/contexts/app-context";
+import { useBankInboxSummary } from "@/lib/hooks/use-bank-inbox-summary";
 
 type AlertSeverity = "critical" | "warning" | "info";
 
@@ -84,6 +86,7 @@ export function ActionPanel(): ReactElement {
   const t = useTranslations("dashboard");
 
   const { leases = [], receipts = [], properties = [] } = state;
+  const { summary: bankSummary } = useBankInboxSummary();
 
   const [streakMonths, setStreakMonths] = useState(0);
   useEffect(() => {
@@ -148,7 +151,20 @@ export function ActionPanel(): ReactElement {
       });
     }
 
-    // --- 3. Leases expiring within 30 days (renewal-aware) ---
+    // --- 3. Bank movements waiting for a decision: money in only, the inbox's own count ---
+    const bankToReview = bankSummary?.toReview ?? 0;
+    if (bankToReview > 0) {
+      results.push({
+        id: "bank-review",
+        icon: Landmark,
+        message: t("bankReviewAlert", { count: bankToReview }),
+        count: bankToReview,
+        href: "/financials?tab=bank",
+        severity: "warning",
+      });
+    }
+
+    // --- 4. Leases expiring within 30 days (renewal-aware) ---
     const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
     const soonExpiring = activeLeases.filter((l) => {
       const end = new Date(l.endDate);
@@ -203,7 +219,7 @@ export function ActionPanel(): ReactElement {
       });
     }
 
-    // --- 4. Leases expiring within 90 days (secondary warning, no renewal offered) ---
+    // --- 5. Leases expiring within 90 days (secondary warning, no renewal offered) ---
     const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
     const soonExpiring90 = activeLeases.filter((l) => {
       const end = new Date(l.endDate);
@@ -226,7 +242,7 @@ export function ActionPanel(): ReactElement {
     }
 
     return results;
-  }, [leases, receipts, properties, t]);
+  }, [leases, receipts, properties, bankSummary, t]);
 
   return (
     <Card className="border-[var(--color-border)] bg-[var(--color-card)]">

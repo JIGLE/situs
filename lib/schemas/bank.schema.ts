@@ -21,10 +21,10 @@ export const debugBankMovementsSchema = z.object({
   rows: z.array(bankRowSchema).min(1).max(1000),
 });
 
-/** PUT /api/bank/transactions/[id] — inbox row actions. */
+/** PUT /api/bank/transactions/[id] — inbox row actions; `restore` takes an ignored one back. */
 export const bankTransactionActionSchema = z
   .object({
-    action: z.enum(["confirm", "reassign", "ignore"]),
+    action: z.enum(["confirm", "reassign", "ignore", "restore"]),
     leaseId: z.string().optional(),
   })
   .refine((body) => body.action !== "reassign" || !!body.leaseId, {
