@@ -21,6 +21,13 @@ updates:
     labels:
       - "dependencies"
       - "npm"
+    ignore:
+      # @prisma/adapter-better-sqlite3 (7.10.0, the latest) depends on better-sqlite3 ^12. A
+      # major bump of the app's own copy installs a second native build beside the adapter's, and
+      # scripts/ensure-sqlite.js would open the database with a different SQLite than Prisma. PR
+      # #387 proposed 13.0.3; it was held back. Lift this once the adapter accepts 13.
+      - dependency-name: "better-sqlite3"
+        update-types: ["version-update:semver-major"]
     groups:
       # FIRST on purpose. Dependabot assigns a package to the first group it matches, so this
       # has to precede dev-dependencies or TypeScript minors would land there instead.
