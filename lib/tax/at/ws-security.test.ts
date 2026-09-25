@@ -60,7 +60,6 @@ describe("buildUsernameToken", () => {
     const token = buildUsernameToken(login, { publicKey, now: NOW });
     const key = rsaDecrypt(token.nonce);
     const expected = createHash("sha1")
-      // codeql[js/insufficient-password-hash, js/weak-cryptographic-algorithm] The test recomputes AT's protocol digest (manual §4.1) to check the header; nothing is stored.
       .update(Buffer.concat([key, Buffer.from(token.created), Buffer.from(login.password)]))
       .digest();
     expect(aesDecrypt(key, token.digest)).toEqual(expected);
@@ -77,7 +76,6 @@ describe("buildUsernameToken", () => {
     const created = aesDecrypt(key, token.created).toString("utf8");
     expect(created).toBe("2026-09-25T08:15:30.123Z");
     const expected = createHash("sha1")
-      // codeql[js/insufficient-password-hash] The test recomputes AT's protocol digest (manual §4.1) to check the header; nothing is stored.
       .update(Buffer.concat([key, Buffer.from(created), Buffer.from(login.password)]))
       .digest();
     expect(aesDecrypt(key, token.digest)).toEqual(expected);

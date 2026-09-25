@@ -80,8 +80,12 @@ export function buildUsernameToken(login: AtLogin, options: TokenOptions): Usern
     typeof options.publicKey === "string" ? createPublicKey(options.publicKey) : options.publicKey;
   const created = createdTimestamp(options.now ?? new Date());
   const password = Buffer.from(login.password, "utf8");
+  // SHA-1 over the password is AT's protocol (manual §4.1), not a choice: no other digest
+  // authenticates. Nor is it a stored password hash; it travels once, AES-encrypted under this
+  // request's key, to AT over mutual TLS. CodeQL reports it as a weak password hash. Dismiss that
+  // alert in the Security tab: an inline codeql[...] comment does nothing in this repository,
+  // whose security-and-quality suite does not run CodeQL's suppression query.
   const digest = createHash("sha1")
-    // codeql[js/insufficient-password-hash, js/weak-cryptographic-algorithm] AT's protocol (manual §4.1) fixes this digest as SHA-1 of key, Created and password. It is not a stored password hash: it travels only AES-encrypted under a key used once, to AT, over mutual TLS.
     .update(Buffer.concat([key, Buffer.from(created, "utf8"), password]))
     .digest();
 
