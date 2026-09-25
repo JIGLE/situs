@@ -37,6 +37,7 @@ import {
   PSD2_PREFIX,
 } from "@/lib/services/bank/providers/registry";
 import { authorityName, modeKind } from "@/lib/tax/connectors/presentation";
+import { AT_FILE_ENV, RENEWAL_WARNING_DAYS, readAtConfig } from "@/lib/tax/at/config";
 
 /**
  * - `ok` — working as designed.
@@ -49,7 +50,15 @@ export type StatusSeverity = "ok" | "simulated" | "warning" | "error";
 
 /** What a check is about. Its label is `admin.check.<kind>` in the message catalogues. */
 export type StatusCheckKind =
-  "schema" | "database" | "session_user" | "pii" | "email" | "bank" | "bank_provider" | "tax";
+  | "schema"
+  | "database"
+  | "session_user"
+  | "pii"
+  | "email"
+  | "bank"
+  | "bank_provider"
+  | "tax"
+  | "at_connector";
 
 export interface StatusCheck {
   /** The kind; a per-country tax check is `tax:<country>`. */
@@ -192,26 +201,131 @@ async function taxChecks(userId: string): Promise<StatusCheck[]> {
 
   // An unsupported mode is an ERROR, not a note: the connector refuses every call and logs,
   // so the symptom is silence. Without this the operator has no way to learn why nothing
-  // submits. Derived from the guard's own SIMULATED_MODES via modeKind().
-  const unsupported = modeKind(row.mode) === "unsupported";
+  // submits. Derived from the guard's own mode sets via modeKind().
+  const kind = modeKind(row.mode);
+  const lastCall = row.lastSubmissionAt
+    ? ` Last call ${row.lastSubmissionAt.toISOString().slice(0, 10)}.`
+    : "";
 
+  if (kind === "unsupported") {
+    return [
+      {
+        id: `tax:${country}`,
+        group: "integration",
+        severity: "error",
+        state: "mode_unsupported",
+        detail: `${authority}. Mode "${row.mode}" is not supported — nothing is being submitted.`,
+        remedy:
+          'Set the connector mode back to "sandbox" or "review". No live endpoint exists yet.',
+      },
+    ];
+  }
+
+  // The test mode reaches the authority's test service, where nothing counts: still not a
+  // filing, so still `simulated`, but said in its own words rather than as "nothing transmitted".
   return [
     {
       id: `tax:${country}`,
       group: "integration",
-      severity: unsupported ? "error" : "simulated",
-      state: unsupported ? "mode_unsupported" : "simulated",
-      detail: unsupported
-        ? `${authority}. Mode "${row.mode}" is not supported — nothing is being submitted.`
-        : `${authority}. Mode "${row.mode}" — filings are simulated and nothing is transmitted.` +
-          (row.lastSubmissionAt
-            ? ` Last call ${row.lastSubmissionAt.toISOString().slice(0, 10)}.`
-            : ""),
-      remedy: unsupported
-        ? 'Set the connector mode back to "sandbox" or "review". No live endpoint exists yet.'
-        : undefined,
+      severity: "simulated",
+      state: kind === "test" ? "test" : "simulated",
+      detail:
+        kind === "test"
+          ? `${authority}. Mode "${row.mode}" — Situs checks credentials and fetches receipts at ` +
+            `the ${authority}'s test service, where nothing counts; it files nothing.${lastCall}`
+          : `${authority}. Mode "${row.mode}" — filings are simulated and nothing is transmitted.` +
+            lastCall,
     },
   ];
+}
+
+/**
+ * The instance's AT certificate files, derived from what the server reads now rather than from
+ * anything stored: missing, unreadable, not matching, or running out. The certificate lasts 12
+ * months (manual §5), so this starts warning `RENEWAL_WARNING_DAYS` before its end.
+ *
+ * Paths and dates only: the files' contents never reach this payload.
+ */
+function atConnectorCheck(now = new Date()): StatusCheck {
+  const { status } = readAtConfig(process.env, now);
+  const base = { id: "at_connector" as const, group: "integration" as const };
+  const entries = Object.entries(status.files) as [
+    keyof typeof AT_FILE_ENV,
+    (typeof status.files)["cert"],
+  ][];
+
+  if (entries.every(([, file]) => file.state === "unset")) {
+    return {
+      ...base,
+      severity: "simulated",
+      state: "not_configured",
+      detail: "No AT certificate files are mounted, so Situs cannot reach AT.",
+    };
+  }
+
+  const wrong = entries.filter(([, file]) => file.state !== "ok");
+  if (wrong.length > 0) {
+    return {
+      ...base,
+      severity: "error",
+      state: "files_invalid",
+      detail: wrong
+        .map(
+          ([name, file]) =>
+            `${AT_FILE_ENV[name]}: ${file.state}${file.path ? ` (${file.path})` : ""}.`,
+        )
+        .join(" "),
+      remedy:
+        "Mount the files AT sent, as PEM without a passphrase, and point the three AT_* variables " +
+        "at them. docs/truenas.md shows how.",
+    };
+  }
+
+  if (status.keyMatches === false) {
+    return {
+      ...base,
+      severity: "error",
+      state: "key_mismatch",
+      detail: `${AT_FILE_ENV.key} does not hold the private key of the certificate in ${AT_FILE_ENV.cert}.`,
+      remedy: "Mount the private key the certificate was requested with.",
+    };
+  }
+
+  const certificate = status.certificate!;
+  const validTo = certificate.validTo.slice(0, 10);
+  if (certificate.daysLeft < 0) {
+    return {
+      ...base,
+      severity: "error",
+      state: "certificate_expired",
+      detail: `The AT certificate for NIF ${certificate.subject} expired on ${validTo}.`,
+      remedy: "Request a new certificate from AT, as for the first one, and mount it.",
+    };
+  }
+  if (new Date(certificate.validFrom) > now) {
+    return {
+      ...base,
+      severity: "warning",
+      state: "certificate_not_yet_valid",
+      detail: `The AT certificate for NIF ${certificate.subject} is valid only from ${certificate.validFrom.slice(0, 10)}.`,
+      remedy: "Check this server's clock.",
+    };
+  }
+  if (certificate.daysLeft <= RENEWAL_WARNING_DAYS) {
+    return {
+      ...base,
+      severity: "warning",
+      state: "certificate_expiring",
+      detail: `The AT certificate for NIF ${certificate.subject} ends on ${validTo}, in ${certificate.daysLeft} days.`,
+      remedy: "Request its renewal from AT now: it lasts 12 months.",
+    };
+  }
+  return {
+    ...base,
+    severity: "ok",
+    state: "configured",
+    detail: `AT certificate for NIF ${certificate.subject}, valid until ${validTo}.`,
+  };
 }
 
 async function bankCheck(userId: string): Promise<StatusCheck> {
@@ -466,7 +580,7 @@ export async function getSystemStatus(userId: string): Promise<SystemStatus> {
     bankProviderCheck(),
   ]);
 
-  const checks: StatusCheck[] = [encryptionCheck(), emailCheck()];
+  const checks: StatusCheck[] = [encryptionCheck(), emailCheck(), atConnectorCheck()];
   for (const result of results) {
     if (result.status !== "fulfilled") continue;
     if (Array.isArray(result.value)) checks.push(...result.value);

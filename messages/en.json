@@ -310,7 +310,8 @@
       "email": "Email (SMTP)",
       "bank": "Bank movements",
       "bank_provider": "Bank provider",
-      "tax": "Tax authority — {country}"
+      "tax": "Tax authority — {country}",
+      "at_connector": "AT certificate"
     },
     "shell": {
       "title": "Instance administration",

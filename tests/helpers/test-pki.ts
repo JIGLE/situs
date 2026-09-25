@@ -7,7 +7,8 @@ import path from "node:path";
  * Throwaway certificates for the AT client's tests. openssl makes them in a temporary directory
  * when a suite starts, and `cleanup()` deletes it, so no key is ever committed.
  *
- * - `ca` signs the server's certificate and the owner's client certificate, as AT's CA does.
+ * - `ca` signs the server's certificate and the owner's client certificate, as AT's CA does. The
+ *   client certificate lasts 400 days, the rest two.
  * - `other-ca` signs a stranger's client certificate, which the server must refuse.
  * - `at-auth` stands in for AT's authentication key: a certificate (`.crt`, and `.der`), the
  *   form AT sends it in, and a bare public key (`.pub`).
@@ -44,7 +45,7 @@ export function makeTestPki(): TestPki {
       `${name}.crt`,
     );
 
-  const issue = (name: string, subject: string, ca: string, extfile?: string) => {
+  const issue = (name: string, subject: string, ca: string, extfile?: string, days = 2) => {
     openssl(
       "req",
       "-newkey",
@@ -61,7 +62,7 @@ export function makeTestPki(): TestPki {
       "x509",
       "-req",
       "-days",
-      "2",
+      String(days),
       "-in",
       `${name}.csr`,
       "-CA",
@@ -79,7 +80,8 @@ export function makeTestPki(): TestPki {
   selfSigned("other-ca", "/CN=Another CA");
   writeFileSync(path.join(dir, "server.ext"), "subjectAltName=IP:127.0.0.1\n");
   issue("server", "/CN=127.0.0.1", "ca", "server.ext");
-  issue("client", "/CN=555555555", "ca");
+  // A year, like the certificate AT signs, so a status check can see it valid, then ending.
+  issue("client", "/CN=555555555", "ca", undefined, 400);
   issue("stranger", "/CN=999999990", "other-ca");
   openssl("x509", "-in", "client.crt", "-outform", "DER", "-out", "client.der");
   openssl(

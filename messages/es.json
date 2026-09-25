@@ -310,7 +310,8 @@
       "email": "Correo (SMTP)",
       "bank": "Movimientos bancarios",
       "bank_provider": "Proveedor bancario",
-      "tax": "Autoridad fiscal — {country}"
+      "tax": "Autoridad fiscal — {country}",
+      "at_connector": "Certificado de la AT"
     },
     "shell": {
       "title": "Administración de la instancia",
