@@ -31,3 +31,30 @@ export function formatDateTime(
   const date = value instanceof Date ? value : new Date(value);
   return isNaN(date.getTime()) ? fallback : date.toLocaleString(locale);
 }
+
+/**
+ * A reference month's name in the app's locale: "set." or "setembro" in Portuguese. Months are
+ * named here rather than listed, since a hardcoded list is English in every language.
+ * The date is built in UTC and formatted in UTC, so no timezone can move it into the month next
+ * door.
+ */
+export function formatMonth(
+  year: number,
+  month: number,
+  locale: string,
+  style: "short" | "long" = "short",
+): string {
+  return new Date(Date.UTC(year, month - 1, 1)).toLocaleDateString(locale, {
+    month: style,
+    timeZone: "UTC",
+  });
+}
+
+/** A reference month with its year: "setembro de 2026", "September 2026". */
+export function formatMonthYear(year: number, month: number, locale: string): string {
+  return new Date(Date.UTC(year, month - 1, 1)).toLocaleDateString(locale, {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}

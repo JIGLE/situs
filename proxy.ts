@@ -271,7 +271,7 @@ export async function proxy(request: NextRequest) {
 
   // Preserve canonical financial tab routes used by the current UI.
   const isFinancialsPath = appPath === "/financials";
-  const canonicalFinancialTabs = new Set(["receipts", "rent-matrix", "bank", "rent-roll", "tax"]);
+  const canonicalFinancialTabs = new Set(["receipts", "rent-matrix", "bank", "tax"]);
 
   // Handle old tab-based URL redirects (backward compatibility)
   const tab = searchParams.get("tab");
@@ -290,6 +290,8 @@ export async function proxy(request: NextRequest) {
       "payment-matrix": { path: "/financials", financialTab: "receipts" },
       // The receipt-based "Due & overdue" tab, replaced by the ledger's rent matrix.
       queue: { path: "/financials", financialTab: "rent-matrix" },
+      // "Ocupação e renda", folded into the rent matrix.
+      "rent-roll": { path: "/financials", financialTab: "rent-matrix" },
       owners: "/owners",
       settings: "/settings",
       profile: "/settings/profile",

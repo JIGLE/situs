@@ -3,6 +3,7 @@ import { assertOwnsRelations } from "../assert-owned";
 import { Receipt } from "@/lib/types";
 import { reverseAllocationsForReceipt } from "@/lib/services/allocation/service";
 import { isFiled } from "@/lib/services/receipts/lifecycle";
+import { ResourceNotFoundError, ValidationError } from "@/lib/utils/error-handling";
 
 /** A receipt that went to Finanças stays: deleting it here would not void it at AT. */
 export class ReceiptFiledError extends Error {
@@ -64,12 +65,26 @@ export const receiptService = {
       tenantId: data.tenantId,
       propertyId: data.propertyId,
     });
+    // The lease decides which contract's months the payment settles, so it must be the caller's,
+    // and the tenant's lease on that property. Without one, allocation gives up on a tenant with
+    // two active leases, and the payment reaches no month at all.
+    if (data.leaseId) {
+      const lease = await getPrismaClient().lease.findFirst({
+        where: { id: data.leaseId, userId },
+        select: { tenantId: true, propertyId: true },
+      });
+      if (!lease) throw new ResourceNotFoundError("Lease");
+      if (lease.tenantId !== data.tenantId || lease.propertyId !== data.propertyId) {
+        throw new ValidationError("The lease is not this tenant's on this property", "leaseId");
+      }
+    }
 
     const receipt = await getPrismaClient().receipt.create({
       data: {
         userId,
         tenantId: data.tenantId,
         propertyId: data.propertyId,
+        leaseId: data.leaseId,
         amount: data.amount,
         date: new Date(data.date),
         type: data.type,

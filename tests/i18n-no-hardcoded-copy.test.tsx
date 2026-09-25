@@ -37,6 +37,7 @@ import { TaxConnectorDashboard } from "@/components/features/financial/tax-conne
 import { AuditTrail as AuditTrailForError } from "@/components/shared/audit-trail";
 import { DraftBanner } from "@/components/ui/multi-step-form";
 import { BankMovementsInbox } from "@/components/features/financial/bank-movements-inbox";
+import { YearlyRentMatrix } from "@/components/features/financial/yearly-rent-matrix";
 import ptMessages from "@/messages/pt.json";
 
 vi.mock("@/lib/contexts/currency-context", () => ({
@@ -45,6 +46,8 @@ vi.mock("@/lib/contexts/currency-context", () => ({
     currencySymbol: "€",
   }),
 }));
+
+vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams() }));
 
 vi.mock("@/lib/contexts/csrf-context", () => ({
   useCsrf: () => ({ token: "test-csrf-token" }),
@@ -273,6 +276,47 @@ describe("user-visible copy comes from the catalogue, not from literals", () => 
     expect(screen.getAllByText("A rever").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Sem sugestão").length).toBeGreaterThan(0);
     expect(screen.queryByText(/matching inbox|REVIEW|name match/)).not.toBeInTheDocument();
+  });
+
+  it("names the rent matrix's months and statuses in Portuguese", async () => {
+    // It named the months from an English list and marked them in codes: PAID, OVDU.
+    const month = { status: "overdue", dueAmount: 800, allocatedAmount: 0, outstanding: 800 };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              data: {
+                year: 2026,
+                rows: [
+                  {
+                    leaseId: "l1",
+                    tenantName: "Ana",
+                    propertyName: "Rua A, 1",
+                    months: { 1: month },
+                    totals: { expected: 800, received: 0 },
+                  },
+                ],
+                totals: {
+                  expected: 800,
+                  received: 0,
+                  months: { 1: { expected: 800, received: 0 } },
+                },
+              },
+            }),
+        }),
+      ),
+    );
+
+    renderWithProviders(<YearlyRentMatrix />, { initialLocale: "pt" });
+
+    expect(await screen.findByRole("columnheader", { name: "jan." })).toBeInTheDocument();
+    expect(screen.getByText("Em atraso")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^janeiro de \d{4}: Em atraso/ }),
+    ).toBeInTheDocument();
   });
 
   it("offers to restore a form draft in Portuguese", () => {

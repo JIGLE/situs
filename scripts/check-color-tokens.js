@@ -72,7 +72,9 @@ const ALLOWLIST = ["empty-state-illustrations", "scenario-runner", "opengraph-im
 // 199 → 186: the landing's language chooser took 12 and the billing panel 1.
 // 186 → 148: the property map took all 38, in the raw grays of its legend and popups. The
 // receipt-based payment matrix, removed with it, already drew with tokens.
-const BASELINE = 148;
+// 148 → 133: "Ocupação e renda" took its 15 raw emeralds, yellows and reds when it was folded
+// into the rent matrix.
+const BASELINE = 133;
 
 function walk(dir, acc) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
