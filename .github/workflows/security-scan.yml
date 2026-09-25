@@ -233,7 +233,7 @@ jobs:
         uses: ./.github/actions/resolve-scan-base
 
       - name: TruffleHog Secret Scan
-        uses: trufflesecurity/trufflehog@v3.97.5
+        uses: trufflesecurity/trufflehog@v3.97.6
         with:
           path: ./
           base: ${{ steps.base.outputs.base }}
@@ -258,7 +258,7 @@ jobs:
 
       - name: TruffleHog Unverified Scan
         id: trufflehog-unverified
-        uses: trufflesecurity/trufflehog@v3.97.5
+        uses: trufflesecurity/trufflehog@v3.97.6
         with:
           path: ./
           base: ${{ steps.base.outputs.base }}
