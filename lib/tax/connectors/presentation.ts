@@ -1,6 +1,6 @@
 // From ./modes, not ./mode-guard: this file is imported by "use client" components, and
 // mode-guard reaches Prisma and better-sqlite3 through connector-service.
-import { SIMULATED_MODES } from "./modes";
+import { SIMULATED_MODES, TEST_MODES } from "./modes";
 
 /**
  * Presentation facts about connectors, shared by the two UIs that show them
@@ -29,21 +29,26 @@ export function authorityName(country: string): string {
  * How a mode should be presented.
  *
  * - `simulated`  — the connector will act, but nothing is transmitted. Informational.
+ * - `test` — real requests to the authority's test service; nothing filed there counts. Shown
+ *   apart from `simulated` because something does leave the instance.
  * - `unsupported` — the connector refuses and logs. An error state the user must be able to
  *   see, because the symptom is silence: nothing gets submitted and without this they would
  *   have no idea why.
  *
- * Derived from SIMULATED_MODES rather than a second hardcoded list, so widening the guard for
- * a real integration updates the UI in the same move.
+ * Derived from the guard's own sets rather than a second hardcoded list, so widening the guard
+ * for a real integration updates the UI in the same move.
  */
-export type ModeKind = "simulated" | "unsupported";
+export type ModeKind = "simulated" | "test" | "unsupported";
 
 export function modeKind(mode: string): ModeKind {
-  return SIMULATED_MODES.has(mode) ? "simulated" : "unsupported";
+  if (SIMULATED_MODES.has(mode)) return "simulated";
+  if (TEST_MODES.has(mode)) return "test";
+  return "unsupported";
 }
 
 /** Tailwind-ish token classes per mode kind. No green: nothing here is a live connection. */
 export const MODE_KIND_STYLES: Record<ModeKind, string> = {
   simulated: "bg-[var(--semantic-info-soft)] text-[var(--semantic-info-readable)]",
+  test: "bg-[var(--semantic-warning-soft)] text-[var(--semantic-warning-readable)]",
   unsupported: "bg-[var(--semantic-danger-soft)] text-[var(--semantic-danger-readable)]",
 };

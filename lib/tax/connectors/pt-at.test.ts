@@ -107,6 +107,29 @@ describe("PT connector refuses modes it cannot honour", () => {
   });
 });
 
+describe("PT connector in the test mode", () => {
+  // The test mode reaches AT's test service to check credentials and fetch receipts. Issuing
+  // through it is not built, so a receipt must not be simulated as filed there either.
+  it("refuses submit() and poll(), and logs why, without touching the receipt", async () => {
+    withMode("test");
+
+    const submitted = await ptAtConnector.submit(RECEIPT_ID);
+    prismaMock.rentReceipt.findUniqueOrThrow.mockResolvedValue({
+      ...submittableReceipt,
+      status: "submitted",
+    });
+    const polled = await ptAtConnector.poll(RECEIPT_ID);
+
+    expect(submitted.status).toBe("error");
+    expect(submitted.responseBody).toMatch(/does not issue receipts\. Nothing was submitted/);
+    expect(polled.status).toBe("error");
+    expect(prismaMock.rentReceipt.update).not.toHaveBeenCalled();
+    expect(logSubmissionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "submit", mode: "test", status: "error" }),
+    );
+  });
+});
+
 describe("PT connector still simulates in the modes it does support", () => {
   it("submit() in review marks the receipt submitted and logs success", async () => {
     withMode("review");

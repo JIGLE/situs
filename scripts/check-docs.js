@@ -46,6 +46,15 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // 3A: a connector's mode can be `test`, which reaches AT's test service, and the AT login is a
+    // fourth field encrypted at the call site.
+    pattern: /sandbox, review or live|in sandbox or review mode|Three fields are deliberately/,
+    retired: "2026-09-25 (AT client, test mode)",
+    because:
+      "a connector can also be in the test mode, which reaches AT's test service, and the AT " +
+      "login is encrypted at the call site beside the bank fields and the contract",
+  },
+  {
     // #413 read lease contracts with Claude. The owner wants no AI API in Situs, and a free-form
     // contract cannot be read reliably without one, so the import was removed.
     pattern:

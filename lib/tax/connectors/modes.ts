@@ -26,8 +26,15 @@
  */
 
 /**
- * No country has a live tax-authority integration. Every connector simulates the round trip, so
- * simulating is opt-in per mode and everything else fails closed — see `mode-guard.ts` for the
- * refusal, and `presentation.ts` for how an unsupported mode is surfaced to the operator.
+ * Modes in which filing is simulated: nothing is transmitted. Every mode outside these and
+ * `TEST_MODES` fails closed — see `mode-guard.ts` for the refusal, and `presentation.ts` for how
+ * each kind of mode is shown to the operator.
  */
 export const SIMULATED_MODES: ReadonlySet<string> = new Set(["sandbox", "review"]);
+
+/**
+ * Modes in which a connector talks to the authority's test service: real requests, and nothing
+ * filed there counts. The connector row names the authority, so the mode stays country-neutral.
+ * Production is not among them: going live is a code change, not a row edit.
+ */
+export const TEST_MODES: ReadonlySet<string> = new Set(["test"]);

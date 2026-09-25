@@ -51,7 +51,7 @@ is _derived_ from this ledger, never hand-set.
 | **Waterfall allocation**   | Always fills the oldest not-fully-allocated period first, so partial payments can't silently skip a month. Pure engine, independently tested.                                                                                               |
 | **Bank matching**          | A live PSD2 sync → fingerprint dedupe (idempotent) → fuzzy-duplicate check → reconciliation rules → weighted confidence score. ≥ 0.85 auto-allocates; anything lower waits in the Bank Movements inbox for a human.                         |
 | **Receipt lifecycle**      | Money state (`paid`/`pending`) is kept separate from the _document_ state machine: draft → review → emitted → submitted → accepted/rejected. A receipt can be voided from draft, review or emitted; voiding soft-reverses live allocations. |
-| **Tax connectors**         | One connector row per user and connector key, in sandbox or review mode: no live AT integration exists, so live mode fails closed. Every call appends an immutable submission-log row.                                                      |
+| **Tax connectors**         | One connector row per user and key. Sandbox and review simulate; test checks credentials and fetches receipts at AT's test service. No live AT integration exists, so live fails closed. Every call appends an immutable log row.           |
 | **Audit trail**            | Scoped per-record or account-wide, persisted on every workflow mutation.                                                                                                                                                                    |
 
 ### Portfolio and operations
@@ -124,6 +124,7 @@ lib/
     receipts/          → receipt document-lifecycle state machine (pure)
     tax/               → connector find-or-create + submission log
   tax/connectors/      → the Portuguese TaxConnector
+  tax/at/              → AT's webservice client (WS-Security, SOAP, mutual TLS)
   contexts/            → global AppState, CSRF, toast, currency
   utils/               → PII encryption, API client, logger, env validation
 prisma/

@@ -42,10 +42,27 @@ const STATUS_KEY: Partial<
  * conflicted; the reason says with what, which is the part a person can act on. A Map, so a reason
  * such as "constructor" finds nothing rather than an inherited property.
  */
-const REASON_KEY = new Map<string, "tenantHasHistory" | "propertyHasHistory" | "leaseHasHistory">([
+const REASON_KEY = new Map<
+  string,
+  | "tenantHasHistory"
+  | "propertyHasHistory"
+  | "leaseHasHistory"
+  | "atPasswordRequired"
+  | "atCredentialsNeedKey"
+  | "atFilesNotReady"
+  | "atCredentialsMissing"
+  | "atCredentialsUnreadable"
+  | "atTestModeRequired"
+>([
   ["tenant_has_history", "tenantHasHistory"],
   ["property_has_history", "propertyHasHistory"],
   ["lease_has_history", "leaseHasHistory"],
+  ["at_password_required", "atPasswordRequired"],
+  ["at_credentials_need_key", "atCredentialsNeedKey"],
+  ["at_files_not_ready", "atFilesNotReady"],
+  ["at_credentials_missing", "atCredentialsMissing"],
+  ["at_credentials_unreadable", "atCredentialsUnreadable"],
+  ["at_test_mode_required", "atTestModeRequired"],
 ]);
 
 type FormsCatalogue = (typeof en)["forms"];

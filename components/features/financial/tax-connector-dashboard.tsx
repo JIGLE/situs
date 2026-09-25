@@ -3,7 +3,8 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { formatDate } from "@/lib/utils/format-date";
-import { MODE_KIND_STYLES, authorityName, modeKind } from "@/lib/tax/connectors/presentation";
+import { authorityName } from "@/lib/tax/connectors/presentation";
+import { useConnectorMode } from "@/components/shared/connector-mode";
 import { useCallback, useEffect, useState } from "react";
 
 /**
@@ -47,6 +48,7 @@ const LOG_STATUS_STYLES: Record<string, string> = {
 
 export function TaxConnectorDashboard(): React.ReactElement | null {
   const t = useTranslations("common");
+  const connectorMode = useConnectorMode();
   const locale = useLocale();
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [logsByConnector, setLogsByConnector] = useState<Record<string, SubmissionLog[]>>({});
@@ -123,20 +125,12 @@ export function TaxConnectorDashboard(): React.ReactElement | null {
                   </div>
                   <div className="flex items-center gap-3">
                     <span
-                      className={`px-1.5 py-0.5 font-mono text-[12px] md:text-[10px] uppercase tracking-[0.04em] ${
-                        MODE_KIND_STYLES[modeKind(connector.mode)]
-                      }`}
-                      title={
-                        modeKind(connector.mode) === "simulated"
-                          ? t("connectorModeSimulatedHelp", {
-                              authority: authorityName(connector.country),
-                            })
-                          : t("connectorModeUnsupportedHelp", { mode: connector.mode })
-                      }
+                      className={`px-1.5 py-0.5 font-mono text-[12px] md:text-[10px] uppercase tracking-[0.04em] ${connectorMode.badgeClass(
+                        connector.mode,
+                      )}`}
+                      title={connectorMode.help(connector.mode, connector.country)}
                     >
-                      {modeKind(connector.mode) === "simulated"
-                        ? t("connectorModeSimulated")
-                        : t("connectorModeUnsupported")}
+                      {connectorMode.label(connector.mode)}
                     </span>
                     <span className="text-xs text-[var(--color-muted-foreground)]">
                       {connector.lastSubmissionAt

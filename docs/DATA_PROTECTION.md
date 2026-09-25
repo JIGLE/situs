@@ -73,16 +73,18 @@ model in this table is written and read through its own delegate, as `LeaseParty
 
 ### Encrypted at the call site
 
-Three fields are deliberately **not** in `PII_FIELDS`. For the two bank fields the distinction
+Four fields are deliberately **not** in `PII_FIELDS`. For the two bank fields the distinction
 is load-bearing: `/api/debug/db` reads through the extension, so adding `BankAccount.iban` to
 that list would make the debug endpoint start returning it in plaintext. The contract is bytes
-rather than text, and too large to decrypt on every lease read.
+rather than text, and too large to decrypt on every lease read. The AT login must never be
+returned by any read at all.
 
-| Model             | Field              | Handling                                                                                                             |
-| ----------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| `BankAccount`     | `iban`             | Encrypted in `lib/services/bank/consent.ts`, **never decrypted**. Matching uses `ibanHash`; display uses `ibanLast4` |
-| `BankTransaction` | `counterpartyIban` | Encrypted in `lib/services/bank/import.ts`. Matching uses `counterpartyIbanHash`                                     |
-| `Lease`           | `contractFile`     | The signed contract PDF. Encrypted and decrypted only in `app/api/leases/[id]/contract/route.ts` (`encryptFile`)     |
+| Model                   | Field              | Handling                                                                                                             |
+| ----------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `BankAccount`           | `iban`             | Encrypted in `lib/services/bank/consent.ts`, **never decrypted**. Matching uses `ibanHash`; display uses `ibanLast4` |
+| `BankTransaction`       | `counterpartyIban` | Encrypted in `lib/services/bank/import.ts`. Matching uses `counterpartyIbanHash`                                     |
+| `Lease`                 | `contractFile`     | The signed contract PDF. Encrypted and decrypted only in `app/api/leases/[id]/contract/route.ts` (`encryptFile`)     |
+| `TaxAuthorityConnector` | `credentialsRef`   | The AT Portal sub-user and password. Only `lib/services/tax/at-connection.ts` reads it; never returned               |
 
 The contract names every party with their NIF, which is why it is encrypted like the columns
 that hold those NIFs. Its route is the only reader: the Prisma client leaves the column out of
@@ -116,7 +118,11 @@ A self-hosted instance shares data with a service only when that service is conf
 | -------------- | ---------------------------------------------------------------- | ------------------------------ | ------------ |
 | Enable Banking | Bank authorisation; returns account and transaction data         | Only where a bank is connected | EEA          |
 | Brevo          | Recipient address and message body of transactional mail we send | Only where email is configured | France (EEA) |
-| Portuguese AT  | Rent receipt filings                                             | Only on submission             | Portugal     |
+| Portuguese AT  | Test service only: the Portal login and fetched receipt numbers  | On a check or a fetch          | Portugal     |
+
+**Filings to AT are still simulated.** In the test mode Situs reaches only AT's test service,
+where nothing counts: it checks the Portal sub-user's login, sent encrypted as AT requires, and
+fetches a receipt the owner asks for by its contract and receipt numbers.
 
 **Enable Banking is the licensed AISP**, which is why the instance needs no PSD2 licence and no
 eIDAS certificate. Access is read-only account information: account details and transactions.
@@ -203,6 +209,7 @@ instance and would need revisiting if Situs were offered as a service.
 | Debug endpoints restricted in production                                      | `/api/debug/db` and `/api/debug/db/seed` return 403; `/api/debug/db/init` needs a session and `INIT_SECRET` (`docs/SECURITY.md`)  |
 | Bank consent references                                                       | 256-bit random, user-scoped, constant-time compared, single-use, dropped once spent                                               |
 | Private key handling                                                          | Enable Banking RSA key mounted as a file (`ENABLE_BANKING_PRIVATE_KEY_FILE`), keeping it out of `/proc/<pid>/environ`             |
+| AT connection                                                                 | Mutual TLS with the certificate AT signed and its mounted key; the Portal password is sent AES-encrypted per request              |
 
 **Backups are the operator's responsibility.** `docs/DATABASE_STRATEGY.md` describes them; nothing
 in the application schedules one. Availability and restorability (Art. 32(1)(c)) are not provided by the application.

@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from "vitest";
+import { makeTestPki, type TestPki } from "@/tests/helpers/test-pki";
 
 /**
  * The two properties this page must never lose.
@@ -426,5 +427,85 @@ describe("the bank check reports what is actually connected", () => {
 
     const { checks } = await getSystemStatus("user-1");
     expect(find(checks, "bank")!.severity).toBe("error");
+  });
+});
+
+describe("the AT certificate check reads the files the server would use", () => {
+  let pki: TestPki;
+  const DAY = 86_400_000;
+
+  beforeAll(() => {
+    pki = makeTestPki();
+  }, 60_000);
+  afterAll(() => pki?.cleanup());
+
+  const mount = (files: { cert?: string; key?: string; authKey?: string }) => {
+    if (files.cert) process.env.AT_CLIENT_CERT_FILE = pki.file(files.cert);
+    if (files.key) process.env.AT_CLIENT_KEY_FILE = pki.file(files.key);
+    if (files.authKey) process.env.AT_AUTH_PUBLIC_KEY_FILE = pki.file(files.authKey);
+  };
+  const complete = { cert: "client.crt", key: "client.key", authKey: "at-auth.crt" };
+
+  afterEach(() => {
+    delete process.env.AT_CLIENT_CERT_FILE;
+    delete process.env.AT_CLIENT_KEY_FILE;
+    delete process.env.AT_AUTH_PUBLIC_KEY_FILE;
+    vi.useRealTimers();
+  });
+
+  it("is simulated, not a fault, on an instance with no files", async () => {
+    const at = find((await getSystemStatus("user-1")).checks, "at_connector")!;
+    expect(at).toMatchObject({ severity: "simulated", state: "not_configured" });
+  });
+
+  it("names each file that is wrong by its variable and path, never its contents", async () => {
+    mount({ cert: "client.crt", key: "does-not-exist.key" });
+
+    const at = find((await getSystemStatus("user-1")).checks, "at_connector")!;
+
+    expect(at).toMatchObject({ severity: "error", state: "files_invalid" });
+    expect(at.detail).toContain(
+      `AT_CLIENT_KEY_FILE: unreadable (${pki.file("does-not-exist.key")})`,
+    );
+    expect(at.detail).toContain("AT_AUTH_PUBLIC_KEY_FILE: unset");
+    expect(JSON.stringify(at)).not.toMatch(/BEGIN/);
+  });
+
+  it("is an error when the key is not the certificate's", async () => {
+    mount({ ...complete, key: "stranger.key" });
+
+    const at = find((await getSystemStatus("user-1")).checks, "at_connector")!;
+    expect(at).toMatchObject({ severity: "error", state: "key_mismatch" });
+  });
+
+  it("is ok with a certificate in date, then warns in its last 30 days, then fails once it ends", async () => {
+    mount(complete);
+
+    const now = find((await getSystemStatus("user-1")).checks, "at_connector")!;
+    expect(now).toMatchObject({ severity: "ok", state: "configured" });
+    expect(now.detail).toMatch(/NIF 555555555, valid until \d{4}-\d{2}-\d{2}/);
+
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() + 380 * DAY);
+    const ending = find((await getSystemStatus("user-1")).checks, "at_connector")!;
+    expect(ending).toMatchObject({ severity: "warning", state: "certificate_expiring" });
+    expect(ending.remedy).toMatch(/renewal/);
+
+    vi.setSystemTime(Date.now() + 30 * DAY);
+    const ended = find((await getSystemStatus("user-1")).checks, "at_connector")!;
+    expect(ended).toMatchObject({ severity: "error", state: "certificate_expired" });
+  });
+});
+
+describe("the tax connector check in the test mode", () => {
+  it("says the test service is reached and nothing is filed, without calling it working", async () => {
+    prismaMock.taxAuthorityConnector.findMany.mockResolvedValue([
+      { country: "PT", mode: "test", status: "active", lastSubmissionAt: null },
+    ]);
+
+    const pt = find((await getSystemStatus("user-1")).checks, "tax:PT")!;
+
+    expect(pt).toMatchObject({ severity: "simulated", state: "test" });
+    expect(pt.detail).toMatch(/test service, where nothing counts; it files nothing/);
   });
 });
