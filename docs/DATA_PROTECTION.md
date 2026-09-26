@@ -102,6 +102,7 @@ Recorded here deliberately rather than left implicit:
 | `BankTransaction`      | `counterpartyName` | The matching engine reads it to score a movement against a lease                                           |
 | `BankTransaction`      | `reference`        | The remittance line. Read for reference-month parsing. **Free text: may contain anything the payer typed** |
 | `BankAccount`          | `ibanLast4`        | Four digits, displayed so a human can tell two accounts apart                                              |
+| `UserSettings`         | `residenceCountry` | The owner's country of tax residence, as a two-letter code, shown under their name in the side bar         |
 | `Property`, `Building` | address fields     | Personal data where a tenant lives there; core to the product                                              |
 | `Document`             | receipt archives   | The PDF kept when a receipt is emitted: the tenant's name, the property's address and the amount, on disk  |
 
