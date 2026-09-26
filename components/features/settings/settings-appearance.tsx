@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/select";
 import { useTheme } from "@/lib/contexts/theme-context";
 import { COUNTRY_CODES, COUNTRY_THEMES, isCountryCode } from "@/lib/design/country-themes";
-import { locales, localeNames } from "@/lib/i18n/config";
+import { isLocale, locales, localeNames } from "@/lib/i18n/locales";
+import { useSetLanguage } from "@/lib/i18n/use-set-language";
 import type { UserSettings } from "./settings-types";
 
 /** Theme option ids paired with their icon; labels resolve from the catalog. */
@@ -32,13 +33,17 @@ interface SettingsAppearanceProps {
 /**
  * Appearance was buried inside the Account section, which also held identity fields and the
  * GDPR export/delete controls — three unrelated jobs on one screen. It is its own section now,
- * which also gives the sidebar's `?tab=appearance` link a real target; it had been falling
- * through to the default tab because no such section existed.
+ * so `?tab=appearance` opens it; that link had been falling through to the default tab because
+ * no such section existed.
+ *
+ * Each control applies at once. The theme reaches the account with the page's Guardar, the palette
+ * is kept on this device, and the language is saved to the account as it switches.
  */
 export function SettingsAppearance({ settings, updateSetting }: SettingsAppearanceProps) {
   const t = useTranslations("settings.panel");
   const { setTheme, country, setCountry } = useTheme();
   const activeLocale = useLocale();
+  const setLanguage = useSetLanguage();
 
   return (
     <Card>
@@ -97,14 +102,23 @@ export function SettingsAppearance({ settings, updateSetting }: SettingsAppearan
         </div>
 
         <div className="space-y-2">
-          <Label>{t("language")}</Label>
-          {/* Driven by the supported-locale list rather than a local array — that array was
-              missing Italian, so `it` users could not pick their own language here. */}
+          <Label htmlFor="settings-language">{t("language")}</Label>
+          {/* It switches at once, the same way as the phone's More sheet and the sign-in page.
+              It used to write the form's `language` field and wait for Guardar, which saved only
+              the account's copy: the screen reads the `situs-locale` cookie, so choosing
+              Português here changed nothing on screen, and the select showed the saved value
+              rather than the language in use. */}
           <Select
-            value={settings.language || activeLocale}
-            onValueChange={(value) => updateSetting("language", value)}
+            value={activeLocale}
+            onValueChange={(value) => {
+              if (isLocale(value)) void setLanguage(value);
+            }}
           >
-            <SelectTrigger className="max-w-xs">
+            <SelectTrigger
+              id="settings-language"
+              className="max-w-xs"
+              aria-describedby="settings-language-help"
+            >
               <SelectValue placeholder={t("selectLanguage")} />
             </SelectTrigger>
             <SelectContent>
@@ -115,6 +129,9 @@ export function SettingsAppearance({ settings, updateSetting }: SettingsAppearan
               ))}
             </SelectContent>
           </Select>
+          <p id="settings-language-help" className="text-xs text-muted-foreground">
+            {t("languageHelp")}
+          </p>
         </div>
       </CardContent>
     </Card>

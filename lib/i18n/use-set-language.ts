@@ -12,15 +12,15 @@ import { apiFetch } from "@/lib/utils/api-client";
 import { logger } from "@/lib/utils/logger";
 
 /**
- * The one way the interface changes language: the account menu, the phone's More sheet, and the
- * language control on the sign-in, privacy and terms pages all call it.
+ * The one way the interface changes language: Settings › Appearance, the phone's More sheet, and
+ * the language control on the sign-in, privacy and terms pages all call it.
  *
  * The interface reads the `situs-locale` cookie, so writing it and re-rendering is the switch. A
  * signed-in owner's choice is also saved to the account (`PUT /api/settings/language`): reminder
  * emails are written in it, and a device with no language of its own takes it on at sign-in.
  *
- * Settings › Appearance used to have a language select that saved only the account's copy. The
- * screen never read it, so choosing a language there changed nothing on screen.
+ * Settings › Appearance's select used to save only the account's copy. The screen never read it,
+ * so choosing a language there changed nothing on screen.
  */
 export function useSetLanguage(): (locale: Locale) => Promise<void> {
   const router = useRouter();

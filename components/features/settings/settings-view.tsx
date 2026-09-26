@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils/utils";
 import { useToast } from "@/lib/contexts/toast-context";
 import { useCsrf } from "@/lib/contexts/csrf-context";
 import { useTheme } from "@/lib/contexts/theme-context";
+import { useUserSettings } from "@/lib/contexts/user-settings-context";
 import { SettingsAccount } from "./settings-account";
 import { SettingsAppearance } from "./settings-appearance";
 import { SettingsNotifications } from "./settings-notifications";
@@ -61,6 +62,7 @@ export function SettingsView(): React.ReactElement {
   const tActions = useTranslations("actions");
   const { token: csrfToken } = useCsrf();
   const { setTheme } = useTheme();
+  const { refresh: refreshAccount } = useUserSettings();
   const searchParams = useSearchParams();
 
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
@@ -86,6 +88,16 @@ export function SettingsView(): React.ReactElement {
   const visibleSection = sections.includes(activeSection) ? activeSection : sections[0];
 
   const sectionLabel = (value: SectionValue) => t(value);
+
+  // The open section is kept in the URL, so a reload opens it again. So does a language switch:
+  // the page is rendered afresh under the new locale, and choosing Português in Appearance would
+  // otherwise land on Account.
+  const selectSection = (section: SectionValue) => {
+    setActiveSection(section);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", section);
+    window.history.replaceState(null, "", `?${params.toString()}`);
+  };
 
   useEffect(() => {
     loadSettings();
@@ -134,6 +146,9 @@ export function SettingsView(): React.ReactElement {
         success(t("toastSaved"));
         setHasChanges(false);
         setTheme(settings.theme);
+        // The rail's line under the owner's name reads the account's row: re-read it, so a new
+        // country of residence shows there at once.
+        void refreshAccount();
       } else {
         showError(t("toastSaveFailed"));
       }
@@ -197,7 +212,7 @@ export function SettingsView(): React.ReactElement {
                   <button
                     key={section}
                     type="button"
-                    onClick={() => setActiveSection(section)}
+                    onClick={() => selectSection(section)}
                     aria-current={visibleSection === section ? "page" : undefined}
                     className={cn(
                       "flex w-full items-center px-3 py-1.5 text-left text-sm transition-colors",
@@ -218,7 +233,7 @@ export function SettingsView(): React.ReactElement {
         <div className="md:hidden">
           <Select
             value={visibleSection}
-            onValueChange={(value: string) => setActiveSection(value as SectionValue)}
+            onValueChange={(value: string) => selectSection(value as SectionValue)}
           >
             {/* The desktop rail above is a labelled <nav>; this is its below-`md` substitute and
                 needs its own name. Without one it announced nothing at all — `SelectValue` is the
@@ -244,7 +259,13 @@ export function SettingsView(): React.ReactElement {
             read as heavy while being mostly empty. `3xl` is wide enough for the two-column
             grids inside Appearance and narrow enough that a value stays near its label. */}
         <div className="min-w-0 max-w-3xl">
-          {visibleSection === "account" && <SettingsAccount appVersion={appVersion} />}
+          {visibleSection === "account" && (
+            <SettingsAccount
+              appVersion={appVersion}
+              settings={settings}
+              updateSetting={updateSetting}
+            />
+          )}
           {visibleSection === "notifications" && (
             <SettingsNotifications settings={settings} updateSetting={updateSetting} />
           )}
