@@ -10,6 +10,10 @@
  *
  * So each density metric is run against a page built to trigger it, and against one built not
  * to. A metric that does not move between the two is not measuring anything.
+ *
+ * `smallText` is here for the same reason, and for one more: its ceiling is 0 only because the
+ * phone bar's own labels are counted apart (`data-audit-chrome`). That exemption has to be shown
+ * to stay on the element that carries the mark, or a mark on a wrapper would read as clean.
  */
 import { chromium } from "playwright";
 import { measure } from "./mobile-audit.mjs";
@@ -126,6 +130,30 @@ const CASES = [
     expect: (bad, good) => bad > 380 && good < 150,
   },
   {
+    name: "smallText",
+    trigger: page(`${filler(12)}<span style="font-size:11px">Small print</span>`),
+    clean: page(`${filler(12)}<span data-audit-chrome style="font-size:11px">Início</span>`),
+    read: (m) => m.smallTextCount,
+    expect: (bad, good) => bad === 1 && good === 0,
+  },
+  {
+    name: "chromeText",
+    trigger: page(`${filler(12)}<span data-audit-chrome style="font-size:11px">Início</span>`),
+    clean: page(`${filler(12)}<span style="font-size:11px">Small print</span>`),
+    read: (m) => m.chromeTextCount,
+    expect: (bad, good) => bad === 1 && good === 0,
+  },
+  {
+    // The mark on a wrapper exempts nothing inside it: the small print still counts.
+    name: "smallText under a marked wrapper",
+    trigger: page(
+      `${filler(12)}<div data-audit-chrome><span style="font-size:11px">Small print</span></div>`,
+    ),
+    clean: page(`${filler(12)}<div data-audit-chrome><span>Readable</span></div>`),
+    read: (m) => m.smallTextCount,
+    expect: (bad, good) => bad === 1 && good === 0,
+  },
+  {
     name: "renderFailure",
     trigger: page(
       `<div role="alert" style="height:600px">Não foi possível carregar os seus dados</div>`,
@@ -159,4 +187,4 @@ if (failed) {
   );
   process.exit(1);
 }
-console.log("\nAll density metrics move as intended.");
+console.log("\nAll metrics move as intended.");

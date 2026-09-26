@@ -70,6 +70,7 @@ export function MobileBottomNav({
   // `data-audit-chrome` marks the bar's 11px labels and its 10px avatar initials: native tab-bar
   // sizes, kept on purpose. The 390px audit counts them on their own line rather than as small
   // text, since they appear on every screen and would otherwise grow with the number measured.
+  // It goes on the element that holds the text: the audit exempts nothing nested inside it.
   //
   // Situs rectilinear: no pills, no radius. The active tab is marked by a 2px
   // country-highlight top border (mirroring the desktop rail's active left

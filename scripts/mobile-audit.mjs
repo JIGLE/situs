@@ -375,10 +375,11 @@ function measure({ touchFail, touchWarn, minFontPx, tolerance }) {
   }
 
   // --- small text ---------------------------------------------------------------------
-  // Text inside `[data-audit-chrome]` is the phone bar's labels and avatar initials, small on
-  // purpose and present on every screen. It is counted apart, so adding a surface cannot push
-  // `smallText` over its ceiling with text nobody intends to change. Anything else that small
-  // still counts.
+  // Text whose own element carries `data-audit-chrome` is the phone bar's labels and avatar
+  // initials, small on purpose and present on every screen. It is counted apart, so adding a
+  // surface cannot push `smallText` over its ceiling with text nobody intends to change. The mark
+  // exempts only the element that carries it, never what sits inside: on a wrapper it would hide
+  // every small line of page text within, so that text still counts (see the selftest).
   const smallText = [];
   let chromeTextCount = 0;
   for (const el of all) {
@@ -390,7 +391,7 @@ function measure({ touchFail, touchWarn, minFontPx, tolerance }) {
     if (r.width === 0 || r.height === 0) continue;
     const size = parseFloat(getComputedStyle(el).fontSize);
     if (size >= minFontPx) continue;
-    if (el.closest("[data-audit-chrome]")) {
+    if (el.hasAttribute("data-audit-chrome")) {
       chromeTextCount += 1;
       continue;
     }
