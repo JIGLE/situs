@@ -420,7 +420,22 @@
     "mainNavLabel": "Navigazione principale",
     "mobileNavLabel": "Navigazione mobile",
     "expandSidebar": "Espandi barra laterale",
-    "collapseSidebar": "Comprimi barra laterale"
+    "collapseSidebar": "Comprimi barra laterale",
+    "accountMenu": {
+      "open": "Menu dell'account",
+      "language": "Lingua",
+      "appearance": "Aspetto",
+      "palette": "Palette",
+      "themes": {
+        "normal": "Chiaro",
+        "dark": "Scuro",
+        "system": "Sistema"
+      },
+      "palettes": {
+        "PT": "Portogallo",
+        "EU": "Unione Europea"
+      }
+    }
   },
   "dashboard": {
     "welcome": "Benvenuto nella tua dashboard di gestione immobiliare",

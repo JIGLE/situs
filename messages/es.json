@@ -420,7 +420,22 @@
     "mainNavLabel": "Navegación principal",
     "mobileNavLabel": "Navegación móvil",
     "expandSidebar": "Expandir barra lateral",
-    "collapseSidebar": "Contraer barra lateral"
+    "collapseSidebar": "Contraer barra lateral",
+    "accountMenu": {
+      "open": "Menú de la cuenta",
+      "language": "Idioma",
+      "appearance": "Apariencia",
+      "palette": "Paleta",
+      "themes": {
+        "normal": "Claro",
+        "dark": "Oscuro",
+        "system": "Sistema"
+      },
+      "palettes": {
+        "PT": "Portugal",
+        "EU": "Unión Europea"
+      }
+    }
   },
   "dashboard": {
     "welcome": "Bienvenido a tu panel de gestión inmobiliaria",

@@ -420,7 +420,22 @@
     "mainNavLabel": "Main navigation",
     "mobileNavLabel": "Mobile navigation",
     "expandSidebar": "Expand sidebar",
-    "collapseSidebar": "Collapse sidebar"
+    "collapseSidebar": "Collapse sidebar",
+    "accountMenu": {
+      "open": "Account menu",
+      "language": "Language",
+      "appearance": "Appearance",
+      "palette": "Palette",
+      "themes": {
+        "normal": "Light",
+        "dark": "Dark",
+        "system": "System"
+      },
+      "palettes": {
+        "PT": "Portugal",
+        "EU": "European Union"
+      }
+    }
   },
   "dashboard": {
     "welcome": "Welcome to your property management dashboard",
