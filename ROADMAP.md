@@ -99,21 +99,20 @@ The owner's notes on the interface, placed among the loop's remaining work in th
 
 | Order | What                | In short                                                                                   |
 | ----- | ------------------- | ------------------------------------------------------------------------------------------ |
-| 1     | Receipts by month   | One list per rent month in Finance, with select-all to issue: the last Finance-loop PR     |
-| 2     | The account menu    | The bell moves into the rail's header. The name opens a menu upward: Settings, Admin (for  |
+| 1     | The account menu    | The bell moves into the rail's header. The name opens a menu upward: Settings, Admin (for  |
 |       |                     | administrators), language, appearance, palette and sign-out. The System group leaves the   |
 |       |                     | rail. Under the name, the language and the country of tax residence. One language switch   |
 |       |                     | that works everywhere, saved to the account. Admin inside the app's shell                  |
-| 3     | Settings            | Account activity starts collapsed. Appearance and System go: the menu holds them.          |
+| 2     | Settings            | Account activity starts collapsed. Appearance and System go: the menu holds them.          |
 |       |                     | Integrations gets tabs, Banks and Finanças; a bank connection can be renamed, renewed or   |
 |       |                     | disconnected, keeping its movements. Placeholders for features that do not exist go        |
-| 4     | The dashboard       | The month at a glance, after the owner's mockup: greeting and month picker, a status line, |
+| 3     | The dashboard       | The month at a glance, after the owner's mockup: greeting and month picker, a status line, |
 |       |                     | three figures from the rent ledger, the loop as one strip, what needs attention, recent    |
 |       |                     | movements, the portfolio as a line of text, recent activity                                |
-| 5     | Issuing at Finanças | Receipts issued through AT's test service, with AT's PDF as the archive                    |
-| 6     | Admin               | One page with tabs: overview, status, access. Sign-up toggles for Google and invitations.  |
+| 4     | Issuing at Finanças | Receipts issued through AT's test service, with AT's PDF as the archive                    |
+| 5     | Admin               | One page with tabs: overview, status, access. Sign-up toggles for Google and invitations.  |
 |       |                     | Users and roles; the last administrator cannot be removed                                  |
-| 7     | Phone forms         | Full-screen dialogs with a fixed action bar, numeric keypads, refreshing on reopen, the    |
+| 6     | Phone forms         | Full-screen dialogs with a fixed action bar, numeric keypads, refreshing on reopen, the    |
 |       |                     | manifest                                                                                   |
 | Later | AT and access       | Deposits, heirs, company tenants and contract registration at AT; going live once the      |
 |       |                     | owner's test run passes; co-owner access, which extends Admin's users; alerts and letters  |
