@@ -707,7 +707,10 @@
       "bankMovementNotIgnored": "Solo un movimento ignorato può essere ripristinato.",
       "tooMany": "Troppe richieste. Attendi un momento e riprova.",
       "serverError": "Il server ha riscontrato un problema. Riprova tra poco.",
-      "securityTokenExpired": "Il token di sicurezza è scaduto. Aggiorna la pagina e riprova."
+      "securityTokenExpired": "Il token di sicurezza è scaduto. Aggiorna la pagina e riprova.",
+      "receiptTransitionNotAllowed": "Questa ricevuta non è più in una fase che lo consente. Aggiorna l'elenco e riprova.",
+      "receiptFilingMissing": "Collega prima questa ricevuta alla sua dichiarazione presso le Finanças.",
+      "receiptSubmissionRefused": "Le Finanças hanno rifiutato questa ricevuta."
     }
   },
   "payments": {
@@ -1154,15 +1157,8 @@
     "vendorVat": "Codice Fiscale / P.IVA fornitore",
     "expenseDeductibilityNote": "Indicativo — conferma la deducibilità con il tuo commercialista.",
     "receipts": {
-      "title": "Ricevute",
-      "descriptionTenant": "Registra pagamenti e ricevute dell'inquilino selezionato.",
-      "descriptionProperty": "Registra pagamenti e ricevute dell'immobile selezionato.",
-      "descriptionOwner": "Registra pagamenti, emetti ricevute ed esporta conferme in PDF.",
-      "addReceipt": "Aggiungi ricevuta",
       "editTitle": "Modifica ricevuta",
-      "createTitle": "Aggiungi ricevuta",
       "editDescription": "Aggiorna i dati della ricevuta",
-      "createDescription": "Crea una nuova ricevuta di pagamento",
       "tenant": "Inquilino",
       "selectTenant": "Seleziona l'inquilino",
       "property": "Immobile",
@@ -1176,7 +1172,6 @@
       "typeOther": "Altro",
       "descriptionOptional": "Descrizione (facoltativa)",
       "submitUpdate": "Aggiorna ricevuta",
-      "submitCreate": "Crea ricevuta",
       "options": "Opzioni della ricevuta",
       "edit": "Modifica ricevuta",
       "delete": "Elimina ricevuta",
@@ -1213,7 +1208,35 @@
         "accepted": "Accettata",
         "rejected": "Rifiutata",
         "voided": "Annullata"
-      }
+      },
+      "monthSummary": "{count, plural, one {# ricevuta} other {# ricevute}} · {toIssue} da emettere · {total}",
+      "issueSelected": "Emetti {count}",
+      "issueDialog": {
+        "title": "Emettere {count, plural, one {# ricevuta} other {# ricevute}}?",
+        "description": "Ogni ricevuta diventa Emessa e il suo PDF viene archiviato. Una ricevuta emessa non torna in bozza, ma può essere annullata.",
+        "confirmLabel": "Emetti"
+      },
+      "issued": "{count, plural, one {# ricevuta emessa} other {# ricevute emesse}}.",
+      "issueFailed": "Impossibile emettere:",
+      "emptyMonth": "Nessuna ricevuta in {month}.",
+      "selectAll": "Seleziona tutte quelle che si possono emettere",
+      "selectOne": "Seleziona la ricevuta di {receipt}",
+      "rentMonth": "Mese di affitto",
+      "received": "Ricevuto",
+      "state": "Stato",
+      "sourceHeader": "Origine",
+      "source": {
+        "bank": "Banca",
+        "manual": "Manuale"
+      },
+      "noRentMonth": "Nessun mese di affitto",
+      "void": "Annulla ricevuta",
+      "voidDialog": {
+        "title": "Annullare questa ricevuta?",
+        "description": "La ricevuta viene annullata e il pagamento esce dal mese che ha pagato, che torna da pagare.",
+        "confirmLabel": "Annulla ricevuta"
+      },
+      "toastVoided": "Ricevuta annullata."
     },
     "isRecurring": "Spesa ricorrente",
     "recurrenceRule": "Ripeti",
@@ -1629,7 +1652,6 @@
     "required": "Obbligatorio",
     "accept": "Accetta",
     "correct": "Correggi…",
-    "emit": "Emetti",
     "contract": "Contratto",
     "noSubmissionLog": "Ancora nessun record di invio.",
     "noScheduledWork": "Nessun intervento di manutenzione programmato o in scadenza.",

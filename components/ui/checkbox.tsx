@@ -5,12 +5,17 @@ import { Check, Minus } from "lucide-react";
 export interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
   indeterminate?: boolean;
   onCheckedChange?: (checked: boolean) => void;
+  /**
+   * Classes for the clickable area around the box. The box stays 16px; this is how a row's
+   * checkbox gets a 44px target on a phone without a second label around it.
+   */
+  wrapperClassName?: string;
 }
 
 const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ className, indeterminate, onCheckedChange, ...props }, ref) => {
+  ({ className, indeterminate, onCheckedChange, wrapperClassName, ...props }, ref) => {
     return (
-      <label className="relative inline-flex items-center cursor-pointer">
+      <label className={cn("relative inline-flex items-center cursor-pointer", wrapperClassName)}>
         <input
           type="checkbox"
           className="sr-only"

@@ -34,7 +34,7 @@ test.describe("Situs surfaces — accessibility (WCAG2A/AA)", () => {
     expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
   });
 
-  test("Finance › Receipts (automation queue) has no critical/serious violations", async ({
+  test("Finance › Receipts (the month's list) has no critical/serious violations", async ({
     page,
   }) => {
     await page.goto("/financials?tab=receipts");

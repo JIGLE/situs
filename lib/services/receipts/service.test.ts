@@ -61,6 +61,7 @@ vi.mock("@/lib/tax/connectors/pt-at", () => ({
 }));
 
 import { transitionReceipt } from "./service";
+import { ConflictError, ResourceNotFoundError } from "@/lib/utils/error-handling";
 
 const baseReceipt = {
   id: "receipt_1",
@@ -206,5 +207,53 @@ describe("transitionReceipt", () => {
 
     expect(mockTransaction).not.toHaveBeenCalled();
     expect(mockReceiptUpdate).toHaveBeenCalled();
+  });
+});
+
+/**
+ * Each refusal names its rule, so the route answers it with its own status and the screen can say
+ * what refused in the owner's language. The route used to turn every one into a generic 400.
+ */
+describe("transitionReceipt: refusals are typed", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockReceiptFindFirst.mockResolvedValue({ ...baseReceipt });
+    mockDocumentFindFirst.mockResolvedValue(null);
+  });
+
+  const reasonOf = (error: unknown) => (error as ConflictError).reason;
+
+  it("reads another owner's receipt, or none, as not found", async () => {
+    mockReceiptFindFirst.mockResolvedValue(null);
+
+    await expect(transitionReceipt("user_1", "receipt_1", "review")).rejects.toBeInstanceOf(
+      ResourceNotFoundError,
+    );
+  });
+
+  it("refuses a move the state machine does not allow, naming the rule", async () => {
+    const error = await transitionReceipt("user_1", "receipt_1", "accepted").catch((e) => e);
+
+    expect(error).toBeInstanceOf(ConflictError);
+    expect(reasonOf(error)).toBe("receipt_transition_not_allowed");
+  });
+
+  it("refuses to submit without a filing, naming the rule", async () => {
+    mockReceiptFindFirst.mockResolvedValue({ ...baseReceipt, lifecycle: "emitted" });
+    mockRentReceiptFindFirst.mockResolvedValue(null);
+
+    const error = await transitionReceipt("user_1", "receipt_1", "submitted").catch((e) => e);
+
+    expect(reasonOf(error)).toBe("receipt_filing_missing");
+  });
+
+  it("passes a refusal from the connector on as one", async () => {
+    mockReceiptFindFirst.mockResolvedValue({ ...baseReceipt, lifecycle: "emitted" });
+    mockRentReceiptFindFirst.mockResolvedValue({ id: "rr_1" });
+    mockConnectorSubmit.mockResolvedValue({ status: "error", responseBody: "Invalid NIF" });
+
+    const error = await transitionReceipt("user_1", "receipt_1", "submitted").catch((e) => e);
+
+    expect(reasonOf(error)).toBe("receipt_submission_refused");
   });
 });

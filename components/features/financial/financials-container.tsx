@@ -11,11 +11,11 @@ import { useBankInboxSummary } from "@/lib/hooks/use-bank-inbox-summary";
 import { useApp } from "@/lib/contexts/app-context";
 import { useCurrency } from "@/lib/contexts/currency-context";
 import { getActiveLease } from "@/lib/utils/lease-helpers";
+import { isIssuable } from "@/lib/utils/receipt-months";
 import { cn } from "@/lib/utils/utils";
 import { ReceiptsView } from "./receipts-view";
 import { YearlyRentMatrix } from "./yearly-rent-matrix";
 import { BankMovementsInbox } from "./bank-movements-inbox";
-import { ReceiptAutomationQueue } from "./receipt-automation-queue";
 import { TaxConnectorDashboard } from "./tax-connector-dashboard";
 import { FinancialsView } from "./financials-view";
 import { RecordPaymentDialog } from "./record-payment-dialog";
@@ -49,6 +49,11 @@ export function FinancialsContainer() {
   const [recordingPayment, setRecordingPayment] = useState(() => recordPaymentLink);
   // Bumped when a payment is recorded here, so the rent matrix reads the ledger again.
   const [ledgerVersion, setLedgerVersion] = useState(0);
+  // Receipts still to issue, in any month: the Receipts tab's count of work waiting.
+  const toIssue = useMemo(
+    () => state.receipts.filter((receipt) => isIssuable(receipt.lifecycle)).length,
+    [state.receipts],
+  );
 
   // Links into Finance carry two one-shot parameters: `?tab=` picks a tab, and
   // `?action=record-payment` opens the payment form. A link is followed once, when it arrives,
@@ -125,7 +130,7 @@ export function FinancialsContainer() {
     /** A count of work waiting there, shown only when there is some. */
     badge?: number;
   }[] = [
-    { value: "receipts", label: t("tabs.receipts"), icon: Receipt },
+    { value: "receipts", label: t("tabs.receipts"), icon: Receipt, badge: toIssue || undefined },
     { value: "rent-matrix", label: t("tabs.rentMatrix"), icon: Grid3X3 },
     {
       value: "bank",
@@ -255,13 +260,8 @@ export function FinancialsContainer() {
           </TabsList>
         </div>
 
-        <TabsContent value="receipts" className="mt-0 space-y-4">
-          <ReceiptAutomationQueue />
-          <ReceiptsView
-            tenantId={tenantId}
-            propertyId={propertyId}
-            onRecordPayment={() => setRecordingPayment(true)}
-          />
+        <TabsContent value="receipts" className="mt-0">
+          <ReceiptsView tenantId={tenantId} propertyId={propertyId} />
         </TabsContent>
 
         <TabsContent value="rent-matrix" className="mt-0">
