@@ -19,13 +19,12 @@ import type { SignInStatus } from "@/lib/services/admin/sign-in-status";
  * `/admin` used to be the status list and nothing else, so answering "is this instance healthy?"
  * meant visiting four tabs and holding the answers in your head. The tabs still exist and are
  * still where the full detail lives — this is the layer above them: every domain reduced to what
- * an operator would actually act on, in one view that does not scroll.
+ * an operator would actually act on.
  *
- * NOT SCROLLING IS THE CONSTRAINT, and it is enforced structurally rather than by hoping the
- * content stays short. Above `lg` the grid is exactly the height of its container and each panel
- * scrolls inside its own box. Below `lg` the whole thing becomes a normal stacked column and the
- * page scrolls, because a phone has no viewport to fit a control centre into and the alternative
- * is six nested scroll areas fighting each other.
+ * It was sized to one viewport, each panel scrolling inside its own box, while Admin had a shell
+ * of its own that was exactly one screen tall. In the app's shell the page scrolls like every
+ * other, so the panels take the height their content needs. The grid itself is due to go when
+ * Admin is reworked (the roadmap's UI-D).
  *
  * Every panel loads independently. One endpoint being down leaves a single tile reporting a
  * problem instead of blanking the screen — this page is opened precisely when something is
@@ -60,10 +59,8 @@ export function AdminControlCenter() {
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
       <header className="flex flex-none flex-wrap items-center justify-between gap-3">
+        {/* No heading of its own: the page's heading and the Overview tab say what this is. */}
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-lg font-semibold tracking-tight text-[var(--color-foreground)]">
-            {tc("title")}
-          </h1>
           {status && (
             <div className="flex flex-wrap gap-1.5" aria-label={t("summary")}>
               {SUMMARY_ORDER.filter((severity) => status.counts[severity] > 0).map((severity) => (

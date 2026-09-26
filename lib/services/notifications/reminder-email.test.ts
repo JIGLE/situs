@@ -57,6 +57,21 @@ describe("sendReminderEmail", () => {
     expect(prisma.user.findUnique).not.toHaveBeenCalled();
   });
 
+  it("writes to a landlord with no saved language in Portuguese, the app's default", async () => {
+    sendEmailMock.mockResolvedValue({ success: true, messageId: "abc" });
+    const prisma = makePrisma({ email: "owner@example.com", settings: null });
+
+    await sendReminderEmail(prisma, "user-1", "overdueNotice", {
+      tenant: "Maria Silva",
+      property: "Sunset Apt. 2A",
+      amount: "€950.00",
+      days: 1,
+    });
+
+    const [emailData] = sendEmailMock.mock.calls[0];
+    expect(emailData.subject).toBe("Pagamento em atraso há 1 dia — Sunset Apt. 2A");
+  });
+
   it("sends an urgent email when notifications are enabled", async () => {
     sendEmailMock.mockResolvedValue({ success: true, messageId: "abc" });
     const prisma = makePrisma({

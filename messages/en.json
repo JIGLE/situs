@@ -318,7 +318,7 @@
     },
     "shell": {
       "title": "Instance administration",
-      "backToApp": "Back to app",
+      "sections": "Administration sections",
       "nav": {
         "overview": "Overview",
         "status": "Status",
@@ -350,7 +350,6 @@
       "allowlistHelp": "AUTH_ALLOWED_EMAILS. Additive: these may sign in even though registration is closed."
     },
     "controlCenter": {
-      "title": "Control center",
       "openDetail": "Detail",
       "unavailable": "This panel could not be loaded.",
       "registration": "Registration",

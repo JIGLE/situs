@@ -3,19 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 import { cn } from "@/lib/utils/utils";
 
 /**
- * The admin area's own nav.
+ * Admin's page header: one heading, and a tab per section.
  *
- * Three destinations and a way back. Deliberately not the app's `Sidebar`: this bar exists to make
- * "you are administering the instance" unmistakable, so it states that in words rather than
- * relying on the operator noticing which of nine rail items is highlighted.
+ * It used to be a bar across the top of a shell of Admin's own, with a "Back to app" link. The
+ * pages sit in the app's shell now, whose rail is the way back, so what is left is what every
+ * other page has: its title, then its sections. Each section is a route, so these are links that
+ * mark the current one, drawn like the app's tab bars. Every section's view leaves the heading to
+ * this bar: the tab label is its heading.
  *
- * Active state is matched on the segment after the locale, so `/en/admin/users` highlights Users
- * without the locale prefix being hardcoded anywhere.
+ * Three short labels fit at 390px in every language, so the bar stays a bar at every width.
  */
 const SECTIONS = [
   { key: "overview", href: "/admin" },
@@ -26,50 +27,37 @@ const SECTIONS = [
 export function AdminShellNav() {
   const t = useTranslations("admin.shell");
   const pathname = usePathname();
-  // Everything after the locale, so comparisons are locale-agnostic.
   const current = pathname.replace(/\/$/, "") || "/admin";
 
   return (
-    <header className="border-b border-[var(--color-inner-border)] bg-[var(--color-surface-solid)]">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4 pt-3 sm:px-6">
-        <div className="flex items-center justify-between gap-3">
-          <p className="flex items-center gap-2 text-sm font-semibold text-[var(--color-foreground)]">
-            <ShieldCheck className="size-4 text-[var(--semantic-warning-readable)]" aria-hidden />
-            {t("title")}
-          </p>
-          <Link
-            href={"/dashboard"}
-            className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:text-[var(--color-foreground)]"
-          >
-            <ArrowLeft className="size-4" aria-hidden />
-            {t("backToApp")}
-          </Link>
-        </div>
-
-        <nav aria-label={t("title")} className="-mb-px flex gap-1 overflow-x-auto">
-          {SECTIONS.map((section) => {
-            const active = current === section.href;
-            return (
-              <Link
-                key={section.key}
-                href={section.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "whitespace-nowrap border-b-2 px-3 py-2 text-sm transition-colors",
-                  // Was a filled pill in `--color-muted`, which is the same token the bar
-                  // itself now sits on — the active tab would have been invisible against it.
-                  // An underline in the country highlight cannot collide with its own surface.
-                  active
-                    ? "border-[var(--country-highlight-readable)] font-medium text-[var(--color-foreground)]"
-                    : "border-transparent text-muted-foreground hover:text-[var(--color-foreground)]",
-                )}
-              >
-                {t(`nav.${section.key}`)}
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
+    <header className="space-y-4">
+      <h1 className="flex items-center gap-2 text-2xl font-bold text-[var(--color-foreground)]">
+        <ShieldCheck className="h-6 w-6" aria-hidden />
+        {t("title")}
+      </h1>
+      <nav
+        aria-label={t("sections")}
+        className="flex items-center gap-1 overflow-x-auto border-b border-[var(--color-border)]"
+      >
+        {SECTIONS.map((section) => {
+          const active = current === section.href;
+          return (
+            <Link
+              key={section.key}
+              href={section.href}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "inline-flex items-center justify-center whitespace-nowrap border border-b-0 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.06em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--country-highlight-readable)] max-md:min-h-11 md:text-[10px]",
+                active
+                  ? "border-[var(--color-border)] border-t-2 border-t-[var(--country-highlight-readable)] bg-[var(--color-hover)] text-[var(--color-foreground)]"
+                  : "border-transparent text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]",
+              )}
+            >
+              {t(`nav.${section.key}`)}
+            </Link>
+          );
+        })}
+      </nav>
     </header>
   );
 }

@@ -18,7 +18,9 @@ export async function GET(request: NextRequest) {
         data: {
           userId,
           theme: "system",
-          language: "en",
+          language: "pt",
+          languageChosenAt: null,
+          residenceCountry: "PT",
           emailNotifications: true,
           taxReminderNotifications: true,
           distributionNotifications: true,
@@ -55,7 +57,9 @@ export async function POST(request: NextRequest) {
         data: {
           userId,
           theme: data.theme || "system",
-          language: data.language || "en",
+          language: "pt",
+          languageChosenAt: null,
+          residenceCountry: data.residenceCountry || "PT",
           emailNotifications: data.emailNotifications ?? true,
           taxReminderNotifications: data.taxReminderNotifications ?? true,
           distributionNotifications: data.distributionNotifications ?? true,
@@ -69,7 +73,7 @@ export async function POST(request: NextRequest) {
       where: { userId },
       update: {
         theme: data.theme,
-        language: data.language,
+        residenceCountry: data.residenceCountry,
         emailNotifications: data.emailNotifications,
         taxReminderNotifications: data.taxReminderNotifications,
         distributionNotifications: data.distributionNotifications,
@@ -78,7 +82,7 @@ export async function POST(request: NextRequest) {
       create: {
         userId,
         theme: data.theme,
-        language: data.language,
+        residenceCountry: data.residenceCountry,
         emailNotifications: data.emailNotifications,
         taxReminderNotifications: data.taxReminderNotifications,
         distributionNotifications: data.distributionNotifications,

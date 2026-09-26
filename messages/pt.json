@@ -318,7 +318,7 @@
     },
     "shell": {
       "title": "Administração da instância",
-      "backToApp": "Voltar à aplicação",
+      "sections": "Secções da administração",
       "nav": {
         "overview": "Visão geral",
         "status": "Estado",
@@ -350,7 +350,6 @@
       "allowlistHelp": "AUTH_ALLOWED_EMAILS. Aditivo: estes podem entrar mesmo com o registo fechado."
     },
     "controlCenter": {
-      "title": "Centro de controlo",
       "openDetail": "Detalhe",
       "unavailable": "Não foi possível carregar este painel.",
       "registration": "Registo",

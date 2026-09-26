@@ -318,7 +318,7 @@
     },
     "shell": {
       "title": "Amministrazione dell'istanza",
-      "backToApp": "Torna all'app",
+      "sections": "Sezioni dell'amministrazione",
       "nav": {
         "overview": "Panoramica",
         "status": "Stato",
@@ -350,7 +350,6 @@
       "allowlistHelp": "AUTH_ALLOWED_EMAILS. Additivo: queste possono accedere anche a registrazione chiusa."
     },
     "controlCenter": {
-      "title": "Centro di controllo",
       "openDetail": "Dettaglio",
       "unavailable": "Impossibile caricare questo pannello.",
       "registration": "Registrazione",

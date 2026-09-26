@@ -847,7 +847,16 @@ model UserSettings {
   id                        String    @id @default(cuid())
   userId                    String    @unique
   theme                     String    @default("system") // light, dark, system
-  language                  String    @default("en")
+  // The interface language: one of `locales` in lib/i18n/config.ts. Reminder emails are written
+  // in it. `languageChosenAt` is set only when the owner picks a language (the account menu, or a
+  // device whose language they chose), never by a default, so a device with no language of its
+  // own adopts it at sign-in only when it was a choice. Rows from before the choice was recorded
+  // hold the old default, "en", with no date: those are not adopted.
+  language                  String    @default("pt")
+  languageChosenAt          DateTime?
+  // Tax residence, an ISO 3166-1 alpha-2 code, shown under the owner's name. IRS and AT features
+  // read it later: a non-resident landlord is taxed differently.
+  residenceCountry          String    @default("PT")
   emailNotifications        Boolean   @default(true)
   taxReminderNotifications  Boolean   @default(true)
   distributionNotifications Boolean   @default(true)

@@ -32,6 +32,8 @@ import { getPrismaClient } from "@/lib/services/database/database";
 import { isMockMode } from "@/lib/config/data-mode";
 import { resolveSignIn } from "@/lib/services/auth/registration";
 import { createDevSession, isDevAuthEnabled } from "@/lib/services/auth/dev-session";
+import { hasLocale } from "next-intl";
+import { locales, type Locale } from "@/lib/i18n/config";
 
 function createBaseAuthOptions(): NextAuthOptions {
   const secret = process.env.NEXTAUTH_SECRET;
@@ -197,6 +199,7 @@ function createBaseAuthOptions(): NextAuthOptions {
             picture?: string;
             role?: string;
             mfaPending?: boolean;
+            locale?: Locale;
           };
           // Resolve the id that owned records (properties, tenants, settings…)
           // foreign-key against. The credentials provider already returns a real
@@ -252,17 +255,29 @@ function createBaseAuthOptions(): NextAuthOptions {
           t.picture = user.image ?? undefined;
           t.role = (user as NextAuthUser & { role?: string }).role ?? t.role ?? "ADMIN";
 
-          // Check TOTP enrollment for non-mock users
+          // Check TOTP enrollment for non-mock users, and read the language the account chose.
           if (!isMockMode && resolvedId && resolvedId !== "demo-user") {
             try {
               const prisma = getPrismaClient();
               const dbUser = await prisma.user.findUnique({
                 where: { id: resolvedId },
-                select: { totpEnabled: true },
+                select: {
+                  totpEnabled: true,
+                  settings: { select: { language: true, languageChosenAt: true } },
+                },
               });
               if (dbUser?.totpEnabled) {
                 t.mfaPending = true;
               }
+              // Carried from sign-in so a device with no language of its own can take it on
+              // (`LanguageSync`). Read once, here: a choice made later on another device does
+              // not reach a session already running, so it cannot switch a page under anyone.
+              // Only a choice travels; the column's default is not one.
+              const chosen = dbUser?.settings;
+              t.locale =
+                chosen?.languageChosenAt && hasLocale(locales, chosen.language)
+                  ? chosen.language
+                  : undefined;
             } catch {
               // DB unavailable — allow login without MFA check
             }
@@ -378,6 +393,7 @@ function createBaseAuthOptions(): NextAuthOptions {
               role?: string;
               isDevAuth?: boolean;
               mfaPending?: boolean;
+              locale?: Locale;
             };
             sessionUser.id = t.sub || t.id;
             if (t.email) sessionUser.email = t.email;
@@ -385,6 +401,7 @@ function createBaseAuthOptions(): NextAuthOptions {
             if (t.picture) sessionUser.image = t.picture;
             session.user.role = t.role || session.user.role || "ADMIN";
             (session as unknown as Record<string, unknown>).mfaPending = t.mfaPending ?? false;
+            if (t.locale) session.locale = t.locale;
 
             // If dev auth, update session expiry to 24 hours from now
             if (t.isDevAuth) {

@@ -318,7 +318,7 @@
     },
     "shell": {
       "title": "Administración de la instancia",
-      "backToApp": "Volver a la aplicación",
+      "sections": "Secciones de la administración",
       "nav": {
         "overview": "Resumen",
         "status": "Estado",
@@ -350,7 +350,6 @@
       "allowlistHelp": "AUTH_ALLOWED_EMAILS. Aditivo: estos pueden entrar aunque el registro esté cerrado."
     },
     "controlCenter": {
-      "title": "Centro de control",
       "openDetail": "Detalle",
       "unavailable": "No se ha podido cargar este panel.",
       "registration": "Registro",

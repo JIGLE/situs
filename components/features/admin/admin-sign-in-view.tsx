@@ -56,10 +56,8 @@ export function AdminSignInView() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-semibold text-[var(--color-foreground)]">{t("title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
-      </div>
+      {/* No heading of its own: the page's heading and the Sign-in tab say what this is. */}
+      <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
 
       <section
         className={
