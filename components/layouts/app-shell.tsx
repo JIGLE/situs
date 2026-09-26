@@ -28,7 +28,8 @@ interface AppShellProps {
 
 /**
  * The signed-in shell every page shares: the rail on a computer, the top and bottom bars on a
- * phone, and the account's settings for the rail's account menu.
+ * phone, and the account's settings row, which the rail's line under the owner's name and
+ * `LanguageSync` read.
  *
  * Admin had a shell of its own, deliberately unlike the app. The owner asked for its navigation
  * to be the same as every other page's (25 September), so it renders this one too; what it still

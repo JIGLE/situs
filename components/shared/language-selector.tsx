@@ -34,9 +34,9 @@ interface LanguageSelectorProps {
 }
 
 /**
- * The language control on the pages outside the signed-in shell: sign-in, privacy and terms.
- * Inside the shell the account menu offers the same choice. Both switch through `useSetLanguage`,
- * which also saves the choice to the account when someone is signed in.
+ * The language control on the sign-in, privacy and terms pages, and in the phone's More sheet. On
+ * a computer the signed-in app has it in Settings › Appearance. Both switch through
+ * `useSetLanguage`, which also saves the choice to the account when someone is signed in.
  */
 export function LanguageSelector({ compact = false, className }: LanguageSelectorProps) {
   const t = useTranslations("language");

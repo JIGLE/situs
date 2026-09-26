@@ -936,7 +936,7 @@ function toMarkdown(results, meta) {
     `| Text under ${MIN_FONT_PX}px | ${ok.reduce((a, r) => a + (r.smallTextCount ?? 0), 0)} |`,
   );
   lines.push(
-    `| Of which deliberate bar chrome, counted apart | ${ok.reduce((a, r) => a + (r.chromeTextCount ?? 0), 0)} |`,
+    `| Bar chrome under ${MIN_FONT_PX}px, counted apart | ${ok.reduce((a, r) => a + (r.chromeTextCount ?? 0), 0)} |`,
   );
   lines.push(
     `| Interactive elements clipped offscreen | ${ok.reduce((a, r) => a + (r.clipped?.length ?? 0), 0)} |`,

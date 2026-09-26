@@ -2,7 +2,7 @@
  * The languages the app speaks, and nothing else.
  *
  * Kept apart from `config.ts`, which calls next-intl's `getRequestConfig` when it loads: client code
- * that only needs the list (the locale cookie, the language switch, the account menu) would
+ * that only needs the list (the locale cookie, the language switch, Settings › Appearance) would
  * otherwise pull the server's request config, and the four message catalogues, in with it.
  */
 export const locales = ["pt", "en", "es", "it"] as const;

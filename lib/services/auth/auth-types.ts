@@ -8,7 +8,7 @@ declare module "next-auth" {
      * The language the account chose, read at sign-in (`auth.ts`). Absent when the account never
      * chose one: `LanguageSync` then leaves the device on its own language.
      */
-    locale?: import("@/lib/i18n/config").Locale;
+    locale?: import("@/lib/i18n/locales").Locale;
     user: {
       id: string;
       role: string;
