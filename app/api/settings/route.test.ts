@@ -25,6 +25,7 @@ vi.mock("@/lib/services/database/database", () => ({
 }));
 
 import { GET, POST } from "./route";
+import { _resetRateLimitMap, _setRateLimitForIP } from "@/lib/utils/rate-limit";
 
 function postRequest(body: unknown) {
   return new NextRequest("http://localhost:3000/api/settings", {
@@ -144,6 +145,30 @@ describe("POST /api/settings validates what it writes", () => {
     const response = await POST(postRequest({ residenceCountry: "XX" }));
 
     expect(response.status).toBe(400);
+    expect(upsertMock).not.toHaveBeenCalled();
+  });
+
+  it("answers 400 for a body that is not JSON, and saves nothing", async () => {
+    const response = await POST(
+      new NextRequest("http://localhost:3000/api/settings", { method: "POST", body: "not json" }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(upsertMock).not.toHaveBeenCalled();
+  });
+
+  it("answers 429 once the address has spent its minute, and saves nothing", async () => {
+    _setRateLimitForIP("203.0.113.9", 100);
+    const response = await POST(
+      new NextRequest("http://localhost:3000/api/settings", {
+        method: "POST",
+        headers: { "x-forwarded-for": "203.0.113.9" },
+        body: JSON.stringify({ residenceCountry: "ES" }),
+      }),
+    );
+    _resetRateLimitMap();
+
+    expect(response.status).toBe(429);
     expect(upsertMock).not.toHaveBeenCalled();
   });
 });

@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { isMockMode } from "@/lib/config/data-mode";
 import { createErrorResponse, parseBody, ValidationError } from "@/lib/utils/error-handling";
+import { withRateLimit } from "@/lib/utils/rate-limit";
 import { updateSettingsSchema } from "@/lib/schemas/settings.schema";
 
 export async function GET(request: NextRequest) {
@@ -41,15 +42,19 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function handlePost(request: NextRequest): Promise<Response> {
   try {
     const authResult = await requireAuth(request);
     if (authResult instanceof Response) return authResult;
 
     const { userId } = authResult;
 
-    // Checked before the upsert: a wrong type used to reach Prisma and answer 500.
-    const data = parseBody(await request.json(), updateSettingsSchema);
+    // Checked before the upsert: a wrong type used to reach Prisma and answer 500. A body that is
+    // not JSON is the caller's mistake too; its SyntaxError used to fall through to the 500 below.
+    const raw: unknown = await request.json().catch(() => {
+      throw new ValidationError("Invalid request: the body is not JSON");
+    });
+    const data = parseBody(raw, updateSettingsSchema);
 
     // In mock mode, just echo back the settings
     if (isMockMode) {
@@ -97,3 +102,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to save settings" }, { status: 500 });
   }
 }
+
+// The write is rate-limited, as `PUT /api/settings/language` is. The read is not: every page load
+// makes it (the theme and the rail's line under the name), and this limiter keeps one budget per
+// address across every route it wraps.
+export const POST = withRateLimit(handlePost);
