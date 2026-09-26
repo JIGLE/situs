@@ -59,13 +59,10 @@ export interface ReceiptsViewProps {
   tenantId?: string;
   propertyId?: string;
   /**
-   * When this flips to `true`, the record-payment dialog opens itself. Lets the parent
-   * request the dialog after switching to this tab without racing a ref across the
-   * tab-mount + `router.replace` re-render that `useTabPersistence` triggers.
+   * Opens **Registar pagamento** (`RecordPaymentDialog`), which the page holds so it can open
+   * from any tab. Without it, the add button opens this view's own form.
    */
-  openDialogSignal?: boolean;
-  /** Called once the dialog has been opened in response to `openDialogSignal`. */
-  onDialogOpened?: () => void;
+  onRecordPayment?: () => void;
   /**
    * Drops the internal `PageHeader` (title/description) when this view is mounted
    * inside another surface that already renders its own heading — e.g. the property
@@ -98,7 +95,9 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
       amount: 0,
       date: new Date().toISOString().split("T")[0],
       type: "rent",
-      status: "pending",
+      // A form that records a payment records money that arrived. Saved as pending, it was
+      // chased as late five days on while the ledger already counted the month paid.
+      status: "paid",
       description: "",
     };
 
@@ -124,18 +123,6 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
     useImperativeHandle(ref, () => ({
       openDialog,
     }));
-
-    // Open the dialog when the parent raises the signal. Fires both when this view was
-    // already mounted (signal flips false→true) and when it just mounted with the signal
-    // already true (switching in from another tab) — robust to either ordering.
-    const { openDialogSignal, onDialogOpened } = props;
-    useEffect(() => {
-      if (openDialogSignal) {
-        openDialog();
-        onDialogOpened?.();
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [openDialogSignal]);
 
     useEffect(() => {
       if (!isOpen || editingItem) {
@@ -307,7 +294,10 @@ export const ReceiptsView = forwardRef<ReceiptsViewRef, ReceiptsViewProps>(
     const addReceiptButton = (
       <Dialog open={dialog.isOpen} onOpenChange={(open) => !open && dialog.closeDialog()}>
         <DialogTrigger asChild>
-          <Button onClick={dialog.openDialog} className="flex items-center gap-2">
+          <Button
+            onClick={props.onRecordPayment ?? dialog.openDialog}
+            className="flex items-center gap-2"
+          >
             <Plus className="w-4 h-4" />
             {t("addReceipt")}
           </Button>

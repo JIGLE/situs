@@ -712,7 +712,6 @@
       "receipts": "Recibos",
       "rentMatrix": "Mapa de rendas",
       "bank": "Movimentos bancários",
-      "rentRoll": "Ocupação e renda",
       "tax": "Resumo fiscal"
     },
     "overdueRent": "Renda em atraso",
@@ -1190,7 +1189,16 @@
         "thanks": "Obrigado pelo seu pagamento."
       },
       "pdfDownload": "Transferir PDF",
-      "pdfGenerating": "A preparar…"
+      "pdfGenerating": "A preparar…",
+      "lifecycle": {
+        "draft": "Rascunho",
+        "review": "Em revisão",
+        "emitted": "Emitido",
+        "submitted": "Submetido",
+        "accepted": "Aceite",
+        "rejected": "Rejeitado",
+        "voided": "Anulado"
+      }
     },
     "isRecurring": "Despesa recorrente",
     "recurrenceRule": "Repetição",
@@ -1205,14 +1213,6 @@
     "recurrenceEndPlaceholder": "Deixar vazio para nunca terminar",
     "expense": "Despesa",
     "paymentReceived": "Pagamento recebido",
-    "rentRoll": {
-      "heading": "Mapa de rendas",
-      "empty": "Sem contratos ativos neste período.",
-      "expected": "Previsto",
-      "received": "Recebido",
-      "delta": "Diferença",
-      "totals": "Totais"
-    },
     "bank": {
       "allMovements": "Todos",
       "needsReview": "A rever",
@@ -1294,6 +1294,33 @@
       "submit": "Criar despesa",
       "toastCreated": "Despesa registada",
       "toastUpdated": "Despesa atualizada"
+    },
+    "matrix": {
+      "cellLabel": "{month}: {status}, pagos {paid} de {due}",
+      "yearTotal": "Ano",
+      "received": "Recebido",
+      "ofExpected": "de {amount}",
+      "empty": "Sem meses de renda em {year}. Cada contrato cria os seus meses quando é registado.",
+      "noPeriod": "Este contrato não tem mês de renda aqui: ainda não tinha começado, ou já tinha acabado.",
+      "due": "Renda",
+      "paid": "Pago",
+      "owed": "Em falta",
+      "payments": "Pagamentos",
+      "noPayments": "Ainda nada pago para este mês.",
+      "coversOlderFirst": "Um pagamento registado agora cobre primeiro {month}, o mês mais antigo por pagar.",
+      "recordPayment": "Registar pagamento"
+    },
+    "recordPayment": {
+      "title": "Registar pagamento",
+      "description": "Dinheiro recebido sem movimento bancário, como numerário. Cobre primeiro o mês mais antigo por pagar do contrato.",
+      "lease": "Contrato",
+      "chooseLease": "Escolha o contrato",
+      "leaseRequired": "Escolha o contrato a que este pagamento pertence.",
+      "amount": "Valor (€)",
+      "amountRequired": "Indique um valor acima de zero.",
+      "dateRequired": "Indique a data em que o dinheiro chegou.",
+      "submit": "Registar pagamento",
+      "recorded": "Pagamento registado."
     }
   },
   "propertyDetail": {

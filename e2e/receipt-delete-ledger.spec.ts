@@ -145,7 +145,7 @@ test("deleting a receipt takes its payment off the ledger, and its movement back
       request,
       "/api/receipts",
       {
-        // No leaseId: the create ignores it, and allocation settles the tenant's one active lease.
+        // No leaseId: allocation settles the tenant's one active lease.
         tenantId: tenant.id,
         propertyId: property.id,
         amount: RENT,

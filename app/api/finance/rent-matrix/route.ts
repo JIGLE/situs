@@ -1,19 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
-import { requireAuth } from "@/lib/services/auth/auth-middleware";
-import { getPrismaClient } from "@/lib/services/database/database";
+import { handleOptions, requireOwnerAccess } from "@/lib/services/auth/auth-middleware";
+import { getRentMatrix } from "@/lib/services/allocation/rent-matrix";
+import { createSuccessResponse, withErrorHandler } from "@/lib/utils/error-handling";
+import { withRateLimit } from "@/lib/utils/rate-limit";
 
 export const runtime = "nodejs";
 
 /**
- * Situs Rent Matrix read model: for a given year, every lease's 12 reference
- * months with their persisted-derived statuses — one query over the
- * RentPeriod ledger (Migration A), no joins per cell.
+ * Situs Rent Matrix read model: for a given year, every lease's 12 reference months, with each
+ * month's status worked out as of now (`lib/services/allocation/rent-matrix.ts`), what is still
+ * owed, and totals.
  */
-export async function GET(request: NextRequest) {
-  const authResult = await requireAuth(request);
+async function handleGet(request: NextRequest): Promise<Response> {
+  const authResult = await requireOwnerAccess(request);
   if (authResult instanceof Response) return authResult;
-  const { userId } = authResult;
+  const { scopeUserId } = authResult;
 
   const url = new URL(request.url);
   const yearParam = Number(url.searchParams.get("year"));
@@ -22,47 +24,8 @@ export async function GET(request: NextRequest) {
       ? yearParam
       : new Date().getUTCFullYear();
 
-  const prisma = getPrismaClient();
-  const periods = await prisma.rentPeriod.findMany({
-    where: { userId, year },
-    select: {
-      leaseId: true,
-      month: true,
-      status: true,
-      dueAmount: true,
-      allocatedAmount: true,
-      tenant: { select: { name: true } },
-      property: { select: { name: true } },
-    },
-    orderBy: [{ leaseId: "asc" }, { month: "asc" }],
-  });
-
-  const rows = new Map<
-    string,
-    {
-      leaseId: string;
-      tenantName: string;
-      propertyName: string;
-      months: Record<number, { status: string; dueAmount: number; allocatedAmount: number }>;
-    }
-  >();
-  for (const p of periods) {
-    let row = rows.get(p.leaseId);
-    if (!row) {
-      row = {
-        leaseId: p.leaseId,
-        tenantName: p.tenant.name,
-        propertyName: p.property.name,
-        months: {},
-      };
-      rows.set(p.leaseId, row);
-    }
-    row.months[p.month] = {
-      status: p.status,
-      dueAmount: p.dueAmount,
-      allocatedAmount: p.allocatedAmount,
-    };
-  }
-
-  return NextResponse.json({ success: true, data: { year, rows: Array.from(rows.values()) } });
+  return createSuccessResponse(await getRentMatrix(scopeUserId, year));
 }
+
+export const GET = withErrorHandler(withRateLimit(handleGet));
+export const OPTIONS = handleOptions;
