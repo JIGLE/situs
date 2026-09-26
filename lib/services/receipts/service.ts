@@ -17,6 +17,7 @@ import { reverseAllocationsForReceipt } from "@/lib/services/allocation/service"
 import { pdfGenerator } from "@/lib/services/pdf-generator";
 import { documentService } from "@/lib/services/document-service";
 import { ptAtConnector } from "@/lib/tax/connectors/pt-at";
+import { ConflictError, ResourceNotFoundError } from "@/lib/utils/error-handling";
 import { evaluateTransition, type ReceiptLifecycleState } from "./lifecycle";
 
 const ARCHIVE_MARKER_PREFIX = "situs-receipt-archive:";
@@ -114,10 +115,13 @@ export async function findExistingArchive(
 }
 
 /**
- * Apply a receipt lifecycle transition. Throws on an invalid transition,
- * a failed PT connector call, or a missing prerequisite (e.g. submitting
- * without a linked Modelo 44 filing) — callers surface the message as a
- * 400.
+ * Apply a receipt lifecycle transition.
+ *
+ * Refusals are typed, so the route answers each with its own status and the screen can say which
+ * rule refused: another owner's receipt, or none, is a 404; a move the state machine does not
+ * allow, a missing filing and a refusal from the PT connector are each a 409 with a `reason`. The
+ * route used to catch everything as a 400 with the English message, which the screen could only
+ * show as "the request was invalid".
  */
 export async function transitionReceipt(
   userId: string,
@@ -127,11 +131,16 @@ export async function transitionReceipt(
 ): Promise<TransitionOutcome> {
   const prisma = getPrismaClient();
   const receipt = await prisma.receipt.findFirst({ where: { id: receiptId, userId } });
-  if (!receipt) throw new Error("Receipt not found");
+  if (!receipt) throw new ResourceNotFoundError("Receipt");
 
   const from = receipt.lifecycle;
   const evaluation = evaluateTransition(from, to);
-  if (!evaluation.allowed) throw new Error(evaluation.reason ?? "Transition not allowed");
+  if (!evaluation.allowed) {
+    throw new ConflictError(
+      evaluation.reason ?? "Transition not allowed",
+      "receipt_transition_not_allowed",
+    );
+  }
 
   let connectorResult: TransitionOutcome["connector"];
 
@@ -142,15 +151,30 @@ export async function transitionReceipt(
 
     if (to === "submitted") {
       if (!filing) {
-        throw new Error("Link a PT rent receipt (Modelo 44) to this receipt before submitting");
+        throw new ConflictError(
+          "Link a PT rent receipt (Modelo 44) to this receipt before submitting",
+          "receipt_filing_missing",
+        );
       }
       const result = await ptAtConnector.submit(filing.id);
-      if (result.status === "error") throw new Error(result.responseBody ?? "AT submission failed");
+      if (result.status === "error") {
+        throw new ConflictError(
+          result.responseBody ?? "AT submission failed",
+          "receipt_submission_refused",
+        );
+      }
       connectorResult = result;
     } else {
-      if (!filing) throw new Error("No linked rent receipt to poll");
+      if (!filing) {
+        throw new ConflictError("No linked rent receipt to poll", "receipt_filing_missing");
+      }
       const result = await ptAtConnector.poll(filing.id);
-      if (result.status === "error") throw new Error(result.responseBody ?? "AT poll failed");
+      if (result.status === "error") {
+        throw new ConflictError(
+          result.responseBody ?? "AT poll failed",
+          "receipt_submission_refused",
+        );
+      }
       connectorResult = result;
     }
   }

@@ -18,14 +18,17 @@ import { FinancialsContainer } from "./financials-container";
  * so once a link had opened Receipts, choosing any other tab snapped straight back to Receipts.
  */
 
+const { appState } = vi.hoisted(() => ({ appState: { receipts: [] as unknown[] } }));
+
 vi.mock("@/lib/contexts/app-context", () => ({
-  useApp: () => ({ state: { receipts: [], tenants: [], leases: [], properties: [] } }),
+  useApp: () => ({
+    state: { receipts: appState.receipts, tenants: [], leases: [], properties: [] },
+  }),
 }));
 
 vi.mock("./receipts-view", () => ({ ReceiptsView: () => <p>receipts panel</p> }));
 vi.mock("./yearly-rent-matrix", () => ({ YearlyRentMatrix: () => <p>rent matrix panel</p> }));
 vi.mock("./bank-movements-inbox", () => ({ BankMovementsInbox: () => <p>bank panel</p> }));
-vi.mock("./receipt-automation-queue", () => ({ ReceiptAutomationQueue: () => null }));
 vi.mock("./tax-connector-dashboard", () => ({ TaxConnectorDashboard: () => null }));
 vi.mock("./financials-view", () => ({ FinancialsView: () => <p>tax panel</p> }));
 
@@ -44,6 +47,19 @@ describe("FinancialsContainer", () => {
     install("");
   });
   afterEach(() => localStorage.clear());
+
+  it("counts the receipts waiting to be issued on the Receipts tab", async () => {
+    appState.receipts = [
+      { id: "a", lifecycle: "draft" },
+      { id: "b", lifecycle: "review" },
+      { id: "c", lifecycle: "emitted" },
+    ];
+
+    render(<FinancialsContainer />);
+
+    expect(await screen.findByRole("tab", { name: /Receipts\s*2$/ })).toBeInTheDocument();
+    appState.receipts = [];
+  });
 
   it("opens on the rent matrix", async () => {
     render(<FinancialsContainer />);

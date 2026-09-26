@@ -57,6 +57,9 @@ const REASON_KEY = new Map<
   | "bankLeaseRequired"
   | "bankMovementHasReceipt"
   | "bankMovementNotIgnored"
+  | "receiptTransitionNotAllowed"
+  | "receiptFilingMissing"
+  | "receiptSubmissionRefused"
 >([
   ["tenant_has_history", "tenantHasHistory"],
   ["property_has_history", "propertyHasHistory"],
@@ -71,6 +74,9 @@ const REASON_KEY = new Map<
   ["bank_lease_required", "bankLeaseRequired"],
   ["bank_movement_has_receipt", "bankMovementHasReceipt"],
   ["bank_movement_not_ignored", "bankMovementNotIgnored"],
+  ["receipt_transition_not_allowed", "receiptTransitionNotAllowed"],
+  ["receipt_filing_missing", "receiptFilingMissing"],
+  ["receipt_submission_refused", "receiptSubmissionRefused"],
 ]);
 
 type FormsCatalogue = (typeof en)["forms"];

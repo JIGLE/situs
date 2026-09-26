@@ -693,7 +693,10 @@
       "bankMovementNotIgnored": "Only an ignored movement can be restored.",
       "tooMany": "Too many requests. Wait a moment and try again.",
       "serverError": "The server had a problem. Try again in a moment.",
-      "securityTokenExpired": "Your security token expired. Refresh the page and try again."
+      "securityTokenExpired": "Your security token expired. Refresh the page and try again.",
+      "receiptTransitionNotAllowed": "This receipt is no longer at a stage that allows this. Refresh the list and try again.",
+      "receiptFilingMissing": "Link this receipt to its Finanças filing first.",
+      "receiptSubmissionRefused": "Finanças refused this receipt."
     }
   },
   "payments": {
@@ -1140,15 +1143,8 @@
     "vendorVat": "Vendor NIF / VAT",
     "expenseDeductibilityNote": "Indicative only – confirm deductibility with your TOC or gestor.",
     "receipts": {
-      "title": "Receipts",
-      "descriptionTenant": "Record payments and receipts for the selected tenant.",
-      "descriptionProperty": "Record payments and receipts for the selected property.",
-      "descriptionOwner": "Record payments, issue receipts, and export PDF confirmations.",
-      "addReceipt": "Add Receipt",
       "editTitle": "Edit Receipt",
-      "createTitle": "Add New Receipt",
       "editDescription": "Update receipt information",
-      "createDescription": "Create a new payment receipt",
       "tenant": "Tenant",
       "selectTenant": "Select tenant",
       "property": "Property",
@@ -1162,7 +1158,6 @@
       "typeOther": "Other",
       "descriptionOptional": "Description (Optional)",
       "submitUpdate": "Update Receipt",
-      "submitCreate": "Create Receipt",
       "options": "Receipt options",
       "edit": "Edit Receipt",
       "delete": "Delete Receipt",
@@ -1199,7 +1194,35 @@
         "accepted": "Accepted",
         "rejected": "Rejected",
         "voided": "Voided"
-      }
+      },
+      "monthSummary": "{count, plural, one {# receipt} other {# receipts}} · {toIssue} to issue · {total}",
+      "issueSelected": "Issue {count}",
+      "issueDialog": {
+        "title": "Issue {count, plural, one {# receipt} other {# receipts}}?",
+        "description": "Each receipt becomes Issued and its PDF is archived. An issued receipt cannot go back to draft, but it can be voided.",
+        "confirmLabel": "Issue"
+      },
+      "issued": "{count, plural, one {# receipt issued} other {# receipts issued}}.",
+      "issueFailed": "Could not issue:",
+      "emptyMonth": "No receipts in {month}.",
+      "selectAll": "Select all that can be issued",
+      "selectOne": "Select the receipt for {receipt}",
+      "rentMonth": "Rent month",
+      "received": "Received",
+      "state": "Status",
+      "sourceHeader": "Source",
+      "source": {
+        "bank": "Bank",
+        "manual": "Manual"
+      },
+      "noRentMonth": "No rent month",
+      "void": "Void",
+      "voidDialog": {
+        "title": "Void this receipt?",
+        "description": "The receipt is voided and its payment leaves the month it paid, which goes back to unpaid.",
+        "confirmLabel": "Void"
+      },
+      "toastVoided": "Receipt voided."
     },
     "isRecurring": "Repeating expense",
     "recurrenceRule": "Repeat",
@@ -1615,7 +1638,6 @@
     "required": "Required",
     "accept": "Accept",
     "correct": "Correct…",
-    "emit": "Emit",
     "contract": "Contract",
     "noSubmissionLog": "No submission log entries yet.",
     "noScheduledWork": "No scheduled or due maintenance work.",
