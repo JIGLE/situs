@@ -118,12 +118,13 @@ const FULLPAGE = flag("fullpage");
  * already met on every surface, and unlike the other metrics it has no legitimate reason to
  * regress.
  *
- * `smallText` is close to its floor, and most of what remains is deliberate. On the 52-surface
- * sweep the ~310 split into 264 bottom-nav labels at 11px — which is what native iOS/Android tab
- * bars use, so they stay — and 44 avatar initials, a glyph sized to its circle rather than text
- * to read. Both are per-surface chrome, which is why the total fell to 192 when the cutdown
- * removed seven surfaces: the sources did not change, only the number of screens they are
- * counted on. Do not chase this one to zero; it would mean overriding two deliberate choices.
+ * `smallText` is text under 12px that nobody chose. On the 52-surface sweep the ~310 it read split
+ * into 264 bottom-nav labels at 11px — which is what native iOS/Android tab bars use, so they
+ * stay — and 44 avatar initials, a glyph sized to its circle rather than text to read. Both are
+ * the phone bar's, on every screen, so the total rose and fell with the number of surfaces and
+ * hid anything else. They are marked `data-audit-chrome` and counted apart as `chromeText`, which
+ * gates nothing. What is left read 0 on two consecutive sweeps and is pinned there: text under
+ * 12px outside the bar is a defect to fix where it is drawn.
  *
  * `touchTargetFails` was the landing footer's two text links, counted once per theme — links in
  * prose, which the doctrine's rule 2 exempts only with explicit design review. The landing page
@@ -137,7 +138,9 @@ const FULLPAGE = flag("fullpage");
  * `smallText` gave 308, 308, 309. The spread is small but real — layout settles differently when
  * a surface does not reach networkidle inside the 5s cap — so a single green run is not evidence
  * that a lower ceiling holds. Tighten either one only from repeated runs that all agree, and
- * expect the true floor to sit a point or two above the best number you have seen.
+ * expect the true floor to sit a point or two above the best number you have seen. Both spreads
+ * were measured on what those metrics then counted; both now read 0 and are pinned. A run above
+ * 0 names its elements in the report (the first ten per surface), and they are where to look.
  * `pageOverflow`, `viewportTallChildren` and `touchTargetFails` have been stable across runs.
  *
  * These come from a **seeded** run (`--seed --strict`; 52 surface-runs before the cutdown). An
@@ -164,8 +167,8 @@ const FULLPAGE = flag("fullpage");
  *
  * Measured on a seeded sweep. The originals came from 52 surface-runs; the scope cutdown removed
  * seven surfaces whose pages no longer exist, and these ceilings were measured on the 38 that
- * left. Every page removed since shrinks the sweep again. `smallText` is the only metric that
- * scales with surface count, and it was retightened once CI reprinted it on a green run.
+ * left. Every page removed since shrinks the sweep again. No ceiling scales with the surface count
+ * any more: `smallText` did while it counted the phone bar, which `chromeText` now counts apart.
  *
  * The harness names any remaining slack as "within baseline — tighten it: …" on a passing run.
  * That line is a prompt to look, not an instruction to obey: `touchTargetFails` sits above its
@@ -187,18 +190,11 @@ const BASELINE = {
   // fixed at the source, so this measures a property of the layout rather than of the run.
   // Confirmed 0 on two consecutive full sweeps.
   clippedContainers: 0,
-  // 192 on the 38-surface sweep, twice — CI on `dc2cdf2` and again on `97e308d` — against ~310
-  // on 52. The drop is the seven removed surfaces taking their nav labels and avatar initials
-  // with them, not a legibility fix. The ceiling keeps one point of margin rather than sitting
-  // on 192, the same margin the old one kept (310 over a worst run of 309): this is the
-  // non-deterministic metric described above, and its cause is still live — the second run
-  // logged 2 of 38 surface-runs missing networkidle inside the 5s cap. Two agreeing runs are
-  // enough to tighten on; they are not enough to prove the spread is zero.
-  //
-  // Since the bar's labels and avatar initials moved to their own `chromeText` line, this counts
-  // only small text nobody chose, so it no longer grows each time a surface is added. The ceiling
-  // stays at 193 until CI prints the new figure, then comes down to it.
-  smallText: 193,
+  // Text under 12px outside the phone bar; the bar's labels and avatar initials are `chromeText`,
+  // counted apart. 0 on two consecutive sweeps, CI on `b528b6b` and again on `a638314`, so it is
+  // pinned: nothing that small outside the bar is deliberate. While it still counted the bar it
+  // read 192 on the 38-surface sweep, twice, under a ceiling of 193.
+  smallText: 0,
 };
 
 /**
