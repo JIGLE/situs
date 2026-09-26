@@ -37,3 +37,12 @@ export function countryOptions(locale: string): CountryOption[] {
   const portugal = options.findIndex((option) => option.code === "PT");
   return [options[portugal], ...options.filter((_, index) => index !== portugal)];
 }
+
+/** One country named in `locale`, or its code when Intl cannot name it. */
+export function countryName(code: string, locale: string): string {
+  try {
+    return new Intl.DisplayNames([locale], { type: "region" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}

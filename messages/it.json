@@ -95,6 +95,8 @@
       "name": "Nome",
       "notAvailable": "Non disponibile",
       "notSet": "Non impostato",
+      "residenceCountry": "Paese di residenza fiscale",
+      "residenceCountryHelp": "Compare sotto il suo nome nella barra laterale, dopo la lingua.",
       "version": "Situs v{version}",
       "appearance": "Aspetto",
       "appearanceDescription": "Come appare l'app su questo dispositivo",
@@ -106,6 +108,7 @@
       "countryPaletteHelp": "Imposta i colori del logo Situs Portal e l'accento dell'interfaccia sulla palette della bandiera del tuo paese. La leggibilità viene prima: l'accento è regolato sul contrasto e i colori di stato restano uguali in ogni paese.",
       "language": "Lingua",
       "selectLanguage": "Seleziona la lingua",
+      "languageHelp": "Si applica subito e viene salvata nel suo account per le e-mail di promemoria.",
       "dataRights": "I tuoi diritti sui dati (GDPR)",
       "dataRightsDescription": "Esporta o elimina definitivamente i tuoi dati personali quando vuoi",
       "exportTitle": "Esporta i miei dati",
@@ -421,21 +424,7 @@
     "mobileNavLabel": "Navigazione mobile",
     "expandSidebar": "Espandi barra laterale",
     "collapseSidebar": "Comprimi barra laterale",
-    "accountMenu": {
-      "open": "Menu dell'account",
-      "language": "Lingua",
-      "appearance": "Aspetto",
-      "palette": "Palette",
-      "themes": {
-        "normal": "Chiaro",
-        "dark": "Scuro",
-        "system": "Sistema"
-      },
-      "palettes": {
-        "PT": "Portogallo",
-        "EU": "Unione Europea"
-      }
-    }
+    "languageAndResidence": "Lingua · paese di residenza fiscale"
   },
   "dashboard": {
     "welcome": "Benvenuto nella tua dashboard di gestione immobiliare",

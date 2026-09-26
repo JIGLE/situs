@@ -35,9 +35,9 @@ const UserSettingsContext = createContext<UserSettingsContextValue>(NOT_LOADED);
 /**
  * The signed-in owner's account settings, read once for the whole shell.
  *
- * The rail's line under the owner's name (their language and country of residence), the account
- * menu and `LanguageSync` all read the same row; each fetching it would be three requests for one
- * row on every page.
+ * The rail's line under the owner's name (their language and country of residence) and
+ * `LanguageSync` both read the same row; each fetching it would be two requests for one row on
+ * every page. Settings › Account calls `refresh` after saving the country, so the rail follows.
  */
 export function UserSettingsProvider({ children }: { children: React.ReactNode }) {
   const { status } = useSession();
