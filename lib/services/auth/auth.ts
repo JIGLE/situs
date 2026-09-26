@@ -33,7 +33,7 @@ import { isMockMode } from "@/lib/config/data-mode";
 import { resolveSignIn } from "@/lib/services/auth/registration";
 import { createDevSession, isDevAuthEnabled } from "@/lib/services/auth/dev-session";
 import { hasLocale } from "next-intl";
-import { locales, type Locale } from "@/lib/i18n/config";
+import { locales, type Locale } from "@/lib/i18n/locales";
 
 function createBaseAuthOptions(): NextAuthOptions {
   const secret = process.env.NEXTAUTH_SECRET;

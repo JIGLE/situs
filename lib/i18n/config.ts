@@ -11,18 +11,9 @@ import ptMessages from "@/messages/pt.json";
 import esMessages from "@/messages/es.json";
 import itMessages from "@/messages/it.json";
 
-// Supported locales
-export const locales = ["pt", "en", "es", "it"] as const;
-export type Locale = (typeof locales)[number];
-export const defaultLocale: Locale = "pt";
+import { locales, defaultLocale, localeNames, type Locale } from "./locales";
 
-// Language display names
-export const localeNames: Record<Locale, string> = {
-  pt: "Português",
-  en: "English",
-  es: "Español",
-  it: "Italiano",
-};
+export { locales, defaultLocale, localeNames, type Locale };
 
 // Coming soon languages (for display in selector)
 export const upcomingLocales = ["fr", "de", "nl", "pl", "ru", "zh", "ja"] as const;

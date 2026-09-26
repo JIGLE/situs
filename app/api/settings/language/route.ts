@@ -11,7 +11,7 @@ import {
   withErrorHandler,
 } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
-import { locales } from "@/lib/i18n/config";
+import { locales } from "@/lib/i18n/locales";
 
 export const runtime = "nodejs";
 

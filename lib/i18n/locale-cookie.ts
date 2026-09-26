@@ -1,4 +1,4 @@
-import { locales, type Locale } from "@/lib/i18n/config";
+import { isLocale, type Locale } from "@/lib/i18n/locales";
 
 /**
  * The cookie the interface's language is read from.
@@ -13,10 +13,6 @@ import { locales, type Locale } from "@/lib/i18n/config";
 export const LOCALE_COOKIE = "situs-locale";
 
 const ONE_YEAR_SECONDS = 31536000;
-
-function isLocale(value: string | undefined): value is Locale {
-  return value !== undefined && (locales as readonly string[]).includes(value);
-}
 
 /** The language chosen on this device, or null when none was: the proxy then goes by the browser. */
 export function readLocaleCookie(): Locale | null {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { locales, localeNames, type Locale } from "@/lib/i18n/config";
+import { locales, localeNames, type Locale } from "@/lib/i18n/locales";
 import { useSetLanguage } from "@/lib/i18n/use-set-language";
 import { cn } from "@/lib/utils/utils";
 import { Globe } from "lucide-react";

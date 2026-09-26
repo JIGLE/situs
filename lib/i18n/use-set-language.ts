@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useLocale } from "next-intl";
 
-import type { Locale } from "@/lib/i18n/config";
+import type { Locale } from "@/lib/i18n/locales";
 import { writeLocaleCookie } from "@/lib/i18n/locale-cookie";
 import { useUserSettings } from "@/lib/contexts/user-settings-context";
 import { apiFetch } from "@/lib/utils/api-client";
