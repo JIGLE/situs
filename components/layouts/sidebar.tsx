@@ -4,7 +4,7 @@ import * as React from "react";
 import { useState, useCallback, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 
@@ -14,7 +14,8 @@ import { cn } from "@/lib/utils/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { usePortalAccess } from "@/lib/contexts/portal-context";
-import { useTheme } from "@/lib/contexts/theme-context";
+import { useUserSettings } from "@/lib/contexts/user-settings-context";
+import { countryName } from "@/lib/utils/countries";
 
 // ── Nav Item Type ──────────────────────────────────────
 interface SidebarProps {
@@ -36,10 +37,9 @@ function SidebarFooter({
   onToggleCollapsed,
   user,
 }: SidebarFooterProps): React.ReactElement {
-  const { country, resolvedTheme } = useTheme();
   const tNav = useTranslations("navigation");
-  const tSettings = useTranslations("settings.nav");
-  const tCommon = useTranslations("common");
+  const locale = useLocale();
+  const { settings } = useUserSettings();
   const initials =
     user?.name
       ?.split(" ")
@@ -78,12 +78,11 @@ function SidebarFooter({
             <p className="text-sm font-medium text-[var(--color-foreground)] truncate">
               {user?.name || "Portal User"}
             </p>
-            <p className="mono-label truncate" title={tSettings("appearance")}>
-              {/* `resolvedTheme` is the internal mode name — "normal" or "dark" — and it was being
-                  printed straight out, so the light theme announced itself as "PT · NORMAL".
-                  Nobody calls a theme "normal", and it was the one word on the screen that had
-                  not been through i18n. */}
-              {`${country} · ${resolvedTheme === "dark" ? tCommon("themeDark") : tCommon("themeLight")}`}
+            <p className="mono-label truncate" title={tNav("languageAndResidence")}>
+              {/* The language on screen, then the country of tax residence named in it. This line
+                  used to read `PT · Escuro`: the colour palette and the theme, both of which the
+                  screen already shows. A missing row reads Portugal, the column's default. */}
+              {`${locale.toUpperCase()} · ${countryName(settings?.residenceCountry ?? "PT", locale)}`}
             </p>
           </div>
         </Link>
@@ -101,8 +100,11 @@ function SidebarFooter({
     );
   }
 
+  // Collapsed, the header row is one button (the logo expands the rail) with no room beside it,
+  // so the bell joins this column, above the avatar.
   return (
     <div className="flex flex-col items-center gap-2">
+      <NotificationBell className="h-8 w-8" />
       <Link
         href={"/settings?tab=account"}
         className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--country-highlight-readable)]"
@@ -120,7 +122,8 @@ function SidebarFooter({
         size="sm"
         onClick={onToggleCollapsed}
         className="h-8 w-8 p-0 text-[var(--color-muted-foreground)]"
-        title="Expand Sidebar"
+        title={tNav("expandSidebar")}
+        aria-label={tNav("expandSidebar")}
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
@@ -191,6 +194,10 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
                 Situs
               </span>
             </div>
+            {/* The bell shares the header row with the collapse button, at the same size. It had
+                a bordered row of its own under the header: a whole row between the logo and the
+                navigation for one icon. */}
+            <NotificationBell className="h-8 w-8" />
             <Button
               variant="ghost"
               size="sm"
@@ -203,19 +210,6 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
             </Button>
           </>
         )}
-      </div>
-
-      {/* Bell sits in its own thin row rather than inside the header: the header's collapsed
-          state is a single button (the whole row toggles expand), which leaves no room for a
-          second interactive element. Icon-only either way, so collapse never changes its
-          layout — only its alignment. */}
-      <div
-        className={cn(
-          "flex items-center border-b border-[var(--color-inner-border)] px-3 py-1.5",
-          collapsed ? "justify-center" : "justify-end",
-        )}
-      >
-        <NotificationBell />
       </div>
 
       {/* Navigation */}

@@ -117,14 +117,8 @@ export function SystemStatusView() {
     <div className="space-y-8">
       <header className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-1.5">
-            <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-              {t("title")}
-            </h1>
-            <p className="max-w-2xl text-sm text-[var(--color-muted-foreground)]">
-              {t("subtitle")}
-            </p>
-          </div>
+          {/* No heading of its own: the page's heading and the Status tab say what this is. */}
+          <p className="max-w-2xl text-sm text-[var(--color-muted-foreground)]">{t("subtitle")}</p>
           <Button variant="secondary" onClick={() => void load()} disabled={loading}>
             <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} aria-hidden />
             {t("refresh")}

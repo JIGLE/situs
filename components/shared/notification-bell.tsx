@@ -46,7 +46,8 @@ const POLL_MS = 60_000;
  * from the Prisma enum in both directions, and it invented a `priority` the schema has no column
  * for. This derives its labels from notification-labels.ts instead, which mirrors the enum.
  */
-export function NotificationBell(): React.ReactElement {
+/** `className` sizes the trigger, so the rail's header can match it to its collapse button. */
+export function NotificationBell({ className }: { className?: string } = {}): React.ReactElement {
   const t = useTranslations("notificationCenter");
   const tTypes = useTranslations("notifications");
   const locale = useLocale();
@@ -127,7 +128,10 @@ export function NotificationBell(): React.ReactElement {
         <Button
           variant="ghost"
           size="icon"
-          className="relative text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+          className={cn(
+            "relative text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]",
+            className,
+          )}
           aria-label={
             unreadCount > 0 ? t("bellAriaLabelUnread", { count: unreadCount }) : t("bellAriaLabel")
           }

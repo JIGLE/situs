@@ -1,6 +1,25 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+import en from "../messages/en.json";
 
 test.use({ storageState: "playwright/.auth/user.json" });
+
+/**
+ * Admin's heading, and the section tab marked as the current page.
+ *
+ * Each section had an `h1` of its own until Admin joined the app's shell. Now one heading covers
+ * them all, so the tab marked current is what says which section this is. The tab is looked up
+ * inside Admin's own section nav, so no other link on the page can answer for it.
+ */
+async function expectSection(page: Page, tab: string) {
+  await expect(page.getByRole("heading", { level: 1, name: en.admin.shell.title })).toBeVisible({
+    timeout: 20000,
+  });
+  const sections = page.getByRole("navigation", { name: en.admin.shell.sections });
+  await expect(sections.getByRole("link", { name: tab, exact: true })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+}
 
 /**
  * The operator area — and specifically *which* page each assertion belongs to.
@@ -41,9 +60,7 @@ test.describe("Admin › System status (/admin/status)", () => {
     // Reachability is not incidental. `canAccessPortalPath` derives access from the nav list, so
     // before /admin was added there it silently redirected to /dashboard.
     await expect(page).toHaveURL(/\/admin\/status$/);
-    await expect(page.getByRole("heading", { name: /system status/i })).toBeVisible({
-      timeout: 20000,
-    });
+    await expectSection(page, en.admin.shell.nav.status);
 
     // The load/error gate must not have replaced the page — this is the whole point.
     await expect(page.getByText(/couldn't load your data/i)).toHaveCount(0);
@@ -72,9 +89,7 @@ test.describe("Admin › System status (/admin/status)", () => {
 
   test("reports every check group", async ({ page }) => {
     await page.goto("/admin/status", { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("heading", { name: /system status/i })).toBeVisible({
-      timeout: 20000,
-    });
+    await expectSection(page, en.admin.shell.nav.status);
 
     // Platform checks.
     await expect(page.getByText(/database schema/i).first()).toBeVisible();
@@ -94,12 +109,9 @@ test.describe("Admin › Control center (/admin)", () => {
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
     await expect(page).toHaveURL(/\/admin$/);
 
-    // Its own `h1`, which is what distinguishes this page from the status detail. The status
-    // panel's `h2` below reads "System status" on both, so the `h1` is the only heading that
-    // tells the two apart.
-    await expect(page.getByRole("heading", { name: /control center/i, level: 1 })).toBeVisible({
-      timeout: 20000,
-    });
+    // The Overview tab marked current is what distinguishes this page from the status detail:
+    // both share Admin's heading, and the status panel's `h2` below reads "System status" on both.
+    await expectSection(page, en.admin.shell.nav.overview);
 
     // The whole point of the landing page: every check is named here, so an operator learns
     // whether anything is wrong without visiting four pages.

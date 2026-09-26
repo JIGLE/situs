@@ -4,9 +4,9 @@
  * for the reason `i18n-no-hardcoded-copy.test.tsx` gives: asserting English cannot catch a
  * component that hardcodes English.
  *
- * The layouts are async server components. `getTranslations` is pointed at the Portuguese
- * catalogue, and the children the shell composes — each with its own tests — are stubbed, so what
- * renders here is the shell alone.
+ * Both layouts render `AppShell`, an async server component, so the shell is rendered here in
+ * both of its modes. `getTranslations` is pointed at the Portuguese catalogue, and the children the
+ * shell composes — each with its own tests — are stubbed, so what renders here is the shell alone.
  */
 import type { ReactNode } from "react";
 import { describe, it, expect, vi } from "vitest";
@@ -37,14 +37,14 @@ vi.mock("@/components/shared/entity-detail-route-client", () => ({
 }));
 vi.mock("@/components/shared/portal-access-guard", () => ({ PortalAccessGuard: passThrough }));
 vi.mock("@/components/shared/app-data-gate", () => ({ AppDataGate: passThrough }));
-vi.mock("@/components/features/admin/admin-shell-nav", () => ({ AdminShellNav: () => null }));
+vi.mock("@/components/shared/language-sync", () => ({ LanguageSync: () => null }));
+vi.mock("@/lib/contexts/user-settings-context", () => ({ UserSettingsProvider: passThrough }));
 
-import MainLayout from "@/app/[locale]/(main)/layout";
-import AdminLayout from "@/app/[locale]/(admin)/layout";
+import { AppShell } from "@/components/layouts/app-shell";
 
 describe("app shell copy", () => {
   it("renders the main layout's skip links and sidebar landmark in Portuguese", async () => {
-    renderWithProviders(await MainLayout({ children: <p>conteúdo</p> }), { initialLocale: "pt" });
+    renderWithProviders(await AppShell({ children: <p>conteúdo</p> }), { initialLocale: "pt" });
 
     expect(screen.getByRole("link", { name: "Saltar para o conteúdo principal" })).toBeDefined();
     expect(screen.getByRole("link", { name: "Saltar para a navegação" })).toBeDefined();
@@ -52,7 +52,9 @@ describe("app shell copy", () => {
   });
 
   it("renders the admin layout's skip link in Portuguese", async () => {
-    renderWithProviders(await AdminLayout({ children: <p>conteúdo</p> }), { initialLocale: "pt" });
+    renderWithProviders(await AppShell({ children: <p>conteúdo</p>, admin: true }), {
+      initialLocale: "pt",
+    });
 
     expect(screen.getByRole("link", { name: "Saltar para o conteúdo principal" })).toBeDefined();
   });

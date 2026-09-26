@@ -25,6 +25,7 @@ vi.mock("@/lib/services/database/database", () => ({
 }));
 
 import { GET, POST } from "./route";
+import { _resetRateLimitMap, _setRateLimitForIP } from "@/lib/utils/rate-limit";
 
 function postRequest(body: unknown) {
   return new NextRequest("http://localhost:3000/api/settings", {
@@ -116,8 +117,58 @@ describe("POST /api/settings validates what it writes", () => {
 
     expect(response.status).toBe(200);
     const { update } = upsertMock.mock.calls[0][0];
-    expect(update).toMatchObject({ theme: "light", language: "pt", emailNotifications: false });
+    expect(update).toMatchObject({ theme: "light", emailNotifications: false });
     expect(update).not.toHaveProperty("id");
     expect(update).not.toHaveProperty("userId");
+  });
+
+  it("leaves the language to its own route, whatever the row holds", async () => {
+    // The row posted back holds the language it loaded, which may be the old default. Writing it
+    // here would record a default as the owner's choice; `PUT /api/settings/language` records
+    // choices.
+    await POST(postRequest({ language: "en", emailNotifications: true }));
+
+    const { update, create } = upsertMock.mock.calls[0][0];
+    expect(update.language).toBeUndefined();
+    expect(update.languageChosenAt).toBeUndefined();
+    expect(create.language).toBeUndefined();
+  });
+
+  it("saves the country of residence as an ISO code", async () => {
+    const response = await POST(postRequest({ residenceCountry: "es" }));
+
+    expect(response.status).toBe(200);
+    expect(upsertMock.mock.calls[0][0].update.residenceCountry).toBe("ES");
+  });
+
+  it("answers 400 for a country that does not exist, and saves nothing", async () => {
+    const response = await POST(postRequest({ residenceCountry: "XX" }));
+
+    expect(response.status).toBe(400);
+    expect(upsertMock).not.toHaveBeenCalled();
+  });
+
+  it("answers 400 for a body that is not JSON, and saves nothing", async () => {
+    const response = await POST(
+      new NextRequest("http://localhost:3000/api/settings", { method: "POST", body: "not json" }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(upsertMock).not.toHaveBeenCalled();
+  });
+
+  it("answers 429 once the address has spent its minute, and saves nothing", async () => {
+    _setRateLimitForIP("203.0.113.9", 100);
+    const response = await POST(
+      new NextRequest("http://localhost:3000/api/settings", {
+        method: "POST",
+        headers: { "x-forwarded-for": "203.0.113.9" },
+        body: JSON.stringify({ residenceCountry: "ES" }),
+      }),
+    );
+    _resetRateLimitMap();
+
+    expect(response.status).toBe(429);
+    expect(upsertMock).not.toHaveBeenCalled();
   });
 });

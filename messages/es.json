@@ -95,6 +95,8 @@
       "name": "Nombre",
       "notAvailable": "No disponible",
       "notSet": "Sin definir",
+      "residenceCountry": "País de residencia fiscal",
+      "residenceCountryHelp": "Aparece bajo su nombre en la barra lateral, después del idioma.",
       "version": "Situs v{version}",
       "appearance": "Apariencia",
       "appearanceDescription": "Cómo se ve la aplicación en este dispositivo",
@@ -106,6 +108,7 @@
       "countryPaletteHelp": "Ajusta los colores del logotipo Situs Portal y el acento de la interfaz a la paleta de la bandera de tu país. La legibilidad es lo primero: el acento se ajusta al contraste y los colores de estado no cambian entre países.",
       "language": "Idioma",
       "selectLanguage": "Selecciona el idioma",
+      "languageHelp": "Se aplica de inmediato y se guarda en su cuenta para los correos de recordatorio.",
       "dataRights": "Tus derechos sobre los datos (RGPD)",
       "dataRightsDescription": "Exporta o elimina de forma permanente tus datos personales cuando quieras",
       "exportTitle": "Exportar mis datos",
@@ -318,7 +321,7 @@
     },
     "shell": {
       "title": "Administración de la instancia",
-      "backToApp": "Volver a la aplicación",
+      "sections": "Secciones de la administración",
       "nav": {
         "overview": "Resumen",
         "status": "Estado",
@@ -350,7 +353,6 @@
       "allowlistHelp": "AUTH_ALLOWED_EMAILS. Aditivo: estos pueden entrar aunque el registro esté cerrado."
     },
     "controlCenter": {
-      "title": "Centro de control",
       "openDetail": "Detalle",
       "unavailable": "No se ha podido cargar este panel.",
       "registration": "Registro",
@@ -421,7 +423,8 @@
     "mainNavLabel": "Navegación principal",
     "mobileNavLabel": "Navegación móvil",
     "expandSidebar": "Expandir barra lateral",
-    "collapseSidebar": "Contraer barra lateral"
+    "collapseSidebar": "Contraer barra lateral",
+    "languageAndResidence": "Idioma · país de residencia fiscal"
   },
   "dashboard": {
     "welcome": "Bienvenido a tu panel de gestión inmobiliaria",

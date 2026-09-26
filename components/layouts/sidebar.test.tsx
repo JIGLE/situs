@@ -36,20 +36,17 @@ vi.mock("@/lib/utils/api-client", async (importOriginal) => {
   };
 });
 
-vi.mock("@/lib/contexts/theme-context", () => ({
-  useTheme: () => ({
-    theme: "light",
-    resolvedTheme: "normal",
-    country: "PT",
-    setTheme: vi.fn(),
-    setCountry: vi.fn(),
-    systemTheme: "light",
-  }),
+// The account's row, as `UserSettingsProvider` would hold it. A plain function, not `vi.fn()`:
+// `resetAllMocks` below would wipe a mock's return value between tests.
+let accountSettings: { residenceCountry: string } | null = null;
+vi.mock("@/lib/contexts/user-settings-context", () => ({
+  useUserSettings: () => ({ settings: accountSettings, refresh: async () => {}, merge: () => {} }),
 }));
 
 describe("Sidebar", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    accountSettings = null;
     // Ensure no persisted collapsed state by default
     window.localStorage.removeItem("situs.sidebar.collapsed");
   });
@@ -80,9 +77,9 @@ describe("Sidebar", () => {
     // Persist collapsed state so the component mounts collapsed
     window.localStorage.setItem("situs.sidebar.collapsed", "true");
     let queryByText: (text: string) => HTMLElement | null;
-    let getByLabelText: (text: string) => HTMLElement;
+    let getAllByLabelText: (text: string) => HTMLElement[];
     await act(async () => {
-      ({ queryByText, getByLabelText } = render(<Sidebar activeTab="dashboard" />, {
+      ({ queryByText, getAllByLabelText } = render(<Sidebar activeTab="dashboard" />, {
         initialLocale: "pt",
       }));
     });
@@ -90,9 +87,9 @@ describe("Sidebar", () => {
     // Username should not be visible in collapsed mode
     expect(queryByText!("Alice")).toBeNull();
 
-    // Header toggle carries the Expand label — in Portuguese, because a hardcoded English label
-    // would pass an English assertion.
-    expect(getByLabelText!("Expandir barra lateral")).toBeDefined();
+    // Both expand controls, the logo in the header and the chevron under the avatar, carry the
+    // label — in Portuguese, because a hardcoded English label would pass an English assertion.
+    expect(getAllByLabelText!("Expandir barra lateral")).toHaveLength(2);
 
     // Header text 'Situs' should be hidden when collapsed
     expect(queryByText!("Situs")).toBeNull();
@@ -113,5 +110,56 @@ describe("Sidebar", () => {
     expect(getByLabelText!("Recolher barra lateral")).toBeDefined();
     expect(getByLabelText!("Navegação principal")).toBeDefined();
     expect(getByLabelText!("Terminar sessão")).toBeDefined();
+  });
+
+  it("puts the bell in the header row, beside the collapse button", async () => {
+    let getByLabelText: (text: string) => HTMLElement;
+    await act(async () => {
+      ({ getByLabelText } = render(<Sidebar activeTab="dashboard" />, { initialLocale: "pt" }));
+    });
+
+    const bell = getByLabelText!("Notificações");
+    const collapse = getByLabelText!("Recolher barra lateral");
+    expect(bell.parentElement).toBe(collapse.parentElement);
+    // Sized like the collapse button, which it sits next to.
+    expect(bell.className).toMatch(/\bh-8\b/);
+    expect(bell.className).toMatch(/\bw-8\b/);
+  });
+
+  it("keeps the bell when collapsed, above the avatar", async () => {
+    window.localStorage.setItem("situs.sidebar.collapsed", "true");
+    let getByLabelText: (text: string) => HTMLElement;
+    let getByTitle: (text: string) => HTMLElement;
+    await act(async () => {
+      ({ getByLabelText, getByTitle } = render(<Sidebar activeTab="dashboard" />, {
+        initialLocale: "pt",
+      }));
+    });
+
+    const bell = getByLabelText!("Notificações");
+    const avatarLink = getByTitle!("Conta");
+    expect(bell.parentElement).toBe(avatarLink.parentElement);
+    expect(
+      bell.compareDocumentPosition(avatarLink) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("reads the language, then the country of tax residence named in it", async () => {
+    let getByText: (text: string) => HTMLElement;
+    await act(async () => {
+      ({ getByText } = render(<Sidebar activeTab="dashboard" />));
+    });
+    // No row yet: the column's default, Portugal.
+    expect(getByText!("EN · Portugal")).toBeDefined();
+  });
+
+  it("names the residence country in the app's language", async () => {
+    accountSettings = { residenceCountry: "ES" };
+    let getByText: (text: string) => HTMLElement;
+    await act(async () => {
+      ({ getByText } = render(<Sidebar activeTab="dashboard" />, { initialLocale: "pt" }));
+    });
+    const line = getByText!("PT · Espanha");
+    expect(line.getAttribute("title")).toBe("Idioma · país de residência fiscal");
   });
 });

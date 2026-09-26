@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { locales, localeNames, type Locale } from "@/lib/i18n/config";
+import { locales, localeNames, type Locale } from "@/lib/i18n/locales";
+import { useSetLanguage } from "@/lib/i18n/use-set-language";
 import { cn } from "@/lib/utils/utils";
 import { Globe } from "lucide-react";
 import {
@@ -33,28 +33,19 @@ interface LanguageSelectorProps {
   className?: string;
 }
 
+/**
+ * The language control on the sign-in, privacy and terms pages, and in the phone's More sheet. On
+ * a computer the signed-in app has it in Settings › Appearance. Both switch through
+ * `useSetLanguage`, which also saves the choice to the account when someone is signed in.
+ */
 export function LanguageSelector({ compact = false, className }: LanguageSelectorProps) {
-  const router = useRouter();
   const t = useTranslations("language");
+  const setLanguage = useSetLanguage();
 
   // Read the active locale from the provider rather than the URL: the auth pages sit outside
   // the `[locale]` segment and resolve their locale from the cookie, so there is nothing in
   // the path to parse there.
   const currentLocale = useLocale() as Locale;
-
-  const switchLocale = (newLocale: Locale) => {
-    if (newLocale === currentLocale) return;
-    // Persist preference in a cookie so root redirects and demo mode respect it
-    if (typeof document !== "undefined") {
-      document.cookie = `situs-locale=${newLocale}; Path=/; Max-Age=31536000; SameSite=Lax`;
-    }
-
-    // No URL carries a locale segment any more, so there is nothing to rewrite: the proxy
-    // rewrites by cookie and every layout resolves its locale from it, which makes re-rendering
-    // the entire switch. The old branch that swapped segments[1] is unreachable, not merely
-    // unused — leaving it would describe a URL shape the app no longer serves.
-    router.refresh();
-  };
 
   return (
     <DropdownMenu>
@@ -88,7 +79,7 @@ export function LanguageSelector({ compact = false, className }: LanguageSelecto
         {locales.map((locale) => (
           <DropdownMenuItem
             key={locale}
-            onClick={() => switchLocale(locale)}
+            onClick={() => void setLanguage(locale)}
             className={cn(
               "gap-2 cursor-pointer",
               locale === currentLocale && "bg-accent font-medium",

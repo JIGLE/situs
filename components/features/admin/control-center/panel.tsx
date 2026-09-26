@@ -3,18 +3,11 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/utils";
 
 /**
- * One tile of the control center.
+ * One tile of the control center: a fixed header and a body.
  *
- * The whole layout rests on a single rule: **the page does not scroll, the panels do.** A control
- * centre that pushes half its content below the fold is a list with borders — you still have to
- * scroll to learn whether anything is wrong, which is the one question it exists to answer at a
- * glance.
- *
- * So the header is fixed and the body is the only scrolling part (`min-h-0` is what makes that
- * work inside a grid track — without it a flex child refuses to shrink below its content and the
- * overflow escapes to the page). Above `lg` the panel is bounded by its grid row; below `lg` it
- * has no height constraint at all and the page scrolls normally, because a phone has no viewport
- * to fit a control centre into and pretending otherwise produces six nested scroll areas.
+ * The body scrolls only when something bounds the panel's height (`min-h-0` is what lets a flex
+ * child shrink below its content inside a grid track). Nothing does since Admin moved into the
+ * app's shell, whose page scrolls, so each panel is as tall as its content.
  */
 export function Panel({
   title,

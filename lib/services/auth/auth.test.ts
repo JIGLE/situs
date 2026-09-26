@@ -217,6 +217,42 @@ describe("jwt callback — session id provisioning", () => {
     expect(token.id).toBe("db-cuid-1");
   });
 
+  it("carries the language the account chose into the token at sign-in", async () => {
+    prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1" });
+    prismaMock.user.findUnique.mockResolvedValue({
+      totpEnabled: false,
+      settings: { language: "en", languageChosenAt: new Date("2026-09-25T10:00:00Z") },
+    });
+    const jwt = await loadJwtCallback();
+
+    const token = await jwt({
+      token: {},
+      user: { id: "google-sub-999", email: "owner@example.com", name: "Owner" },
+      account: { provider: "google" },
+    });
+
+    expect(token.locale).toBe("en");
+  });
+
+  it("carries no language when the account only holds the column's default", async () => {
+    // Rows from before choices were recorded say "en" with no date. Carrying that would switch
+    // every device without a language of its own to English at sign-in.
+    prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1" });
+    prismaMock.user.findUnique.mockResolvedValue({
+      totpEnabled: false,
+      settings: { language: "en", languageChosenAt: null },
+    });
+    const jwt = await loadJwtCallback();
+
+    const token = await jwt({
+      token: {},
+      user: { id: "google-sub-999", email: "owner@example.com", name: "Owner" },
+      account: { provider: "google" },
+    });
+
+    expect(token.locale).toBeUndefined();
+  });
+
   it("refuses to issue a session when provisioning the User row fails", async () => {
     // The database was unreachable at sign-in. Falling through here would mint a
     // token carrying Google's sub, which FK-violates on every subsequent write.

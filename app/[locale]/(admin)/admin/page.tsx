@@ -8,9 +8,9 @@ export const dynamic = "force-dynamic";
 /**
  * Admin › Control center.
  *
- * The instance at a glance: status, access, metrics, accounts and the bank workbench in one view
- * that does not scroll above `lg`. The tabs remain, and remain the place the full detail lives —
- * this is the layer above them, so "is anything wrong?" is answerable without visiting four pages.
+ * The instance at a glance: status, access and the bank workbench on one page. The other tabs
+ * remain the place the full detail lives — this is the layer above them, so "is anything wrong?"
+ * is answerable without visiting every page.
  *
  * Deliberately renders nothing from AppContext, like the status page it grew out of. It is opened
  * when something is wrong, so it reads the admin APIs on its own and is exempt from AppDataGate.

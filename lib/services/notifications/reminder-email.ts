@@ -32,8 +32,13 @@ const log = logger.child("reminder-email");
 const MESSAGES = { en: enMessages, pt: ptMessages, es: esMessages, it: itMessages } as const;
 type SupportedLocale = keyof typeof MESSAGES;
 
+/**
+ * The landlord's saved language, else Portuguese, the app's own default. This fell back to
+ * English, and so did the column's default, while every screen defaulted to Portuguese: an owner
+ * who never chose a language read the app in one and their reminders in the other.
+ */
 function resolveLocale(language: string | null | undefined): SupportedLocale {
-  return language && language in MESSAGES ? (language as SupportedLocale) : "en";
+  return language && language in MESSAGES ? (language as SupportedLocale) : "pt";
 }
 
 export type ReminderEmailKind =

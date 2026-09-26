@@ -95,6 +95,8 @@
       "name": "Nome",
       "notAvailable": "Indisponível",
       "notSet": "Por definir",
+      "residenceCountry": "País de residência fiscal",
+      "residenceCountryHelp": "Aparece por baixo do seu nome na barra lateral, depois do idioma.",
       "version": "Situs v{version}",
       "appearance": "Aparência",
       "appearanceDescription": "Como a aplicação se apresenta neste dispositivo",
@@ -106,6 +108,7 @@
       "countryPaletteHelp": "Define as cores do logótipo Situs Portal e o acento da interface com a paleta da bandeira do seu país. A legibilidade vem primeiro: o acento é ajustado ao contraste e as cores de estado mantêm-se iguais em todos os países.",
       "language": "Idioma",
       "selectLanguage": "Selecione o idioma",
+      "languageHelp": "Aplica-se de imediato e fica guardado na sua conta para os e-mails de lembrete.",
       "dataRights": "Os seus direitos sobre os dados (RGPD)",
       "dataRightsDescription": "Exporte ou elimine definitivamente os seus dados pessoais a qualquer momento",
       "exportTitle": "Exportar os meus dados",
@@ -318,7 +321,7 @@
     },
     "shell": {
       "title": "Administração da instância",
-      "backToApp": "Voltar à aplicação",
+      "sections": "Secções da administração",
       "nav": {
         "overview": "Visão geral",
         "status": "Estado",
@@ -350,7 +353,6 @@
       "allowlistHelp": "AUTH_ALLOWED_EMAILS. Aditivo: estes podem entrar mesmo com o registo fechado."
     },
     "controlCenter": {
-      "title": "Centro de controlo",
       "openDetail": "Detalhe",
       "unavailable": "Não foi possível carregar este painel.",
       "registration": "Registo",
@@ -421,7 +423,8 @@
     "mainNavLabel": "Navegação principal",
     "mobileNavLabel": "Navegação móvel",
     "expandSidebar": "Expandir barra lateral",
-    "collapseSidebar": "Recolher barra lateral"
+    "collapseSidebar": "Recolher barra lateral",
+    "languageAndResidence": "Idioma · país de residência fiscal"
   },
   "dashboard": {
     "welcome": "Bem-vindo ao seu painel de gestão de imóveis",

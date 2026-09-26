@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COUNTRY_CODES, countryOptions } from "./countries";
+import { COUNTRY_CODES, countryName, countryOptions } from "./countries";
 
 describe("countryOptions", () => {
   it("names every ISO country in the app's language, Portugal first", () => {
@@ -22,5 +22,17 @@ describe("countryOptions", () => {
   it("lists each code once, as two capital letters", () => {
     expect(new Set(COUNTRY_CODES).size).toBe(COUNTRY_CODES.length);
     expect(COUNTRY_CODES.every((code) => /^[A-Z]{2}$/.test(code))).toBe(true);
+  });
+});
+
+describe("countryName", () => {
+  it("names one country in the app's language", () => {
+    expect(countryName("PT", "en")).toBe("Portugal");
+    expect(countryName("ES", "pt")).toBe("Espanha");
+    expect(countryName("DE", "it")).toBe("Germania");
+  });
+
+  it("falls back to the code when Intl cannot name it", () => {
+    expect(countryName("not a code", "en")).toBe("not a code");
   });
 });

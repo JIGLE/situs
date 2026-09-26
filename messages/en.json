@@ -95,6 +95,8 @@
       "name": "Name",
       "notAvailable": "Not available",
       "notSet": "Not set",
+      "residenceCountry": "Country of tax residence",
+      "residenceCountryHelp": "Shown under your name in the side bar, after the language.",
       "version": "Situs v{version}",
       "appearance": "Appearance",
       "appearanceDescription": "How the app looks on this device",
@@ -106,6 +108,7 @@
       "countryPaletteHelp": "Sets the Situs Portal logo colours and the interface accent to your country's flag palette. Readability-first: the accent is contrast-adjusted, and status colours stay the same across every country.",
       "language": "Language",
       "selectLanguage": "Select language",
+      "languageHelp": "Applies at once, and is saved to your account for reminder emails.",
       "dataRights": "Your data rights (GDPR)",
       "dataRightsDescription": "Export or permanently delete your personal data at any time",
       "exportTitle": "Export my data",
@@ -318,7 +321,7 @@
     },
     "shell": {
       "title": "Instance administration",
-      "backToApp": "Back to app",
+      "sections": "Administration sections",
       "nav": {
         "overview": "Overview",
         "status": "Status",
@@ -350,7 +353,6 @@
       "allowlistHelp": "AUTH_ALLOWED_EMAILS. Additive: these may sign in even though registration is closed."
     },
     "controlCenter": {
-      "title": "Control center",
       "openDetail": "Detail",
       "unavailable": "This panel could not be loaded.",
       "registration": "Registration",
@@ -421,7 +423,8 @@
     "mainNavLabel": "Main navigation",
     "mobileNavLabel": "Mobile navigation",
     "expandSidebar": "Expand sidebar",
-    "collapseSidebar": "Collapse sidebar"
+    "collapseSidebar": "Collapse sidebar",
+    "languageAndResidence": "Language · country of tax residence"
   },
   "dashboard": {
     "welcome": "Welcome to your property management dashboard",

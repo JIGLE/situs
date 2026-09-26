@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+import en from "../messages/en.json";
+import pt from "../messages/pt.json";
 import { revealPortfolioLink } from "./helpers/nav";
 import { settle } from "./helpers/wait";
 
@@ -63,26 +65,29 @@ test.describe("Dashboard", () => {
   });
 
   test("should switch language from Settings › Appearance", async ({ page }) => {
-    // This used to look for a language switcher on the dashboard with
-    // `/language|idioma|en|pt/i`, which was broad enough to match several controls and failed
-    // with a strict mode violation. It could not have worked regardless: `LanguageSelector` is
-    // not rendered anywhere in the authenticated desktop shell — only in the mobile "More" sheet
-    // (components/ui/mobile-nav.tsx:194) and the auth pages. On desktop the
-    // control lives in Settings › Appearance, so test it where it actually is.
+    // `LanguageSelector` is not in the desktop shell (only the phone's More sheet and the auth
+    // pages have it), so on a computer this select is where the language changes.
     await page.goto("/settings?tab=appearance");
     await settle(page);
 
-    // Anchor on the field, not on its current value: a locator filtered by `/english/i` stops
-    // matching the moment the test changes it, and the assertion then waits on nothing.
-    const languageField = page.locator('div:has(> label:text-is("Language"))').last();
-    const languageSelect = languageField.getByRole("combobox").first();
-    await expect(languageSelect).toBeVisible();
-    await expect(languageSelect).toContainText(/english/i);
+    // Named by its label, so the field is found in either language. It used to be found by a
+    // `div:has(> label)` locator, and the test only checked that the select showed Português:
+    // the select saved the account's copy and the screen stayed in English, and the test passed.
+    const english = page.getByRole("combobox", { name: en.settings.panel.language });
+    await expect(english).toContainText("English");
 
-    await languageSelect.click();
-    await page.getByRole("option", { name: /portugu/i }).click();
+    await english.click();
+    await page.getByRole("option", { name: "Português" }).click();
 
-    // The setting persists rather than navigating, so assert the control took the value.
-    await expect(languageSelect).toContainText(/portugu/i);
+    // The page itself switches, with no Guardar and on the same section.
+    await expect(page.locator("html")).toHaveAttribute("lang", "pt");
+    const portuguese = page.getByRole("combobox", { name: pt.settings.panel.language });
+    await expect(portuguese).toContainText("Português");
+
+    // Back to English: every test shares this account, and the others read English.
+    await portuguese.click();
+    await page.getByRole("option", { name: "English" }).click();
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(english).toContainText("English");
   });
 });
