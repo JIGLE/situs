@@ -194,6 +194,10 @@ const BASELINE = {
   // non-deterministic metric described above, and its cause is still live — the second run
   // logged 2 of 38 surface-runs missing networkidle inside the 5s cap. Two agreeing runs are
   // enough to tighten on; they are not enough to prove the spread is zero.
+  //
+  // Since the bar's labels and avatar initials moved to their own `chromeText` line, this counts
+  // only small text nobody chose, so it no longer grows each time a surface is added. The ceiling
+  // stays at 193 until CI prints the new figure, then comes down to it.
   smallText: 193,
 };
 
@@ -374,7 +378,12 @@ function measure({ touchFail, touchWarn, minFontPx, tolerance }) {
   }
 
   // --- small text ---------------------------------------------------------------------
+  // Text inside `[data-audit-chrome]` is the phone bar's labels and avatar initials, small on
+  // purpose and present on every screen. It is counted apart, so adding a surface cannot push
+  // `smallText` over its ceiling with text nobody intends to change. Anything else that small
+  // still counts.
   const smallText = [];
+  let chromeTextCount = 0;
   for (const el of all) {
     const direct = Array.from(el.childNodes).some(
       (n) => n.nodeType === 3 && n.textContent.trim().length > 1,
@@ -384,6 +393,10 @@ function measure({ touchFail, touchWarn, minFontPx, tolerance }) {
     if (r.width === 0 || r.height === 0) continue;
     const size = parseFloat(getComputedStyle(el).fontSize);
     if (size >= minFontPx) continue;
+    if (el.closest("[data-audit-chrome]")) {
+      chromeTextCount += 1;
+      continue;
+    }
     smallText.push({ ...describe(el), fontSize: size });
   }
 
@@ -650,6 +663,7 @@ function measure({ touchFail, touchWarn, minFontPx, tolerance }) {
     smallTargetFailCount: smallTargets.filter((t) => t.severity === "fail").length,
     smallText: smallText.slice(0, 10),
     smallTextCount: smallText.length,
+    chromeTextCount,
     clipped: clipped.slice(0, 10),
     verticalScroll: Math.max(0, scroller.scrollHeight - scroller.clientHeight),
     wastedRun: density.wastedRun,
@@ -921,6 +935,9 @@ function toMarkdown(results, meta) {
     `| Text under ${MIN_FONT_PX}px | ${ok.reduce((a, r) => a + (r.smallTextCount ?? 0), 0)} |`,
   );
   lines.push(
+    `| Of which deliberate bar chrome, counted apart | ${ok.reduce((a, r) => a + (r.chromeTextCount ?? 0), 0)} |`,
+  );
+  lines.push(
     `| Interactive elements clipped offscreen | ${ok.reduce((a, r) => a + (r.clipped?.length ?? 0), 0)} |`,
   );
   lines.push(
@@ -1152,6 +1169,8 @@ async function main() {
     touchTargetWarns: sum(results, "smallTargetCount"),
     clippedContainers: sum(results, "clippedContainerCount"),
     smallText: sum(results, "smallTextCount"),
+    // Not ratcheted: the bar's deliberate labels and initials, which grow with the surface count.
+    chromeText: sum(results, "chromeTextCount"),
   };
 
   // Not a ratcheted metric — it measures the harness's environment, not the app's design — but

@@ -67,6 +67,10 @@ export function MobileBottomNav({
     return pathname === fullPath || pathname.startsWith(`${fullPath}/`);
   };
 
+  // `data-audit-chrome` marks the bar's 11px labels and its 10px avatar initials: native tab-bar
+  // sizes, kept on purpose. The 390px audit counts them on their own line rather than as small
+  // text, since they appear on every screen and would otherwise grow with the number measured.
+  //
   // Situs rectilinear: no pills, no radius. The active tab is marked by a 2px
   // country-highlight top border (mirroring the desktop rail's active left
   // border) rather than a rounded accent chip.
@@ -115,7 +119,9 @@ export function MobileBottomNav({
                 aria-current={isActive ? "page" : undefined}
               >
                 <Icon className="h-5 w-5" aria-hidden="true" />
-                <span className="text-[11px] font-medium tracking-tight">{item.label}</span>
+                <span data-audit-chrome className="text-[11px] font-medium tracking-tight">
+                  {item.label}
+                </span>
               </Link>
             );
           })}
@@ -125,11 +131,16 @@ export function MobileBottomNav({
               <SheetTrigger className={tabItemClass(isSecondaryActive)} aria-label={tNav("more")}>
                 <Avatar className="h-6 w-6 rounded-none ring-1 ring-[var(--color-border)]">
                   <AvatarImage src={user?.image || ""} alt={user?.name || "User"} />
-                  <AvatarFallback className="rounded-none bg-[var(--country-highlight-readable)] text-[10px] font-semibold text-[var(--color-background)]">
+                  <AvatarFallback
+                    data-audit-chrome
+                    className="rounded-none bg-[var(--country-highlight-readable)] text-[10px] font-semibold text-[var(--color-background)]"
+                  >
                     {initials}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-[11px] font-medium tracking-tight">{tNav("more")}</span>
+                <span data-audit-chrome className="text-[11px] font-medium tracking-tight">
+                  {tNav("more")}
+                </span>
               </SheetTrigger>
               <SheetContent
                 side="bottom"
