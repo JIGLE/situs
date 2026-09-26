@@ -234,6 +234,9 @@ const SURFACES = [
   // Account is a Settings section now; measure it where it lives rather than through the
   // /account redirect, so the surface id matches the URL that renders.
   { id: "account", path: "/settings?tab=account" },
+  // Admin shares the app's shell: the rail on a computer, the bottom bar on a phone, one heading
+  // and a tab per section. It had a shell of its own, which this list never measured.
+  { id: "admin", path: "/admin" },
 ];
 
 /**
