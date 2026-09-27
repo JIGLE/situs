@@ -129,7 +129,9 @@ fetches a receipt the owner asks for by its contract and receipt numbers.
 **Enable Banking is the licensed AISP**, which is why the instance needs no PSD2 licence and no
 eIDAS certificate. Access is read-only account information: account details and transactions.
 There is no payment-initiation scope anywhere in the adapter, and adding one would be a
-different regulatory undertaking.
+different regulatory undertaking. When the owner renews, disconnects or removes a connection,
+Enable Banking is asked to end the consent it replaces; the request carries only that session's
+id, which Situs keeps on the server and never sends to a browser.
 
 **Third-country transfers.** None are intended, and none are made under the default
 configuration: Enable Banking and Brevo both operate in the EEA. Mail moved from
@@ -209,7 +211,7 @@ instance and would need revisiting if Situs were offered as a service.
 | Registration closed by default                                                | `lib/services/auth/registration.ts` — the first account owns the instance; every other email is refused before any row is written |
 | Audit trail on workflow mutations                                             | `lib/services/audit-log.ts`, `AuditLog`                                                                                           |
 | Debug endpoints restricted in production                                      | `/api/debug/db` and `/api/debug/db/seed` return 403; `/api/debug/db/init` needs a session and `INIT_SECRET` (`docs/SECURITY.md`)  |
-| Bank consent references                                                       | 256-bit random, user-scoped, constant-time compared, single-use, dropped once spent                                               |
+| Bank consent references                                                       | 256-bit random, user-scoped, constant-time compared, single-use, dropped once spent, lapsing after 24 hours                       |
 | Private key handling                                                          | Enable Banking RSA key mounted as a file (`ENABLE_BANKING_PRIVATE_KEY_FILE`), keeping it out of `/proc/<pid>/environ`             |
 | AT connection                                                                 | Mutual TLS with the certificate AT signed and its mounted key; the Portal password is sent AES-encrypted per request              |
 
