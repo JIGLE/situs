@@ -9,6 +9,8 @@ export interface BankConnectionRow {
   id: string;
   provider: string;
   institutionName: string;
+  /** The owner's own name for it; the bank's name shows while it is null. */
+  label: string | null;
   status: string;
   lastSyncAt: string | null;
   consentExpiresAt: string | null;

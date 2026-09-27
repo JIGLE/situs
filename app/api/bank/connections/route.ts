@@ -40,6 +40,7 @@ async function handleGet(request: NextRequest): Promise<Response> {
       id: true,
       provider: true,
       institutionName: true,
+      label: true,
       status: true,
       lastSyncAt: true,
       consentExpiresAt: true,

@@ -20,6 +20,7 @@ function row(overrides: Partial<BankConnectionRow>): BankConnectionRow {
     id: "conn-1",
     provider: "psd2_fake",
     institutionName: "Banco BPI",
+    label: null,
     status: "active",
     lastSyncAt: null,
     consentExpiresAt: null,

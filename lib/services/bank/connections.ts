@@ -154,3 +154,44 @@ export async function disconnectConnection(
 
   return { connectionId: connection.id, revocation };
 }
+
+export interface RenamedConnection {
+  connectionId: string;
+  /** The owner's name for it, or null when the bank's name shows. */
+  label: string | null;
+}
+
+/**
+ * Name a connection: the owner's own name for it, shown instead of the bank's. Any connection,
+ * a manual one included. `null` goes back to the bank's name.
+ */
+export async function renameConnection(
+  userId: string,
+  connectionId: string,
+  label: string | null,
+): Promise<RenamedConnection> {
+  const prisma = getPrismaClient();
+  const connection = await prisma.bankConnection.findFirst({
+    where: { id: connectionId, userId },
+    select: { id: true, label: true, institutionName: true },
+  });
+  if (!connection) throw new ResourceNotFoundError("Bank connection");
+  if (connection.label === label) return { connectionId: connection.id, label };
+
+  // Scoped again in the write, so a connection removed meanwhile is not found rather than a 500.
+  const renamed = await prisma.bankConnection.updateMany({
+    where: { id: connection.id, userId },
+    data: { label },
+  });
+  if (renamed.count !== 1) throw new ResourceNotFoundError("Bank connection");
+
+  await logAudit({
+    userId,
+    action: "BANK_CONNECTION_RENAMED",
+    resourceType: "bank_connection",
+    resourceId: connection.id,
+    details: { institutionName: connection.institutionName, from: connection.label, to: label },
+  });
+
+  return { connectionId: connection.id, label };
+}

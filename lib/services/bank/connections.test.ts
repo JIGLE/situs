@@ -13,7 +13,13 @@ import { ResourceNotFoundError } from "@/lib/utils/error-handling";
 import { createFakeProvider, type FakeProvider } from "./providers/fake-provider";
 import { __registerProviderForTest } from "./providers/registry";
 import type { RevocationResult } from "./providers/types";
-import { accessEnded, canDisconnect, disconnectConnection, revokeAtBank } from "./connections";
+import {
+  accessEnded,
+  canDisconnect,
+  disconnectConnection,
+  renameConnection,
+  revokeAtBank,
+} from "./connections";
 
 describe("revokeAtBank", () => {
   let unregister: (() => void) | undefined;
@@ -256,5 +262,69 @@ describe("disconnectConnection", () => {
       id: "conn-1",
       userId: "user-2",
     });
+  });
+});
+
+describe("renameConnection", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prismaMock.bankConnection.findFirst.mockResolvedValue({
+      id: "conn-1",
+      label: null,
+      institutionName: "Banco BPI",
+    });
+    prismaMock.bankConnection.updateMany.mockResolvedValue({ count: 1 });
+  });
+
+  it("names the connection, and records the name it had and the one it has", async () => {
+    await expect(renameConnection("user-1", "conn-1", "Conta da casa")).resolves.toEqual({
+      connectionId: "conn-1",
+      label: "Conta da casa",
+    });
+    expect(prismaMock.bankConnection.updateMany).toHaveBeenCalledWith({
+      where: { id: "conn-1", userId: "user-1" },
+      data: { label: "Conta da casa" },
+    });
+    expect(auditMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "BANK_CONNECTION_RENAMED",
+        resourceId: "conn-1",
+        details: { institutionName: "Banco BPI", from: null, to: "Conta da casa" },
+      }),
+    );
+  });
+
+  it("writes and records nothing when the name does not change", async () => {
+    prismaMock.bankConnection.findFirst.mockResolvedValue({
+      id: "conn-1",
+      label: "Conta da casa",
+      institutionName: "Banco BPI",
+    });
+
+    await renameConnection("user-1", "conn-1", "Conta da casa");
+
+    expect(prismaMock.bankConnection.updateMany).not.toHaveBeenCalled();
+    expect(auditMock).not.toHaveBeenCalled();
+  });
+
+  it("scopes the lookup to the caller, and does not find another owner's connection", async () => {
+    prismaMock.bankConnection.findFirst.mockResolvedValue(null);
+
+    await expect(renameConnection("user-2", "conn-1", "Conta")).rejects.toBeInstanceOf(
+      ResourceNotFoundError,
+    );
+    expect(prismaMock.bankConnection.findFirst.mock.calls[0][0].where).toEqual({
+      id: "conn-1",
+      userId: "user-2",
+    });
+  });
+
+  it("answers a connection removed meanwhile as not found, and records nothing", async () => {
+    prismaMock.bankConnection.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(renameConnection("user-1", "conn-1", "Conta")).rejects.toBeInstanceOf(
+      ResourceNotFoundError,
+    );
+    expect(auditMock).not.toHaveBeenCalled();
   });
 });

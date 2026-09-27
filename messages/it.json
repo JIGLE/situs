@@ -1841,6 +1841,7 @@
     "bankConnectionCreated": "Banca collegata",
     "bankConnectionDeleted": "Collegamento bancario di prova eliminato",
     "bankConnectionDisconnected": "Collegamento bancario disconnesso",
+    "bankConnectionRenamed": "Collegamento bancario rinominato",
     "bankConsentGranted": "Consenso bancario concesso",
     "bankConsentExpired": "Consenso bancario scaduto",
     "bankConsentRenewed": "Consenso bancario rinnovato",

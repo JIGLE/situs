@@ -69,6 +69,7 @@ export type AuditAction =
   // discarded test run — never the removal of a bank someone relies on.
   | "BANK_CONNECTION_DELETED"
   | "BANK_CONNECTION_DISCONNECTED"
+  | "BANK_CONNECTION_RENAMED"
   | "BANK_CONSENT_GRANTED"
   | "BANK_CONSENT_EXPIRED"
   // A connection's consent renewed in place, on the same connection and accounts.

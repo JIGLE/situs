@@ -405,6 +405,7 @@ model BankConnection {
   userId           String
   provider         String    @default("manual") // manual|csv|psd2_<provider> later
   institutionName  String
+  label            String? // the owner's own name for it (60 characters at most); the bank's name shows when unset
   status           String    @default("active") // pending_consent|active|expired|revoked|error
   consentId        String?
   consentExpiresAt DateTime?

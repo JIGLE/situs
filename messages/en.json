@@ -1841,6 +1841,7 @@
     "bankConnectionCreated": "Bank connected",
     "bankConnectionDeleted": "Test bank connection deleted",
     "bankConnectionDisconnected": "Bank connection disconnected",
+    "bankConnectionRenamed": "Bank connection renamed",
     "bankConsentGranted": "Bank consent granted",
     "bankConsentExpired": "Bank consent expired",
     "bankConsentRenewed": "Bank consent renewed",

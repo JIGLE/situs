@@ -57,6 +57,7 @@ export const AUDIT_ACTION_KEY = {
   BANK_CONNECTION_CREATED: "bankConnectionCreated",
   BANK_CONNECTION_DELETED: "bankConnectionDeleted",
   BANK_CONNECTION_DISCONNECTED: "bankConnectionDisconnected",
+  BANK_CONNECTION_RENAMED: "bankConnectionRenamed",
   BANK_CONSENT_GRANTED: "bankConsentGranted",
   BANK_CONSENT_EXPIRED: "bankConsentExpired",
   BANK_CONSENT_RENEWED: "bankConsentRenewed",

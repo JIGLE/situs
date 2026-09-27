@@ -61,3 +61,19 @@ export const bankConnectSchema = z.object({
 });
 
 export type BankConnectInput = z.infer<typeof bankConnectSchema>;
+
+/**
+ * PATCH /api/bank/connections/[id] — the owner's own name for a connection, shown instead of the
+ * bank's. Empty, or null, goes back to the bank's name.
+ */
+export const bankConnectionRenameSchema = z.object({
+  label: z
+    .string()
+    .trim()
+    .max(60, "label must be at most 60 characters")
+    .refine((value) => !/\p{Cc}/u.test(value), "label cannot contain control characters")
+    .nullable()
+    .transform((value) => (value ? value : null)),
+});
+
+export type BankConnectionRenameInput = z.infer<typeof bankConnectionRenameSchema>;
