@@ -2,20 +2,27 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 /**
- * A connection's own route: naming it. What a rename does is tested in
+ * A connection's own route: naming it and removing it. What each does is tested in
  * lib/services/bank/connections.test.ts.
  */
 
-const { access, renameMock } = vi.hoisted(() => ({ access: vi.fn(), renameMock: vi.fn() }));
+const { access, renameMock, removeMock } = vi.hoisted(() => ({
+  access: vi.fn(),
+  renameMock: vi.fn(),
+  removeMock: vi.fn(),
+}));
 
 vi.mock("@/lib/services/auth/auth-middleware", () => ({
   requireOwnerAccess: access,
   handleOptions: vi.fn(),
 }));
-vi.mock("@/lib/services/bank/connections", () => ({ renameConnection: renameMock }));
+vi.mock("@/lib/services/bank/connections", () => ({
+  renameConnection: renameMock,
+  removeConnection: removeMock,
+}));
 
-import { ResourceNotFoundError } from "@/lib/utils/error-handling";
-import { PATCH } from "./route";
+import { ConflictError, ResourceNotFoundError } from "@/lib/utils/error-handling";
+import { DELETE, PATCH } from "./route";
 
 const patch = (body: string, params: Record<string, string> = { id: "conn-1" }) =>
   PATCH(
@@ -83,5 +90,51 @@ describe("PATCH /api/bank/connections/[id]", () => {
     const res = await patch(JSON.stringify({ label: "Conta" }));
 
     expect(res.status).toBe(404);
+  });
+});
+
+const remove = (params: Record<string, string> = { id: "conn-1" }) =>
+  DELETE(
+    new NextRequest("http://localhost:3000/api/bank/connections/conn-1", { method: "DELETE" }),
+    { params: Promise.resolve(params) },
+  );
+
+describe("DELETE /api/bank/connections/[id]", () => {
+  beforeEach(() => {
+    removeMock.mockResolvedValue({ connectionId: "conn-1", revocation: "revoked" });
+  });
+
+  it("removes the connection, looking only in the owner's own connections", async () => {
+    access.mockResolvedValue({ userId: "manager-1", scopeUserId: "owner-1" });
+
+    const res = await remove();
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ data: { connectionId: "conn-1", revocation: "revoked" } });
+    expect(removeMock).toHaveBeenCalledWith("owner-1", "conn-1");
+  });
+
+  it("answers a connection with movements as a 409 with its reason", async () => {
+    removeMock.mockRejectedValue(
+      new ConflictError("A connection with movements", "bank_connection_has_movements"),
+    );
+
+    const res = await remove();
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ reason: "bank_connection_has_movements" });
+  });
+
+  it("answers another owner's connection as not found", async () => {
+    removeMock.mockRejectedValue(new ResourceNotFoundError("Bank connection"));
+
+    expect((await remove()).status).toBe(404);
+  });
+
+  it("needs the connection's id, and an owner", async () => {
+    expect((await remove({})).status).toBe(400);
+    access.mockResolvedValue(new Response(null, { status: 403 }));
+    expect((await remove()).status).toBe(403);
+    expect(removeMock).not.toHaveBeenCalled();
   });
 });

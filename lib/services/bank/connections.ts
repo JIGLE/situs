@@ -195,3 +195,62 @@ export async function renameConnection(
 
   return { connectionId: connection.id, label };
 }
+
+export interface RemovedConnection {
+  connectionId: string;
+  /** How asking the bank went; `no_consent_id` for a connection that held no consent. */
+  revocation: RevocationOutcome;
+}
+
+/**
+ * Remove a connection that brought no movements: a bank connected by mistake, or an empty manual
+ * row. A connection with movements is refused: they are the owner's records, and disconnecting it
+ * keeps them.
+ *
+ * The schema cascades a connection to its accounts and their movements, so the condition is part
+ * of the delete itself. A sync landing movements between a check and a delete would otherwise be
+ * deleted with it. A consent the connection held is ended at the bank once the row is gone.
+ */
+export async function removeConnection(
+  userId: string,
+  connectionId: string,
+): Promise<RemovedConnection> {
+  const prisma = getPrismaClient();
+  const connection = await prisma.bankConnection.findFirst({
+    where: { id: connectionId, userId },
+  });
+  if (!connection) throw new ResourceNotFoundError("Bank connection");
+
+  const removed = await prisma.bankConnection.deleteMany({
+    where: { id: connection.id, userId, accounts: { every: { transactions: { none: {} } } } },
+  });
+  if (removed.count !== 1) {
+    // Gone meanwhile (a second click) is not found; still there means it has movements.
+    const stillThere = await prisma.bankConnection.findFirst({
+      where: { id: connection.id, userId },
+      select: { id: true },
+    });
+    if (!stillThere) throw new ResourceNotFoundError("Bank connection");
+    throw new ConflictError(
+      "A connection with movements cannot be removed",
+      "bank_connection_has_movements",
+    );
+  }
+
+  const revocation = await revokeAtBank(connection.provider, connection.consentId);
+
+  await logAudit({
+    userId,
+    action: "BANK_CONNECTION_REMOVED",
+    resourceType: "bank_connection",
+    resourceId: connection.id,
+    details: {
+      institutionName: connection.institutionName,
+      label: connection.label,
+      previousStatus: connection.status,
+      revocation,
+    },
+  });
+
+  return { connectionId: connection.id, revocation };
+}

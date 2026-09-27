@@ -10,7 +10,7 @@ import {
 } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { bankConnectionRenameSchema } from "@/lib/schemas/bank.schema";
-import { renameConnection } from "@/lib/services/bank/connections";
+import { removeConnection, renameConnection } from "@/lib/services/bank/connections";
 
 export const runtime = "nodejs";
 
@@ -50,5 +50,24 @@ async function handlePatch(request: NextRequest, context?: Context): Promise<Res
   return createSuccessResponse(await renameConnection(scopeUserId, id, label));
 }
 
+/**
+ * DELETE /api/bank/connections/[id] — remove a connection that brought no movements, ending at
+ * the bank any consent it held. One with movements is a 409 `bank_connection_has_movements`: its
+ * movements are the owner's records, and disconnecting it keeps them.
+ */
+async function handleDelete(request: NextRequest, context?: Context): Promise<Response> {
+  const authResult = await requireOwnerAccess(request);
+  if (authResult instanceof Response) return authResult;
+  const { scopeUserId } = authResult;
+
+  const id = await connectionId(context);
+  if (!id) {
+    return createErrorResponse(new Error("Connection id is required"), 400, request);
+  }
+
+  return createSuccessResponse(await removeConnection(scopeUserId, id));
+}
+
 export const PATCH = withErrorHandler(withRateLimit(handlePatch));
+export const DELETE = withErrorHandler(withRateLimit(handleDelete));
 export const OPTIONS = handleOptions;

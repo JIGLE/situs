@@ -57,8 +57,8 @@ const cases = Object.entries(routes).flatMap(([name, route]) =>
 describe("[id] routes admit owners only, as their collections do", () => {
   it("covers every handler of the routes", () => {
     // leases/[id] has PUT and DELETE; the other three records have GET, PUT and DELETE; a bank
-    // connection has PATCH, and each of its actions is one POST.
-    expect(cases).toHaveLength(15);
+    // connection has PATCH and DELETE, and each of its actions is one POST.
+    expect(cases).toHaveLength(16);
   });
 
   it.each(cases)("%s refuses a USER-role session", async (_name, method, handler) => {

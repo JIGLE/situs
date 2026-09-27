@@ -319,6 +319,32 @@ describe("live bank connection — real Prisma client + real SQLite file", () =>
     );
   });
 
+  it("removes a connection only while it has brought no movements", async () => {
+    const { removeConnection } = await import("./connections");
+    const { syncConnection } = await import("./sync");
+    const { getPrismaClient } = await import("../database/database");
+    const prisma = getPrismaClient();
+
+    // Before any sync there is nothing to lose: it goes, and its consent ends at the bank.
+    const empty = await connectAndAuthorise();
+    const { consentId } = await prisma.bankConnection.findUniqueOrThrow({ where: { id: empty } });
+    await expect(removeConnection(userId, empty)).resolves.toMatchObject({
+      revocation: "revoked",
+    });
+    expect(await prisma.bankConnection.findUnique({ where: { id: empty } })).toBeNull();
+    expect(await prisma.bankAccount.count({ where: { connectionId: empty } })).toBe(0);
+    expect(fake.revocations).toEqual([consentId]);
+
+    // After a sync its movements are the owner's records: refused, and nothing is deleted.
+    const synced = await connectAndAuthorise();
+    await syncConnection(userId, synced);
+    await expect(removeConnection(userId, synced)).rejects.toMatchObject({
+      reason: "bank_connection_has_movements",
+    });
+    expect(await prisma.bankConnection.findUnique({ where: { id: synced } })).not.toBeNull();
+    expect(await prisma.bankTransaction.count({ where: { userId } })).toBe(2);
+  });
+
   it("counts the day's reads from persisted jobs and then refuses", async () => {
     const connectionId = await connectAndAuthorise();
     const { syncConnection, SyncBudgetExceededError } = await import("./sync");

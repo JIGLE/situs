@@ -70,6 +70,7 @@ export type AuditAction =
   | "BANK_CONNECTION_DELETED"
   | "BANK_CONNECTION_DISCONNECTED"
   | "BANK_CONNECTION_RENAMED"
+  | "BANK_CONNECTION_REMOVED"
   | "BANK_CONSENT_GRANTED"
   | "BANK_CONSENT_EXPIRED"
   // A connection's consent renewed in place, on the same connection and accounts.

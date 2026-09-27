@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vite
 
 const { warnMock, prismaMock, auditMock } = vi.hoisted(() => ({
   warnMock: vi.fn(),
-  prismaMock: { bankConnection: { findFirst: vi.fn(), updateMany: vi.fn() } },
+  prismaMock: {
+    bankConnection: { findFirst: vi.fn(), updateMany: vi.fn(), deleteMany: vi.fn() },
+  },
   auditMock: vi.fn(),
 }));
 vi.mock("@/lib/utils/logger", () => ({ logger: { warn: warnMock } }));
@@ -17,6 +19,7 @@ import {
   accessEnded,
   canDisconnect,
   disconnectConnection,
+  removeConnection,
   renameConnection,
   revokeAtBank,
 } from "./connections";
@@ -326,5 +329,107 @@ describe("renameConnection", () => {
       ResourceNotFoundError,
     );
     expect(auditMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("removeConnection", () => {
+  let unregister: (() => void) | undefined;
+  let fake: FakeProvider;
+
+  function connection(overrides: Record<string, unknown> = {}) {
+    return {
+      id: "conn-1",
+      userId: "user-1",
+      provider: "psd2_fake",
+      institutionName: "Banco BPI",
+      label: "Conta da casa",
+      status: "active",
+      consentId: "session-1",
+      metadata: null,
+      ...overrides,
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    fake = createFakeProvider({ key: "fake" });
+    unregister = __registerProviderForTest(fake);
+    prismaMock.bankConnection.findFirst.mockResolvedValue(connection());
+    prismaMock.bankConnection.deleteMany.mockResolvedValue({ count: 1 });
+  });
+
+  afterEach(() => {
+    unregister?.();
+    unregister = undefined;
+  });
+
+  it("removes a connection that brought no movements, the condition inside the delete", async () => {
+    await expect(removeConnection("user-1", "conn-1")).resolves.toEqual({
+      connectionId: "conn-1",
+      revocation: "revoked",
+    });
+
+    // One statement: a sync landing movements after a separate check could not be deleted with it.
+    expect(prismaMock.bankConnection.deleteMany).toHaveBeenCalledWith({
+      where: {
+        id: "conn-1",
+        userId: "user-1",
+        accounts: { every: { transactions: { none: {} } } },
+      },
+    });
+    expect(fake.revocations).toEqual(["session-1"]);
+    expect(auditMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "BANK_CONNECTION_REMOVED",
+        resourceId: "conn-1",
+        details: expect.objectContaining({ label: "Conta da casa", revocation: "revoked" }),
+      }),
+    );
+    expect(JSON.stringify(auditMock.mock.calls)).not.toContain("session-1");
+  });
+
+  it("refuses one with movements, asks the bank nothing and records nothing", async () => {
+    prismaMock.bankConnection.deleteMany.mockResolvedValue({ count: 0 });
+
+    await expect(removeConnection("user-1", "conn-1")).rejects.toMatchObject({
+      reason: "bank_connection_has_movements",
+    });
+    expect(fake.revocations).toEqual([]);
+    expect(auditMock).not.toHaveBeenCalled();
+  });
+
+  it("answers one removed meanwhile, by a second click, as not found", async () => {
+    prismaMock.bankConnection.findFirst
+      .mockResolvedValueOnce(connection())
+      .mockResolvedValueOnce(null);
+    prismaMock.bankConnection.deleteMany.mockResolvedValue({ count: 0 });
+
+    await expect(removeConnection("user-1", "conn-1")).rejects.toBeInstanceOf(
+      ResourceNotFoundError,
+    );
+  });
+
+  it("removes an empty manual connection, with nothing to ask a bank", async () => {
+    prismaMock.bankConnection.findFirst.mockResolvedValue(
+      connection({ provider: "manual", consentId: null }),
+    );
+
+    await expect(removeConnection("user-1", "conn-1")).resolves.toMatchObject({
+      revocation: "no_consent_id",
+    });
+    expect(fake.revocations).toEqual([]);
+  });
+
+  it("scopes the lookup to the caller, and deletes nothing of another owner's", async () => {
+    prismaMock.bankConnection.findFirst.mockResolvedValue(null);
+
+    await expect(removeConnection("user-2", "conn-1")).rejects.toBeInstanceOf(
+      ResourceNotFoundError,
+    );
+    expect(prismaMock.bankConnection.findFirst.mock.calls[0][0].where).toEqual({
+      id: "conn-1",
+      userId: "user-2",
+    });
+    expect(prismaMock.bankConnection.deleteMany).not.toHaveBeenCalled();
   });
 });
