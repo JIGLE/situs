@@ -365,7 +365,7 @@ _Recording the transaction shape_ above.
 ## Finanças (AT)
 
 Situs reaches AT's rent-receipt webservice with three files AT provides. All optional: without them
-Settings › Integrations shows each as missing, and nothing reaches AT. For now only AT's **test**
+Settings › Integrations › Finanças shows each as missing, and nothing reaches AT. For now only AT's **test**
 service is reachable; filing for real comes after a successful test run.
 
 | Variable                  | File                                                                         |
@@ -393,7 +393,7 @@ OpenSSL 3 refuses an older `.pfx` with "unsupported algorithm"; add `-legacy` to
 `-nodes` writes the key without a passphrase, which Situs needs; `chmod 400` is what protects it.
 
 The instance must be able to reach `servicos.portaldasfinancas.gov.pt` on port 709, AT's test
-service. Then, in **Settings › Integrations › Finanças (AT)**: enter the Portal sub-user
+service. Then, in **Settings › Integrations › Finanças**: enter the Portal sub-user
 (`NIF/n`) and its password, choose _AT's test service_ as the mode, and press **Check**.
 `/admin`'s _AT certificate_ check says whether the files read, and warns 30 days before the
 certificate's 12 months run out.

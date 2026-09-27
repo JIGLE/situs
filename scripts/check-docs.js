@@ -46,6 +46,15 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // UI-B1: Integrations became two tabs, Bancos and Finanças, and the cards under them lost the
+    // titles that repeated the tab. The AT login is found under the Finanças tab.
+    pattern: /Integrations › Finanças \(AT\)|Classificador simulado|mock classifier/i,
+    retired: "2026-09-27 (Settings sections)",
+    because:
+      "Settings › Integrations has two tabs, Bancos and Finanças; there is no card called " +
+      "Finanças (AT), and no classifier card",
+  },
+  {
     // 3A: a connector's mode can be `test`, which reaches AT's test service, and the AT login is a
     // fourth field encrypted at the call site.
     pattern: /sandbox, review or live|in sandbox or review mode|Three fields are deliberately/,

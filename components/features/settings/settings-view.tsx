@@ -96,6 +96,8 @@ export function SettingsView(): React.ReactElement {
     setActiveSection(section);
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", section);
+    // `view` is a tab inside one section (Integrations); it means nothing in another.
+    params.delete("view");
     window.history.replaceState(null, "", `?${params.toString()}`);
   };
 

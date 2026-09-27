@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
-import { Info, KeyRound, MonitorSmartphone, Shield } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronRight, Info, Shield } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useLocale, useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { AuditTrail } from "@/components/shared/audit-trail";
 import { countryOptions } from "@/lib/utils/countries";
+import { cn } from "@/lib/utils/utils";
 import type { UserSettings } from "./settings-types";
 
 interface SettingsAccountProps {
@@ -27,20 +28,24 @@ interface SettingsAccountProps {
 /**
  * Identity and account-level records.
  *
- * Sessions, API tokens and the audit trail came from the standalone `/account` page, which was
- * otherwise a read-only shadow of this screen — its Security card showed the 2FA state and then
- * linked here for the control. Appearance and the GDPR export/delete controls moved out to their
- * own sections, so this one has a single subject.
+ * The audit trail came from the standalone `/account` page, which was otherwise a read-only
+ * shadow of this screen. Two cards came with it, Sessions and API tokens, and went: both were
+ * placeholders for features that do not exist, one of them a hard-coded "this device, active" row.
+ * Appearance and the GDPR export/delete controls moved out to their own sections, so this one has
+ * a single subject.
  *
  * The country of tax residence is the one field here that is saved, with the page's Guardar. The
  * rail shows it under the owner's name, after the language.
+ *
+ * The activity starts closed and is fetched only when opened: it is a record to consult, and it
+ * was loaded every time Account opened. A closed `<details>` would still mount it and fetch.
  */
 export function SettingsAccount({ appVersion, settings, updateSetting }: SettingsAccountProps) {
   const { data: session } = useSession();
   const t = useTranslations("settings.panel");
-  const tStatus = useTranslations("status");
   const locale = useLocale();
   const countries = useMemo(() => countryOptions(locale), [locale]);
+  const [activityOpen, setActivityOpen] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -99,47 +104,22 @@ export function SettingsAccount({ appVersion, settings, updateSetting }: Setting
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MonitorSmartphone className="h-5 w-5" />
-            {t("sessions")}
-          </CardTitle>
-          <CardDescription>{t("sessionsDescription")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* A divided row, not a bordered box. This was a card inside a card — the panel already
-              draws a border, so framing the one row inside it again drew two rectangles around a
-              single fact. A rule above the row separates it from the description just as well and
-              costs no nesting; it is the same divided-list pattern `system-status-view.tsx` uses
-              for a list of exactly this shape. */}
-          <div className="flex items-center justify-between gap-4 border-t border-[var(--color-border)] py-3">
-            <div>
-              <p className="text-sm font-medium">{t("thisDevice")}</p>
-              <p className="mono-label mt-1">{t("currentSession")}</p>
-            </div>
-            <Badge variant="status-success">{tStatus("active")}</Badge>
-          </div>
-          <p className="text-xs text-muted-foreground">{t("sessionsSoon")}</p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <KeyRound className="h-5 w-5" />
-            {t("apiTokens")}
-          </CardTitle>
-          <CardDescription>{t("apiTokensDescription")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">{t("noTokens")}</p>
-        </CardContent>
-      </Card>
-
-      <div>
-        <p className="mono-label mb-2">{t("activity")}</p>
-        <AuditTrail emptyDescription={t("activityEmpty")} />
+      <div className="space-y-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-expanded={activityOpen}
+          onClick={() => setActivityOpen((open) => !open)}
+          className="-ml-3 gap-1.5 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+        >
+          <ChevronRight
+            aria-hidden
+            className={cn("h-4 w-4 transition-transform", activityOpen && "rotate-90")}
+          />
+          {t("activity")}
+        </Button>
+        {activityOpen && <AuditTrail emptyDescription={t("activityEmpty")} />}
       </div>
     </div>
   );
