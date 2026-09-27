@@ -158,10 +158,6 @@
       "taxYearRemindersHelp": "Get reminded in January to generate tax forms",
       "incomeAlerts": "Income distribution alerts",
       "incomeAlertsHelp": "Notify when distributions are calculated",
-      "bankConnections": "Bank connections",
-      "documentClassification": "Document classification",
-      "classificationHelp": "Runs on every document upload",
-      "mockClassifier": "Mock classifier",
       "systemStatus": "System status",
       "systemStatusDescription": "Server, database and service health",
       "database": "Database",
@@ -172,8 +168,6 @@
       "systemUnavailable": "Couldn't fetch system information.",
       "bankConnectionsHelp": "Accounts feeding the Finance › Bank Movements inbox",
       "noBankConnection": "No bank connected yet.",
-      "classifierHelp": "Keyword-based type detection across all four locales — ambiguous or unlinked results land in Documents › Review Required",
-      "active": "active",
       "uptimeValue": "{hours}h {minutes}m",
       "bankConnectCta": "Connect a bank",
       "bankPickerTitle": "Connect a bank",
@@ -212,10 +206,13 @@
       "openAdmin": "Open admin",
       "bankConsentUntil": "Consent valid until {date}",
       "bankConsentEnding": "Consent ends {date}: reconnect before then to keep syncing",
-      "bankConsentEnded": "Consent ended {date}"
+      "bankConsentEnded": "Consent ended {date}",
+      "integrationTabs": {
+        "banks": "Banks",
+        "at": "Finanças"
+      }
     },
     "at": {
-      "title": "Finanças (AT)",
       "description": "Situs signs in to AT as a Portal sub-user, with the certificate AT signed for this instance.",
       "loadFailed": "The Finanças connection could not be loaded.",
       "filesTitle": "Certificate files",

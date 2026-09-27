@@ -158,10 +158,6 @@
       "taxYearRemindersHelp": "Recibir un recordatorio en enero para generar los formularios fiscales",
       "incomeAlerts": "Avisos de reparto de ingresos",
       "incomeAlertsHelp": "Avisar cuando se calculen los repartos",
-      "bankConnections": "Conexiones bancarias",
-      "documentClassification": "Clasificación de documentos",
-      "classificationHelp": "Se ejecuta en cada subida de documento",
-      "mockClassifier": "Clasificador simulado",
       "systemStatus": "Estado del sistema",
       "systemStatusDescription": "Salud del servidor, la base de datos y los servicios",
       "database": "Base de datos",
@@ -172,8 +168,6 @@
       "systemUnavailable": "No se ha podido obtener la información del sistema.",
       "bankConnectionsHelp": "Cuentas que alimentan la bandeja Finanzas › Movimientos bancarios",
       "noBankConnection": "Aún no hay ningún banco conectado.",
-      "classifierHelp": "Detección de tipo por palabras clave en los cuatro idiomas — los resultados ambiguos o sin vincular van a Documentos › Revisión necesaria",
-      "active": "activo",
       "uptimeValue": "{hours} h {minutes} min",
       "bankConnectCta": "Conectar un banco",
       "bankPickerTitle": "Conectar un banco",
@@ -212,10 +206,13 @@
       "openAdmin": "Abrir administración",
       "bankConsentUntil": "Consentimiento válido hasta el {date}",
       "bankConsentEnding": "El consentimiento termina el {date}: vuelve a conectar antes para seguir sincronizando",
-      "bankConsentEnded": "El consentimiento terminó el {date}"
+      "bankConsentEnded": "El consentimiento terminó el {date}",
+      "integrationTabs": {
+        "banks": "Bancos",
+        "at": "Finanças"
+      }
     },
     "at": {
-      "title": "Finanças (AT)",
       "description": "Situs accede a la AT como un subusuario del Portal, con el certificado que la AT firmó para esta instancia.",
       "loadFailed": "No se pudo cargar la conexión con Finanças.",
       "filesTitle": "Archivos del certificado",
