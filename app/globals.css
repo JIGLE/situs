@@ -408,33 +408,6 @@ body {
   }
 }
 
-/* Alert cards — 3px semantic left border over a soft wash */
-.alert-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  padding: 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-}
-
-.alert-card.alert-success {
-  border-left: 3px solid var(--semantic-success);
-  background: var(--semantic-success-soft);
-}
-.alert-card.alert-warning {
-  border-left: 3px solid var(--semantic-warning);
-  background: var(--semantic-warning-soft);
-}
-.alert-card.alert-danger {
-  border-left: 3px solid var(--semantic-danger);
-  background: var(--semantic-danger-soft);
-}
-.alert-card.alert-info {
-  border-left: 3px solid var(--semantic-info);
-  background: var(--semantic-info-soft);
-}
 /* Status dots — 8px squares, semantic only */
 .status-dot {
   width: 8px;
