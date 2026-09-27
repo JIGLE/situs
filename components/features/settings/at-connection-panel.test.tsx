@@ -1,11 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
-import {
-  renderWithProviders,
-  screen,
-  waitFor,
-  within,
-} from "@/tests/helpers/render-with-providers";
+import { within } from "@testing-library/dom";
+import { renderWithProviders, screen, waitFor } from "@/tests/helpers/render-with-providers";
 
 const { apiFetchMock } = vi.hoisted(() => ({ apiFetchMock: vi.fn() }));
 vi.mock("@/lib/utils/api-client", () => ({ apiFetch: apiFetchMock }));
