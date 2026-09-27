@@ -291,4 +291,26 @@ describe("completing a consent", () => {
     expect(metadata.reference).toBeUndefined();
     expect(metadata.accountRefs).toEqual({ "acct-1": "gc-1" });
   });
+
+  it("keeps a test run's marker once its consent completes", async () => {
+    // Writing only the account refs used to drop `isTest`: the run then vanished from /admin and
+    // its sandbox movements stopped being kept out of automatic allocation.
+    prismaMock.bankConnection.findMany.mockResolvedValue([
+      pending({ metadata: JSON.stringify({ reference: REFERENCE, isTest: true }) }),
+    ]);
+    prismaMock.bankConnection.findUnique.mockResolvedValue({
+      metadata: JSON.stringify({ reference: REFERENCE, isTest: true }),
+    });
+    providerMock.completeConsent.mockResolvedValue([{ id: "gc-1", label: "Conta" }]);
+
+    await completeConsent("user-1", REFERENCE);
+
+    const metadataWrite = prismaMock.bankConnection.update.mock.calls.find(
+      (call) => typeof call[0].data.metadata === "string",
+    )!;
+    expect(JSON.parse(metadataWrite[0].data.metadata)).toEqual({
+      isTest: true,
+      accountRefs: { "acct-1": "gc-1" },
+    });
+  });
 });

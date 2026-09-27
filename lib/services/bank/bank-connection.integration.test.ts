@@ -303,6 +303,30 @@ describe("live bank connection — real Prisma client + real SQLite file", () =>
     expect(await prisma.bankTransaction.count({ where: { userId } })).toBe(0);
   });
 
+  it("still lists a completed test run as one, so /admin can show and delete it", async () => {
+    const { startConsent, completeConsent } = await import("./consent");
+    const { listTestConnections } = await import("./test-connections");
+    const { getPrismaClient } = await import("../database/database");
+    const prisma = getPrismaClient();
+
+    const started = await startConsent(userId, {
+      country: "PT",
+      institutionId: "FAKEBANK_PT",
+      institutionName: "Fake Bank",
+      providerKey: "fake",
+      isTest: true,
+    });
+    const pending = await prisma.bankConnection.findUniqueOrThrow({
+      where: { id: started.connectionId },
+    });
+    await completeConsent(userId, JSON.parse(pending.metadata ?? "{}").reference as string);
+
+    // Completing the consent used to overwrite the metadata with the account refs alone.
+    const listed = await listTestConnections(userId);
+    expect(listed.map((row) => row.id)).toEqual([started.connectionId]);
+    expect(listed[0].status).toBe("active");
+  });
+
   it("refuses to sync a connection belonging to someone else", async () => {
     const connectionId = await connectAndAuthorise();
     const { syncConnection, ConnectionNotSyncableError } = await import("./sync");

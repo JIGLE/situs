@@ -295,14 +295,18 @@ async function persistAccounts(
   }
 
   const connection = await prisma.bankConnection.findUnique({ where: { id: connectionId } });
-  const metadata = readMetadata(connection?.metadata ?? null);
+  // Everything already on the row is kept except the spent reference: keeping that would leave a
+  // usable token on a row that is no longer pending, and it has no second purpose. This used to
+  // write `accountRefs` alone, which also dropped `isTest`. A completed test run then vanished
+  // from /admin, could not be deleted as one, and its sandbox movements were no longer kept out
+  // of automatic allocation.
+  const { reference: _spent, ...metadata } = readMetadata(connection?.metadata ?? null);
 
   await prisma.bankConnection.update({
     where: { id: connectionId },
     data: {
-      // The reference is dropped once spent: keeping it would leave a usable token on a row that
-      // is no longer pending, and it has no second purpose.
       metadata: JSON.stringify({
+        ...metadata,
         accountRefs: { ...(metadata.accountRefs ?? {}), ...accountRefs },
       } satisfies ConnectionMetadata),
     },
