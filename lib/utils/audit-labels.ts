@@ -58,6 +58,7 @@ export const AUDIT_ACTION_KEY = {
   BANK_CONNECTION_DELETED: "bankConnectionDeleted",
   BANK_CONSENT_GRANTED: "bankConsentGranted",
   BANK_CONSENT_EXPIRED: "bankConsentExpired",
+  BANK_CONSENT_RENEWED: "bankConsentRenewed",
   EMIT_RECEIPT: "emitReceipt",
   SUBMIT_RECEIPT: "submitReceipt",
   ARCHIVE_RECEIPT: "archiveReceipt",

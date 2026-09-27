@@ -70,6 +70,8 @@ export type AuditAction =
   | "BANK_CONNECTION_DELETED"
   | "BANK_CONSENT_GRANTED"
   | "BANK_CONSENT_EXPIRED"
+  // A connection's consent renewed in place, on the same connection and accounts.
+  | "BANK_CONSENT_RENEWED"
   // Situs receipt lifecycle + tax connector (Migration C)
   | "EMIT_RECEIPT"
   | "SUBMIT_RECEIPT"
