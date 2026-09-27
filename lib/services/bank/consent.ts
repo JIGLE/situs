@@ -21,6 +21,7 @@ import {
   providerColumnValue,
 } from "./providers/registry";
 import type { ProviderAccount } from "./providers/types";
+import { isTestConnection, readMetadata, writeMetadata, type ConnectionMetadata } from "./metadata";
 
 /** How long a consent is requested for. Providers clamp; the adapter clamps again. */
 const ACCESS_VALID_DAYS = 90;
@@ -35,35 +36,6 @@ export class ConsentFlowError extends Error {
     super(message);
     this.name = "ConsentFlowError";
     this.status = status;
-  }
-}
-
-interface ConnectionMetadata {
-  reference?: string;
-  accountRefs?: Record<string, string>;
-  /**
-   * A connection the operator created deliberately to prove the chain works, from /admin.
-   *
-   * It is a label, not a mode. The consent, the provider call, the account persistence and the
-   * import pipeline are all identical to a real connection — a test that took a different path
-   * would prove nothing about the path that matters. What the flag buys is that /admin can show
-   * it as a test run and offer to delete it, so a sandbox trial does not sit in Settings
-   * indefinitely looking like a bank someone connected on purpose.
-   */
-  isTest?: boolean;
-}
-
-/** Read the test marker off a connection row without caring how metadata is shaped elsewhere. */
-export function isTestConnection(metadataRaw: string | null): boolean {
-  return readMetadata(metadataRaw).isTest === true;
-}
-
-function readMetadata(raw: string | null): ConnectionMetadata {
-  if (!raw) return {};
-  try {
-    return JSON.parse(raw) as ConnectionMetadata;
-  } catch {
-    return {};
   }
 }
 
@@ -131,7 +103,7 @@ export async function startConsent(
       institutionName: input.institutionName,
       status: "pending_consent",
       consentScope: "details,transactions",
-      metadata: JSON.stringify(
+      metadata: writeMetadata(
         (input.isTest ? { reference, isTest: true } : { reference }) satisfies ConnectionMetadata,
       ),
     },
@@ -305,10 +277,10 @@ async function persistAccounts(
   await prisma.bankConnection.update({
     where: { id: connectionId },
     data: {
-      metadata: JSON.stringify({
+      metadata: writeMetadata({
         ...metadata,
         accountRefs: { ...(metadata.accountRefs ?? {}), ...accountRefs },
-      } satisfies ConnectionMetadata),
+      }),
     },
   });
 }

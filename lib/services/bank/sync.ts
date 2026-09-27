@@ -15,6 +15,7 @@ import { logger } from "@/lib/utils/logger";
 import { importBankRows, type ImportSummary } from "./import";
 import { getProviderForConnection } from "./providers/registry";
 import { ConsentExpiredError } from "./providers/types";
+import { providerAccountRef } from "./metadata";
 
 /**
  * Fallback read budget for a connection whose provider is no longer registered.
@@ -240,23 +241,6 @@ export async function syncConnection(
     summaries,
     remainingBudget: Math.max(0, budget - (spent + 1)),
   };
-}
-
-/**
- * The provider's own id for an account.
- *
- * Stored in the connection's `metadata` JSON as `accountRefs: { <bankAccountId>: <providerRef> }`
- * — a map rather than a column because it is provider-specific and `BankAccount` is shared with
- * manual import, which has no such id.
- */
-function providerAccountRef(metadata: string | null, bankAccountId: string): string | null {
-  if (!metadata) return null;
-  try {
-    const parsed = JSON.parse(metadata) as { accountRefs?: Record<string, string> };
-    return parsed.accountRefs?.[bankAccountId] ?? null;
-  } catch {
-    return null;
-  }
 }
 
 export interface ScheduledSyncReport {

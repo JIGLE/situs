@@ -1,6 +1,6 @@
 import { getPrismaClient } from "@/lib/services/database/database";
 import { logAudit } from "@/lib/services/audit-log";
-import { isTestConnection } from "@/lib/services/bank/consent";
+import { isTestConnection } from "@/lib/services/bank/metadata";
 
 /**
  * The lifecycle of a connection made to prove the chain works.
