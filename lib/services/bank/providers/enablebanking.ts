@@ -26,11 +26,12 @@ import { readFileSync } from "node:fs";
 import type { BankRow } from "../rows";
 import type {
   BankDataProvider,
+  ConsentGrant,
   ConsentLink,
   ConsentRequest,
   InstitutionListing,
-  ProviderAccount,
   ProviderDiagnostics,
+  RevocationResult,
 } from "./types";
 import { ConsentExpiredError } from "./types";
 
@@ -247,10 +248,11 @@ export function buildAuthJwt(now = new Date()): string {
   return `${header}.${payload}.${base64url(signature)}`;
 }
 
-async function apiCall<T>(path: string, init?: RequestInit): Promise<T> {
+/** A request to Enable Banking with the signed `Authorization` header, and nothing read back. */
+function signedFetch(path: string, init?: RequestInit): Promise<Response> {
   // Enable Banking's own host, not /api/*: it never passes through proxy.ts's CSRF check, and
   // attaching our CSRF token would disclose it to an external host.
-  const response = await fetch(`${apiBase()}${path}`, {
+  return fetch(`${apiBase()}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${buildAuthJwt()}`,
@@ -259,6 +261,10 @@ async function apiCall<T>(path: string, init?: RequestInit): Promise<T> {
       ...(init?.headers ?? {}),
     },
   });
+}
+
+async function apiCall<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await signedFetch(path, init);
 
   if (response.status === 401 || response.status === 403) {
     // At a session or account path this is the shape a revoked consent takes. It is also what a
@@ -278,6 +284,21 @@ async function apiCall<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   return (await response.json()) as T;
+}
+
+/**
+ * An error code from a JSON reply, for the log: never the body itself, which can quote the
+ * request back. Only a short upper-case identifier is taken.
+ */
+function errorCodeOf(response: Response, text: string): string {
+  if (!text || !response.headers.get("content-type")?.includes("json")) return "";
+  try {
+    const body = JSON.parse(text) as { code?: unknown; error?: unknown };
+    const code = typeof body.code === "string" ? body.code : body.error;
+    return typeof code === "string" && /^[A-Z][A-Z0-9_]{2,63}$/.test(code) ? `, ${code}` : "";
+  } catch {
+    return "";
+  }
 }
 
 /**
@@ -464,7 +485,7 @@ export const enableBankingProvider: BankDataProvider = {
     return { providerRef: null, url: body.url, expiresAt: validUntil };
   },
 
-  async completeConsent({ callbackParams }): Promise<ProviderAccount[]> {
+  async completeConsent({ callbackParams }): Promise<ConsentGrant> {
     const code = callbackParams.code;
     if (!code) {
       // The user closed the bank's page, or the bank refused. Either way there is no session to
@@ -482,7 +503,7 @@ export const enableBankingProvider: BankDataProvider = {
       throw new ConsentExpiredError("The bank granted no accounts. Try connecting again.");
     }
 
-    return Promise.all(
+    const granted = await Promise.all(
       accounts
         .filter((a): a is EbSessionAccount & { uid: string } => Boolean(a.uid))
         .map(async (account) => {
@@ -513,6 +534,36 @@ export const enableBankingProvider: BankDataProvider = {
             return { id: account.uid, currency: account.currency, label };
           }
         }),
+    );
+
+    // The session id was read and dropped, so no connection could be revoked at the bank. It is
+    // the consent's id: DELETE /sessions/{id} ends it.
+    const providerRef =
+      typeof session.session_id === "string" && session.session_id ? session.session_id : null;
+    return { accounts: granted, providerRef };
+  },
+
+  /**
+   * End the session at Enable Banking, which ends the bank's access.
+   *
+   * Not through `apiCall`: that reads 401 and 403 as an expired consent and parses every reply as
+   * JSON, which throws on an empty 204. Here only a 2xx counts as revoked, and only 404 or 410 as
+   * already gone. A 401 or 403 proves nothing about the session — a wrong key, or a proxy that
+   * blocks the host, answers the same — so it fails, and the caller keeps the id to try again.
+   */
+  async revokeConsent({ providerRef }): Promise<RevocationResult> {
+    const response = await signedFetch(`/sessions/${encodeURIComponent(providerRef)}`, {
+      method: "DELETE",
+      // It runs while the owner waits: on Disconnect, and after a renewal on the way back from
+      // the bank.
+      signal: AbortSignal.timeout(10_000),
+    });
+    // Drained, never parsed as a whole: the body may be empty, or HTML from a proxy.
+    const text = await response.text().catch(() => "");
+    if (response.ok) return "revoked";
+    if (response.status === 404 || response.status === 410) return "already_gone";
+    throw new Error(
+      `Enable Banking did not revoke the session (HTTP ${response.status}${errorCodeOf(response, text)})`,
     );
   },
 

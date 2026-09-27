@@ -93,6 +93,23 @@ export interface ProviderAccount {
   label: string;
 }
 
+/** What a completed consent granted, and the id of the consent now standing at the provider. */
+export interface ConsentGrant {
+  accounts: ProviderAccount[];
+  /**
+   * The consent's id at the provider when the provider mints it only now, at completion (Enable
+   * Banking's `session_id`); null when there is none, or when it was `ConsentLink.providerRef`
+   * already. Stored as `BankConnection.consentId`: it is what `revokeConsent` needs later.
+   */
+  providerRef: string | null;
+}
+
+/**
+ * How a revocation ended. `already_gone` means there was nothing left to end: the provider no
+ * longer knows the consent. Anything the provider does not confirm is thrown, never guessed.
+ */
+export type RevocationResult = "revoked" | "already_gone";
+
 /**
  * Thrown when a consent has lapsed or been revoked at the bank.
  *
@@ -200,7 +217,17 @@ export interface BankDataProvider {
   completeConsent(input: {
     providerRef: string | null;
     callbackParams: Readonly<Record<string, string>>;
-  }): Promise<ProviderAccount[]>;
+  }): Promise<ConsentGrant>;
+
+  /**
+   * End a consent at the provider, so the bank's access stops as well as the syncing here.
+   *
+   * Required, not optional like `diagnose`: a provider that could not revoke would leave the
+   * bank's access live after the owner pressed Disconnect, and nothing on screen would show it.
+   * Resolves `already_gone` when the provider no longer knows the consent; throws for anything it
+   * cannot confirm, so the caller keeps the id and can try again.
+   */
+  revokeConsent(input: { providerRef: string }): Promise<RevocationResult>;
 
   /**
    * Transactions for one account, in the shape the import pipeline already consumes.

@@ -44,7 +44,7 @@ beforeEach(() => {
     url: "https://bank.example/authorise",
     expiresAt: new Date("2026-11-12T00:00:00.000Z"),
   });
-  providerMock.completeConsent.mockResolvedValue([]);
+  providerMock.completeConsent.mockResolvedValue({ accounts: [], providerRef: null });
 });
 
 describe("starting a consent", () => {
@@ -153,8 +153,32 @@ describe("completing a consent", () => {
       connectionId: "conn-1",
     });
     expect(prismaMock.bankConnection.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { status: "active" } }),
+      expect.objectContaining({ data: expect.objectContaining({ status: "active" }) }),
     );
+  });
+
+  it("stores the consent id the provider mints at completion, so it can be revoked", async () => {
+    // Enable Banking mints its session id only when the user comes back; it used to be dropped.
+    prismaMock.bankConnection.findMany.mockResolvedValue([pending({ consentId: null })]);
+    providerMock.completeConsent.mockResolvedValue({ accounts: [], providerRef: "session-9" });
+
+    await completeConsent("user-1", REFERENCE);
+
+    expect(prismaMock.bankConnection.update).toHaveBeenCalledWith({
+      where: { id: "conn-1" },
+      data: { status: "active", consentId: "session-9" },
+    });
+  });
+
+  it("keeps a consent id minted at consent-start when completion mints none", async () => {
+    prismaMock.bankConnection.findMany.mockResolvedValue([pending({ consentId: "req-1" })]);
+
+    await completeConsent("user-1", REFERENCE);
+
+    expect(prismaMock.bankConnection.update).toHaveBeenCalledWith({
+      where: { id: "conn-1" },
+      data: { status: "active", consentId: "req-1" },
+    });
   });
 
   it("only ever looks at the caller's own pending connections", async () => {
@@ -246,9 +270,10 @@ describe("completing a consent", () => {
 
   it("encrypts the IBAN and keeps only a hash for matching", async () => {
     prismaMock.bankConnection.findMany.mockResolvedValue([pending()]);
-    providerMock.completeConsent.mockResolvedValue([
-      { id: "gc-1", iban: "PT50000201231234567890154", label: "Conta ordenado" },
-    ]);
+    providerMock.completeConsent.mockResolvedValue({
+      accounts: [{ id: "gc-1", iban: "PT50000201231234567890154", label: "Conta ordenado" }],
+      providerRef: null,
+    });
 
     await completeConsent("user-1", REFERENCE);
 
@@ -262,9 +287,10 @@ describe("completing a consent", () => {
     prismaMock.bankConnection.findMany.mockResolvedValue([pending()]);
     prismaMock.bankAccount.findFirst.mockResolvedValue({ id: "acct-existing" });
     prismaMock.bankAccount.update.mockResolvedValue({ id: "acct-existing" });
-    providerMock.completeConsent.mockResolvedValue([
-      { id: "gc-1", iban: "PT50000201231234567890154", label: "Conta ordenado" },
-    ]);
+    providerMock.completeConsent.mockResolvedValue({
+      accounts: [{ id: "gc-1", iban: "PT50000201231234567890154", label: "Conta ordenado" }],
+      providerRef: null,
+    });
 
     await completeConsent("user-1", REFERENCE);
 
@@ -279,7 +305,10 @@ describe("completing a consent", () => {
     prismaMock.bankConnection.findUnique.mockResolvedValue({
       metadata: JSON.stringify({ reference: REFERENCE }),
     });
-    providerMock.completeConsent.mockResolvedValue([{ id: "gc-1", label: "Conta" }]);
+    providerMock.completeConsent.mockResolvedValue({
+      accounts: [{ id: "gc-1", label: "Conta" }],
+      providerRef: null,
+    });
 
     await completeConsent("user-1", REFERENCE);
 
@@ -301,7 +330,10 @@ describe("completing a consent", () => {
     prismaMock.bankConnection.findUnique.mockResolvedValue({
       metadata: JSON.stringify({ reference: REFERENCE, isTest: true }),
     });
-    providerMock.completeConsent.mockResolvedValue([{ id: "gc-1", label: "Conta" }]);
+    providerMock.completeConsent.mockResolvedValue({
+      accounts: [{ id: "gc-1", label: "Conta" }],
+      providerRef: null,
+    });
 
     await completeConsent("user-1", REFERENCE);
 

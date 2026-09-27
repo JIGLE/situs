@@ -199,15 +199,18 @@ export async function completeConsent(
   // reached the bank", which was true for a provider that mints its id at consent-start — and
   // wrong for one that returns only a URL and mints the id in exchange for a callback code.
   // Whether the pieces are sufficient is the adapter's question, so it is asked there.
-  const accounts = await provider.completeConsent({
+  const grant = await provider.completeConsent({
     providerRef: connection.consentId,
     callbackParams,
   });
+  const accounts = grant.accounts;
   await persistAccounts(userId, connection.id, accounts);
 
   await prisma.bankConnection.update({
     where: { id: connection.id },
-    data: { status: "active" },
+    // The id the provider minted at completion, when it did (Enable Banking's session), is the
+    // one a revocation needs. A provider that minted it at consent-start already stored it.
+    data: { status: "active", consentId: grant.providerRef ?? connection.consentId },
   });
 
   await logAudit({

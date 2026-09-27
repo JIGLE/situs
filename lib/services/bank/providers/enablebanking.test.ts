@@ -383,3 +383,144 @@ describe("mapping a transaction", () => {
     expect(row?.counterpartyName).toBe("Only Side Given");
   });
 });
+
+describe("completing a consent", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function sessionReply(body: unknown) {
+    return vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify(body),
+      json: async () => body,
+    } as Response);
+  }
+
+  const account = {
+    uid: "uid-1",
+    account_id: { iban: "PT50000201231234567890154" },
+    currency: "EUR",
+    name: "Conta",
+  };
+
+  it("returns the session id, which is the consent's id at Enable Banking", async () => {
+    configure();
+    sessionReply({ session_id: "sess-123", accounts: [account] });
+
+    const grant = await enableBankingProvider.completeConsent({
+      providerRef: null,
+      callbackParams: { code: "code-1" },
+    });
+
+    expect(grant.providerRef).toBe("sess-123");
+    expect(grant.accounts).toHaveLength(1);
+  });
+
+  it("returns no consent id when the reply carries none", async () => {
+    configure();
+    sessionReply({ accounts: [account] });
+
+    const grant = await enableBankingProvider.completeConsent({
+      providerRef: null,
+      callbackParams: { code: "code-1" },
+    });
+
+    expect(grant.providerRef).toBeNull();
+  });
+});
+
+describe("revoking a consent", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function reply(status: number, body = "", contentType = "") {
+    const json = vi.fn(async () => {
+      throw new Error("the body must never be parsed as a whole");
+    });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: status >= 200 && status < 300,
+      status,
+      headers: new Headers(contentType ? { "content-type": contentType } : {}),
+      text: async () => body,
+      json,
+    } as unknown as Response);
+    return { fetchSpy, json };
+  }
+
+  it("sends a signed DELETE for the session, with a timeout", async () => {
+    configure();
+    const { fetchSpy } = reply(204);
+
+    await enableBankingProvider.revokeConsent({ providerRef: "sess/1" });
+
+    const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://api.enablebanking.com/sessions/sess%2F1");
+    expect(init.method).toBe("DELETE");
+    expect(new Headers(init.headers).get("Authorization")).toMatch(/^Bearer /);
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("counts any 2xx as revoked, and never parses an empty reply", async () => {
+    configure();
+    const { json } = reply(204);
+    await expect(enableBankingProvider.revokeConsent({ providerRef: "s" })).resolves.toBe(
+      "revoked",
+    );
+    expect(json).not.toHaveBeenCalled();
+
+    reply(200, '{"message":"OK"}', "application/json");
+    await expect(enableBankingProvider.revokeConsent({ providerRef: "s" })).resolves.toBe(
+      "revoked",
+    );
+  });
+
+  it("reads 404 and 410 as already gone", async () => {
+    configure();
+    reply(404);
+    await expect(enableBankingProvider.revokeConsent({ providerRef: "s" })).resolves.toBe(
+      "already_gone",
+    );
+    reply(410);
+    await expect(enableBankingProvider.revokeConsent({ providerRef: "s" })).resolves.toBe(
+      "already_gone",
+    );
+  });
+
+  it("fails on 401 and 403: a wrong key or a blocking proxy proves nothing about the session", async () => {
+    configure();
+    reply(403, "<html>blocked by proxy</html>", "text/html");
+    const refused = enableBankingProvider.revokeConsent({ providerRef: "s" });
+    await expect(refused).rejects.toThrow("HTTP 403");
+    await expect(refused).rejects.not.toThrow(/blocked by proxy/);
+
+    reply(401);
+    await expect(enableBankingProvider.revokeConsent({ providerRef: "s" })).rejects.toThrow(
+      "HTTP 401",
+    );
+  });
+
+  it("names a JSON error code, but never echoes the body", async () => {
+    configure();
+    reply(422, '{"code":"SESSION_CLOSED","message":"secret detail"}', "application/json");
+
+    const refused = enableBankingProvider.revokeConsent({ providerRef: "s" });
+    await expect(refused).rejects.toThrow("HTTP 422, SESSION_CLOSED");
+    await expect(refused).rejects.not.toThrow(/secret detail/);
+  });
+
+  it("fails on a server error and on a network error", async () => {
+    configure();
+    reply(500);
+    await expect(enableBankingProvider.revokeConsent({ providerRef: "s" })).rejects.toThrow(
+      "HTTP 500",
+    );
+
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("fetch failed"));
+    await expect(enableBankingProvider.revokeConsent({ providerRef: "s" })).rejects.toThrow(
+      "fetch failed",
+    );
+  });
+});
