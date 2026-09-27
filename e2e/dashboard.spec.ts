@@ -28,6 +28,24 @@ test.describe("Dashboard", () => {
     await expect(page.getByRole("navigation").first()).toBeVisible();
   });
 
+  test("shows a month read from the ledger, and moves between months", async ({ page }) => {
+    await page.goto("/dashboard?month=2026-08");
+    await settle(page);
+
+    // Assembled on the server: the status line and the portfolio line arrive with the month.
+    await expect(page.getByTestId("dashboard-status")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("dashboard-portfolio")).toBeVisible();
+    await expect(page.getByTestId("dashboard-month")).toHaveText(/august 2026|agosto de 2026/i);
+
+    // In whichever language the suite runs.
+    const previous = new RegExp(`^(${en.dashboard.previousMonth}|${pt.dashboard.previousMonth})$`);
+    await page.getByRole("button", { name: previous }).click();
+
+    await expect(page).toHaveURL(/month=2026-07/);
+    await expect(page.getByTestId("dashboard-month")).toHaveText(/july 2026|julho de 2026/i);
+    await expect(page.getByTestId("dashboard-status")).toBeVisible();
+  });
+
   test("should navigate to Portfolio section", async ({ page }) => {
     await page.goto("/dashboard");
     await settle(page);

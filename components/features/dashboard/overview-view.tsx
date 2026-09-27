@@ -1,20 +1,37 @@
 "use client";
 
-import { type ElementType, type ReactElement, useMemo } from "react";
-import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import { type ElementType, type ReactElement, useCallback, useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { BadgeEuro, Building2, FileText, Home, UserRound } from "lucide-react";
+import {
+  BadgeEuro,
+  Building2,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Home,
+  UserRound,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   OnboardingChecklist,
   type OnboardingChecklistStep,
 } from "@/components/ui/onboarding-checklist";
-import { cn } from "@/lib/utils/utils";
-import { ActionPanel } from "@/components/features/dashboard/action-panel";
+import {
+  AttentionList,
+  LoopStrip,
+  MonthFigures,
+  PortfolioLine,
+  RecentActivity,
+  RecentMoney,
+  StatusLine,
+} from "@/components/features/dashboard/month-glance";
 import { useApp } from "@/lib/contexts/app-context";
-import { useCurrency } from "@/lib/contexts/currency-context";
-import { getActiveLease } from "@/lib/utils/lease-helpers";
+import { useDashboardMonth } from "@/lib/hooks/use-dashboard-month";
+import { useApiError } from "@/lib/utils/api-error";
+import { formatMonthYear } from "@/lib/utils/format-date";
 
 export interface OverviewViewProps {
   onAddProperty?: () => void;
@@ -23,35 +40,35 @@ export interface OverviewViewProps {
   onRecordPayment?: () => void;
 }
 
-function startOfMonth(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
+interface MonthRef {
+  year: number;
+  month: number;
 }
 
-function endOfMonth(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+/** `?month=YYYY-MM`, or null for anything else. */
+function parseMonth(value: string | null): MonthRef | null {
+  const match = value ? /^(\d{4})-(\d{2})$/.exec(value) : null;
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  return month >= 1 && month <= 12 ? { year, month } : null;
 }
 
-function formatDate(date?: string) {
-  if (!date) return "—";
-  return new Date(date).toLocaleDateString(undefined, {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+function currentMonth(): MonthRef {
+  const now = new Date();
+  return { year: now.getFullYear(), month: now.getMonth() + 1 };
 }
 
-function getNextPaymentDate(leaseStartDate?: string): Date | null {
-  if (!leaseStartDate) return null;
-  const start = new Date(leaseStartDate);
-  if (isNaN(start.getTime())) return null;
-  const payDay = start.getDate();
-  const today = new Date();
-  // Try current month first, then advance if past
-  let candidate = new Date(today.getFullYear(), today.getMonth(), payDay);
-  if (candidate <= today) {
-    candidate = new Date(today.getFullYear(), today.getMonth() + 1, payDay);
-  }
-  return candidate;
+function shiftMonth({ year, month }: MonthRef, by: number): MonthRef {
+  const index = year * 12 + (month - 1) + by;
+  return { year: Math.floor(index / 12), month: (index % 12) + 1 };
+}
+
+/** The greeting for the hour on the owner's own clock. */
+function greetingKey(hour: number): "greetingMorning" | "greetingAfternoon" | "greetingEvening" {
+  if (hour < 12) return "greetingMorning";
+  if (hour < 20) return "greetingAfternoon";
+  return "greetingEvening";
 }
 
 function FeatureHighlightCard({
@@ -83,12 +100,31 @@ export function OverviewView({
   onRecordPayment,
 }: OverviewViewProps = {}): ReactElement {
   const { state } = useApp();
-  const { formatCurrency } = useCurrency();
   const { data: session } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const locale = useLocale();
   const t = useTranslations("dashboard");
+  const apiError = useApiError();
 
   const { properties = [], tenants = [], leases = [], receipts = [], loading } = state;
+
+  const [selected, setSelected] = useState<MonthRef>(
+    () => parseMonth(searchParams.get("month")) ?? currentMonth(),
+  );
+  const { data: month, error } = useDashboardMonth(selected.year, selected.month);
+
+  // Read on the owner's clock after mount, so the server's hour never decides the greeting.
+  const [hour, setHour] = useState<number | null>(null);
+  useEffect(() => setHour(new Date().getHours()), []);
+
+  const selectMonth = useCallback((next: MonthRef) => {
+    setSelected(next);
+    // Kept in the URL, so a reload or a shared link opens the same month.
+    const params = new URLSearchParams(window.location.search);
+    params.set("month", `${next.year}-${String(next.month).padStart(2, "0")}`);
+    window.history.replaceState({}, "", `${window.location.pathname}?${params}`);
+  }, []);
 
   const navigate = (href: string) => router.push(href);
   const handleAddProperty = () =>
@@ -98,105 +134,6 @@ export function OverviewView({
   const handleAddLease = () => onAddLease?.() ?? navigate("/leases");
   const handleRecordPayment = () =>
     onRecordPayment?.() ?? navigate("/financials?tab=receipts&action=record-payment");
-
-  const dashboardData = useMemo(() => {
-    const currentMonth = new Date();
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(currentMonth);
-
-    const occupiedProperties = properties.filter(
-      (property) => property.status === "occupied",
-    ).length;
-    const occupancyRate =
-      properties.length > 0 ? (occupiedProperties / properties.length) * 100 : 0;
-
-    const monthlyIncome = receipts
-      .filter((receipt) => {
-        const receiptDate = new Date(receipt.date);
-        return (
-          receipt.status === "paid" &&
-          receipt.type === "rent" &&
-          receiptDate >= monthStart &&
-          receiptDate <= monthEnd
-        );
-      })
-      .reduce((sum, receipt) => sum + receipt.amount, 0);
-
-    const overdueTenants = tenants.filter((tenant) => tenant.paymentStatus === "overdue");
-    const overdueRent = overdueTenants.reduce((sum, tenant) => {
-      const activeLease = getActiveLease(tenant.id, leases);
-      return sum + (activeLease?.monthlyRent ?? tenant.rent ?? 0);
-    }, 0);
-
-    const pendingReceipts = receipts.filter((receipt) => receipt.status === "pending").length;
-
-    const recentPayments = [...receipts]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 4);
-
-    const overdueQueue = overdueTenants
-      .map((tenant) => {
-        const activeLease = getActiveLease(tenant.id, leases);
-        const relatedPropertyId = activeLease?.propertyId ?? tenant.propertyId;
-
-        return {
-          id: tenant.id,
-          tenantName: tenant.name,
-          propertyName:
-            properties.find((property) => property.id === relatedPropertyId)?.name ??
-            tenant.propertyName ??
-            "Unassigned property",
-          amountDue: activeLease?.monthlyRent ?? tenant.rent ?? 0,
-          dueDate: tenant.lastPayment || activeLease?.startDate,
-        };
-      })
-      .slice(0, 4);
-
-    const sixtyDaysFromNow = Date.now() + 60 * 24 * 60 * 60 * 1000;
-    const expiringLeases = [...leases]
-      .filter((lease) => {
-        if (lease.status !== "active") return false;
-        const end = Date.parse(lease.endDate);
-        return !isNaN(end) && end > Date.now() && end <= sixtyDaysFromNow;
-      })
-      .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
-      .slice(0, 4)
-      .map((lease) => ({
-        id: lease.id,
-        propertyName:
-          properties.find((property) => property.id === lease.propertyId)?.name ??
-          lease.property?.name ??
-          "Property",
-        tenantName:
-          tenants.find((tenant) => tenant.id === lease.tenantId)?.name ??
-          lease.tenant?.name ??
-          "Tenant",
-        endDate: lease.endDate,
-      }));
-
-    const tenant = tenants.find((t) => t.email === session?.user?.email) ?? tenants[0] ?? null;
-    const activeLease = tenant ? getActiveLease(tenant.id, leases) : null;
-    const home = properties.find(
-      (property) => property.id === (activeLease?.propertyId ?? tenant?.propertyId),
-    );
-    const paidReceipts = receipts.filter((receipt) => receipt.status === "paid");
-    const nextPaymentDate = getNextPaymentDate(activeLease?.startDate);
-
-    return {
-      occupancyRate,
-      monthlyIncome,
-      overdueRent,
-      pendingReceipts,
-      recentPayments,
-      overdueQueue,
-      expiringLeases,
-      tenant,
-      activeLease,
-      home,
-      paidReceipts,
-      nextPaymentDate,
-    };
-  }, [leases, properties, receipts, tenants, session]);
 
   const onboardingSteps: OnboardingChecklistStep[] = [
     {
@@ -236,52 +173,18 @@ export function OverviewView({
       actionLabel: t("recordPaymentAction"),
     },
   ];
-  const allStepsDone = onboardingSteps.every((s) => s.completed);
-  const showChecklist = !allStepsDone;
+  const showChecklist = !onboardingSteps.every((step) => step.completed);
 
   if (loading) {
     return <div className="h-40 animate-pulse bg-[var(--color-muted)]/30" />;
   }
 
   if (properties.length === 0) {
-    const richSteps: OnboardingChecklistStep[] = [
-      {
-        id: "property",
-        label: t("addPropertyLabel"),
-        description: t("addPropertyDesc2"),
-        completed: false,
-        icon: Home,
-        action: handleAddProperty,
-        actionLabel: t("addPropertyAction"),
-      },
-      {
-        id: "tenant",
-        label: t("addTenantLabel"),
-        description: t("addTenantDesc"),
-        completed: false,
-        icon: UserRound,
-        action: handleAddTenant,
-        actionLabel: t("addTenantAction"),
-      },
-      {
-        id: "lease",
-        label: t("createLeaseLabel"),
-        description: t("createLeaseDesc"),
-        completed: false,
-        icon: FileText,
-        action: handleAddLease,
-        actionLabel: t("createLeaseAction"),
-      },
-      {
-        id: "payment",
-        label: t("recordPaymentLabel"),
-        description: t("recordPaymentDesc"),
-        completed: false,
-        icon: BadgeEuro,
-        action: handleRecordPayment,
-        actionLabel: t("recordPaymentAction"),
-      },
-    ];
+    const richSteps = onboardingSteps.map((step) => ({
+      ...step,
+      completed: false,
+      description: step.id === "property" ? t("addPropertyDesc2") : step.description,
+    }));
     return (
       <div className="space-y-6">
         <OnboardingChecklist steps={richSteps} />
@@ -306,91 +209,70 @@ export function OverviewView({
     );
   }
 
+  const firstName = session?.user?.name?.trim().split(/\s+/)[0];
+  const greeting =
+    hour === null
+      ? null
+      : firstName
+        ? t("greetingNamed", { greeting: t(greetingKey(hour)), name: firstName })
+        : t(greetingKey(hour));
+
   return (
     <div className="space-y-5 motion-safe:animate-fade-in">
-      {/* Onboarding: top priority when setup is incomplete */}
       {showChecklist && <OnboardingChecklist steps={onboardingSteps} />}
 
-      {/* Status hero — the first thing a landlord sees */}
-      <ActionPanel />
-
-      {/* Three key numbers — Situs metric panels: mono label, light numeral,
-          tabular figures. Collected income is the focal metric (country accent);
-          overdue lights up danger only when there is money at risk. */}
-      <div className="grid grid-cols-3 gap-3 motion-safe:animate-slide-up">
-        <div className="panel border-l-[3px] border-l-[var(--country-highlight-readable)] p-4">
-          <p className="mono-label">{t("collectedThisMonth")}</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-lg font-light text-[var(--color-foreground)]" data-testid="greeting">
+          {greeting}
+        </p>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t("previousMonth")}
+            onClick={() => selectMonth(shiftMonth(selected, -1))}
+          >
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          </Button>
           <p
-            className="mt-2 text-xl font-light tabular-nums sm:text-2xl text-[var(--color-foreground)]"
+            className="min-w-36 text-center text-sm font-medium capitalize"
             aria-live="polite"
+            data-testid="dashboard-month"
           >
-            {formatCurrency(dashboardData.monthlyIncome)}
+            {formatMonthYear(selected.year, selected.month, locale)}
           </p>
-        </div>
-        <div
-          className={cn(
-            "panel p-4",
-            dashboardData.overdueRent > 0 &&
-              "border-l-[3px] border-l-[var(--semantic-danger)] bg-[var(--semantic-danger-soft)]",
-          )}
-        >
-          <p className="mono-label">{t("overdueRentMetric")}</p>
-          <p
-            className={cn(
-              "mt-2 text-xl font-light tabular-nums sm:text-2xl",
-              dashboardData.overdueRent > 0
-                ? "text-[var(--semantic-danger)]"
-                : "text-[var(--color-foreground)]",
-            )}
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t("nextMonth")}
+            onClick={() => selectMonth(shiftMonth(selected, 1))}
           >
-            {formatCurrency(dashboardData.overdueRent)}
-          </p>
-        </div>
-        <div className="panel p-4">
-          <p className="mono-label">{t("occupancyMetric")}</p>
-          <p className="mt-2 text-xl font-light tabular-nums sm:text-2xl text-[var(--color-foreground)]">
-            {dashboardData.occupancyRate.toFixed(0)}%
-          </p>
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+          </Button>
         </div>
       </div>
 
-      {/* Recent payments — compact rectilinear list */}
-      {dashboardData.recentPayments.length > 0 && (
-        <div className="panel">
-          {/* `px-4`, matching `Card`'s padding. This list is a bespoke `.panel` rather than a
-              `Card` — `.panel` is background and border only, padding is per-use — which is
-              why it kept its own `px-5` while every card in the app moved to `p-4`. Two
-              primitives disagreeing by 4px on every row is the kind of thing nobody can name
-              and everybody feels. */}
-          <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
-            <p className="mono-label">{t("recentPayments")}</p>
-            <button
-              onClick={() => navigate("/financials?tab=receipts")}
-              className="flex items-center justify-end text-sm text-[var(--color-primary)] hover:underline max-md:min-h-11 max-md:min-w-11"
-            >
-              {t("seeAll")}
-            </button>
-          </div>
-          {/* Rows are `py-3`, not `py-4`. Two short lines — a name and a date — were sitting
-              in a 67px row, roughly half of which was padding. */}
-          <div className="divide-y divide-[var(--color-border)]">
-            {dashboardData.recentPayments.map((receipt) => (
-              <div key={receipt.id} className="flex items-center justify-between px-4 py-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-[var(--color-foreground)]">
-                    {receipt.tenantName}
-                  </p>
-                  <p className="truncate text-xs text-[var(--color-muted-foreground)]">
-                    {formatDate(receipt.date)}
-                  </p>
-                </div>
-                <p className="ml-4 shrink-0 text-sm font-medium tabular-nums text-[var(--color-foreground)]">
-                  {formatCurrency(receipt.amount)}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+      {error ? (
+        <p
+          role="alert"
+          className="rounded-md bg-[var(--semantic-danger-soft)] px-3 py-2 text-sm text-[var(--semantic-danger-readable)]"
+        >
+          {apiError(error)}
+        </p>
+      ) : null}
+
+      {month ? (
+        <>
+          <StatusLine status={month.status} />
+          <MonthFigures figures={month.figures} />
+          <LoopStrip loop={month.loop} />
+          <AttentionList attention={month.attention} />
+          <RecentMoney recent={month.recent} />
+          <PortfolioLine portfolio={month.portfolio} />
+          <RecentActivity activity={month.activity} />
+        </>
+      ) : error ? null : (
+        <div className="h-40 animate-pulse bg-[var(--color-muted)]/30" />
       )}
     </div>
   );
