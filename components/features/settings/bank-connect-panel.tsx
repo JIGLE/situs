@@ -1,10 +1,37 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Landmark, Loader2, RefreshCw, TriangleAlert } from "lucide-react";
+import {
+  Landmark,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  RefreshCw,
+  RotateCw,
+  Trash2,
+  TriangleAlert,
+  Unplug,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import {
   Sheet,
   SheetContent,
@@ -20,7 +47,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { apiFetch } from "@/lib/utils/api-client";
+import { useApiError } from "@/lib/utils/api-error";
 import { useCsrf } from "@/lib/contexts/csrf-context";
+import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import {
   BANK_SYNC_PROBLEM_KEY,
   useBankSync,
@@ -64,9 +93,19 @@ const STATUS_STYLES: Record<string, string> = {
   active: "bg-[var(--semantic-success-soft)] text-[var(--semantic-success-readable)]",
   pending_consent: "bg-[var(--semantic-warning-soft)] text-[var(--semantic-warning-readable)]",
   expired: "bg-[var(--semantic-danger-soft)] text-[var(--semantic-danger-readable)]",
-  revoked: "bg-[var(--semantic-danger-soft)] text-[var(--semantic-danger-readable)]",
+  // Disconnected on purpose: a state, not a fault.
+  revoked: "bg-[var(--color-muted)] text-muted-foreground",
   error: "bg-[var(--semantic-danger-soft)] text-[var(--semantic-danger-readable)]",
 };
+
+/** How asking the bank went, as the owner reads it once a disconnect is done. */
+const DISCONNECT_NOTICE_KEYS = {
+  revoked: "bankDisconnected",
+  already_gone: "bankDisconnected",
+  failed: "bankDisconnectedUnconfirmed",
+  no_consent_id: "bankDisconnectedLocal",
+  provider_unavailable: "bankDisconnectedLocal",
+} as const;
 
 interface Props {
   connections: BankConnectionRow[];
@@ -76,7 +115,9 @@ interface Props {
 }
 
 /**
- * The connect / sync / reconnect affordances for live bank connections.
+ * The bank connections: connect one, sync it, and from each row's menu rename, renew, disconnect
+ * or remove it. What each row offers is decided by the server (`canRenew`, `canDisconnect`,
+ * `canRemove`); this only shows it.
  *
  * Everything here is gated on `providersConfigured`, which answers two questions at once now
  * that no adapter ships: whether this build contains a provider at all, and whether this instance
@@ -85,9 +126,12 @@ interface Props {
  */
 export function BankConnectPanel({ connections, providersConfigured, loading, onRefresh }: Props) {
   const t = useTranslations("settings.panel");
+  const tActions = useTranslations("actions");
   const locale = useLocale();
   const { token: csrfToken } = useCsrf();
   const syncNow = useBankSync();
+  const apiError = useApiError();
+  const confirmDialog = useConfirmDialog();
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [country, setCountry] = useState<string>(COUNTRIES[0]);
@@ -98,22 +142,38 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<BankConnectionRow | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameError, setRenameError] = useState<string | null>(null);
+  const [savingName, setSavingName] = useState(false);
 
   const configured = providersConfigured.length > 0;
 
-  // The callback lands back here with ?bank=connected|failed. Reading it once and clearing it
-  // keeps the message off every later visit to this tab.
+  // The callback lands back here with ?bank=connected|renewed|failed. Reading it once and
+  // clearing it keeps the message off every later visit to this tab.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const outcome = params.get("bank");
     if (!outcome) return;
-    setNotice(outcome === "connected" ? t("bankConnected") : null);
+    setNotice(
+      outcome === "connected"
+        ? t("bankConnected")
+        : outcome === "renewed"
+          ? t("bankRenewed")
+          : null,
+    );
     setError(outcome === "failed" ? t("bankConnectFailed") : null);
     params.delete("bank");
     const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
     window.history.replaceState({}, "", next);
-    if (outcome === "connected") onRefresh();
+    if (outcome === "connected" || outcome === "renewed") onRefresh();
   }, [t, onRefresh]);
+
+  /** The owner's name for a connection; a manual row's stored name is English, so it is not shown. */
+  function displayName(connection: BankConnectionRow): string {
+    if (connection.label) return connection.label;
+    return connection.provider === "manual" ? t("bankManualName") : connection.institutionName;
+  }
 
   const loadInstitutions = useCallback(
     async (code: string) => {
@@ -191,6 +251,121 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
     }
   }
 
+  /** A new consent for the same connection: the bank's page, then back to the callback. */
+  async function renew(connection: BankConnectionRow) {
+    setBusyId(connection.id);
+    setError(null);
+    setNotice(null);
+    try {
+      const body = await apiFetch<{ url?: string }>(
+        `/api/bank/connections/${encodeURIComponent(connection.id)}/renew`,
+        csrfToken,
+        "POST",
+      );
+      if (!body?.url) {
+        setError(t("bankConnectFailed"));
+        setBusyId(null);
+        return;
+      }
+      // Leaves the app for the bank's own authentication.
+      window.location.href = body.url;
+    } catch (err) {
+      setError(apiError(err));
+      setBusyId(null);
+    }
+  }
+
+  function askToDisconnect(connection: BankConnectionRow) {
+    confirmDialog.confirm(
+      {
+        title: t("bankDisconnectTitle", { name: displayName(connection) }),
+        description: connection.revocable ? t("bankDisconnectBody") : t("bankDisconnectBodyLocal"),
+        confirmLabel: t("bankDisconnect"),
+        cancelLabel: tActions("cancel"),
+        variant: "destructive",
+      },
+      () => disconnect(connection),
+    );
+  }
+
+  async function disconnect(connection: BankConnectionRow) {
+    setError(null);
+    setNotice(null);
+    try {
+      const body = await apiFetch<{ revocation?: string }>(
+        `/api/bank/connections/${encodeURIComponent(connection.id)}/disconnect`,
+        csrfToken,
+        "POST",
+      );
+      const key =
+        DISCONNECT_NOTICE_KEYS[body?.revocation as keyof typeof DISCONNECT_NOTICE_KEYS] ??
+        "bankDisconnectedLocal";
+      setNotice(t(key));
+      onRefresh();
+    } catch (err) {
+      setError(apiError(err));
+    }
+  }
+
+  function askToRemove(connection: BankConnectionRow) {
+    confirmDialog.confirm(
+      {
+        title: t("bankRemoveTitle", { name: displayName(connection) }),
+        description: t("bankRemoveBody"),
+        confirmLabel: t("bankRemove"),
+        cancelLabel: tActions("cancel"),
+        variant: "destructive",
+      },
+      () => remove(connection),
+    );
+  }
+
+  async function remove(connection: BankConnectionRow) {
+    setError(null);
+    setNotice(null);
+    try {
+      await apiFetch(
+        `/api/bank/connections/${encodeURIComponent(connection.id)}`,
+        csrfToken,
+        "DELETE",
+      );
+      setNotice(t("bankRemoved"));
+      onRefresh();
+    } catch (err) {
+      setError(apiError(err));
+    }
+  }
+
+  function startRenaming(connection: BankConnectionRow) {
+    setRenaming(connection);
+    setRenameValue(connection.label ?? "");
+    setRenameError(null);
+  }
+
+  async function saveName(event: FormEvent) {
+    event.preventDefault();
+    if (!renaming) return;
+    setSavingName(true);
+    setRenameError(null);
+    try {
+      // Empty goes back to the bank's name; the server trims.
+      await apiFetch(
+        `/api/bank/connections/${encodeURIComponent(renaming.id)}`,
+        csrfToken,
+        "PATCH",
+        { label: renameValue },
+      );
+      setRenaming(null);
+      setError(null);
+      setNotice(t("bankRenamed"));
+      onRefresh();
+    } catch (err) {
+      setRenameError(apiError(err));
+    } finally {
+      setSavingName(false);
+    }
+  }
+
   async function sync(connection: BankConnectionRow) {
     setBusyId(connection.id);
     setError(null);
@@ -239,8 +414,13 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
             >
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-[var(--color-foreground)]">
-                  {c.institutionName}
+                  {displayName(c)}
                 </p>
+                {c.label ? (
+                  <p className="truncate text-xs text-muted-foreground">
+                    {c.provider === "manual" ? t("bankManualName") : c.institutionName}
+                  </p>
+                ) : null}
                 <p className="text-xs text-muted-foreground">
                   {t("bankLastSync", {
                     date: formatDate(c.lastSyncAt, locale, t("bankNeverSynced")),
@@ -249,7 +429,7 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
                     ? ` · ${t("bankSyncsLeft", { count: c.remainingBudget })}`
                     : ""}
                 </p>
-                {c.consentExpiresAt ? (
+                {c.consentExpiresAt && c.status !== "revoked" ? (
                   <p className="text-xs text-muted-foreground">
                     {t("bankConsentUntil", { date: formatDate(c.consentExpiresAt, locale) })}
                   </p>
@@ -264,9 +444,20 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
                 </span>
 
                 {c.status === "expired" ? (
-                  <Button size="sm" variant="outline" onClick={openPicker} disabled={!configured}>
-                    <TriangleAlert className="mr-1.5 h-3.5 w-3.5" />
-                    {t("bankReconnect")}
+                  // The same connection, renewed: its accounts keep their ids, so the movements
+                  // seen before and after dedupe instead of waiting in review twice.
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void renew(c)}
+                    disabled={!c.canRenew || busyId === c.id}
+                  >
+                    {busyId === c.id ? (
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <TriangleAlert className="mr-1.5 h-3.5 w-3.5" />
+                    )}
+                    {t("bankRenew")}
                   </Button>
                 ) : c.canSync ? (
                   <Button
@@ -283,6 +474,43 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
                     {t("bankSyncNow")}
                   </Button>
                 ) : null}
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      aria-label={t("bankActions", { name: displayName(c) })}
+                    >
+                      <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => startRenaming(c)}>
+                      <Pencil className="mr-2 h-4 w-4" aria-hidden="true" />
+                      {t("bankRename")}
+                    </DropdownMenuItem>
+                    {c.canRenew ? (
+                      <DropdownMenuItem onClick={() => void renew(c)}>
+                        <RotateCw className="mr-2 h-4 w-4" aria-hidden="true" />
+                        {t("bankRenew")}
+                      </DropdownMenuItem>
+                    ) : null}
+                    {c.canDisconnect ? (
+                      <DropdownMenuItem onClick={() => askToDisconnect(c)}>
+                        <Unplug className="mr-2 h-4 w-4" aria-hidden="true" />
+                        {t("bankDisconnect")}
+                      </DropdownMenuItem>
+                    ) : null}
+                    {c.canRemove ? (
+                      <DropdownMenuItem onClick={() => askToRemove(c)}>
+                        <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
+                        {t("bankRemove")}
+                      </DropdownMenuItem>
+                    ) : null}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           ))}
@@ -303,6 +531,57 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
           <p className="mt-2 text-sm text-muted-foreground">{t("bankNoProviderManual")}</p>
         </div>
       )}
+
+      <ConfirmationDialog dialog={confirmDialog} />
+
+      <Dialog
+        open={renaming !== null}
+        onOpenChange={(open) => {
+          if (!open) setRenaming(null);
+        }}
+      >
+        <DialogContent>
+          <form onSubmit={(event) => void saveName(event)} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>{t("bankRenameTitle")}</DialogTitle>
+              <DialogDescription>
+                {renaming
+                  ? t("bankRenameHelp", {
+                      bank:
+                        renaming.provider === "manual"
+                          ? t("bankManualName")
+                          : renaming.institutionName,
+                    })
+                  : null}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label htmlFor="bank-connection-label">{t("bankRenameLabel")}</Label>
+              <Input
+                id="bank-connection-label"
+                value={renameValue}
+                onChange={(event) => setRenameValue(event.target.value)}
+                maxLength={60}
+                autoComplete="off"
+              />
+              {renameError ? (
+                <p role="alert" className="text-sm text-[var(--semantic-danger-readable)]">
+                  {renameError}
+                </p>
+              ) : null}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setRenaming(null)}>
+                {tActions("cancel")}
+              </Button>
+              <Button type="submit" disabled={savingName}>
+                {savingName ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+                {tActions("save")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Sheet open={pickerOpen} onOpenChange={setPickerOpen}>
         <SheetContent side="right" className="w-full sm:max-w-md">

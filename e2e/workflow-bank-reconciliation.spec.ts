@@ -65,3 +65,60 @@ test("Critical Path: a bank movement lands in the inbox", async ({ page, request
 
   await expect(page.getByRole("button", { name: /import csv/i })).toHaveCount(0);
 });
+
+/**
+ * Settings › Integrações › Bancos: a connection's menu, against the connection the debug import
+ * find-or-creates. It has movements, so it can be renamed and never removed: removing it would
+ * cascade to them. The name goes back to the stored one at the end, so a rerun starts the same.
+ */
+test("Settings: a connection is renamed and back, and one with movements cannot be removed", async ({
+  page,
+  request,
+}) => {
+  const today = new Date().toISOString().split("T")[0];
+  const stamp = Date.now();
+  const res = await request.post("/api/debug/bank/movements", {
+    data: {
+      rows: [
+        {
+          bookingDate: today,
+          amount: 1,
+          counterpartyName: "E2E Rename",
+          reference: `e2e rename ${stamp}`,
+        },
+      ],
+    },
+    headers: await csrfHeader(request),
+  });
+  expect(res.ok(), `POST /api/debug/bank/movements → ${res.status()}`).toBe(true);
+
+  await page.goto("/settings?tab=integrations");
+  await settle(page);
+
+  // In whichever language the suite runs.
+  const manualName = "(Manual import|Importação manual)";
+  const menuFor = (name: string) =>
+    page.getByRole("button", { name: new RegExp(`^(Actions for|Ações para) ${name}$`) });
+  const rename = async (name: string, value: string) => {
+    await menuFor(name).click();
+    await page.getByRole("menuitem", { name: /^(Rename|Renomear)$/ }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel(/^(Name|Nome)$/).fill(value);
+    await dialog.getByRole("button", { name: /^(Save|Guardar)$/ }).click();
+    await expect(dialog).toHaveCount(0);
+  };
+
+  const label = `E2E ${stamp}`;
+  await rename(manualName, label);
+  await expect(page.getByText(label, { exact: true })).toBeVisible({ timeout: 10000 });
+
+  // Empty goes back to the connection's own name.
+  await rename(label, "");
+  await expect(menuFor(manualName)).toBeVisible({ timeout: 10000 });
+
+  await menuFor(manualName).click();
+  await expect(page.getByRole("menuitem", { name: /^(Rename|Renomear)$/ })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: /^(Remove|Remover)$/ })).toHaveCount(0);
+  await expect(page.getByRole("menuitem", { name: /^(Disconnect|Desligar)$/ })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+});

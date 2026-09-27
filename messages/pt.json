@@ -197,16 +197,35 @@
       "bankSyncDone": "Sincronizado. Os novos movimentos estão na caixa de entrada de Finanças.",
       "bankSyncFailed": "A sincronização não foi concluída. Tente novamente dentro de momentos.",
       "bankSyncBudgetSpent": "Esta conta já usou as leituras bancárias de hoje. Haverá mais amanhã.",
-      "bankSyncConsentExpired": "O consentimento bancário expirou. Volte a ligar a conta para retomar a sincronização.",
+      "bankSyncConsentExpired": "O consentimento bancário expirou. Renove o acesso para retomar a sincronização.",
       "bankSyncsLeft": "{count} sincronizações restantes hoje",
-      "bankReconnect": "Voltar a ligar",
       "bankLastSync": "Última sincronização: {date}",
       "bankNeverSynced": "nunca",
+      "bankManualName": "Importação manual",
+      "bankActions": "Ações para {name}",
+      "bankRename": "Renomear",
+      "bankRenameTitle": "Renomear ligação",
+      "bankRenameHelp": "Um nome seu, mostrado em vez de {bank}. Deixe vazio para mostrar o nome do banco.",
+      "bankRenameLabel": "Nome",
+      "bankRenamed": "Nome guardado.",
+      "bankRenew": "Renovar acesso",
+      "bankRenewed": "Acesso renovado. A ligação mantém as contas e os movimentos.",
+      "bankDisconnect": "Desligar",
+      "bankDisconnectTitle": "Desligar {name}?",
+      "bankDisconnectBody": "Deixa de sincronizar, e o banco é informado para terminar o acesso. As contas e os movimentos ficam, e pode renovar o acesso mais tarde.",
+      "bankDisconnectBodyLocal": "Deixa de sincronizar. Esta ligação é anterior ao registo da sessão no banco, por isso o acesso do banco termina na data prevista, ou quando o terminar na app do seu banco. As contas e os movimentos ficam.",
+      "bankDisconnected": "Desligada. O banco terminou o acesso.",
+      "bankDisconnectedUnconfirmed": "Desligada aqui, mas o banco não confirmou. Desligue de novo mais tarde, ou termine o acesso na app do seu banco.",
+      "bankDisconnectedLocal": "Desligada aqui. O acesso do banco termina na data prevista, ou na app do seu banco.",
+      "bankRemove": "Remover",
+      "bankRemoveTitle": "Remover {name}?",
+      "bankRemoveBody": "A ligação e as suas contas saem da lista. Não trouxe movimentos, por isso nada mais se perde. Se o banco deu acesso, é-lhe pedido que o termine.",
+      "bankRemoved": "Ligação removida.",
       "bankStatus": {
         "active": "Ativa",
         "pendingConsent": "A aguardar consentimento",
         "expired": "Consentimento expirado",
-        "revoked": "Revogada",
+        "revoked": "Desligada",
         "error": "Erro"
       },
       "bankCountry": {
@@ -219,7 +238,7 @@
       "systemStatusMovedHelp": "O estado da instância passou para a área de administração, separada da aplicação.",
       "openAdmin": "Abrir administração",
       "bankConsentUntil": "Consentimento válido até {date}",
-      "bankConsentEnding": "O consentimento termina a {date}: volte a ligar antes disso para continuar a sincronizar",
+      "bankConsentEnding": "O consentimento termina a {date}: renove o acesso antes disso para continuar a sincronizar",
       "bankConsentEnded": "O consentimento terminou a {date}"
     },
     "at": {
@@ -1295,7 +1314,7 @@
       },
       "sync": {
         "noBank": "Nenhum banco ligado. Os movimentos chegam de um banco ligado em Configurações › Integrações.",
-        "reconnect": "Voltar a ligar em Configurações",
+        "reconnect": "Renovar em Configurações",
         "done": "Sincronizado: {imported, plural, =0 {nenhum movimento novo} one {# movimento novo} other {# movimentos novos}}."
       }
     },

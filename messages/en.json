@@ -197,16 +197,35 @@
       "bankSyncDone": "Synced. Any new movements are in the Finance inbox.",
       "bankSyncFailed": "The sync did not complete. Try again shortly.",
       "bankSyncBudgetSpent": "This account has used its bank reads for today. More are available tomorrow.",
-      "bankSyncConsentExpired": "Your bank consent has expired. Reconnect the account to resume syncing.",
+      "bankSyncConsentExpired": "Your bank consent has expired. Renew access to resume syncing.",
       "bankSyncsLeft": "{count} syncs left today",
-      "bankReconnect": "Reconnect",
       "bankLastSync": "Last sync: {date}",
       "bankNeverSynced": "never",
+      "bankManualName": "Manual import",
+      "bankActions": "Actions for {name}",
+      "bankRename": "Rename",
+      "bankRenameTitle": "Rename connection",
+      "bankRenameHelp": "Your own name for it, shown instead of {bank}. Leave it empty to show the bank's name.",
+      "bankRenameLabel": "Name",
+      "bankRenamed": "Name saved.",
+      "bankRenew": "Renew access",
+      "bankRenewed": "Access renewed. The connection keeps its accounts and movements.",
+      "bankDisconnect": "Disconnect",
+      "bankDisconnectTitle": "Disconnect {name}?",
+      "bankDisconnectBody": "It stops syncing, and the bank is asked to end its access. Its accounts and movements stay, and you can renew access later.",
+      "bankDisconnectBodyLocal": "It stops syncing. This connection predates Situs keeping the bank's session, so the bank's access ends on its own date, or when you end it in your bank's app. Its accounts and movements stay.",
+      "bankDisconnected": "Disconnected. The bank ended its access.",
+      "bankDisconnectedUnconfirmed": "Disconnected here, but the bank did not confirm. Disconnect again later, or end the access in your bank's app.",
+      "bankDisconnectedLocal": "Disconnected here. The bank's access ends on its own date, or in your bank's app.",
+      "bankRemove": "Remove",
+      "bankRemoveTitle": "Remove {name}?",
+      "bankRemoveBody": "The connection and its accounts leave the list. It brought no movements, so nothing else is lost. If the bank granted access, it is asked to end it.",
+      "bankRemoved": "Connection removed.",
       "bankStatus": {
         "active": "Active",
         "pendingConsent": "Awaiting consent",
         "expired": "Consent expired",
-        "revoked": "Revoked",
+        "revoked": "Disconnected",
         "error": "Error"
       },
       "bankCountry": {
@@ -219,7 +238,7 @@
       "systemStatusMovedHelp": "Instance health moved to the admin area, which is separate from the app.",
       "openAdmin": "Open admin",
       "bankConsentUntil": "Consent valid until {date}",
-      "bankConsentEnding": "Consent ends {date}: reconnect before then to keep syncing",
+      "bankConsentEnding": "Consent ends {date}: renew access before then to keep syncing",
       "bankConsentEnded": "Consent ended {date}"
     },
     "at": {
@@ -1295,7 +1314,7 @@
       },
       "sync": {
         "noBank": "No bank connected. Movements arrive from a bank connected in Settings › Integrations.",
-        "reconnect": "Reconnect in Settings",
+        "reconnect": "Renew in Settings",
         "done": "Synced: {imported, plural, =0 {no new movements} one {# new movement} other {# new movements}}."
       }
     },

@@ -27,6 +27,11 @@ function row(overrides: Partial<BankConnectionRow>): BankConnectionRow {
     isProvider: true,
     canSync: true,
     remainingBudget: 4,
+    canRenew: true,
+    canDisconnect: true,
+    revocable: true,
+    movements: 0,
+    canRemove: true,
     ...overrides,
   };
 }
@@ -54,6 +59,15 @@ describe("BankSyncStrip", () => {
     render(<BankSyncStrip onSynced={vi.fn()} />, { initialLocale: "pt" });
 
     expect(screen.getByText("Banco CTT")).toBeInTheDocument();
+    expect(screen.queryByText("Banco BPI")).not.toBeInTheDocument();
+  });
+
+  it("shows the owner's name for a connection they named", () => {
+    withConnections([row({ label: "Conta da casa" })]);
+
+    render(<BankSyncStrip onSynced={vi.fn()} />, { initialLocale: "pt" });
+
+    expect(screen.getByText("Conta da casa")).toBeInTheDocument();
     expect(screen.queryByText("Banco BPI")).not.toBeInTheDocument();
   });
 

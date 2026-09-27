@@ -17,6 +17,15 @@ export interface BankConnectionRow {
   isProvider: boolean;
   canSync: boolean;
   remainingBudget: number | null;
+  /** A new consent for the same connection can be asked for (`POST .../renew`). */
+  canRenew: boolean;
+  canDisconnect: boolean;
+  /** Disconnecting reaches the bank: the connection holds a consent its provider can end. */
+  revocable: boolean;
+  /** Movements brought in through its accounts. */
+  movements: number;
+  /** Only a connection that brought no movements can be removed. */
+  canRemove: boolean;
 }
 
 /**

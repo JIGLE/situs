@@ -197,16 +197,35 @@
       "bankSyncDone": "Sincronizzato. I nuovi movimenti sono nella posta in arrivo di Finanze.",
       "bankSyncFailed": "La sincronizzazione non è stata completata. Riprova tra poco.",
       "bankSyncBudgetSpent": "Questo conto ha esaurito le letture bancarie di oggi. Altre saranno disponibili domani.",
-      "bankSyncConsentExpired": "Il consenso bancario è scaduto. Ricollega il conto per riprendere la sincronizzazione.",
+      "bankSyncConsentExpired": "Il consenso bancario è scaduto. Rinnova l'accesso per riprendere la sincronizzazione.",
       "bankSyncsLeft": "{count} sincronizzazioni rimaste oggi",
-      "bankReconnect": "Ricollega",
       "bankLastSync": "Ultima sincronizzazione: {date}",
       "bankNeverSynced": "mai",
+      "bankManualName": "Importazione manuale",
+      "bankActions": "Azioni per {name}",
+      "bankRename": "Rinomina",
+      "bankRenameTitle": "Rinomina collegamento",
+      "bankRenameHelp": "Un nome tuo, mostrato al posto di {bank}. Lascialo vuoto per mostrare il nome della banca.",
+      "bankRenameLabel": "Nome",
+      "bankRenamed": "Nome salvato.",
+      "bankRenew": "Rinnova accesso",
+      "bankRenewed": "Accesso rinnovato. Il collegamento mantiene i conti e i movimenti.",
+      "bankDisconnect": "Disconnetti",
+      "bankDisconnectTitle": "Disconnettere {name}?",
+      "bankDisconnectBody": "Smette di sincronizzare, e alla banca viene chiesto di terminare l'accesso. I conti e i movimenti restano, e puoi rinnovare l'accesso più tardi.",
+      "bankDisconnectBodyLocal": "Smette di sincronizzare. Questo collegamento è precedente alla registrazione della sessione presso la banca, quindi l'accesso della banca termina alla sua data, o quando lo termini nell'app della tua banca. I conti e i movimenti restano.",
+      "bankDisconnected": "Disconnesso. La banca ha terminato l'accesso.",
+      "bankDisconnectedUnconfirmed": "Disconnesso qui, ma la banca non ha confermato. Disconnetti di nuovo più tardi, o termina l'accesso nell'app della tua banca.",
+      "bankDisconnectedLocal": "Disconnesso qui. L'accesso della banca termina alla sua data, o nell'app della tua banca.",
+      "bankRemove": "Rimuovi",
+      "bankRemoveTitle": "Rimuovere {name}?",
+      "bankRemoveBody": "Il collegamento e i suoi conti escono dall'elenco. Non ha portato movimenti, quindi non si perde nient'altro. Se la banca ha concesso l'accesso, le viene chiesto di terminarlo.",
+      "bankRemoved": "Collegamento rimosso.",
       "bankStatus": {
         "active": "Attiva",
         "pendingConsent": "In attesa di consenso",
         "expired": "Consenso scaduto",
-        "revoked": "Revocata",
+        "revoked": "Disconnessa",
         "error": "Errore"
       },
       "bankCountry": {
@@ -219,7 +238,7 @@
       "systemStatusMovedHelp": "Lo stato dell'istanza è passato all'area di amministrazione, separata dall'app.",
       "openAdmin": "Apri amministrazione",
       "bankConsentUntil": "Consenso valido fino al {date}",
-      "bankConsentEnding": "Il consenso scade il {date}: ricollega prima per continuare a sincronizzare",
+      "bankConsentEnding": "Il consenso scade il {date}: rinnova l'accesso prima per continuare a sincronizzare",
       "bankConsentEnded": "Il consenso è scaduto il {date}"
     },
     "at": {
@@ -1295,7 +1314,7 @@
       },
       "sync": {
         "noBank": "Nessuna banca collegata. I movimenti arrivano da una banca collegata in Impostazioni › Integrazioni.",
-        "reconnect": "Ricollega in Impostazioni",
+        "reconnect": "Rinnova in Impostazioni",
         "done": "Sincronizzato: {imported, plural, =0 {nessun nuovo movimento} one {# nuovo movimento} other {# nuovi movimenti}}."
       }
     },
