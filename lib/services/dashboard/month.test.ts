@@ -256,7 +256,7 @@ describe("getDashboardMonth — the status line and recent money", () => {
           amount: 750,
           currency: "EUR",
           counterparty: "Ana Silva",
-          processed: false,
+          state: "review",
         },
         {
           id: "tx-2",
@@ -264,7 +264,7 @@ describe("getDashboardMonth — the status line and recent money", () => {
           amount: 600,
           currency: "EUR",
           counterparty: null,
-          processed: true,
+          state: "processed",
         },
       ],
     });
@@ -275,6 +275,26 @@ describe("getDashboardMonth — the status line and recent money", () => {
       provider: { startsWith: "psd2_" },
       status: { not: "revoked" },
     });
+  });
+
+  it("never marks money going out for review, as the inbox never counts it as work", async () => {
+    prismaMock.bankConnection.findMany.mockResolvedValue([
+      { status: "active", lastSyncAt: null, consentExpiresAt: null },
+    ]);
+    prismaMock.bankTransaction.findMany.mockResolvedValue([
+      {
+        id: "tx-3",
+        bookingDate: new Date("2026-09-24T00:00:00.000Z"),
+        amount: -120.5,
+        currency: "EUR",
+        counterpartyName: "EDP Comercial",
+        status: "needs_review",
+      },
+    ]);
+
+    const month = await getDashboardMonth("user-1", 2026, 9, NOW);
+
+    expect(month.recent.source === "bank" && month.recent.items[0].state).toBe("outgoing");
   });
 
   it("shows the last payments instead when no bank is connected", async () => {

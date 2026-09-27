@@ -67,7 +67,11 @@ export interface DashboardMonth {
           amount: number;
           currency: string;
           counterparty: string | null;
-          processed: boolean;
+          /**
+           * `review` is money in waiting for the owner. Money going out is never work, as in the
+           * inbox, so it is `outgoing` whatever its status.
+           */
+          state: "processed" | "review" | "outgoing";
         }[];
       }
     | {
@@ -264,7 +268,12 @@ async function recentMoney(userId: string, bankConnected: boolean) {
         amount: movement.amount,
         currency: movement.currency,
         counterparty: movement.counterpartyName,
-        processed: !MOVEMENTS_TO_REVIEW.has(movement.status),
+        state:
+          movement.amount <= 0
+            ? ("outgoing" as const)
+            : MOVEMENTS_TO_REVIEW.has(movement.status)
+              ? ("review" as const)
+              : ("processed" as const),
       })),
     };
   }
