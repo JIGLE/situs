@@ -235,6 +235,10 @@ const SURFACES = [
   // Account is a Settings section now; measure it where it lives rather than through the
   // /account redirect, so the surface id matches the URL that renders.
   { id: "account", path: "/settings?tab=account" },
+  // Integrations' two tabs: the bank connections, and the AT login with its forms. Neither was
+  // measured while all of it sat on one page behind the Account default.
+  { id: "integrations-banks", path: "/settings?tab=integrations" },
+  { id: "integrations-at", path: "/settings?tab=integrations&view=at" },
   // Admin shares the app's shell: the rail on a computer, the bottom bar on a phone, one heading
   // and a tab per section. It had a shell of its own, which this list never measured.
   { id: "admin", path: "/admin" },

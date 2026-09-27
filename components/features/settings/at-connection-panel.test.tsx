@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
+import { within } from "@testing-library/dom";
 import { renderWithProviders, screen, waitFor } from "@/tests/helpers/render-with-providers";
 
 const { apiFetchMock } = vi.hoisted(() => ({ apiFetchMock: vi.fn() }));
@@ -78,20 +79,28 @@ describe("AtConnectionPanel", () => {
     );
   });
 
-  it("never shows the stored password, and says one is stored", async () => {
+  it("reads a stored login as a summary, and never shows its password", async () => {
+    const user = userEvent.setup();
     renderWithProviders(<AtConnectionPanel />, { initialLocale: "pt" });
 
-    expect(await screen.findByLabelText("Senha")).toHaveValue("");
-    expect(screen.getByText("Guardada. Escreva outra para a mudar.")).toBeInTheDocument();
+    expect(await screen.findByText("555555555/1")).toBeInTheDocument();
+    expect(screen.getByText("Guardada")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Senha")).toBeNull();
+
+    // Editar fills in the username; the password stays empty, with a word on what is stored.
+    await user.click(screen.getByRole("button", { name: "Editar" }));
     expect(screen.getByLabelText("Utilizador (NIF/subutilizador)")).toHaveValue("555555555/1");
+    expect(screen.getByLabelText("Senha")).toHaveValue("");
+    expect(screen.getByText("Guardada. Escreva outra para a mudar.")).toBeInTheDocument();
   });
 
-  it("sends a typed password once, then clears the field", async () => {
+  it("sends a typed password once, then goes back to the summary", async () => {
     const user = userEvent.setup();
     answer("/api/tax/connectors/at/credentials", view());
     renderWithProviders(<AtConnectionPanel />, { initialLocale: "pt" });
 
-    await user.type(await screen.findByLabelText("Senha"), "nova-senha");
+    await user.click(await screen.findByRole("button", { name: "Editar" }));
+    await user.type(screen.getByLabelText("Senha"), "nova-senha");
     await user.click(screen.getByRole("button", { name: "Guardar" }));
 
     await waitFor(() =>
@@ -103,14 +112,90 @@ describe("AtConnectionPanel", () => {
       ),
     );
     expect(await screen.findByText("Guardado.")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Senha")).toBeNull();
+  });
+
+  it("Cancelar closes the form and keeps the stored login", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<AtConnectionPanel />, { initialLocale: "pt" });
+
+    await user.click(await screen.findByRole("button", { name: "Editar" }));
+    const field = screen.getByLabelText("Utilizador (NIF/subutilizador)");
+    await user.clear(field);
+    await user.type(field, "111111111/2");
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(screen.getByText("555555555/1")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Utilizador (NIF/subutilizador)")).toBeNull();
+    expect(apiFetchMock).not.toHaveBeenCalledWith(
+      "/api/tax/connectors/at/credentials",
+      expect.anything(),
+      "PUT",
+      expect.anything(),
+    );
+  });
+
+  it("asks before removing the login, and says what stays", async () => {
+    const user = userEvent.setup();
+    answer("/api/tax/connectors/at/credentials", view({ username: null, passwordSet: false }));
+    renderWithProviders(<AtConnectionPanel />, { initialLocale: "pt" });
+
+    await user.click(await screen.findByRole("button", { name: "Remover" }));
+    let dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText("Remover o acesso às Finanças?")).toBeInTheDocument();
+    expect(within(dialog).getByText(/o registo de cada chamada à AT fica/)).toBeInTheDocument();
+
+    // Cancelling removes nothing.
+    await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    expect(apiFetchMock).not.toHaveBeenCalledWith(
+      "/api/tax/connectors/at/credentials",
+      "csrf-token",
+      "DELETE",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Remover" }));
+    dialog = await screen.findByRole("alertdialog");
+    await user.click(within(dialog).getByRole("button", { name: "Remover" }));
+
+    await waitFor(() =>
+      expect(apiFetchMock).toHaveBeenCalledWith(
+        "/api/tax/connectors/at/credentials",
+        "csrf-token",
+        "DELETE",
+      ),
+    );
+    expect(await screen.findByText("Removido.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Utilizador (NIF/subutilizador)")).toHaveValue("");
+  });
+
+  it("shows the form directly when no login is stored", async () => {
+    apiFetchMock.mockResolvedValue(view({ username: null, passwordSet: false }));
+    renderWithProviders(<AtConnectionPanel />, { initialLocale: "pt" });
+
+    expect(await screen.findByLabelText("Utilizador (NIF/subutilizador)")).toHaveValue("");
+    expect(screen.queryByRole("button", { name: "Editar" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Remover" })).toBeNull();
+  });
+
+  it("shows the form for a login that can no longer be read, with Remover", async () => {
+    apiFetchMock.mockResolvedValue(
+      view({ username: null, passwordSet: false, credentialsUnreadable: true }),
+    );
+    renderWithProviders(<AtConnectionPanel />, { initialLocale: "pt" });
+
+    expect(
+      await screen.findByText("A senha guardada já não pode ser lida. Introduza-a de novo."),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("Senha")).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Remover" })).toBeInTheDocument();
   });
 
   it("explains a malformed username and will not save it", async () => {
     const user = userEvent.setup();
     renderWithProviders(<AtConnectionPanel />, { initialLocale: "pt" });
 
-    const field = await screen.findByLabelText("Utilizador (NIF/subutilizador)");
+    await user.click(await screen.findByRole("button", { name: "Editar" }));
+    const field = screen.getByLabelText("Utilizador (NIF/subutilizador)");
     await user.clear(field);
     await user.type(field, "555555555");
 

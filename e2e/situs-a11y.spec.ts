@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import en from "../messages/en.json";
 import { settle } from "./helpers/wait";
 
 /**
@@ -55,7 +56,24 @@ test.describe("Situs surfaces — accessibility (WCAG2A/AA)", () => {
   test("Account page (audit trail) has no critical/serious violations", async ({ page }) => {
     await page.goto("/account");
     await settle(page);
+    // The activity starts closed and loads when opened; open it, or the trail goes unscanned.
+    await page.getByRole("button", { name: en.settings.panel.activity }).click();
+    await settle(page);
     const { blocking } = await scanForSeriousViolations(page);
     expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
+  });
+
+  test("Settings › Integrations, both tabs, has no critical/serious violations", async ({
+    page,
+  }) => {
+    await page.goto("/settings?tab=integrations");
+    await settle(page);
+    const banks = await scanForSeriousViolations(page);
+    expect(banks.blocking, JSON.stringify(banks.blocking, null, 2)).toEqual([]);
+
+    await page.getByRole("tab", { name: en.settings.panel.integrationTabs.at }).click();
+    await settle(page);
+    const finances = await scanForSeriousViolations(page);
+    expect(finances.blocking, JSON.stringify(finances.blocking, null, 2)).toEqual([]);
   });
 });

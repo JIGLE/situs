@@ -20,7 +20,8 @@ vi.mock("next/navigation", () => ({
     refresh: vi.fn(),
   }),
   usePathname: () => "/en/settings",
-  useSearchParams: () => new URLSearchParams(),
+  // The address bar as the page sees it, so `?tab=` and `?view=` round-trip through the URL.
+  useSearchParams: () => new URLSearchParams(window.location.search),
 }));
 
 // Mock next-auth. Signed out unless a test signs in: Settings loads the account's row only for a
@@ -39,6 +40,18 @@ vi.mock("@/lib/contexts/user-settings-context", () => ({
 
 vi.mock("@/lib/i18n/use-set-language", () => ({
   useSetLanguage: () => setLanguage,
+}));
+
+// Integrations' panels fetch their own data and have their own tests.
+vi.mock("./at-connection-panel", () => ({ AtConnectionPanel: () => null }));
+vi.mock("./bank-connect-panel", () => ({ BankConnectPanel: () => null }));
+vi.mock("@/lib/hooks/use-bank-connections", () => ({
+  useBankConnections: () => ({
+    connections: [],
+    providersConfigured: [],
+    loading: false,
+    reload: async () => {},
+  }),
 }));
 
 // Mock toast context
@@ -172,6 +185,15 @@ describe("SettingsView, signed in", () => {
     const save = requests.find((request) => request.init?.method === "POST");
     expect(save?.url).toBe("/api/settings");
     expect(JSON.parse(String(save?.init?.body)).residenceCountry).toBe("ES");
+  });
+
+  it("drops Integrations' tab from the URL on moving to another section", async () => {
+    window.history.replaceState(null, "", "/settings?tab=integrations&view=at");
+    render(<SettingsView />, { initialLocale: "pt" });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Conta" }));
+
+    expect(window.location.search).toBe("?tab=account");
   });
 
   it("switches the language from Appearance at once, without Guardar", async () => {
