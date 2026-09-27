@@ -5,6 +5,7 @@ const { prismaMock, providerMock, configuredMock } = vi.hoisted(() => ({
     bankConnection: {
       create: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
       findMany: vi.fn(),
       findUnique: vi.fn(),
     },
@@ -36,6 +37,7 @@ beforeEach(() => {
   configuredMock.mockReturnValue(["fake"]);
   prismaMock.bankConnection.create.mockResolvedValue({ id: "conn-1" });
   prismaMock.bankConnection.update.mockResolvedValue({});
+  prismaMock.bankConnection.updateMany.mockResolvedValue({ count: 1 });
   prismaMock.bankConnection.findUnique.mockResolvedValue({ metadata: null });
   prismaMock.bankAccount.findFirst.mockResolvedValue(null);
   prismaMock.bankAccount.create.mockResolvedValue({ id: "acct-1" });
@@ -142,6 +144,8 @@ describe("completing a consent", () => {
       status: "pending_consent",
       consentId: "req-1",
       metadata: JSON.stringify({ reference: REFERENCE }),
+      // Minted an hour ago: well inside the day a reference lasts.
+      createdAt: new Date(Date.now() - 60 * 60 * 1000),
       ...overrides,
     };
   }
@@ -208,6 +212,42 @@ describe("completing a consent", () => {
     prismaMock.bankConnection.findMany.mockResolvedValue([]);
 
     await expect(completeConsent("user-1", REFERENCE)).rejects.toThrow(/no longer valid/i);
+  });
+
+  it("refuses a reference older than a day, before calling the bank", async () => {
+    prismaMock.bankConnection.findMany.mockResolvedValue([
+      pending({ createdAt: new Date(Date.now() - 25 * 60 * 60 * 1000) }),
+    ]);
+
+    await expect(completeConsent("user-1", REFERENCE)).rejects.toMatchObject({ status: 404 });
+    expect(providerMock.completeConsent).not.toHaveBeenCalled();
+  });
+
+  it("spends the reference before calling the bank, so a second callback finds nothing", async () => {
+    prismaMock.bankConnection.findMany.mockResolvedValue([pending()]);
+
+    await completeConsent("user-1", REFERENCE);
+
+    // The claim is conditional on the row as it was read, and removes the reference.
+    const claim = prismaMock.bankConnection.updateMany.mock.calls[0][0];
+    expect(claim.where).toEqual({
+      id: "conn-1",
+      userId: "user-1",
+      status: "pending_consent",
+      metadata: JSON.stringify({ reference: REFERENCE }),
+    });
+    expect(JSON.parse(claim.data.metadata).reference).toBeUndefined();
+    expect(prismaMock.bankConnection.updateMany.mock.invocationCallOrder[0]).toBeLessThan(
+      providerMock.completeConsent.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("answers the callback that lost the race like a replay, without calling the bank", async () => {
+    prismaMock.bankConnection.findMany.mockResolvedValue([pending()]);
+    prismaMock.bankConnection.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(completeConsent("user-1", REFERENCE)).rejects.toMatchObject({ status: 404 });
+    expect(providerMock.completeConsent).not.toHaveBeenCalled();
   });
 
   it("gives the same answer for unknown, replayed and foreign references", async () => {

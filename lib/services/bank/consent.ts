@@ -21,7 +21,13 @@ import {
   providerColumnValue,
 } from "./providers/registry";
 import type { ProviderAccount } from "./providers/types";
-import { isTestConnection, readMetadata, writeMetadata, type ConnectionMetadata } from "./metadata";
+import {
+  CONSENT_REFERENCE_TTL_HOURS,
+  isTestConnection,
+  readMetadata,
+  writeMetadata,
+  type ConnectionMetadata,
+} from "./metadata";
 
 /** How long a consent is requested for. Providers clamp; the adapter clamps again. */
 const ACCESS_VALID_DAYS = 90;
@@ -137,6 +143,11 @@ export async function startConsent(
   return { connectionId: connection.id, url: link.url };
 }
 
+/** Whether a reference minted at `mintedAt` can still be used at `now`. */
+function referenceFresh(mintedAt: Date, now: Date): boolean {
+  return now.getTime() - mintedAt.getTime() < CONSENT_REFERENCE_TTL_HOURS * 60 * 60 * 1000;
+}
+
 /** Constant-time compare of two hex references of equal length. */
 function referenceMatches(a: string, b: string): boolean {
   const left = Buffer.from(a);
@@ -168,12 +179,18 @@ export async function completeConsent(
   userId: string,
   reference: string,
   callbackParams: Readonly<Record<string, string>> = {},
+  now = new Date(),
 ): Promise<CompletedConsent> {
   if (!reference) {
     throw new ConsentFlowError("Missing consent reference");
   }
 
   const prisma = getPrismaClient();
+  // Deliberately the same answer whether the reference is unknown, already used, expired or
+  // belongs to another account: distinguishing them would confirm a valid reference to whoever
+  // guessed it.
+  const noLongerValid = () =>
+    new ConsentFlowError("This bank connection request is no longer valid", 404);
 
   // Scoped to the caller at the query. The candidate set is one row in practice.
   const pending = await prisma.bankConnection.findMany({
@@ -182,18 +199,33 @@ export async function completeConsent(
 
   const connection = pending.find((row) => {
     const stored = readMetadata(row.metadata).reference;
-    return stored ? referenceMatches(stored, reference) : false;
+    // A reference lapses after a day, as the retention sweep deletes a pending row that old.
+    return stored
+      ? referenceMatches(stored, reference) && referenceFresh(row.createdAt, now)
+      : false;
   });
+  if (!connection) throw noLongerValid();
 
-  if (!connection) {
-    // Deliberately the same message whether the reference is unknown, already used, or belongs to
-    // another account — distinguishing them would confirm a valid reference to whoever guessed it.
-    throw new ConsentFlowError("This bank connection request is no longer valid", 404);
-  }
   const provider = getProviderForConnection(connection.provider);
   if (!provider) {
     throw new ConsentFlowError("Bank provider unavailable", 503);
   }
+
+  // Spend the reference before calling the bank, in one conditional write: of two callbacks
+  // racing (a double click), one claims it and the other finds nothing. Checking the status
+  // afterwards left a window in which both reached the provider. If the bank then refuses, the
+  // row stays pending with no reference, and the retention sweep removes it.
+  const { reference: _claimed, ...unclaimed } = readMetadata(connection.metadata);
+  const claim = await prisma.bankConnection.updateMany({
+    where: {
+      id: connection.id,
+      userId,
+      status: "pending_consent",
+      metadata: connection.metadata,
+    },
+    data: { metadata: writeMetadata(unclaimed) },
+  });
+  if (claim.count !== 1) throw noLongerValid();
 
   // No `consentId` check here any more. It used to reject a connection without one as "never
   // reached the bank", which was true for a provider that mints its id at consent-start — and
