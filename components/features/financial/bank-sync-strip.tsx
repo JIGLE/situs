@@ -39,8 +39,8 @@ export function BankSyncStrip({ onSynced }: Props) {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   // Manual and file connections hold movements that arrived before, and there is nothing to
-  // sync on them.
-  const banks = connections.filter((c) => c.isProvider);
+  // sync on them. A disconnected bank has nothing to sync either: it is managed in Settings.
+  const banks = connections.filter((c) => c.isProvider && c.status !== "revoked");
 
   if (loading) return null;
 
@@ -102,7 +102,7 @@ export function BankSyncStrip({ onSynced }: Props) {
         <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="min-w-0 text-sm">
             <p className="truncate font-medium text-[var(--color-foreground)]">
-              {c.institutionName}
+              {c.label ?? c.institutionName}
             </p>
             <p className="text-xs text-[var(--color-muted-foreground)]">
               {tPanel("bankLastSync", {

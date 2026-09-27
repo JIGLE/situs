@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const { prismaMock, importMock, providerMock } = vi.hoisted(() => ({
   prismaMock: {
-    bankConnection: { findFirst: vi.fn(), findMany: vi.fn(), update: vi.fn() },
+    bankConnection: { findFirst: vi.fn(), findMany: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
     bankSyncJob: { count: vi.fn() },
   },
   importMock: vi.fn(),
@@ -38,6 +38,8 @@ function connection(overrides: Record<string, unknown> = {}) {
     provider: "psd2_fake",
     institutionName: "Banco BPI",
     status: "active",
+    // Set, so the guard on the expiry write is tested: Prisma ignores an undefined filter.
+    consentId: "consent-1",
     lastSyncAt: null,
     metadata: JSON.stringify({ accountRefs: { "acct-1": "remote-account-1" } }),
     accounts: [{ id: "acct-1", label: "Conta ordenado", isActive: true }],
@@ -50,6 +52,7 @@ beforeEach(() => {
   prismaMock.bankSyncJob.count.mockResolvedValue(0);
   prismaMock.bankConnection.findFirst.mockResolvedValue(connection());
   prismaMock.bankConnection.update.mockResolvedValue({});
+  prismaMock.bankConnection.updateMany.mockResolvedValue({ count: 1 });
   providerMock.fetchTransactions.mockResolvedValue([]);
   importMock.mockResolvedValue({
     jobId: "job-1",
@@ -170,10 +173,26 @@ describe("expired consent", () => {
     await expect(syncConnection("user-1", "conn-1", NOW)).rejects.toBeInstanceOf(
       ConsentExpiredError,
     );
-    expect(prismaMock.bankConnection.update).toHaveBeenCalledWith({
-      where: { id: "conn-1" },
+    expect(prismaMock.bankConnection.updateMany).toHaveBeenCalledWith({
+      where: { id: "conn-1", status: "active", consentId: "consent-1" },
       data: { status: "expired" },
     });
+  });
+});
+
+describe("a connection that changed during the sync", () => {
+  it("is not marked expired, and nothing is audited", async () => {
+    // A disconnect or a renewal while the sync ran: the old consent's call fails, but the row
+    // is no longer active on that consent, so the conditional write matches nothing.
+    const { logAudit } = await import("@/lib/services/audit-log");
+    providerMock.fetchTransactions.mockRejectedValue(new ConsentExpiredError());
+    prismaMock.bankConnection.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(syncConnection("user-1", "conn-1", NOW)).rejects.toBeInstanceOf(
+      ConsentExpiredError,
+    );
+    expect(prismaMock.bankConnection.update).not.toHaveBeenCalled();
+    expect(logAudit).not.toHaveBeenCalled();
   });
 });
 
@@ -240,8 +259,8 @@ describe("consent expiry", () => {
 
     await expect(syncConnection("user-1", "conn-1", NOW)).rejects.toThrow();
 
-    expect(prismaMock.bankConnection.update).toHaveBeenCalledWith({
-      where: { id: "conn-1" },
+    expect(prismaMock.bankConnection.updateMany).toHaveBeenCalledWith({
+      where: { id: "conn-1", status: "active", consentId: "consent-1" },
       data: { status: "expired" },
     });
   });

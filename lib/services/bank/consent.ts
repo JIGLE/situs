@@ -12,15 +12,25 @@ import crypto from "crypto";
 
 import { getPrismaClient } from "@/lib/services/database/database";
 import { logAudit } from "@/lib/services/audit-log";
+import { ConflictError, ResourceNotFoundError } from "@/lib/utils/error-handling";
 import { encryptPII } from "@/lib/utils/pii-encryption";
+import { revokeAtBank, type RevocationOutcome } from "./connections";
 import { hashIban } from "./import";
 import {
+  PSD2_PREFIX,
   configuredProviders,
   getBankProvider,
   getProviderForConnection,
   providerColumnValue,
 } from "./providers/registry";
-import type { ProviderAccount } from "./providers/types";
+import type { BankDataProvider, ProviderAccount } from "./providers/types";
+import {
+  CONSENT_REFERENCE_TTL_HOURS,
+  isTestConnection,
+  readMetadata,
+  writeMetadata,
+  type ConnectionMetadata,
+} from "./metadata";
 
 /** How long a consent is requested for. Providers clamp; the adapter clamps again. */
 const ACCESS_VALID_DAYS = 90;
@@ -35,35 +45,6 @@ export class ConsentFlowError extends Error {
     super(message);
     this.name = "ConsentFlowError";
     this.status = status;
-  }
-}
-
-interface ConnectionMetadata {
-  reference?: string;
-  accountRefs?: Record<string, string>;
-  /**
-   * A connection the operator created deliberately to prove the chain works, from /admin.
-   *
-   * It is a label, not a mode. The consent, the provider call, the account persistence and the
-   * import pipeline are all identical to a real connection — a test that took a different path
-   * would prove nothing about the path that matters. What the flag buys is that /admin can show
-   * it as a test run and offer to delete it, so a sandbox trial does not sit in Settings
-   * indefinitely looking like a bank someone connected on purpose.
-   */
-  isTest?: boolean;
-}
-
-/** Read the test marker off a connection row without caring how metadata is shaped elsewhere. */
-export function isTestConnection(metadataRaw: string | null): boolean {
-  return readMetadata(metadataRaw).isTest === true;
-}
-
-function readMetadata(raw: string | null): ConnectionMetadata {
-  if (!raw) return {};
-  try {
-    return JSON.parse(raw) as ConnectionMetadata;
-  } catch {
-    return {};
   }
 }
 
@@ -131,9 +112,12 @@ export async function startConsent(
       institutionName: input.institutionName,
       status: "pending_consent",
       consentScope: "details,transactions",
-      metadata: JSON.stringify(
-        (input.isTest ? { reference, isTest: true } : { reference }) satisfies ConnectionMetadata,
-      ),
+      // The bank's id is kept so a renewal can open a consent for the same bank again.
+      metadata: writeMetadata({
+        reference,
+        institutionId: input.institutionId,
+        ...(input.isTest ? { isTest: true } : {}),
+      } satisfies ConnectionMetadata),
     },
   });
 
@@ -165,6 +149,124 @@ export async function startConsent(
   return { connectionId: connection.id, url: link.url };
 }
 
+/**
+ * Renew a connection in place: a second consent flow for the same bank, on the same row.
+ *
+ * A reconnect used to be a new connection, with new account rows. A movement's fingerprint
+ * includes its account, so the new connection's movements missed exact deduplication against the
+ * old one's and landed in review as possible duplicates. Renewing keeps the connection and its
+ * accounts, so they keep their ids.
+ *
+ * The new consent is parked in the row's metadata, and nothing the connection works from changes
+ * until the bank grants it: an abandoned renewal leaves it exactly as it was.
+ */
+export async function startRenewal(
+  userId: string,
+  connectionId: string,
+  now = new Date(),
+): Promise<StartedConsent> {
+  const prisma = getPrismaClient();
+  const connection = await prisma.bankConnection.findFirst({
+    where: { id: connectionId, userId },
+  });
+  if (!connection) throw new ResourceNotFoundError("Bank connection");
+
+  // A manual row has no consent to renew, and a pending one has not finished its first.
+  if (!connection.provider.startsWith(PSD2_PREFIX) || connection.status === "pending_consent") {
+    throw new ConflictError(
+      "Only a live bank connection can be renewed",
+      "bank_connection_not_live",
+    );
+  }
+  const provider = getProviderForConnection(connection.provider);
+  if (!provider || !configuredProviders().includes(provider.key)) {
+    throw new ConsentFlowError("Bank provider unavailable", 503);
+  }
+
+  const metadata = readMetadata(connection.metadata);
+  const institutionId =
+    metadata.institutionId ?? (await legacyInstitutionId(userId, connection, provider));
+  if (!institutionId) {
+    throw new ConflictError(
+      "The bank of this connection cannot be found again; connect it anew",
+      "bank_connection_renewal_unavailable",
+    );
+  }
+
+  const reference = crypto.randomBytes(32).toString("hex");
+  const link = await provider.createConsentLink({
+    institutionId,
+    // The same callback as a first consent: the provider compares it with the registered URL.
+    redirectUrl: callbackUrl(),
+    reference,
+    accessValidForDays: ACCESS_VALID_DAYS,
+    maxHistoricalDays: MAX_HISTORICAL_DAYS,
+  });
+
+  // Conditional on the row as it was read, so a renewal started twice at once parks only one.
+  const parked = await prisma.bankConnection.updateMany({
+    where: { id: connection.id, userId, metadata: connection.metadata },
+    data: {
+      metadata: writeMetadata({
+        ...metadata,
+        institutionId,
+        renewal: {
+          reference,
+          startedAt: now.toISOString(),
+          providerRef: link.providerRef,
+          consentExpiresAt: link.expiresAt ? link.expiresAt.toISOString() : null,
+        },
+      }),
+    },
+  });
+  if (parked.count !== 1) {
+    throw new ConflictError(
+      "The connection changed; reload and try again",
+      "bank_connection_changed",
+    );
+  }
+
+  return { connectionId: connection.id, url: link.url };
+}
+
+/**
+ * The bank's id for a connection made before it was stored, found once and never guessed: the
+ * country from the connection's own creation record, and the one bank there with its exact name.
+ */
+async function legacyInstitutionId(
+  userId: string,
+  connection: { id: string; institutionName: string },
+  provider: BankDataProvider,
+): Promise<string | null> {
+  const created = await getPrismaClient().auditLog.findFirst({
+    where: {
+      userId,
+      action: "BANK_CONNECTION_CREATED",
+      resourceType: "bank_connection",
+      resourceId: connection.id,
+    },
+    select: { details: true },
+  });
+  let country: unknown;
+  try {
+    country = created?.details
+      ? (JSON.parse(created.details) as { country?: unknown }).country
+      : null;
+  } catch {
+    country = null;
+  }
+  if (typeof country !== "string" || !/^[A-Z]{2}$/.test(country)) return null;
+
+  const { institutions } = await provider.listInstitutions(country);
+  const matches = institutions.filter((bank) => bank.name === connection.institutionName);
+  return matches.length === 1 ? matches[0].id : null;
+}
+
+/** Whether a reference minted at `mintedAt` can still be used at `now`. */
+function referenceFresh(mintedAt: Date, now: Date): boolean {
+  return now.getTime() - mintedAt.getTime() < CONSENT_REFERENCE_TTL_HOURS * 60 * 60 * 1000;
+}
+
 /** Constant-time compare of two hex references of equal length. */
 function referenceMatches(a: string, b: string): boolean {
   const left = Buffer.from(a);
@@ -174,13 +276,15 @@ function referenceMatches(a: string, b: string): boolean {
 }
 
 /**
- * Finish a consent the bank has redirected back from.
+ * Finish a consent the bank has redirected back from: a first consent, or a renewal.
  *
- * Three guards, all load-bearing:
+ * Four guards, all load-bearing:
  *  - the reference is unguessable, so a callback cannot be forged;
  *  - the connection must belong to the signed-in user, so a reference lifted from someone else's
  *    redirect cannot attach their bank to your account;
- *  - only a `pending_consent` row is accepted, so replaying the URL does nothing.
+ *  - the reference is spent in one conditional write before the bank is called, so replaying
+ *    the URL, or a double click, does nothing;
+ *  - it lapses after a day.
  */
 export interface CompletedConsent {
   connectionId: string;
@@ -190,63 +294,131 @@ export interface CompletedConsent {
    * second query for a flag it just read would be the caller re-deriving what it was told.
    */
   isTest: boolean;
+  /** Whether this renewed a connection that already existed. */
+  renewal: boolean;
 }
 
 export async function completeConsent(
   userId: string,
   reference: string,
   callbackParams: Readonly<Record<string, string>> = {},
+  now = new Date(),
 ): Promise<CompletedConsent> {
   if (!reference) {
     throw new ConsentFlowError("Missing consent reference");
   }
 
   const prisma = getPrismaClient();
+  // Deliberately the same answer whether the reference is unknown, already used, expired or
+  // belongs to another account: distinguishing them would confirm a valid reference to whoever
+  // guessed it.
+  const noLongerValid = () =>
+    new ConsentFlowError("This bank connection request is no longer valid", 404);
 
-  // Scoped to the caller at the query. The candidate set is one row in practice.
-  const pending = await prisma.bankConnection.findMany({
-    where: { userId, status: "pending_consent" },
-  });
+  // Scoped to the caller at the query. A first consent's reference is on a pending row; a
+  // renewal's is parked on the live row it renews. A reference lapses after a day, as the
+  // retention sweep deletes a pending row that old.
+  const candidates = await prisma.bankConnection.findMany({ where: { userId } });
+  const match = candidates
+    .map((row) => ({ row, metadata: readMetadata(row.metadata) }))
+    .find(({ row, metadata }) => {
+      if (row.status === "pending_consent") {
+        return metadata.reference
+          ? referenceMatches(metadata.reference, reference) && referenceFresh(row.createdAt, now)
+          : false;
+      }
+      return metadata.renewal
+        ? referenceMatches(metadata.renewal.reference, reference) &&
+            referenceFresh(new Date(metadata.renewal.startedAt), now)
+        : false;
+    });
+  if (!match) throw noLongerValid();
+  const connection = match.row;
+  const renewal = connection.status === "pending_consent" ? null : (match.metadata.renewal ?? null);
 
-  const connection = pending.find((row) => {
-    const stored = readMetadata(row.metadata).reference;
-    return stored ? referenceMatches(stored, reference) : false;
-  });
-
-  if (!connection) {
-    // Deliberately the same message whether the reference is unknown, already used, or belongs to
-    // another account — distinguishing them would confirm a valid reference to whoever guessed it.
-    throw new ConsentFlowError("This bank connection request is no longer valid", 404);
-  }
   const provider = getProviderForConnection(connection.provider);
   if (!provider) {
     throw new ConsentFlowError("Bank provider unavailable", 503);
   }
 
+  // Spend the reference before calling the bank, in one conditional write: of two callbacks
+  // racing (a double click), one claims it and the other finds nothing. Checking the status
+  // afterwards left a window in which both reached the provider. If the bank then refuses, a
+  // first consent's row stays pending with no reference, and the retention sweep removes it; a
+  // renewed connection is left exactly as it was.
+  const { reference: _claimed, renewal: _parked, ...unclaimed } = match.metadata;
+  const claim = await prisma.bankConnection.updateMany({
+    where: {
+      id: connection.id,
+      userId,
+      status: connection.status,
+      metadata: connection.metadata,
+    },
+    data: { metadata: writeMetadata(unclaimed) },
+  });
+  if (claim.count !== 1) throw noLongerValid();
+
   // No `consentId` check here any more. It used to reject a connection without one as "never
   // reached the bank", which was true for a provider that mints its id at consent-start — and
   // wrong for one that returns only a URL and mints the id in exchange for a callback code.
   // Whether the pieces are sufficient is the adapter's question, so it is asked there.
-  const accounts = await provider.completeConsent({
-    providerRef: connection.consentId,
-    callbackParams,
-  });
+  const startedRef = renewal ? renewal.providerRef : connection.consentId;
+  const grant = await provider.completeConsent({ providerRef: startedRef, callbackParams });
+  const accounts = grant.accounts;
   await persistAccounts(userId, connection.id, accounts);
 
+  // The id the provider minted at completion, when it did (Enable Banking's session), is the one a
+  // revocation needs. A provider that minted it at consent-start returned it then.
+  const consentId = grant.providerRef ?? startedRef;
   await prisma.bankConnection.update({
     where: { id: connection.id },
-    data: { status: "active" },
+    data: {
+      status: "active",
+      consentId,
+      ...(renewal
+        ? {
+            consentExpiresAt: renewal.consentExpiresAt ? new Date(renewal.consentExpiresAt) : null,
+          }
+        : {}),
+    },
   });
 
-  await logAudit({
-    userId,
-    action: "BANK_CONSENT_GRANTED",
-    resourceType: "bank_connection",
-    resourceId: connection.id,
-    details: { institutionName: connection.institutionName, accounts: accounts.length },
-  });
+  if (renewal) {
+    // The consent it replaces is ended at the bank, once the new one is stored. Best effort: the
+    // connection already works from the new one, and a failure is recorded, not raised. A
+    // connection made before its id was stored records `no_consent_id`: that consent lapses on its
+    // own date, and the record says so rather than nothing.
+    const previousConsent: RevocationOutcome | null =
+      connection.consentId === consentId
+        ? null
+        : await revokeAtBank(connection.provider, connection.consentId);
+    await logAudit({
+      userId,
+      action: "BANK_CONSENT_RENEWED",
+      resourceType: "bank_connection",
+      resourceId: connection.id,
+      details: {
+        institutionName: connection.institutionName,
+        accounts: accounts.length,
+        previousStatus: connection.status,
+        previousConsent,
+      },
+    });
+  } else {
+    await logAudit({
+      userId,
+      action: "BANK_CONSENT_GRANTED",
+      resourceType: "bank_connection",
+      resourceId: connection.id,
+      details: { institutionName: connection.institutionName, accounts: accounts.length },
+    });
+  }
 
-  return { connectionId: connection.id, isTest: isTestConnection(connection.metadata) };
+  return {
+    connectionId: connection.id,
+    isTest: isTestConnection(connection.metadata),
+    renewal: Boolean(renewal),
+  };
 }
 
 /**
@@ -256,6 +428,11 @@ export async function completeConsent(
  * counterparty IBAN — so nothing in the matching path ever needs to decrypt. The provider's own
  * account id goes into the connection's metadata rather than a column, because it is
  * provider-specific and `BankAccount` is shared with manual import, which has no such id.
+ *
+ * On a renewal the same accounts are found again, so they keep their ids and their movements'
+ * fingerprints. The provider ids are replaced, not merged: the old consent's ids stop working
+ * once it is revoked, and an account the bank did not grant again stops syncing (its movements
+ * stay).
  */
 async function persistAccounts(
   userId: string,
@@ -264,19 +441,22 @@ async function persistAccounts(
 ): Promise<void> {
   const prisma = getPrismaClient();
   const accountRefs: Record<string, string> = {};
+  const granted = new Set<string>();
 
   for (const account of accounts) {
     const ibanHash = account.iban ? hashIban(account.iban) : null;
+    const currency = account.currency ?? "EUR";
 
     // The unique key is (connectionId, ibanHash), so reconnecting the same bank updates the
-    // existing account rather than creating a second one that splits its movement history.
+    // existing account rather than creating a second one that splits its movement history. An
+    // account without an IBAN is found by its name and currency, when exactly one matches.
     const existing = ibanHash
       ? await prisma.bankAccount.findFirst({ where: { connectionId, ibanHash } })
-      : null;
+      : await ibanlessAccount(connectionId, account.label, currency, granted);
 
     const data = {
       label: account.label,
-      currency: account.currency ?? "EUR",
+      currency,
       isActive: true,
       ...(account.iban
         ? {
@@ -291,20 +471,40 @@ async function persistAccounts(
       ? await prisma.bankAccount.update({ where: { id: existing.id }, data })
       : await prisma.bankAccount.create({ data: { ...data, connectionId, userId } });
 
+    granted.add(saved.id);
     accountRefs[saved.id] = account.id;
   }
 
+  await prisma.bankAccount.updateMany({
+    where: { connectionId, isActive: true, id: { notIn: [...granted] } },
+    data: { isActive: false },
+  });
+
   const connection = await prisma.bankConnection.findUnique({ where: { id: connectionId } });
-  const metadata = readMetadata(connection?.metadata ?? null);
+  // Everything already on the row is kept except the spent reference: keeping that would leave a
+  // usable token on a row that is no longer pending, and it has no second purpose. This used to
+  // write `accountRefs` alone, which also dropped `isTest`. A completed test run then vanished
+  // from /admin, could not be deleted as one, and its sandbox movements were no longer kept out
+  // of automatic allocation. A renewal started meanwhile is kept too.
+  const { reference: _spent, ...metadata } = readMetadata(connection?.metadata ?? null);
 
   await prisma.bankConnection.update({
     where: { id: connectionId },
-    data: {
-      // The reference is dropped once spent: keeping it would leave a usable token on a row that
-      // is no longer pending, and it has no second purpose.
-      metadata: JSON.stringify({
-        accountRefs: { ...(metadata.accountRefs ?? {}), ...accountRefs },
-      } satisfies ConnectionMetadata),
-    },
+    data: { metadata: writeMetadata({ ...metadata, accountRefs }) },
   });
+}
+
+/** The one account of a connection with no IBAN, this name and currency, not yet matched. */
+async function ibanlessAccount(
+  connectionId: string,
+  label: string,
+  currency: string,
+  alreadyMatched: ReadonlySet<string>,
+): Promise<{ id: string } | null> {
+  const candidates = await getPrismaClient().bankAccount.findMany({
+    where: { connectionId, ibanHash: null, label, currency },
+    select: { id: true },
+  });
+  const free = candidates.filter((candidate) => !alreadyMatched.has(candidate.id));
+  return free.length === 1 ? free[0] : null;
 }

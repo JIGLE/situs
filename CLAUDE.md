@@ -129,9 +129,15 @@ e2e/                    # Playwright E2E tests
   whitelist as your own. Every request carries a JWT the app signs with the application's RSA key.
   A provider only returns `BankRow[]` (`lib/services/bank/rows.ts`); `importBankRows`' `target`
   routes them to the right connection and account. Consent
-  (`consent.ts`) is an unguessable reference, scoped to the caller, single-use. `sync.ts` checks
+  (`consent.ts`) is an unguessable reference, scoped to the caller, single-use, lapsing after a
+  day. A connection is one row for its whole life: a renewal parks a second consent on the same row
+  and swaps it in at the callback, so its accounts keep their ids and movements dedupe across it.
+  `consentId` holds Enable Banking's session id, never sent to a browser; `connections.ts` revokes
+  it on renewal, disconnect (`revoked` is written first, conditionally) and removal, which the
+  schema's cascade to movements limits to a connection that brought none. `sync.ts` checks
   the provider's daily read budget **before** spending a call (a 429 costs the rest of the day) and
-  marks a connection `expired` on `ConsentExpiredError`. `BankConnection.provider` is `psd2_<key>`
+  marks a connection `expired` on `ConsentExpiredError`, conditionally, so it cannot overwrite a
+  disconnect or a renewal. `BankConnection.provider` is `psd2_<key>`
   for a real bank and `manual`/`csv` otherwise — never offer a sync to the latter.
 - **Receipt lifecycle**: `Receipt.status` is the money state (paid|pending); `Receipt.lifecycle` is
   the document state machine (`lib/services/receipts/lifecycle.ts`, pure): draft → review →

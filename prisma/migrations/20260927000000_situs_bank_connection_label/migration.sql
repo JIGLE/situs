@@ -1,0 +1,11 @@
+-- The owner's own name for a bank connection.
+--
+-- A bank connection showed only the bank's name, so two accounts at one bank, or a business and a
+-- personal connection, read the same. `label` holds the name the owner gives it, 60 characters at
+-- most; while it is unset, the bank's name shows. Existing rows take NULL and read as before.
+--
+-- Generated with `prisma migrate diff` from the previous schema to this one, which touches no
+-- database. As docs/DATABASE_STRATEGY.md says, nothing applies migration files: the image's
+-- startup `prisma db push` makes the same change.
+-- AlterTable
+ALTER TABLE "bank_connections" ADD COLUMN "label" TEXT;

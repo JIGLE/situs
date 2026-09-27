@@ -363,6 +363,25 @@ describe("the bank check reports what is actually connected", () => {
     expect(bank.detail).toMatch(/Banco BPI/);
   });
 
+  it("does not call a connection the owner disconnected stranded", async () => {
+    // Stopped on purpose, whatever its provider: nothing arrives from it, which is what
+    // `not_connected` says, and "cannot sync" would read as a fault.
+    unregister?.();
+    unregister = null;
+    prismaMock.bankConnection.findMany.mockResolvedValue([
+      {
+        provider: "psd2_departed",
+        status: "revoked",
+        lastSyncAt: null,
+        institutionName: "Banco BPI",
+      },
+    ]);
+
+    const { checks } = await getSystemStatus("user-1");
+    const bank = find(checks, "bank")!;
+    expect(bank.state).toBe("not_connected");
+  });
+
   it("warns when only an older manual or CSV connection exists", async () => {
     prismaMock.bankConnection.findMany.mockResolvedValue([
       { provider: "manual", status: "active", lastSyncAt: null, institutionName: "Manual import" },

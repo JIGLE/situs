@@ -9,12 +9,23 @@ export interface BankConnectionRow {
   id: string;
   provider: string;
   institutionName: string;
+  /** The owner's own name for it; the bank's name shows while it is null. */
+  label: string | null;
   status: string;
   lastSyncAt: string | null;
   consentExpiresAt: string | null;
   isProvider: boolean;
   canSync: boolean;
   remainingBudget: number | null;
+  /** A new consent for the same connection can be asked for (`POST .../renew`). */
+  canRenew: boolean;
+  canDisconnect: boolean;
+  /** Disconnecting reaches the bank: the connection holds a consent its provider can end. */
+  revocable: boolean;
+  /** Movements brought in through its accounts. */
+  movements: number;
+  /** Only a connection that brought no movements can be removed. */
+  canRemove: boolean;
 }
 
 /**

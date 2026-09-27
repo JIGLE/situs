@@ -357,7 +357,19 @@ The same secret gates `/api/cron/notifications` and `/api/cron/data-retention`; 
 Consents expire — 90 days by default, and a bank can revoke one sooner. The Finance inbox shows
 when each consent ends, and warns 14 days before. When one expires the connection is marked
 expired, syncing stops rather than quietly returning nothing, and Settings › Integrations, the
-Finance inbox and `/admin` say so, with a way to reconnect.
+Finance inbox and `/admin` say so, with a way to renew it.
+
+Each connection has a menu in Settings › Integrations › Bancos:
+
+- **Renovar acesso** asks the bank for a new consent for the same connection, before or after the
+  old one ends. The connection keeps its accounts, so movements seen before and after deduplicate,
+  and the old consent is ended at the bank once the new one is in place.
+- **Desligar** stops the connection syncing and asks the bank to end its access. Its accounts and
+  movements stay, and it can be renewed later. A connection made before Situs kept the bank's
+  session cannot be revoked from here: it stops syncing, and its access ends on its own date or
+  in your bank's app.
+- **Remover** is offered only for a connection that brought no movements.
+- **Renomear** gives it your own name, shown instead of the bank's.
 
 To exercise the flow without a real account, use a Sandbox application and its Mock ASPSP — see
 _Recording the transaction shape_ above.

@@ -57,6 +57,8 @@ const REASON_KEY = new Map<
   | "bankLeaseRequired"
   | "bankMovementHasReceipt"
   | "bankMovementNotIgnored"
+  | "bankConnectionRenewalUnavailable"
+  | "bankConnectionHasMovements"
   | "receiptTransitionNotAllowed"
   | "receiptFilingMissing"
   | "receiptSubmissionRefused"
@@ -74,6 +76,8 @@ const REASON_KEY = new Map<
   ["bank_lease_required", "bankLeaseRequired"],
   ["bank_movement_has_receipt", "bankMovementHasReceipt"],
   ["bank_movement_not_ignored", "bankMovementNotIgnored"],
+  ["bank_connection_renewal_unavailable", "bankConnectionRenewalUnavailable"],
+  ["bank_connection_has_movements", "bankConnectionHasMovements"],
   ["receipt_transition_not_allowed", "receiptTransitionNotAllowed"],
   ["receipt_filing_missing", "receiptFilingMissing"],
   ["receipt_submission_refused", "receiptSubmissionRefused"],

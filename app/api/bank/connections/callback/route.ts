@@ -48,12 +48,13 @@ async function handleGet(request: NextRequest): Promise<Response> {
     // Everything the redirect carried goes through. This route used to read one parameter and
     // discard the rest, which silently ruled out any provider whose consent completes by
     // exchanging a single-use `code` that only exists here.
-    const { isTest } = await completeConsent(scopeUserId, reference, params);
+    const { isTest, renewal } = await completeConsent(scopeUserId, reference, params);
 
     // Back where it was started from. A test connection is begun in the control center and is
     // managed there, so finishing on the Settings tab would strand the operator away from the
-    // panel that lists it and offers to delete it.
-    return seeOther(isTest ? "/admin?bank=connected" : "/settings?tab=integrations&bank=connected");
+    // panel that lists it and offers to delete it. A renewal says so, rather than "connected".
+    if (isTest) return seeOther("/admin?bank=connected");
+    return seeOther(`/settings?tab=integrations&bank=${renewal ? "renewed" : "connected"}`);
   } catch (error) {
     // The reason is deliberately not put in the URL: these messages are the same for an unknown,
     // a replayed and a foreign reference precisely so the redirect cannot be used as an oracle.

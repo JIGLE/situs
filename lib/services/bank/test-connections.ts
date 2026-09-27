@@ -1,6 +1,7 @@
 import { getPrismaClient } from "@/lib/services/database/database";
 import { logAudit } from "@/lib/services/audit-log";
-import { isTestConnection } from "@/lib/services/bank/consent";
+import { isTestConnection } from "@/lib/services/bank/metadata";
+import { revokeAtBank } from "@/lib/services/bank/connections";
 
 /**
  * The lifecycle of a connection made to prove the chain works.
@@ -97,12 +98,16 @@ export async function deleteTestConnection(
 
   await prisma.bankConnection.delete({ where: { id: connection.id } });
 
+  // The consent it held is ended at the bank too, once the row is gone. Best effort, as for a
+  // real connection: the outcome is recorded, never raised.
+  const revocation = await revokeAtBank(connection.provider, connection.consentId);
+
   await logAudit({
     userId,
     action: "BANK_CONNECTION_DELETED",
     resourceType: "bank_connection",
     resourceId: connection.id,
-    details: { institutionName: connection.institutionName, isTest: true, ...removed },
+    details: { institutionName: connection.institutionName, isTest: true, ...removed, revocation },
   });
 
   return removed;

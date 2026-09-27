@@ -20,7 +20,7 @@ import { logAudit } from "@/lib/services/audit-log";
 import { ConflictError, ResourceNotFoundError } from "@/lib/utils/error-handling";
 import { encryptPII } from "@/lib/utils/pii-encryption";
 import { allocateReceipt } from "@/lib/services/allocation/service";
-import { isTestConnection } from "@/lib/services/bank/consent";
+import { isTestConnection } from "@/lib/services/bank/metadata";
 import { redactRowForStorage } from "@/lib/services/bank/rows";
 import {
   classifyMatch,
