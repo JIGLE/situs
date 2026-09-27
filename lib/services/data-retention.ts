@@ -34,6 +34,7 @@
  */
 
 import { getPrismaClient } from "@/lib/services/database/database";
+import { CONSENT_REFERENCE_TTL_HOURS } from "@/lib/services/bank/metadata";
 
 export interface RetentionResult {
   auditLogsDeleted: number;
@@ -60,8 +61,11 @@ const RETENTION_DAYS = {
  * A consent flow that has not completed within a day is not going to. The window is generous
  * for a redirect that takes minutes: the cost of it being too long is a live reference sitting
  * in the database, and the cost of it being too short is a user losing a flow mid-authorisation.
+ *
+ * It is the day a consent reference lasts (`completeConsent` refuses an older one), taken from
+ * the same constant, so the sweep never deletes a row whose reference could still be used.
  */
-const ABANDONED_CONSENT_HOURS = 24;
+const ABANDONED_CONSENT_HOURS = CONSENT_REFERENCE_TTL_HOURS;
 
 function cutoff(days: number): Date {
   const d = new Date();

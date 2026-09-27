@@ -97,6 +97,8 @@ describe("useApiError", () => {
     expect(kept("tenant_has_history")).toBe(api.tenantHasHistory);
     expect(kept("property_has_history")).toBe(api.propertyHasHistory);
     expect(kept("lease_has_history")).toBe(api.leaseHasHistory);
+    expect(kept("bank_connection_renewal_unavailable")).toBe(api.bankConnectionRenewalUnavailable);
+    expect(kept("bank_connection_has_movements")).toBe(api.bankConnectionHasMovements);
   });
 
   it("falls back to the status for a reason it has no sentence for", () => {

@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import type { BankRow } from "./rows";
+import type { FakeProvider } from "./providers/fake-provider";
 
 /**
  * The live bank connection, end to end, against a real SQLite file.
@@ -66,6 +67,8 @@ describe("live bank connection — real Prisma client + real SQLite file", () =>
   let transactionRows: BankRow[] = ROWS;
   let failTransactionsWith: Error | null = null;
   let unregister: (() => void) | null = null;
+  /** The case's fake, kept so a case can read what the bank was asked to revoke. */
+  let fake: FakeProvider;
 
   beforeAll(() => {
     tempDir = mkdtempSync(path.join(tmpdir(), "situs-bank-test-"));
@@ -106,6 +109,7 @@ describe("live bank connection — real Prisma client + real SQLite file", () =>
       dailyReadBudget: DAILY_BUDGET,
       accounts: [{ id: REMOTE_ACCOUNT_ID, iban: IBAN, currency: "EUR", label: "Conta ordenado" }],
     });
+    fake = base;
     unregister = __registerProviderForTest({
       ...base,
       async fetchTransactions(accountRef: string, since?: Date) {
@@ -236,38 +240,109 @@ describe("live bank connection — real Prisma client + real SQLite file", () =>
     expect(await prisma.bankTransaction.count({ where: { userId } })).toBe(2);
   });
 
-  it("updates the existing account on reconnect instead of splitting its history", async () => {
+  it("renews a connection in place, so its accounts keep their ids and nothing imports twice", async () => {
     const connectionId = await connectAndAuthorise();
     const { syncConnection } = await import("./sync");
-    const { completeConsent, startConsent } = await import("./consent");
+    const { completeConsent, startRenewal } = await import("./consent");
+    const { getPrismaClient } = await import("../database/database");
+    const prisma = getPrismaClient();
+
+    const first = await syncConnection(userId, connectionId);
+    expect(first.summaries[0].imported).toBe(2);
+    const before = await prisma.bankConnection.findUniqueOrThrow({
+      where: { id: connectionId },
+      include: { accounts: true },
+    });
+
+    // Renewing used to mean connecting again: a second connection with its own account rows, so a
+    // movement seen through both missed exact deduplication and waited in review.
+    await startRenewal(userId, connectionId);
+    const parked = await prisma.bankConnection.findUniqueOrThrow({ where: { id: connectionId } });
+    const reference = JSON.parse(parked.metadata ?? "{}").renewal.reference as string;
+    await expect(completeConsent(userId, reference)).resolves.toMatchObject({ renewal: true });
+
+    const after = await prisma.bankConnection.findUniqueOrThrow({
+      where: { id: connectionId },
+      include: { accounts: true },
+    });
+    expect(await prisma.bankConnection.count({ where: { userId } })).toBe(1);
+    expect(after.accounts.map((account) => account.id)).toEqual(
+      before.accounts.map((account) => account.id),
+    );
+    expect(after.status).toBe("active");
+    expect(after.consentId).toBeTruthy();
+    expect(after.consentId).not.toBe(before.consentId);
+    // The old consent is ended at the bank, once the new one is stored.
+    expect(fake.revocations).toEqual([before.consentId]);
+
+    const second = await syncConnection(userId, connectionId);
+    expect(second.summaries[0].imported).toBe(0);
+    expect(second.summaries[0].duplicates).toBe(2);
+    expect(await prisma.bankTransaction.count({ where: { userId } })).toBe(2);
+
+    // Spent: the same reference cannot complete twice.
+    await expect(completeConsent(userId, reference)).rejects.toMatchObject({ status: 404 });
+  });
+
+  it("disconnects a connection: its movements stay, the bank is told and the daily run skips it", async () => {
+    const connectionId = await connectAndAuthorise();
+    const { syncConnection, syncAllDueConnections, ConnectionNotSyncableError } =
+      await import("./sync");
+    const { disconnectConnection } = await import("./connections");
     const { getPrismaClient } = await import("../database/database");
     const prisma = getPrismaClient();
 
     await syncConnection(userId, connectionId);
+    const before = await prisma.bankConnection.findUniqueOrThrow({ where: { id: connectionId } });
 
-    // Reconnect the same bank: a second consent for the same IBAN.
-    const again = await startConsent(userId, {
-      country: "PT",
-      institutionId: "FAKEBANK_PT",
-      institutionName: "Fake Bank",
-      providerKey: "fake",
+    await expect(disconnectConnection(userId, connectionId)).resolves.toMatchObject({
+      revocation: "revoked",
     });
-    const pending = await prisma.bankConnection.findUniqueOrThrow({
-      where: { id: again.connectionId },
-    });
-    await completeConsent(userId, JSON.parse(pending.metadata ?? "{}").reference as string);
 
-    // Same connection → the (connectionId, ibanHash) unique key applies within a connection, so a
-    // NEW connection legitimately gets its own account row. What must not happen is a duplicate
-    // inside one connection.
-    const perConnection = await prisma.bankAccount.groupBy({
-      by: ["connectionId"],
-      where: { userId },
-      _count: { _all: true },
+    const after = await prisma.bankConnection.findUniqueOrThrow({
+      where: { id: connectionId },
+      include: { accounts: true },
     });
-    for (const row of perConnection) {
-      expect(row._count._all).toBe(1);
-    }
+    expect(after.status).toBe("revoked");
+    expect(after.consentId).toBeNull();
+    expect(fake.revocations).toEqual([before.consentId]);
+    // The owner's records stay: the account and every movement it brought.
+    expect(after.accounts).toHaveLength(1);
+    expect(await prisma.bankTransaction.count({ where: { userId } })).toBe(2);
+
+    // Tomorrow's run picks up every active connection; it passes this one by.
+    await syncAllDueConnections(new Date(Date.now() + 24 * 60 * 60 * 1000));
+    const later = await prisma.bankConnection.findUniqueOrThrow({ where: { id: connectionId } });
+    expect(later.lastSyncAt?.getTime()).toBe(after.lastSyncAt?.getTime());
+    await expect(syncConnection(userId, connectionId)).rejects.toBeInstanceOf(
+      ConnectionNotSyncableError,
+    );
+  });
+
+  it("removes a connection only while it has brought no movements", async () => {
+    const { removeConnection } = await import("./connections");
+    const { syncConnection } = await import("./sync");
+    const { getPrismaClient } = await import("../database/database");
+    const prisma = getPrismaClient();
+
+    // Before any sync there is nothing to lose: it goes, and its consent ends at the bank.
+    const empty = await connectAndAuthorise();
+    const { consentId } = await prisma.bankConnection.findUniqueOrThrow({ where: { id: empty } });
+    await expect(removeConnection(userId, empty)).resolves.toMatchObject({
+      revocation: "revoked",
+    });
+    expect(await prisma.bankConnection.findUnique({ where: { id: empty } })).toBeNull();
+    expect(await prisma.bankAccount.count({ where: { connectionId: empty } })).toBe(0);
+    expect(fake.revocations).toEqual([consentId]);
+
+    // After a sync its movements are the owner's records: refused, and nothing is deleted.
+    const synced = await connectAndAuthorise();
+    await syncConnection(userId, synced);
+    await expect(removeConnection(userId, synced)).rejects.toMatchObject({
+      reason: "bank_connection_has_movements",
+    });
+    expect(await prisma.bankConnection.findUnique({ where: { id: synced } })).not.toBeNull();
+    expect(await prisma.bankTransaction.count({ where: { userId } })).toBe(2);
   });
 
   it("counts the day's reads from persisted jobs and then refuses", async () => {
@@ -301,6 +376,30 @@ describe("live bank connection — real Prisma client + real SQLite file", () =>
 
     // And a lapsed consent is not a quiet zero: no movements were recorded for it.
     expect(await prisma.bankTransaction.count({ where: { userId } })).toBe(0);
+  });
+
+  it("still lists a completed test run as one, so /admin can show and delete it", async () => {
+    const { startConsent, completeConsent } = await import("./consent");
+    const { listTestConnections } = await import("./test-connections");
+    const { getPrismaClient } = await import("../database/database");
+    const prisma = getPrismaClient();
+
+    const started = await startConsent(userId, {
+      country: "PT",
+      institutionId: "FAKEBANK_PT",
+      institutionName: "Fake Bank",
+      providerKey: "fake",
+      isTest: true,
+    });
+    const pending = await prisma.bankConnection.findUniqueOrThrow({
+      where: { id: started.connectionId },
+    });
+    await completeConsent(userId, JSON.parse(pending.metadata ?? "{}").reference as string);
+
+    // Completing the consent used to overwrite the metadata with the account refs alone.
+    const listed = await listTestConnections(userId);
+    expect(listed.map((row) => row.id)).toEqual([started.connectionId]);
+    expect(listed[0].status).toBe("active");
   });
 
   it("refuses to sync a connection belonging to someone else", async () => {

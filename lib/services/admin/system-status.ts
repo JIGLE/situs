@@ -352,8 +352,12 @@ async function bankCheck(userId: string): Promise<StatusCheck> {
     // cannot be reconnected, but it is not "manual only" either — reporting it as `simulated`
     // would file a stranded connection under "working as intended". Named explicitly so the
     // remedy is obvious rather than mysterious.
+    // A connection the owner disconnected is not stranded: it was stopped on purpose.
     const orphaned = connections.filter(
-      (c) => c.provider.startsWith(PSD2_PREFIX) && !getProviderForConnection(c.provider),
+      (c) =>
+        c.provider.startsWith(PSD2_PREFIX) &&
+        c.status !== "revoked" &&
+        !getProviderForConnection(c.provider),
     );
 
     if (expired.length > 0) {
