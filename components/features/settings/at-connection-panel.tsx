@@ -14,8 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { useConnectorMode } from "@/components/shared/connector-mode";
 import { useCsrf } from "@/lib/contexts/csrf-context";
+import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { AT_SELECTABLE_MODES } from "@/lib/schemas/at-connection.schema";
 import type { AtCallView, AtConnectionView } from "@/lib/services/tax/at-connection";
 import type { AtFileName, AtFileState } from "@/lib/tax/at/config";
@@ -32,6 +34,11 @@ import { formatDate } from "@/lib/utils/format-date";
  *
  * The password field is write-only. The server never returns the password, so the field starts
  * empty and says whether one is stored; typing replaces it.
+ *
+ * A stored login reads as a summary with Editar and Remover. It used to be an open form on every
+ * visit, the stored username sitting in an editable field. Editar opens the form with the username
+ * filled in and the password empty; Remover asks first, and says what stays. With no login, or one
+ * that can no longer be read, the form shows directly.
  */
 
 const FILES: AtFileName[] = ["cert", "key", "authKey"];
@@ -80,16 +87,19 @@ function downloadPdf(base64: string, name: string) {
 
 export function AtConnectionPanel() {
   const t = useTranslations("settings.at");
+  const tActions = useTranslations("actions");
   const locale = useLocale();
   const apiError = useApiError();
   const connectorMode = useConnectorMode();
   const { token: csrfToken } = useCsrf();
+  const confirmDialog = useConfirmDialog();
 
   const [connection, setConnection] = useState<AtConnectionView | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [busy, setBusy] = useState<Busy>(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [editing, setEditing] = useState(false);
   const [loginNotice, setLoginNotice] = useState<Notice | null>(null);
   const [modeNotice, setModeNotice] = useState<Notice | null>(null);
   const [checkNotice, setCheckNotice] = useState<Notice | null>(null);
@@ -165,6 +175,7 @@ export function AtConnectionPanel() {
       );
       setConnection(view);
       setPassword("");
+      setEditing(false);
       setLoginNotice({ tone: "success", text: t("saved") });
     } catch (error) {
       setLoginNotice({ tone: "error", text: apiError(error) });
@@ -185,11 +196,32 @@ export function AtConnectionPanel() {
       setConnection(view);
       setUsername("");
       setPassword("");
+      setEditing(false);
+      setLoginNotice({ tone: "success", text: t("removed") });
     } catch (error) {
       setLoginNotice({ tone: "error", text: apiError(error) });
     } finally {
       setBusy(null);
     }
+  };
+
+  const askToRemove = () =>
+    confirmDialog.confirm(
+      {
+        title: t("removeTitle"),
+        description: t("removeDescription"),
+        confirmLabel: t("remove"),
+        cancelLabel: tActions("cancel"),
+        variant: "destructive",
+      },
+      removeLogin,
+    );
+
+  const cancelEditing = () => {
+    setUsername(connection?.username ?? "");
+    setPassword("");
+    setEditing(false);
+    setLoginNotice(null);
   };
 
   const changeMode = async (mode: string) => {
@@ -328,74 +360,126 @@ export function AtConnectionPanel() {
           </h3>
           <p className="text-xs text-muted-foreground">{t("loginHelp")}</p>
         </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="at-username">{t("username")}</Label>
-            <Input
-              id="at-username"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder="123456789/1"
-              autoComplete="username"
-              spellCheck={false}
-              aria-invalid={username.trim() !== "" && !usernameValid}
-              aria-describedby="at-username-help"
-            />
-            {username.trim() !== "" && !usernameValid ? (
-              <p id="at-username-help" className="text-xs text-[var(--semantic-danger-readable)]">
-                {t("usernameInvalid")}
-              </p>
-            ) : null}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="at-password">{t("password")}</Label>
-            <Input
-              id="at-password"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="new-password"
-              aria-describedby="at-password-help"
-            />
-            {connection.passwordSet || connection.credentialsUnreadable ? (
-              <p
-                id="at-password-help"
-                className={`text-xs ${
-                  connection.credentialsUnreadable
-                    ? "text-[var(--semantic-danger-readable)]"
-                    : "text-muted-foreground"
-                }`}
+        {connection.passwordSet && !editing ? (
+          <>
+            <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
+              <dt className="text-muted-foreground">{t("username")}</dt>
+              <dd className="font-mono">{connection.username}</dd>
+              <dt className="text-muted-foreground">{t("password")}</dt>
+              <dd>{t("passwordSet")}</dd>
+            </dl>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setLoginNotice(null);
+                  setEditing(true);
+                }}
+                disabled={busy !== null}
+                className="w-full sm:w-auto"
               >
-                {connection.credentialsUnreadable ? t("passwordUnreadable") : t("passwordStored")}
-              </p>
-            ) : null}
-          </div>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button
-            onClick={saveLogin}
-            disabled={busy !== null || !usernameValid || (!password && !connection.passwordSet)}
-            className="w-full sm:w-auto"
-          >
-            {busy === "save" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : null}
-            {t("save")}
-          </Button>
-          {connection.passwordSet || connection.credentialsUnreadable ? (
-            <Button
-              variant="outline"
-              onClick={removeLogin}
-              disabled={busy !== null}
-              className="w-full sm:w-auto"
-            >
-              {t("remove")}
-            </Button>
-          ) : null}
-        </div>
+                {tActions("edit")}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={askToRemove}
+                disabled={busy !== null}
+                className="w-full sm:w-auto"
+              >
+                {t("remove")}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="at-username">{t("username")}</Label>
+                <Input
+                  id="at-username"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  placeholder="123456789/1"
+                  autoComplete="username"
+                  spellCheck={false}
+                  aria-invalid={username.trim() !== "" && !usernameValid}
+                  aria-describedby="at-username-help"
+                />
+                {username.trim() !== "" && !usernameValid ? (
+                  <p
+                    id="at-username-help"
+                    className="text-xs text-[var(--semantic-danger-readable)]"
+                  >
+                    {t("usernameInvalid")}
+                  </p>
+                ) : null}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="at-password">{t("password")}</Label>
+                <Input
+                  id="at-password"
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="new-password"
+                  aria-describedby="at-password-help"
+                />
+                {connection.passwordSet || connection.credentialsUnreadable ? (
+                  <p
+                    id="at-password-help"
+                    className={`text-xs ${
+                      connection.credentialsUnreadable
+                        ? "text-[var(--semantic-danger-readable)]"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {connection.credentialsUnreadable
+                      ? t("passwordUnreadable")
+                      : t("passwordStored")}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button
+                onClick={saveLogin}
+                disabled={busy !== null || !usernameValid || (!password && !connection.passwordSet)}
+                className="w-full sm:w-auto"
+              >
+                {busy === "save" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                ) : null}
+                {t("save")}
+              </Button>
+              {editing ? (
+                <Button
+                  variant="outline"
+                  onClick={cancelEditing}
+                  disabled={busy !== null}
+                  className="w-full sm:w-auto"
+                >
+                  {tActions("cancel")}
+                </Button>
+              ) : null}
+              {connection.credentialsUnreadable ? (
+                <Button
+                  variant="outline"
+                  onClick={askToRemove}
+                  disabled={busy !== null}
+                  className="w-full sm:w-auto"
+                >
+                  {t("remove")}
+                </Button>
+              ) : null}
+            </div>
+          </>
+        )}
         {loginNotice ? (
           <p role="status" className={`text-sm ${TONE_CLASS[loginNotice.tone]}`}>
             {loginNotice.text}
           </p>
         ) : null}
+        <ConfirmationDialog dialog={confirmDialog} />
       </section>
 
       <section className="space-y-2" aria-labelledby="at-mode">

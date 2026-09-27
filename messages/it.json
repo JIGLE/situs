@@ -241,9 +241,13 @@
       "password": "Password",
       "passwordStored": "Salvata. Scrivine un'altra per cambiarla.",
       "passwordUnreadable": "La password salvata non si può più leggere. Inseriscila di nuovo.",
+      "passwordSet": "Salvata",
       "save": "Salva",
       "saved": "Salvato.",
+      "removed": "Rimosso.",
       "remove": "Rimuovi",
+      "removeTitle": "Rimuovere l'accesso a Finanças?",
+      "removeDescription": "Situs smette di accedere all'AT con questo sottoutente. La modalità di prova torna a simulazione con revisione; il registro di ogni chiamata all'AT resta.",
       "modeTitle": "Modalità",
       "modeOption": {
         "sandbox": "Simulazione",

@@ -241,9 +241,13 @@
       "password": "Password",
       "passwordStored": "Stored. Type a new one to change it.",
       "passwordUnreadable": "The stored password can no longer be read. Enter it again.",
+      "passwordSet": "Stored",
       "save": "Save",
       "saved": "Saved.",
+      "removed": "Removed.",
       "remove": "Remove",
+      "removeTitle": "Remove the sign-in to Finanças?",
+      "removeDescription": "Situs stops signing in to AT as this sub-user. A test mode goes back to simulation with review; the record of every call to AT stays.",
       "modeTitle": "Mode",
       "modeOption": {
         "sandbox": "Simulation",

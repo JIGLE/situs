@@ -241,9 +241,13 @@
       "password": "Senha",
       "passwordStored": "Guardada. Escreva outra para a mudar.",
       "passwordUnreadable": "A senha guardada já não pode ser lida. Introduza-a de novo.",
+      "passwordSet": "Guardada",
       "save": "Guardar",
       "saved": "Guardado.",
+      "removed": "Removido.",
       "remove": "Remover",
+      "removeTitle": "Remover o acesso às Finanças?",
+      "removeDescription": "O Situs deixa de entrar na AT com este subutilizador. O modo de testes volta a simulação com revisão; o registo de cada chamada à AT fica.",
       "modeTitle": "Modo",
       "modeOption": {
         "sandbox": "Simulação",

@@ -31,7 +31,7 @@ describe("SettingsIntegrations", () => {
     render(<SettingsIntegrations />, { initialLocale: "pt" });
 
     const tabs = screen.getAllByRole("tab");
-    expect(tabs.map((tab) => tab.textContent)).toEqual(["Bancos", "Finanças"]);
+    expect(tabs.map((tab: HTMLElement) => tab.textContent)).toEqual(["Bancos", "Finanças"]);
     expect(screen.getByRole("tab", { name: "Bancos" }).getAttribute("aria-selected")).toBe("true");
     expect(screen.getByRole("tablist", { name: "Integrações" })).toBeDefined();
     expect(screen.getByText("painel dos bancos")).toBeDefined();

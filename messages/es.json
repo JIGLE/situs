@@ -241,9 +241,13 @@
       "password": "Contraseña",
       "passwordStored": "Guardada. Escriba otra para cambiarla.",
       "passwordUnreadable": "La contraseña guardada ya no se puede leer. Introdúzcala de nuevo.",
+      "passwordSet": "Guardada",
       "save": "Guardar",
       "saved": "Guardado.",
+      "removed": "Eliminado.",
       "remove": "Eliminar",
+      "removeTitle": "¿Eliminar el acceso a Finanças?",
+      "removeDescription": "Situs deja de acceder a la AT con este subusuario. El modo de pruebas vuelve a simulación con revisión; el registro de cada llamada a la AT se conserva.",
       "modeTitle": "Modo",
       "modeOption": {
         "sandbox": "Simulación",
