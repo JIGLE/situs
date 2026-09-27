@@ -1,11 +1,19 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
-const { warnMock } = vi.hoisted(() => ({ warnMock: vi.fn() }));
+const { warnMock, prismaMock, auditMock } = vi.hoisted(() => ({
+  warnMock: vi.fn(),
+  prismaMock: { bankConnection: { findFirst: vi.fn(), updateMany: vi.fn() } },
+  auditMock: vi.fn(),
+}));
 vi.mock("@/lib/utils/logger", () => ({ logger: { warn: warnMock } }));
+vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prismaMock }));
+vi.mock("@/lib/services/audit-log", () => ({ logAudit: auditMock }));
 
-import { createFakeProvider } from "./providers/fake-provider";
+import { ResourceNotFoundError } from "@/lib/utils/error-handling";
+import { createFakeProvider, type FakeProvider } from "./providers/fake-provider";
 import { __registerProviderForTest } from "./providers/registry";
-import { accessEnded, revokeAtBank } from "./connections";
+import type { RevocationResult } from "./providers/types";
+import { accessEnded, canDisconnect, disconnectConnection, revokeAtBank } from "./connections";
 
 describe("revokeAtBank", () => {
   let unregister: (() => void) | undefined;
@@ -60,5 +68,193 @@ describe("revokeAtBank", () => {
     expect(accessEnded("failed")).toBe(false);
     expect(accessEnded("no_consent_id")).toBe(false);
     expect(accessEnded("provider_unavailable")).toBe(false);
+  });
+});
+
+describe("canDisconnect", () => {
+  let unregister: (() => void) | undefined;
+
+  afterEach(() => {
+    unregister?.();
+    unregister = undefined;
+  });
+
+  it("offers it for a bank connection whose first consent completed", () => {
+    expect(canDisconnect({ provider: "psd2_fake", status: "active", consentId: "s" })).toBe(true);
+    expect(canDisconnect({ provider: "psd2_fake", status: "expired", consentId: null })).toBe(true);
+    expect(
+      canDisconnect({ provider: "psd2_fake", status: "pending_consent", consentId: null }),
+    ).toBe(false);
+    expect(canDisconnect({ provider: "manual", status: "active", consentId: null })).toBe(false);
+  });
+
+  it("offers it again once disconnected only while there is a consent to ask about", () => {
+    unregister = __registerProviderForTest(createFakeProvider({ key: "fake" }));
+
+    expect(canDisconnect({ provider: "psd2_fake", status: "revoked", consentId: "s" })).toBe(true);
+    expect(canDisconnect({ provider: "psd2_fake", status: "revoked", consentId: null })).toBe(
+      false,
+    );
+    // Nobody left to ask.
+    expect(canDisconnect({ provider: "psd2_gone", status: "revoked", consentId: "s" })).toBe(false);
+  });
+});
+
+describe("disconnectConnection", () => {
+  const NOW = new Date("2026-09-27T12:00:00.000Z");
+  let unregister: (() => void) | undefined;
+  let revokeSpy: Mock<FakeProvider["revokeConsent"]>;
+
+  function live(overrides: Record<string, unknown> = {}) {
+    return {
+      id: "conn-1",
+      userId: "user-1",
+      provider: "psd2_fake",
+      institutionName: "Banco BPI",
+      status: "active",
+      consentId: "session-1",
+      metadata: JSON.stringify({
+        institutionId: "BANCOBPI_BBPIPTPL",
+        accountRefs: { "acct-1": "remote-1" },
+        renewal: {
+          reference: "r".repeat(64),
+          startedAt: NOW.toISOString(),
+          providerRef: null,
+          consentExpiresAt: null,
+        },
+      }),
+      ...overrides,
+    };
+  }
+
+  function register(revokeResult?: RevocationResult | Error) {
+    const fake = createFakeProvider({ key: "fake", revokeResult });
+    revokeSpy = vi.fn(fake.revokeConsent);
+    unregister = __registerProviderForTest({ ...fake, revokeConsent: revokeSpy });
+    return fake;
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prismaMock.bankConnection.findFirst.mockResolvedValue(live());
+    prismaMock.bankConnection.updateMany.mockResolvedValue({ count: 1 });
+  });
+
+  afterEach(() => {
+    unregister?.();
+    unregister = undefined;
+  });
+
+  it("stops the connection first, then asks the bank, and lets the id go once it confirms", async () => {
+    const fake = register();
+
+    const result = await disconnectConnection("user-1", "conn-1", NOW);
+
+    expect(result).toEqual({ connectionId: "conn-1", revocation: "revoked" });
+    const [stop, release] = prismaMock.bankConnection.updateMany.mock.calls.map((call) => call[0]);
+    // Conditional on the row as read, so a sync or a renewal landing meanwhile is not overwritten.
+    expect(stop.where).toEqual({
+      id: "conn-1",
+      userId: "user-1",
+      status: "active",
+      consentId: "session-1",
+      metadata: live().metadata,
+    });
+    expect(stop.data.status).toBe("revoked");
+    // A parked renewal goes, so the bank's redirect cannot bring the connection back.
+    expect(JSON.parse(stop.data.metadata)).toEqual({
+      institutionId: "BANCOBPI_BBPIPTPL",
+      accountRefs: { "acct-1": "remote-1" },
+    });
+    expect(fake.revocations).toEqual(["session-1"]);
+    expect(revokeSpy.mock.invocationCallOrder[0]).toBeGreaterThan(
+      prismaMock.bankConnection.updateMany.mock.invocationCallOrder[0],
+    );
+    expect(release).toEqual({
+      where: { id: "conn-1", status: "revoked", consentId: "session-1" },
+      data: { consentId: null, consentExpiresAt: NOW },
+    });
+  });
+
+  it("records the disconnect without the consent id", async () => {
+    register();
+
+    await disconnectConnection("user-1", "conn-1", NOW);
+
+    expect(auditMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "BANK_CONNECTION_DISCONNECTED",
+        resourceId: "conn-1",
+        details: expect.objectContaining({ previousStatus: "active", revocation: "revoked" }),
+      }),
+    );
+    expect(JSON.stringify(auditMock.mock.calls)).not.toContain("session-1");
+  });
+
+  it("keeps the consent id when the bank does not confirm, so it can be asked again", async () => {
+    register(new Error("HTTP 500"));
+
+    const result = await disconnectConnection("user-1", "conn-1", NOW);
+
+    expect(result.revocation).toBe("failed");
+    // The status was written; the id and the expiry were not touched.
+    expect(prismaMock.bankConnection.updateMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("asks again for a disconnected connection whose revocation failed", async () => {
+    const fake = register();
+    prismaMock.bankConnection.findFirst.mockResolvedValue(live({ status: "revoked" }));
+
+    await expect(disconnectConnection("user-1", "conn-1", NOW)).resolves.toMatchObject({
+      revocation: "revoked",
+    });
+    expect(fake.revocations).toEqual(["session-1"]);
+  });
+
+  it("disconnects an older connection that has no id to revoke with", async () => {
+    const fake = register();
+    prismaMock.bankConnection.findFirst.mockResolvedValue(live({ consentId: null }));
+
+    const result = await disconnectConnection("user-1", "conn-1", NOW);
+
+    // Its access ends on its own date, or in the bank's app; the screen says so.
+    expect(result.revocation).toBe("no_consent_id");
+    expect(fake.revocations).toEqual([]);
+    expect(prismaMock.bankConnection.updateMany.mock.calls[0][0].data.status).toBe("revoked");
+  });
+
+  it("refuses a manual connection and one whose first consent is unfinished", async () => {
+    register();
+    for (const row of [live({ provider: "manual" }), live({ status: "pending_consent" })]) {
+      prismaMock.bankConnection.findFirst.mockResolvedValue(row);
+      await expect(disconnectConnection("user-1", "conn-1", NOW)).rejects.toMatchObject({
+        reason: "bank_connection_not_live",
+      });
+    }
+    expect(prismaMock.bankConnection.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("answers a connection that changed meanwhile, and asks the bank nothing", async () => {
+    const fake = register();
+    prismaMock.bankConnection.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(disconnectConnection("user-1", "conn-1", NOW)).rejects.toMatchObject({
+      reason: "bank_connection_changed",
+    });
+    expect(fake.revocations).toEqual([]);
+    expect(auditMock).not.toHaveBeenCalled();
+  });
+
+  it("scopes the lookup to the caller, and does not find another owner's connection", async () => {
+    register();
+    prismaMock.bankConnection.findFirst.mockResolvedValue(null);
+
+    await expect(disconnectConnection("user-2", "conn-1", NOW)).rejects.toBeInstanceOf(
+      ResourceNotFoundError,
+    );
+    expect(prismaMock.bankConnection.findFirst.mock.calls[0][0].where).toEqual({
+      id: "conn-1",
+      userId: "user-2",
+    });
   });
 });

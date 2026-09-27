@@ -1840,6 +1840,7 @@
     "applyReconciliationRule": "Regola di riconciliazione applicata",
     "bankConnectionCreated": "Banca collegata",
     "bankConnectionDeleted": "Collegamento bancario di prova eliminato",
+    "bankConnectionDisconnected": "Collegamento bancario disconnesso",
     "bankConsentGranted": "Consenso bancario concesso",
     "bankConsentExpired": "Consenso bancario scaduto",
     "bankConsentRenewed": "Consenso bancario rinnovato",

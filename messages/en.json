@@ -1840,6 +1840,7 @@
     "applyReconciliationRule": "Reconciliation rule applied",
     "bankConnectionCreated": "Bank connected",
     "bankConnectionDeleted": "Test bank connection deleted",
+    "bankConnectionDisconnected": "Bank connection disconnected",
     "bankConsentGranted": "Bank consent granted",
     "bankConsentExpired": "Bank consent expired",
     "bankConsentRenewed": "Bank consent renewed",

@@ -4,6 +4,8 @@
  * (`requireAuth`). A USER-role session, refused at every collection, could still read, change and
  * delete single records by id. The role check has to run before anything reaches the database,
  * which is why the database here throws instead of answering.
+ *
+ * The bank connection actions are held to the same rule: each acts on one connection by its id.
  */
 import { describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
@@ -25,30 +27,42 @@ import * as leases from "@/app/api/leases/[id]/route";
 import * as receipts from "@/app/api/receipts/[id]/route";
 import * as properties from "@/app/api/properties/[id]/route";
 import * as tenants from "@/app/api/tenants/[id]/route";
+import * as bankSync from "@/app/api/bank/connections/[id]/sync/route";
+import * as bankRenew from "@/app/api/bank/connections/[id]/renew/route";
+import * as bankDisconnect from "@/app/api/bank/connections/[id]/disconnect/route";
 
 type Handler = (
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) => Promise<Response>;
 
-const routes: Record<string, Record<string, unknown>> = { leases, receipts, properties, tenants };
+const routes: Record<string, Record<string, unknown>> = {
+  "leases/[id]": leases,
+  "receipts/[id]": receipts,
+  "properties/[id]": properties,
+  "tenants/[id]": tenants,
+  "bank/connections/[id]/sync": bankSync,
+  "bank/connections/[id]/renew": bankRenew,
+  "bank/connections/[id]/disconnect": bankDisconnect,
+};
 
 const cases = Object.entries(routes).flatMap(([name, route]) =>
-  (["GET", "PUT", "DELETE"] as const)
+  (["GET", "POST", "PUT", "PATCH", "DELETE"] as const)
     .filter((method) => typeof route[method] === "function")
-    .map((method) => [`${method} /api/${name}/[id]`, method, route[method] as Handler] as const),
+    .map((method) => [`${method} /api/${name}`, method, route[method] as Handler] as const),
 );
 
 describe("[id] routes admit owners only, as their collections do", () => {
-  it("covers every handler of the four routes", () => {
-    // leases/[id] has PUT and DELETE; the other three have GET, PUT and DELETE.
-    expect(cases).toHaveLength(11);
+  it("covers every handler of the routes", () => {
+    // leases/[id] has PUT and DELETE; the other three records have GET, PUT and DELETE; each bank
+    // connection action is one POST.
+    expect(cases).toHaveLength(14);
   });
 
   it.each(cases)("%s refuses a USER-role session", async (_name, method, handler) => {
     const request = new NextRequest("http://localhost:3000/api/any/rec-1", {
       method,
-      ...(method === "PUT"
+      ...(method === "PUT" || method === "PATCH"
         ? { body: JSON.stringify({}), headers: { "Content-Type": "application/json" } }
         : {}),
     });

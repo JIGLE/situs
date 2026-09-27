@@ -284,6 +284,41 @@ describe("live bank connection — real Prisma client + real SQLite file", () =>
     await expect(completeConsent(userId, reference)).rejects.toMatchObject({ status: 404 });
   });
 
+  it("disconnects a connection: its movements stay, the bank is told and the daily run skips it", async () => {
+    const connectionId = await connectAndAuthorise();
+    const { syncConnection, syncAllDueConnections, ConnectionNotSyncableError } =
+      await import("./sync");
+    const { disconnectConnection } = await import("./connections");
+    const { getPrismaClient } = await import("../database/database");
+    const prisma = getPrismaClient();
+
+    await syncConnection(userId, connectionId);
+    const before = await prisma.bankConnection.findUniqueOrThrow({ where: { id: connectionId } });
+
+    await expect(disconnectConnection(userId, connectionId)).resolves.toMatchObject({
+      revocation: "revoked",
+    });
+
+    const after = await prisma.bankConnection.findUniqueOrThrow({
+      where: { id: connectionId },
+      include: { accounts: true },
+    });
+    expect(after.status).toBe("revoked");
+    expect(after.consentId).toBeNull();
+    expect(fake.revocations).toEqual([before.consentId]);
+    // The owner's records stay: the account and every movement it brought.
+    expect(after.accounts).toHaveLength(1);
+    expect(await prisma.bankTransaction.count({ where: { userId } })).toBe(2);
+
+    // Tomorrow's run picks up every active connection; it passes this one by.
+    await syncAllDueConnections(new Date(Date.now() + 24 * 60 * 60 * 1000));
+    const later = await prisma.bankConnection.findUniqueOrThrow({ where: { id: connectionId } });
+    expect(later.lastSyncAt?.getTime()).toBe(after.lastSyncAt?.getTime());
+    await expect(syncConnection(userId, connectionId)).rejects.toBeInstanceOf(
+      ConnectionNotSyncableError,
+    );
+  });
+
   it("counts the day's reads from persisted jobs and then refuses", async () => {
     const connectionId = await connectAndAuthorise();
     const { syncConnection, SyncBudgetExceededError } = await import("./sync");
