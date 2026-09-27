@@ -112,6 +112,20 @@ export async function remainingBudget(
 }
 
 /**
+ * Mark a connection expired, but only while it is still the connection this sync read: active,
+ * on the same consent. It used to be written unconditionally, so a disconnect or a renewal made
+ * while a sync was running was overwritten with `expired` when the old consent's call failed.
+ * Answers whether it wrote, so the audit records only a change that happened.
+ */
+async function markExpired(connection: { id: string; consentId: string | null }): Promise<boolean> {
+  const { count } = await getPrismaClient().bankConnection.updateMany({
+    where: { id: connection.id, status: "active", consentId: connection.consentId },
+    data: { status: "expired" },
+  });
+  return count === 1;
+}
+
+/**
  * Pull new movements for one connection.
  *
  * Scoped by `userId` at the query, not checked afterwards — a connection belonging to someone
@@ -156,21 +170,19 @@ export async function syncConnection(
   // Checked here, before the budget check, because an expired consent is not a budget problem
   // and should not report itself as one.
   if (connection.consentExpiresAt && connection.consentExpiresAt.getTime() <= now.getTime()) {
-    await prisma.bankConnection.update({
-      where: { id: connection.id },
-      data: { status: "expired" },
-    });
-    await logAudit({
-      userId,
-      action: "BANK_CONSENT_EXPIRED",
-      resourceType: "bank_connection",
-      resourceId: connection.id,
-      details: {
-        institutionName: connection.institutionName,
-        expiredAt: connection.consentExpiresAt.toISOString(),
-        detectedBy: "expiry_check",
-      },
-    });
+    if (await markExpired(connection)) {
+      await logAudit({
+        userId,
+        action: "BANK_CONSENT_EXPIRED",
+        resourceType: "bank_connection",
+        resourceId: connection.id,
+        details: {
+          institutionName: connection.institutionName,
+          expiredAt: connection.consentExpiresAt.toISOString(),
+          detectedBy: "expiry_check",
+        },
+      });
+    }
     throw new ConsentExpiredError(
       "Bank consent has expired. Reconnect the account to resume syncing.",
     );
@@ -208,17 +220,15 @@ export async function syncConnection(
       if (error instanceof ConsentExpiredError) {
         // The one failure that must never be reported as "0 new movements": that reads as a
         // quiet success and the feature is then silently off until someone notices missing rent.
-        await prisma.bankConnection.update({
-          where: { id: connection.id },
-          data: { status: "expired" },
-        });
-        await logAudit({
-          userId,
-          action: "BANK_CONSENT_EXPIRED",
-          resourceType: "bank_connection",
-          resourceId: connection.id,
-          details: { institutionName: connection.institutionName },
-        });
+        if (await markExpired(connection)) {
+          await logAudit({
+            userId,
+            action: "BANK_CONSENT_EXPIRED",
+            resourceType: "bank_connection",
+            resourceId: connection.id,
+            details: { institutionName: connection.institutionName },
+          });
+        }
       }
       throw error;
     }
