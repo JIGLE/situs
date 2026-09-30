@@ -116,15 +116,24 @@ clear here.
 
 A self-hosted instance shares data with a service only when that service is configured.
 
-| Recipient      | Receives                                                         | When                           | Location     |
-| -------------- | ---------------------------------------------------------------- | ------------------------------ | ------------ |
-| Enable Banking | Bank authorisation; returns account and transaction data         | Only where a bank is connected | EEA          |
-| Brevo          | Recipient address and message body of transactional mail we send | Only where email is configured | France (EEA) |
-| Portuguese AT  | Test service only: the Portal login and fetched receipt numbers  | On a check or a fetch          | Portugal     |
+| Recipient      | Receives                                                                                        | When                           | Location     |
+| -------------- | ----------------------------------------------------------------------------------------------- | ------------------------------ | ------------ |
+| Enable Banking | Bank authorisation; returns account and transaction data                                        | Only where a bank is connected | EEA          |
+| Brevo          | Recipient address and message body of transactional mail we send                                | Only where email is configured | France (EEA) |
+| Portuguese AT  | Test service only: the Portal login, receipt numbers to fetch, and the receipts the owner tests | On a check, a fetch or a test  | Portugal     |
 
 **Filings to AT are still simulated.** In the test mode Situs reaches only AT's test service,
-where nothing counts: it checks the Portal sub-user's login, sent encrypted as AT requires, and
-fetches a receipt the owner asks for by its contract and receipt numbers.
+where nothing counts. There it does three things:
+
+- checks the Portal sub-user's login, sent encrypted as AT requires;
+- fetches a receipt the owner asks for by its contract and receipt numbers;
+- sends the rent months of the receipts the owner tests from Finance › Recibos, one request per
+  month (`lib/tax/at/receipt-request.ts`).
+
+A test request carries the lease's AT contract number, the issuer's NIF, every landlord's NIF, and
+each tenant's NIF, or identity document and country. A guarantor is never on it. It also carries
+the period, the amount and the date the money arrived. Names stay in Situs. A test records nothing
+on the receipt; the submission log and the audit trail note that it went.
 
 **Enable Banking is the licensed AISP**, which is why the instance needs no PSD2 licence and no
 eIDAS certificate. Access is read-only account information: account details and transactions.

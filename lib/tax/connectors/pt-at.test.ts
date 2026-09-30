@@ -121,7 +121,9 @@ describe("PT connector in the test mode", () => {
     const polled = await ptAtConnector.poll(RECEIPT_ID);
 
     expect(submitted.status).toBe("error");
-    expect(submitted.responseBody).toMatch(/does not issue receipts\. Nothing was submitted/);
+    expect(submitted.responseBody).toMatch(
+      /never recorded; it files nothing\. Nothing was submitted/,
+    );
     expect(polled.status).toBe("error");
     expect(prismaMock.rentReceipt.update).not.toHaveBeenCalled();
     expect(logSubmissionMock).toHaveBeenCalledWith(

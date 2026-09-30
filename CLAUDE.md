@@ -154,13 +154,17 @@ e2e/                    # Playwright E2E tests
   client-side jsPDF copy.
 - **Tax connectors**: one `TaxAuthorityConnector` row per `[userId, connectorKey]`. Sandbox and
   review simulate, transmitting nothing. `test` reaches AT's test service through `lib/tax/at/`
-  (mutual TLS with the certificate AT signed, a WS-Security header, SOAP), and there only checks
-  credentials and fetches receipts: issuing through it is not built, so
-  `lib/tax/connectors/mode-guard.ts` refuses a receipt in it. No production AT integration exists,
-  and the guard makes every other mode, `live` included, fail closed, so going live is a code
-  change, not a row edit. The owner sets the mode and the Portal sub-user in Settings ›
-  Integrations (`lib/services/tax/at-connection.ts`). Every call appends an immutable
-  `TaxSubmissionLog` row (`GET /api/tax/connectors`, Finance › Tax Summary).
+  (mutual TLS with the certificate AT signed, a WS-Security header, SOAP). There it checks
+  credentials, fetches a receipt, and tests receipts from Finance › Recibos: **Emitir** opens a
+  review of each rent month a receipt pays (`lib/tax/at/receipt-request.ts` builds AT's
+  `emitirRecibo` request, `lib/services/tax/at-receipts.ts` reads the records), and **Testar na
+  AT** sends the ready months. A test records nothing on the receipt, since a receipt AT's test
+  service issues does not count; `lib/tax/connectors/mode-guard.ts` still refuses the recorded
+  filing in it. No production AT integration exists, and the guard makes every other mode, `live`
+  included, fail closed, so going live is a code change, not a row edit. The owner sets the mode
+  and the Portal sub-user in Settings › Integrations (`lib/services/tax/at-connection.ts`). Every
+  call appends an immutable `TaxSubmissionLog` row (`GET /api/tax/connectors`, Finance › Tax
+  Summary).
 - **Alert generation**: `lib/services/notifications/notification-automation.ts` reads the rent
   ledger. `payment_due` (D-5) and `payment_overdue` (D+1/D+7) come from `RentPeriod` and quote the
   OUTSTANDING balance, so a part-paid month is chased for its balance; `rent_receipt_due` comes

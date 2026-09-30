@@ -55,6 +55,16 @@ const RETIRED_CLAIMS = [
       "Finanças (AT), and no classifier card",
   },
   {
+    // 3B: the test mode also tests receipts from Finance › Recibos, one rent month at a time, and
+    // records nothing on them.
+    pattern:
+      /there only checks|issuing through it is not built|the Portal login and fetched receipt numbers/,
+    retired: "2026-09-27 (receipts tested at AT)",
+    because:
+      "the test mode also sends the months of receipts the owner tests from Finance › Recibos " +
+      "to AT's test service, recording nothing on them",
+  },
+  {
     // 3A: a connector's mode can be `test`, which reaches AT's test service, and the AT login is a
     // fourth field encrypted at the call site.
     pattern: /sandbox, review or live|in sandbox or review mode|Three fields are deliberately/,

@@ -52,11 +52,12 @@ export async function refuseUnsupportedMode(
 
   if (SIMULATED_MODES.has(connector.mode)) return null;
 
-  // The test mode reaches the authority's test service to check credentials and fetch receipts.
-  // Issuing through it is not built, so a receipt in this mode is refused like any other.
+  // The test mode reaches the authority's test service, where the owner tests receipts from
+  // Recibos (`lib/services/tax/at-receipts.ts`) and nothing counts, so none is ever recorded as
+  // filed. A filing through the lifecycle is refused in it like in any other mode.
   const responseBody = TEST_MODES.has(connector.mode)
-    ? `Connector mode "${connector.mode}" checks credentials and fetches receipts at the ` +
-      `${authority}'s test service; it does not issue receipts. Nothing was submitted.`
+    ? `Connector mode "${connector.mode}" reaches the ${authority}'s test service, where ` +
+      `receipts are tested from Recibos and never recorded; it files nothing. Nothing was submitted.`
     : `Connector mode "${connector.mode}" is not supported: there is no live ${authority} ` +
       `integration. Nothing was submitted. Set the connector back to "sandbox" or "review".`;
 
