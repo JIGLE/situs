@@ -22,9 +22,10 @@ export interface LogSubmissionInput {
   connectorId: string;
   /**
    * `connector` for a check of the connection itself; `at_receipt` for a receipt fetched from AT,
-   * whose id is `<contract>/<receipt>`.
+   * whose id is `<contract>/<receipt>`; `receipt` for a Situs receipt's month sent to AT's test
+   * service, whose id is `<receiptId>/<YYYY-MM>`.
    */
-  subjectType: "rent_receipt" | "connector" | "at_receipt";
+  subjectType: "rent_receipt" | "connector" | "at_receipt" | "receipt";
   subjectId: string;
   action: "validate" | "submit" | "poll" | "cancel" | "check" | "fetch";
   mode: string;
