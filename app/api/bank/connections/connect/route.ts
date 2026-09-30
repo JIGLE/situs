@@ -6,6 +6,7 @@ import {
   createSuccessResponse,
   parseBody,
   withErrorHandler,
+  readJson,
 } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { bankConnectSchema } from "@/lib/schemas/bank.schema";
@@ -19,7 +20,7 @@ async function handlePost(request: NextRequest): Promise<Response> {
   if (authResult instanceof Response) return authResult;
   const { scopeUserId } = authResult;
 
-  const body = parseBody(await request.json(), bankConnectSchema);
+  const body = parseBody(await readJson(request), bankConnectSchema);
 
   try {
     const { connectionId, url } = await startConsent(scopeUserId, body);

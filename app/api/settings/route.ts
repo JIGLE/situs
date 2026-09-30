@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { isMockMode } from "@/lib/config/data-mode";
-import { createErrorResponse, parseBody, ValidationError } from "@/lib/utils/error-handling";
+import {
+  createErrorResponse,
+  parseBody,
+  ValidationError,
+  readJson,
+} from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { updateSettingsSchema } from "@/lib/schemas/settings.schema";
 
@@ -49,11 +54,8 @@ async function handlePost(request: NextRequest): Promise<Response> {
 
     const { userId } = authResult;
 
-    // Checked before the upsert: a wrong type used to reach Prisma and answer 500. A body that is
-    // not JSON is the caller's mistake too; its SyntaxError used to fall through to the 500 below.
-    const raw: unknown = await request.json().catch(() => {
-      throw new ValidationError("Invalid request: the body is not JSON");
-    });
+    // Checked before the upsert: a wrong type used to reach Prisma and answer 500.
+    const raw: unknown = await readJson(request);
     const data = parseBody(raw, updateSettingsSchema);
 
     // In mock mode, just echo back the settings

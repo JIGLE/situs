@@ -2,11 +2,11 @@ import { NextRequest } from "next/server";
 
 import { handleOptions, requireOwnerAccess } from "@/lib/services/auth/auth-middleware";
 import {
-  ValidationError,
   createErrorResponse,
   createSuccessResponse,
   parseBody,
   withErrorHandler,
+  readJson,
 } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { bankConnectionRenameSchema } from "@/lib/schemas/bank.schema";
@@ -41,10 +41,7 @@ async function handlePatch(request: NextRequest, context?: Context): Promise<Res
     return createErrorResponse(new Error("Connection id is required"), 400, request);
   }
 
-  // A body that is not JSON is the caller's mistake, not the server's.
-  const raw: unknown = await request.json().catch(() => {
-    throw new ValidationError("Invalid request: the body is not JSON");
-  });
+  const raw: unknown = await readJson(request);
   const { label } = parseBody(raw, bankConnectionRenameSchema);
 
   return createSuccessResponse(await renameConnection(scopeUserId, id, label));

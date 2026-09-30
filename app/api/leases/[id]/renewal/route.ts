@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
+import { readJson, ValidationError } from "@/lib/utils/error-handling";
 
 export const runtime = "nodejs";
 
 type RouteContext = { params: Promise<{ id: string }> };
+
+/** The JSON body, or the 400 for one that is not JSON: this route has no `withErrorHandler`. */
+async function readBody<T>(request: NextRequest): Promise<T | Response> {
+  try {
+    return (await readJson(request)) as T;
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    throw error;
+  }
+}
 
 const leaseInclude = {
   property: { select: { name: true, address: true } },
@@ -28,12 +41,13 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
     return NextResponse.json({ error: "Only active leases can be renewed" }, { status: 400 });
   }
 
-  const body = (await request.json()) as {
+  const body = await readBody<{
     proposedRent?: number;
     startDate?: string;
     endDate?: string;
     notes?: string;
-  };
+  }>(request);
+  if (body instanceof Response) return body;
 
   // Default proposed terms to current lease terms
   const renewalStartDate = body.startDate
@@ -81,7 +95,8 @@ export async function PATCH(request: NextRequest, context: RouteContext): Promis
     return NextResponse.json({ error: "No active renewal offer on this lease" }, { status: 400 });
   }
 
-  const body = (await request.json()) as { response: "accepted" | "declined" };
+  const body = await readBody<{ response: "accepted" | "declined" }>(request);
+  if (body instanceof Response) return body;
   if (body.response !== "accepted" && body.response !== "declined") {
     return NextResponse.json(
       { error: "response must be 'accepted' or 'declined'" },

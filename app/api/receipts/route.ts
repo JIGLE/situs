@@ -9,6 +9,8 @@ import {
   createSuccessResponse,
   parseBody,
   withErrorHandler,
+  RawBody,
+  readJson,
 } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { receiptService } from "@/lib/services/database/receipt";
@@ -65,7 +67,7 @@ async function handlePost(request: NextRequest): Promise<Response> {
 
   const { scopeUserId } = authResult;
 
-  const raw = await request.json();
+  const raw = (await readJson(request)) as RawBody;
   const sanitizedBody = {
     ...raw,
     tenantId: sanitizeForDatabase(raw.tenantId),

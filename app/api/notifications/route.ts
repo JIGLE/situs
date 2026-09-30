@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
+import { readJson, ValidationError } from "@/lib/utils/error-handling";
 import { isMockMode } from "@/lib/config/data-mode";
 import { z } from "zod";
 
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (authResult instanceof Response) return authResult as NextResponse;
     const { userId } = authResult;
 
-    const body = await request.json();
+    const body = await readJson(request);
     const parsed = createNotificationSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -91,6 +92,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json(notification, { status: 201 });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     console.error("Error creating notification:", error);
     return NextResponse.json({ error: "Failed to create notification" }, { status: 500 });
   }

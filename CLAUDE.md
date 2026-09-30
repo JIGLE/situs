@@ -82,7 +82,9 @@ e2e/                    # Playwright E2E tests
   (`addProperty`, `updateTenant`, …). Bank, tax and ledger data are fetched by their own
   components and never live in AppState.
 - **API routes**: one folder per domain under `app/api/`. Validate with Zod, check the NextAuth
-  session before touching the database.
+  session before touching the database. Read a body with `readJson` (or `parseJsonBody`, when the
+  schema is all a handler needs) from `lib/utils/error-handling.ts`: a body that is not JSON is a 400,
+  and a bare `request.json()` answers it 500. `app/api/json-body-status.test.ts` refuses one.
 - **Compliance**: `/api/compliance/rent-receipts`, Portugal's rent receipts. Tax logic lives in
   `lib/tax/` and `lib/services/tax/connector-service.ts`.
 - **PII encryption**: AES-256-GCM via `lib/utils/pii-encryption.ts`, keyed off

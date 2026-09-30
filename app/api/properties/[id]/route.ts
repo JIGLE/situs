@@ -4,6 +4,7 @@ import {
   createErrorResponse,
   createSuccessResponse,
   withErrorHandler,
+  readJson,
 } from "@/lib/utils/error-handling";
 import { propertyService } from "@/lib/services/database/property";
 import { sanitizeForDatabase } from "@/lib/utils/sanitize";
@@ -67,7 +68,7 @@ async function handlePut(
     // The shared fields, all optional. This route used to parse a list of its own that lacked the
     // address and building fields, which z.object drops, so an edit to them was silently lost;
     // its type list also lacked "commercial", so such a property could not be edited at all.
-    const validatedData = updatePropertySchema.parse(await request.json());
+    const validatedData = updatePropertySchema.parse(await readJson(request));
 
     // Sanitized after validation, as POST does. A blank stays "" rather than becoming undefined:
     // on an edit it means "clear this field", and the service reads "" back as absent.

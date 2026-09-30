@@ -4,6 +4,8 @@ import {
   createErrorResponse,
   createSuccessResponse,
   withErrorHandler,
+  RawBody,
+  readJson,
 } from "@/lib/utils/error-handling";
 import { tenantService } from "@/lib/services/database/tenant";
 import { sanitizeForDatabase, sanitizeEmail, sanitizeNumber } from "@/lib/utils/sanitize";
@@ -81,7 +83,7 @@ async function handlePut(
       return createErrorResponse(new Error("Tenant not found"), 404, request);
     }
 
-    const body = await request.json();
+    const body = (await readJson(request)) as RawBody;
 
     // Sanitize input
     const sanitizedBody = {

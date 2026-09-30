@@ -6,6 +6,7 @@ import {
   createSuccessResponse,
   parseBody,
   withErrorHandler,
+  readJson,
 } from "@/lib/utils/error-handling";
 import { debugBankMovementsSchema } from "@/lib/schemas/bank.schema";
 import { importBankRows } from "@/lib/services/bank/import";
@@ -32,7 +33,7 @@ async function handlePost(request: NextRequest): Promise<Response> {
   const authResult = await requireOwnerAccess(request);
   if (authResult instanceof Response) return authResult;
 
-  const { rows } = parseBody(await request.json(), debugBankMovementsSchema);
+  const { rows } = parseBody(await readJson(request), debugBankMovementsSchema);
   const summary = await importBankRows(authResult.scopeUserId, rows, "manual_entry");
   return createSuccessResponse(summary, 201);
 }

@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
-import { createErrorResponse, ResourceNotFoundError } from "@/lib/utils/error-handling";
+import {
+  createErrorResponse,
+  ResourceNotFoundError,
+  RawBody,
+  readJson,
+  ValidationError,
+} from "@/lib/utils/error-handling";
 import {
   calculateDistribution,
   saveDistribution,
@@ -49,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     const { userId } = authResult;
 
-    const data = await request.json();
+    const data = (await readJson(request)) as RawBody;
 
     // Validate required fields
     if (!data.propertyId || !data.periodStart || !data.periodEnd) {
@@ -91,6 +97,10 @@ export async function POST(request: NextRequest) {
     // Return preview without saving
     return NextResponse.json({ data: result, preview: true });
   } catch (error) {
+    // A body that is not JSON is the caller's mistake.
+    if (error instanceof ValidationError) {
+      return createErrorResponse(error, 400, request);
+    }
     // createErrorResponse resolves the status from the error TYPE, so the ownership failures
     // thrown by saveDistribution surface as 404 rather than being flattened into a 500 with
     // the message "Property not found" — which is both the wrong status and, in a 500 body,

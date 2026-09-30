@@ -185,6 +185,47 @@ export function withErrorHandler<C = unknown>(
 }
 
 /**
+ * A JSON body nobody has validated yet. A few older handlers read its fields one at a time and
+ * sanitise each before a schema sees the result, so it is typed as loosely as `request.json()`
+ * was. A new handler validates first (`parseBody`, `parseJsonBody`) and has no use for it.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type RawBody = Record<string, any>;
+
+// By name, so it holds whichever realm built the error.
+const isSyntaxError = (error: unknown): boolean =>
+  typeof error === "object" &&
+  error !== null &&
+  (error as { name?: unknown }).name === "SyntaxError";
+
+/**
+ * The JSON body of a request, or a `ValidationError` (→ 400) when the body is not JSON.
+ *
+ * `request.json()` alone rejects a body that is empty or malformed with a `SyntaxError`, and
+ * `withErrorHandler` answers any error it does not know as a 500: a server error for what is the
+ * caller's mistake. `app/api/json-body-status.test.ts` refuses a bare `request.json()` in a route.
+ *
+ * Only a `SyntaxError` becomes a `ValidationError`. Anything else `json()` throws, such as a body
+ * that was already read, is a bug in this server and stays one.
+ *
+ * A handler that answers its own errors instead of going through `withErrorHandler` has to catch
+ * the `ValidationError` itself; `app/api/json-body-answers-400.test.ts` covers the ones that do.
+ *
+ * @example
+ * const raw = await readJson(request);
+ */
+export async function readJson(request: Pick<Request, "json">): Promise<unknown> {
+  try {
+    return await request.json();
+  } catch (error) {
+    if (isSyntaxError(error)) {
+      throw new ValidationError("Invalid request: the body is not JSON");
+    }
+    throw error;
+  }
+}
+
+/**
  * Validate an already-parsed body object against a Zod schema.
  *
  * Throws `ValidationError` (→ 400) on failure, so callers wrapped in
@@ -193,7 +234,7 @@ export function withErrorHandler<C = unknown>(
  * Use this when you need to sanitize the raw body before validation.
  *
  * @example
- * const raw = await request.json();
+ * const raw = (await readJson(request)) as RawBody;
  * const data = parseBody({ ...raw, name: sanitizeForDatabase(raw.name) }, schema);
  */
 export function parseBody<T>(body: unknown, schema: ZodSchema<T>): T {
@@ -221,5 +262,5 @@ export function parseBody<T>(body: unknown, schema: ZodSchema<T>): T {
  * const data = await parseJsonBody(request, createTenantSchema);
  */
 export async function parseJsonBody<T>(request: NextRequest, schema: ZodSchema<T>): Promise<T> {
-  return parseBody(await request.json(), schema);
+  return parseBody(await readJson(request), schema);
 }

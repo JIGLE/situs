@@ -4,6 +4,7 @@ import {
   createErrorResponse,
   createSuccessResponse,
   withErrorHandler,
+  readJson,
 } from "@/lib/utils/error-handling";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { buildingSchema } from "@/lib/schemas/building.schema";
@@ -28,7 +29,7 @@ async function handlePut(
   const existing = await prisma.building.findFirst({ where: { id, userId } });
   if (!existing) return createErrorResponse(new Error("Building not found"), 404, request);
 
-  const json = await request.json();
+  const json = await readJson(request);
   const body = buildingSchema.partial().parse(json);
 
   const building = await prisma.building.update({

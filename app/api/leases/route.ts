@@ -8,6 +8,7 @@ import {
   createErrorResponse,
   createSuccessResponse,
   withErrorHandler,
+  readJson,
 } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { getPrismaClient } from "@/lib/services/database/database";
@@ -58,7 +59,7 @@ async function handlePost(request: NextRequest): Promise<Response> {
   const prisma = getPrismaClient();
 
   try {
-    const json = await request.json();
+    const json = await readJson(request);
     const { parties, ...body } = leaseSchema.parse(json);
 
     // Both ids come from the body. A lease is the record that binds a tenant to a property

@@ -5,6 +5,8 @@ import {
   createErrorResponse,
   parseBody,
   ValidationError,
+  RawBody,
+  readJson,
 } from "@/lib/utils/error-handling";
 import { emailService } from "@/lib/services/email/email-service";
 import { z } from "zod";
@@ -73,7 +75,7 @@ export async function POST(request: NextRequest): Promise<Response | NextRespons
   if (authResult instanceof Response) return authResult;
 
   try {
-    const body = await request.json();
+    const body = (await readJson(request)) as RawBody;
     const { emailLogId } = body;
 
     if (!emailLogId) {

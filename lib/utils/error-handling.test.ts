@@ -15,6 +15,7 @@ import {
   withErrorHandler,
   parseBody,
   parseJsonBody,
+  readJson,
 } from "@/lib/utils/error-handling";
 
 // ─── Custom Error Classes ─────────────────────────────────────────────────────
@@ -360,12 +361,71 @@ describe("parseJsonBody", () => {
     expect(result).toEqual({ value: 42 });
   });
 
-  it("throws ValidationError for invalid JSON body", async () => {
+  it("throws ValidationError for a body that fails the schema", async () => {
     const req = new NextRequest("http://localhost/", {
       method: "POST",
       body: JSON.stringify({ value: "not a number" }),
       headers: { "Content-Type": "application/json" },
     });
     await expect(parseJsonBody(req, schema)).rejects.toThrow(ValidationError);
+  });
+
+  it("throws ValidationError for a body that is not JSON", async () => {
+    const req = new NextRequest("http://localhost/", { method: "POST", body: "{value: 42" });
+    await expect(parseJsonBody(req, schema)).rejects.toThrow(ValidationError);
+  });
+});
+
+// ─── readJson ─────────────────────────────────────────────────────────────────
+
+describe("readJson", () => {
+  const post = (body?: string) => new NextRequest("http://localhost/", { method: "POST", body });
+
+  it("returns the parsed body, whatever JSON it holds", async () => {
+    await expect(readJson(post('{"a":1}'))).resolves.toEqual({ a: 1 });
+    await expect(readJson(post("[1,2]"))).resolves.toEqual([1, 2]);
+    await expect(readJson(post("null"))).resolves.toBeNull();
+  });
+
+  it("answers a body that is not JSON as a ValidationError, which is a 400", async () => {
+    const error = await readJson(post("{value: 42")).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ValidationError);
+    expect((error as ValidationError).message).toBe("Invalid request: the body is not JSON");
+    expect(createErrorResponse(error as Error, 500).status).toBe(400);
+  });
+
+  it("answers an empty body the same way", async () => {
+    await expect(readJson(post())).rejects.toThrow(ValidationError);
+  });
+
+  it("leaves a failure that is not a bad body alone", async () => {
+    const req = post('{"a":1}');
+    await req.text();
+    // The body is already read: that is this server's bug, not the caller's mistake.
+    const error = await readJson(req).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(TypeError);
+    expect(error).not.toBeInstanceOf(ValidationError);
+  });
+
+  it("reads anything with a json() method", async () => {
+    await expect(readJson({ json: async () => ({ ok: true }) })).resolves.toEqual({ ok: true });
+    await expect(
+      readJson({
+        json: async () => {
+          throw new SyntaxError("Unexpected token");
+        },
+      }),
+    ).rejects.toThrow(ValidationError);
+  });
+
+  it("makes withErrorHandler answer a body that is not JSON as a 400, not a 500", async () => {
+    const handler = withErrorHandler(async (request: NextRequest) => {
+      await readJson(request);
+      return new Response("ok");
+    });
+    const res = await handler(post("{value: 42"));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "Invalid request: the body is not JSON" });
+    expect((await handler(post('{"a":1}'))).status).toBe(200);
   });
 });
