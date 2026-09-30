@@ -1157,8 +1157,7 @@
       "issueSelected": "Issue {count}",
       "issueDialog": {
         "title": "Issue {count, plural, one {# receipt} other {# receipts}}?",
-        "description": "Each receipt becomes Issued and its PDF is archived. An issued receipt cannot go back to draft, but it can be voided.",
-        "confirmLabel": "Issue"
+        "description": "Each receipt becomes Issued and its PDF is archived. An issued receipt cannot go back to draft, but it can be voided."
       },
       "issued": "{count, plural, one {# receipt issued} other {# receipts issued}}.",
       "issueFailed": "Could not issue:",
@@ -1180,7 +1179,50 @@
         "description": "The receipt is voided and its payment leaves the month it paid, which goes back to unpaid.",
         "confirmLabel": "Void"
       },
-      "toastVoided": "Receipt voided."
+      "toastVoided": "Receipt voided.",
+      "atSheet": {
+        "modeSimulated": "Simulation: nothing is sent to Finanças. Each receipt below is issued in Situs only.",
+        "modeTest": "Test mode: the months that are ready can go to AT's test service. Nothing issued there counts, and the receipts here stay as they are.",
+        "contract": "AT contract no. {number}",
+        "contractVersion": "AT contract no. {number}, version {version}",
+        "received": "received on {date}",
+        "landlords": "Landlords",
+        "tenants": "Tenants",
+        "byNif": "{name}, NIF {nif}",
+        "byDocument": "{name}, document {document} ({country})",
+        "noId": "{name}, no NIF",
+        "ready": "Ready for Finanças",
+        "missing": "Before Finanças:",
+        "blocker": {
+          "contractNumberMissing": "The lease has no AT contract number.",
+          "contractNumberInvalid": "The lease's AT contract number is not all digits.",
+          "landlordMissing": "The property has no owners.",
+          "landlordNifMissing": "{name} has no NIF.",
+          "landlordNifInvalid": "{name}'s NIF is not valid.",
+          "tenantMissing": "The lease has no tenant.",
+          "tenantNifMissing": "{name} has no NIF.",
+          "tenantNifInvalid": "{name}'s NIF is not valid.",
+          "tenantEntity": "{name} is a company: withholding tax is not sent to AT yet.",
+          "tenantDocumentMissing": "{name} has neither a Portuguese NIF nor an identity document.",
+          "amountNotPositive": "The amount for this month is zero.",
+          "receivedInFuture": "The date received is after today."
+        },
+        "refusal": {
+          "notIssuable": "Already issued.",
+          "notRent": "Not rent: deposits and other payments do not go to AT yet.",
+          "notPaid": "The payment has not been received yet.",
+          "noRentMonth": "It pays no rent month."
+        },
+        "test": "Test at AT ({count})",
+        "testUnavailable": "To test, Situs needs the AT sub-user and the certificate files, in Settings › Integrations.",
+        "result": {
+          "issued": "AT's test service issued receipt no. {number}.",
+          "refused": "AT refused this month:",
+          "skipped": "Not sent: an earlier request failed.",
+          "fetchPdf": "Get the PDF",
+          "nothingRecorded": "Nothing was recorded in Situs: the receipts stay as they were."
+        }
+      }
     },
     "isRecurring": "Repeating expense",
     "recurrenceRule": "Repeat",
@@ -1809,6 +1851,7 @@
     "removeTaxCredentials": "AT sub-user removed",
     "setTaxConnectorMode": "Finanças connection mode changed",
     "fetchAtReceipt": "Receipt fetched from Finanças",
+    "testAtReceipt": "Receipt tested at Finanças' test service",
     "ocrClassifyDocument": "Document classified",
     "ocrExtractionReviewed": "Document reading reviewed",
     "linkExpenseDocument": "Document linked to an expense",
