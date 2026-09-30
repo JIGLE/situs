@@ -71,6 +71,7 @@ export const AUDIT_ACTION_KEY = {
   REMOVE_TAX_CREDENTIALS: "removeTaxCredentials",
   SET_TAX_CONNECTOR_MODE: "setTaxConnectorMode",
   FETCH_AT_RECEIPT: "fetchAtReceipt",
+  TEST_AT_RECEIPT: "testAtReceipt",
   OCR_CLASSIFY_DOCUMENT: "ocrClassifyDocument",
   OCR_EXTRACTION_REVIEWED: "ocrExtractionReviewed",
   LINK_EXPENSE_DOCUMENT: "linkExpenseDocument",

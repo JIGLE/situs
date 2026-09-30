@@ -1,6 +1,8 @@
 /**
  * The owner's connection to AT: the Portal sub-user Situs signs in as, the connector's mode, and
- * the two calls that change nothing at AT, Check credentials and Fetch receipt.
+ * the two calls that change nothing at AT, Check credentials and Fetch receipt. The test of a
+ * receipt, which does create one at AT's test service, is in `at-receipts.ts` and prepares its
+ * calls here.
  *
  * Nothing here reaches AT unless the owner has put the connector in the test mode, which needs the
  * instance's certificate files and a stored sub-user first. Production is not reachable from here
@@ -174,7 +176,8 @@ function requireReady(credentialsRef: string | null) {
   return { material, login: credentials.login };
 }
 
-async function prepareCall(userId: string) {
+/** The connector, the endpoint and the login for a call, or the 409 that names what is missing. */
+export async function prepareCall(userId: string) {
   const connector = await findConnector(userId);
   if (!connector || !TEST_MODES.has(connector.mode)) {
     throw new ConflictError("The connector is not in the test mode", "at_test_mode_required");
@@ -200,7 +203,7 @@ export type AtCallView =
   | { outcome: "not_sent" }
   | { outcome: "unknown" };
 
-function toView(result: AtOutcome): AtCallView {
+export function toView(result: AtOutcome): AtCallView {
   switch (result.outcome) {
     case "answer":
       return {
@@ -219,7 +222,7 @@ function toView(result: AtOutcome): AtCallView {
   }
 }
 
-async function logCall(
+export async function logCall(
   userId: string,
   connector: { id: string; mode: string },
   call: Pick<Parameters<typeof logSubmission>[0], "subjectType" | "subjectId" | "action">,

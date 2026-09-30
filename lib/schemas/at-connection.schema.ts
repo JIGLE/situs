@@ -24,5 +24,16 @@ const atNumber = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 /** POST /api/tax/connectors/at/receipt: which receipt to fetch from AT. */
 export const atReceiptSchema = z.object({ contractNumber: atNumber, receiptNumber: atNumber });
 
+const receiptIds = (max: number) => z.array(z.string().min(1).max(64)).min(1).max(max);
+
+/** POST /api/tax/connectors/at/receipts/preview: the receipts to review before issuing. */
+export const atReceiptsPreviewSchema = z.object({ receiptIds: receiptIds(100) });
+
+/**
+ * POST /api/tax/connectors/at/receipts/test: the receipts to send to AT's test service. Fewer than
+ * a review takes: each month is a call to AT, and the service stops at twelve months anyway.
+ */
+export const atReceiptsTestSchema = z.object({ receiptIds: receiptIds(12) });
+
 export type AtCredentialsInput = z.infer<typeof atCredentialsSchema>;
 export type AtSelectableMode = (typeof AT_SELECTABLE_MODES)[number];

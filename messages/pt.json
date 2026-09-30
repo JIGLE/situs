@@ -1157,8 +1157,7 @@
       "issueSelected": "Emitir {count}",
       "issueDialog": {
         "title": "Emitir {count, plural, one {# recibo} other {# recibos}}?",
-        "description": "Cada recibo passa a Emitido e o PDF fica arquivado. Um recibo emitido já não volta a rascunho, mas pode ser anulado.",
-        "confirmLabel": "Emitir"
+        "description": "Cada recibo passa a Emitido e o PDF fica arquivado. Um recibo emitido já não volta a rascunho, mas pode ser anulado."
       },
       "issued": "{count, plural, one {# recibo emitido} other {# recibos emitidos}}.",
       "issueFailed": "Não foi possível emitir:",
@@ -1180,7 +1179,50 @@
         "description": "O recibo fica anulado e o pagamento sai do mês que pagou, que volta a ficar por pagar.",
         "confirmLabel": "Anular"
       },
-      "toastVoided": "Recibo anulado."
+      "toastVoided": "Recibo anulado.",
+      "atSheet": {
+        "modeSimulated": "Simulação: nada é enviado às Finanças. Cada recibo abaixo é emitido só no Situs.",
+        "modeTest": "Modo de testes: os meses prontos podem ir ao serviço de testes da AT. Nada do que lá se emite conta, e aqui os recibos ficam como estão.",
+        "contract": "Contrato na AT n.º {number}",
+        "contractVersion": "Contrato na AT n.º {number}, versão {version}",
+        "received": "recebido a {date}",
+        "landlords": "Senhorios",
+        "tenants": "Inquilinos",
+        "byNif": "{name}, NIF {nif}",
+        "byDocument": "{name}, documento {document} ({country})",
+        "noId": "{name}, sem NIF",
+        "ready": "Pronto para as Finanças",
+        "missing": "Antes das Finanças:",
+        "blocker": {
+          "contractNumberMissing": "O contrato não tem o número que a AT lhe deu.",
+          "contractNumberInvalid": "O número do contrato na AT não é só algarismos.",
+          "landlordMissing": "O imóvel não tem proprietários.",
+          "landlordNifMissing": "{name} não tem NIF.",
+          "landlordNifInvalid": "O NIF de {name} não é válido.",
+          "tenantMissing": "O contrato não tem inquilino.",
+          "tenantNifMissing": "{name} não tem NIF.",
+          "tenantNifInvalid": "O NIF de {name} não é válido.",
+          "tenantEntity": "{name} é uma empresa: a retenção na fonte ainda não é enviada à AT.",
+          "tenantDocumentMissing": "{name} não tem NIF português nem documento de identificação.",
+          "amountNotPositive": "O valor deste mês é zero.",
+          "receivedInFuture": "A data de recebimento é depois de hoje."
+        },
+        "refusal": {
+          "notIssuable": "Já foi emitido.",
+          "notRent": "Não é uma renda: cauções e outros pagamentos ainda não vão para a AT.",
+          "notPaid": "O pagamento ainda não foi recebido.",
+          "noRentMonth": "Não paga nenhum mês de renda."
+        },
+        "test": "Testar na AT ({count})",
+        "testUnavailable": "Para testar, o Situs precisa do subutilizador da AT e dos ficheiros do certificado, em Definições › Integrações.",
+        "result": {
+          "issued": "O serviço de testes da AT emitiu o recibo n.º {number}.",
+          "refused": "A AT recusou este mês:",
+          "skipped": "Não enviado: um pedido anterior falhou.",
+          "fetchPdf": "Obter o PDF",
+          "nothingRecorded": "Nada ficou registado no Situs: os recibos ficam como estavam."
+        }
+      }
     },
     "isRecurring": "Despesa recorrente",
     "recurrenceRule": "Repetição",
@@ -1809,6 +1851,7 @@
     "removeTaxCredentials": "Subutilizador da AT removido",
     "setTaxConnectorMode": "Modo da ligação às Finanças alterado",
     "fetchAtReceipt": "Recibo obtido das Finanças",
+    "testAtReceipt": "Recibo testado no serviço de testes das Finanças",
     "ocrClassifyDocument": "Documento classificado",
     "ocrExtractionReviewed": "Leitura do documento revista",
     "linkExpenseDocument": "Documento associado a uma despesa",

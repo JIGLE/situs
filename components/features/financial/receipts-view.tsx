@@ -65,6 +65,7 @@ import { useFormDialog } from "@/lib/hooks/use-form-dialog";
 import jsPDF from "jspdf";
 import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { AtReceiptsSheet } from "./at-receipts-sheet";
 
 export interface ReceiptsViewProps {
   tenantId?: string;
@@ -99,8 +100,9 @@ interface IssueFailure {
  * A receipt is listed under the rent month it paid, or the month it was paid when it paid none
  * (`lib/utils/receipt-months.ts`). Each row says whose receipt it is, for which month, what came
  * in and when, whether it is paid, its stage, and whether a bank movement or a person recorded it.
- * **Select all** takes the receipts that can be issued (draft or review), and **Emitir N** issues
- * them after a confirmation, saying which failed and why.
+ * **Select all** takes the receipts that can be issued (draft or review). **Emitir N** first opens
+ * a review of what Finanças would receive for each rent month they pay (`at-receipts-sheet.tsx`),
+ * and issues them from there, saying which failed and why.
  *
  * This replaced two lists: a receipt queue above a list of cards titled "Receipt #" followed by
  * nothing, which showed every receipt ever recorded with no month and no stage. A payment is
@@ -126,6 +128,8 @@ export function ReceiptsView(props: ReceiptsViewProps) {
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [issuing, setIssuing] = useState(false);
   const [failures, setFailures] = useState<IssueFailure[]>([]);
+  // Emitir opens the review of what Finanças would receive; nothing happens until it is confirmed.
+  const [reviewing, setReviewing] = useState(false);
 
   const initialFormData: ReceiptFormData = {
     tenantId: "",
@@ -199,35 +203,28 @@ export function ReceiptsView(props: ReceiptsViewProps) {
   const moveTo = (receipt: Receipt, to: "emitted" | "voided") =>
     apiFetch(`/api/receipts/${receipt.id}/lifecycle`, csrfToken, "PUT", { to });
 
-  const issueChosen = () => {
+  /** Issues the chosen receipts in Situs; the review sheet's Emitir calls it. */
+  const issueChosen = async () => {
     const batch = chosen;
-    confirmDialog.confirm(
-      {
-        title: t("issueDialog.title", { count: batch.length }),
-        description: t("issueDialog.description"),
-        confirmLabel: t("issueDialog.confirmLabel"),
-      },
-      async () => {
-        setIssuing(true);
-        setFailures([]);
-        const failed: IssueFailure[] = [];
-        // One at a time: each issue archives a PDF, and a refusal names only its own receipt.
-        for (const receipt of batch) {
-          try {
-            await moveTo(receipt, "emitted");
-          } catch (err) {
-            failed.push({ id: receipt.id, label: rowLabel(receipt), message: apiError(err) });
-          }
-        }
-        const issued = batch.length - failed.length;
-        if (issued > 0) success(t("issued", { count: issued }));
-        setFailures(failed);
-        // The ones that failed stay ticked, so a retry is one click.
-        setSelected(new Set(failed.map((failure) => failure.id)));
-        await refreshData();
-        setIssuing(false);
-      },
-    );
+    setIssuing(true);
+    setFailures([]);
+    const failed: IssueFailure[] = [];
+    // One at a time: each issue archives a PDF, and a refusal names only its own receipt.
+    for (const receipt of batch) {
+      try {
+        await moveTo(receipt, "emitted");
+      } catch (err) {
+        failed.push({ id: receipt.id, label: rowLabel(receipt), message: apiError(err) });
+      }
+    }
+    const issued = batch.length - failed.length;
+    if (issued > 0) success(t("issued", { count: issued }));
+    setFailures(failed);
+    // The ones that failed stay ticked, so a retry is one click.
+    setSelected(new Set(failed.map((failure) => failure.id)));
+    await refreshData();
+    setIssuing(false);
+    setReviewing(false);
   };
 
   const handleVoid = (receipt: Receipt) => {
@@ -610,7 +607,7 @@ export function ReceiptsView(props: ReceiptsViewProps) {
               </Button>
             </div>
             {chosen.length > 0 ? (
-              <Button onClick={issueChosen} loading={issuing} className="gap-2">
+              <Button onClick={() => setReviewing(true)} loading={issuing} className="gap-2">
                 <Send className="h-4 w-4" />
                 {t("issueSelected", { count: chosen.length })}
               </Button>
@@ -783,6 +780,14 @@ export function ReceiptsView(props: ReceiptsViewProps) {
         </div>
       )}
       {editDialog}
+      {reviewing ? (
+        <AtReceiptsSheet
+          onClose={() => setReviewing(false)}
+          receipts={chosen}
+          onIssue={issueChosen}
+          issuing={issuing}
+        />
+      ) : null}
       <ConfirmationDialog dialog={confirmDialog} />
     </>
   );

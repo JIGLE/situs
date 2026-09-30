@@ -1157,8 +1157,7 @@
       "issueSelected": "Emetti {count}",
       "issueDialog": {
         "title": "Emettere {count, plural, one {# ricevuta} other {# ricevute}}?",
-        "description": "Ogni ricevuta diventa Emessa e il suo PDF viene archiviato. Una ricevuta emessa non torna in bozza, ma può essere annullata.",
-        "confirmLabel": "Emetti"
+        "description": "Ogni ricevuta diventa Emessa e il suo PDF viene archiviato. Una ricevuta emessa non torna in bozza, ma può essere annullata."
       },
       "issued": "{count, plural, one {# ricevuta emessa} other {# ricevute emesse}}.",
       "issueFailed": "Impossibile emettere:",
@@ -1180,7 +1179,50 @@
         "description": "La ricevuta viene annullata e il pagamento esce dal mese che ha pagato, che torna da pagare.",
         "confirmLabel": "Annulla ricevuta"
       },
-      "toastVoided": "Ricevuta annullata."
+      "toastVoided": "Ricevuta annullata.",
+      "atSheet": {
+        "modeSimulated": "Simulazione: nulla viene inviato a Finanças. Ogni ricevuta qui sotto è emessa solo in Situs.",
+        "modeTest": "Modalità di prova: i mesi pronti possono andare al servizio di prova della AT. Nulla di ciò che vi si emette conta, e qui le ricevute restano come sono.",
+        "contract": "Contratto presso la AT n. {number}",
+        "contractVersion": "Contratto presso la AT n. {number}, versione {version}",
+        "received": "ricevuto il {date}",
+        "landlords": "Locatori",
+        "tenants": "Inquilini",
+        "byNif": "{name}, NIF {nif}",
+        "byDocument": "{name}, documento {document} ({country})",
+        "noId": "{name}, senza NIF",
+        "ready": "Pronto per Finanças",
+        "missing": "Prima di Finanças:",
+        "blocker": {
+          "contractNumberMissing": "Il contratto non ha il numero che gli ha dato la AT.",
+          "contractNumberInvalid": "Il numero del contratto presso la AT non è di sole cifre.",
+          "landlordMissing": "L'immobile non ha proprietari.",
+          "landlordNifMissing": "{name} non ha NIF.",
+          "landlordNifInvalid": "Il NIF di {name} non è valido.",
+          "tenantMissing": "Il contratto non ha inquilino.",
+          "tenantNifMissing": "{name} non ha NIF.",
+          "tenantNifInvalid": "Il NIF di {name} non è valido.",
+          "tenantEntity": "{name} è un'azienda: la ritenuta alla fonte non viene ancora inviata alla AT.",
+          "tenantDocumentMissing": "{name} non ha né un NIF portoghese né un documento d'identità.",
+          "amountNotPositive": "L'importo di questo mese è zero.",
+          "receivedInFuture": "La data d'incasso è successiva a oggi."
+        },
+        "refusal": {
+          "notIssuable": "Già emessa.",
+          "notRent": "Non è un affitto: cauzioni e altri pagamenti non vanno ancora alla AT.",
+          "notPaid": "Il pagamento non è ancora stato ricevuto.",
+          "noRentMonth": "Non paga nessun mese d'affitto."
+        },
+        "test": "Prova presso la AT ({count})",
+        "testUnavailable": "Per provare, Situs ha bisogno del sottoutente AT e dei file del certificato, in Impostazioni › Integrazioni.",
+        "result": {
+          "issued": "Il servizio di prova della AT ha emesso la ricevuta n. {number}.",
+          "refused": "La AT ha rifiutato questo mese:",
+          "skipped": "Non inviato: una richiesta precedente non è riuscita.",
+          "fetchPdf": "Ottieni il PDF",
+          "nothingRecorded": "Nulla è stato registrato in Situs: le ricevute restano come erano."
+        }
+      }
     },
     "isRecurring": "Spesa ricorrente",
     "recurrenceRule": "Ripeti",
@@ -1809,6 +1851,7 @@
     "removeTaxCredentials": "Sottoutente AT rimosso",
     "setTaxConnectorMode": "Modalità del collegamento con Finanças modificata",
     "fetchAtReceipt": "Ricevuta ottenuta da Finanças",
+    "testAtReceipt": "Ricevuta provata nel servizio di prova di Finanças",
     "ocrClassifyDocument": "Documento classificato",
     "ocrExtractionReviewed": "Lettura del documento rivista",
     "linkExpenseDocument": "Documento collegato a una spesa",

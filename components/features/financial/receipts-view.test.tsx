@@ -12,7 +12,7 @@ import { ReceiptsView } from "./receipts-view";
 /**
  * Finance › Recibos lists one rent month at a time, in Portuguese: each receipt under the rent
  * month it paid, or the month it was paid when it paid none. **Select all** takes only what can be
- * issued, **Emitir** asks first, and a refusal says why. Asserted in Portuguese, since asserting
+ * issued, **Emitir** opens a review of what Finanças would receive first, and a refusal says why. Asserted in Portuguese, since asserting
  * English cannot catch hardcoded English.
  */
 
@@ -75,9 +75,42 @@ const receipt = (
   updatedAt: "2026-09-02",
 });
 
-/** Answers the lifecycle PUTs: 200, or a refusal for the ids listed. */
+/** What the review answers for each receipt: one September month, ready for Finanças. */
+function reviewOf(receiptIds: string[]) {
+  return {
+    mode: "review",
+    canTest: false,
+    receipts: receiptIds.map((receiptId) => ({
+      receiptId,
+      refusal: null,
+      months: [
+        {
+          periodId: `period-${receiptId}`,
+          year: 2026,
+          month: 9,
+          amount: 800,
+          receivedOn: "2026-09-02",
+          contractNumber: "1234567",
+          contractVersion: null,
+          landlords: [{ name: "Ana Senhoria", nif: "123456789" }],
+          tenants: [{ name: "Ana Costa", nif: "234567899", country: "PT", document: null }],
+          blockers: [],
+        },
+      ],
+    })),
+  };
+}
+
+/**
+ * Answers the review Emitir opens, and the lifecycle PUTs: 200, or a refusal for the ids listed.
+ * Only the PUTs are returned by `issued`, since the review changes nothing.
+ */
 function stubLifecycle(refused: Record<string, { status: number; body: unknown }> = {}) {
-  const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => {
+  const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+    if (url === "/api/tax/connectors/at/receipts/preview") {
+      const { receiptIds } = JSON.parse(String(init?.body)) as { receiptIds: string[] };
+      return { ok: true, status: 200, json: async () => ({ data: reviewOf(receiptIds) }) };
+    }
     const id = /\/api\/receipts\/([^/]+)\/lifecycle/.exec(url)?.[1] ?? "";
     const refusal = refused[id];
     return refusal
@@ -92,6 +125,10 @@ function show() {
   render(<ReceiptsView />, { initialLocale: "pt" });
   return userEvent.setup();
 }
+
+/** The lifecycle PUTs a stub saw, in order: what was issued. */
+const lifecycleCalls = (fetchMock: ReturnType<typeof stubLifecycle>) =>
+  fetchMock.mock.calls.map(([url]) => url).filter((url) => url.endsWith("/lifecycle"));
 
 /** The table and the phone cards are both in the DOM; the first copy is the table's. */
 const first = <T,>(items: T[]) => items[0];
@@ -175,16 +212,22 @@ describe("ReceiptsView", () => {
     await user.click(first(screen.getAllByRole("checkbox", { name: pt.selectAll })));
     await user.click(screen.getByRole("button", { name: "Emitir 2" }));
 
-    const dialog = await screen.findByRole("alertdialog");
-    expect(dialog).toHaveTextContent("Emitir 2 recibos?");
-    expect(fetchMock).not.toHaveBeenCalled();
-    await user.click(within(dialog).getByRole("button", { name: pt.issueDialog.confirmLabel }));
+    // Emitir opens the review of what Finanças would receive; nothing is issued yet.
+    const sheet = await screen.findByRole("dialog");
+    expect(sheet).toHaveTextContent("Emitir 2 recibos?");
+    expect(await within(sheet).findAllByText(pt.atSheet.ready)).toHaveLength(2);
+    expect(lifecycleCalls(fetchMock)).toEqual([]);
+    await user.click(within(sheet).getByRole("button", { name: "Emitir 2" }));
 
     await waitFor(() => expect(app.refreshData).toHaveBeenCalled());
-    const issued = fetchMock.mock.calls.map(([url]) => url);
-    expect(issued).toEqual(["/api/receipts/r-draft/lifecycle", "/api/receipts/r-review/lifecycle"]);
-    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toEqual({ to: "emitted" });
+    expect(lifecycleCalls(fetchMock)).toEqual([
+      "/api/receipts/r-draft/lifecycle",
+      "/api/receipts/r-review/lifecycle",
+    ]);
+    const put = fetchMock.mock.calls.find(([url]) => url === "/api/receipts/r-draft/lifecycle");
+    expect(JSON.parse(String(put?.[1]?.body))).toEqual({ to: "emitted" });
     expect(toast.success).toHaveBeenCalledWith("2 recibos emitidos.");
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 
   it("says in Portuguese why a receipt was not issued, and keeps it ticked for a retry", async () => {
@@ -202,11 +245,9 @@ describe("ReceiptsView", () => {
 
     await user.click(first(screen.getAllByRole("checkbox", { name: pt.selectAll })));
     await user.click(screen.getByRole("button", { name: "Emitir 2" }));
-    await user.click(
-      within(await screen.findByRole("alertdialog")).getByRole("button", {
-        name: pt.issueDialog.confirmLabel,
-      }),
-    );
+    const sheet = await screen.findByRole("dialog");
+    await within(sheet).findAllByText(pt.atSheet.ready);
+    await user.click(within(sheet).getByRole("button", { name: "Emitir 2" }));
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(pt.issueFailed);

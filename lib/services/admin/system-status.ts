@@ -231,8 +231,9 @@ async function taxChecks(userId: string): Promise<StatusCheck[]> {
       state: kind === "test" ? "test" : "simulated",
       detail:
         kind === "test"
-          ? `${authority}. Mode "${row.mode}" — Situs checks credentials and fetches receipts at ` +
-            `the ${authority}'s test service, where nothing counts; it files nothing.${lastCall}`
+          ? `${authority}. Mode "${row.mode}" — Situs checks credentials, fetches receipts and ` +
+            `tests receipts at the ${authority}'s test service, where nothing counts; it files ` +
+            `nothing.${lastCall}`
           : `${authority}. Mode "${row.mode}" — filings are simulated and nothing is transmitted.` +
             lastCall,
     },

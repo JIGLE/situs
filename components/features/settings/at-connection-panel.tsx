@@ -25,6 +25,8 @@ import { AT_USERNAME } from "@/lib/tax/at/username";
 import { TEST_MODES } from "@/lib/tax/connectors/modes";
 import { apiFetch } from "@/lib/utils/api-client";
 import { useApiError } from "@/lib/utils/api-error";
+import { atProblemKey } from "@/lib/utils/at-call-labels";
+import { downloadBase64Pdf } from "@/lib/utils/download-pdf";
 import { formatDate } from "@/lib/utils/format-date";
 
 /**
@@ -75,16 +77,6 @@ const TONE_CLASS: Record<Notice["tone"], string> = {
   error: "text-[var(--semantic-danger-readable)]",
 };
 
-function downloadPdf(base64: string, name: string) {
-  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-  const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = name;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
 export function AtConnectionPanel() {
   const t = useTranslations("settings.at");
   const tActions = useTranslations("actions");
@@ -134,22 +126,11 @@ export function AtConnectionPanel() {
             return purpose === "check"
               ? { tone: "success", text: t("result.accepted") }
               : { tone: "error", text: t("result.notFound"), atMessage };
-          case "username":
-            return { tone: "error", text: t("result.username"), atMessage };
-          case "password":
-            return { tone: "error", text: t("result.password"), atMessage };
-          case "key":
-            return { tone: "error", text: t("result.key"), atMessage };
-          case "clock":
-            return { tone: "error", text: t("result.clock"), atMessage };
-          case "request":
-            return { tone: "error", text: t("result.request"), atMessage };
-          case "at_fault":
-            return { tone: "error", text: t("result.atFault"), atMessage };
           case "unknown":
             return { tone: "error", text: t("result.otherCode", { code: call.code }), atMessage };
+          default:
+            return { tone: "error", text: t(atProblemKey(call.category)), atMessage };
         }
-        break;
       }
       case "fault":
         return { tone: "error", text: t("result.fault", { fault: call.faultString }) };
@@ -272,7 +253,7 @@ export function AtConnectionPanel() {
         { contractNumber: contract, receiptNumber: receipt },
       );
       if (result.pdf) {
-        downloadPdf(result.pdf, `recibo-${contract}-${receipt}.pdf`);
+        downloadBase64Pdf(result.pdf, `recibo-${contract}-${receipt}.pdf`);
       } else {
         setFetchNotice(describeCall(result.call, "fetch"));
       }

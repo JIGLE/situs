@@ -10,7 +10,8 @@ test.use({ storageState: "playwright/.auth/user.json" });
  *
  * The movement goes in through `/api/debug/bank/movements`, as the other bank specs do, and is
  * confirmed against the lease, which makes the draft. The rest is the screen: the list opens on
- * this month, the draft is last month's rent, and ticking it offers **Issue 1**, which asks first.
+ * this month, the draft is last month's rent, and ticking it offers **Issue 1**, which opens the
+ * review of what Finanças would receive before issuing.
  * The spec ticks its own row rather than selecting all: other specs may leave drafts in that month,
  * and issuing theirs would change what they read.
  */
@@ -183,15 +184,16 @@ test("a matched draft is listed under its rent month, and issuing it makes it Is
       .filter({ visible: true })
       .first()
       .check({ force: true });
-    await page
-      .getByRole("button", { name: en.financial.receipts.issueSelected.replace("{count}", "1") })
-      .click();
+    const issueOne = en.financial.receipts.issueSelected.replace("{count}", "1");
+    await page.getByRole("button", { name: issueOne }).click();
 
-    const dialog = page.getByRole("alertdialog");
-    await dialog
-      .getByRole("button", { name: en.financial.receipts.issueDialog.confirmLabel, exact: true })
-      .click();
-    await expect(dialog).toBeHidden();
+    // Issue opens the review of what Finanças would receive. This lease has no AT contract
+    // number, and the review says so; issuing in Situs goes ahead regardless.
+    const review = page.getByRole("dialog");
+    await expect(review).toContainText("Issue 1 receipt?");
+    await expect(review).toContainText(en.financial.receipts.atSheet.blocker.contractNumberMissing);
+    await review.getByRole("button", { name: issueOne, exact: true }).click();
+    await expect(review).toBeHidden();
 
     await expect
       .poll(async () => {

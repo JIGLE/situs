@@ -1,7 +1,13 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { XMLValidator } from "fast-xml-parser";
-import { envelope, obterReciboBody, parseResponse } from "./soap";
+import {
+  emitirReciboBody,
+  envelope,
+  obterReciboBody,
+  parseResponse,
+  type EmitirReciboFields,
+} from "./soap";
 import { authenticated, categorize } from "./codes";
 
 const wrap = (body: string) =>
@@ -16,6 +22,64 @@ describe("envelope and obterReciboBody", () => {
     expect(xml).toContain("<S:Header><wss:Security/></S:Header>");
     // The manual's field order: the contract, then the receipt.
     expect(xml).toMatch(/<numeroContrato>0<\/numeroContrato><numeroRecibo>0<\/numeroRecibo>/);
+  });
+});
+
+const receipt: EmitirReciboFields = {
+  numeroContrato: "1234567",
+  versaoContrato: 2,
+  nifEmitente: "123456789",
+  locadores: [{ nif: "123456789" }, { nif: "234567899" }],
+  locatarios: [
+    { nif: "234567899", pais: "PT" },
+    { docIdentificacao: "AB<12>&34", pais: "FR" },
+  ],
+  tipo: "ARREND",
+  dataInicio: "2026-09-01",
+  dataFim: "2026-09-30",
+  tipoImportancia: "RENDAC",
+  valor: "750.00",
+  dataRecebimento: "2026-09-03",
+};
+
+describe("emitirReciboBody", () => {
+  it("writes the fields in the manual's order, 1.1 to 1.12", () => {
+    const xml = envelope("<wss:Security/>", emitirReciboBody(receipt));
+    expect(XMLValidator.validate(xml)).toBe(true);
+
+    const order = [...xml.matchAll(/<(\w+)>/g)].map((match) => match[1]);
+    expect(order).toEqual([
+      "numeroContrato",
+      "versaoContrato",
+      "nifEmitente",
+      "locadores",
+      "locador",
+      "nif",
+      "locador",
+      "nif",
+      "locatarios",
+      "locatario",
+      "nif",
+      "pais",
+      "locatario",
+      "docIdentificacao",
+      "pais",
+      "tipo",
+      "dataInicio",
+      "dataFim",
+      "tipoImportancia",
+      "valor",
+      "dataRecebimento",
+    ]);
+  });
+
+  it("escapes what it writes, and leaves the version out when there is none", () => {
+    const { versaoContrato: _version, ...unversioned } = receipt;
+    const xml = emitirReciboBody(unversioned);
+
+    expect(xml).toContain("<docIdentificacao>AB&lt;12&gt;&amp;34</docIdentificacao>");
+    expect(xml).not.toContain("versaoContrato");
+    expect(xml).toContain("<numeroContrato>1234567</numeroContrato><nifEmitente>");
   });
 });
 

@@ -49,6 +49,67 @@ export function obterReciboBody(numeroContrato: number, numeroRecibo: number): s
   );
 }
 
+/** A tenant on a receipt: by NIF when Portuguese, by an identity document when not (§4.1, 1.5). */
+export type EmitirReciboTenant =
+  { nif: string; pais: string } | { docIdentificacao: string; pais: string };
+
+/**
+ * `emitirRecibo`'s fields as the manual names them (§4.1, `emitirReciboRequest`, v1.6), each a
+ * string as it goes on the wire: AT reads a NIF as an int, a contract number as a long and `valor`
+ * as a decimal. `lib/tax/at/receipt-request.ts` builds them.
+ *
+ * Three optional parts of the request are not here yet: a tenant's `retencaoFonte` (withholding),
+ * `herdeiros` (the heirs of an undivided inheritance), and amount types other than rent.
+ */
+export interface EmitirReciboFields {
+  numeroContrato: string;
+  /** Optional in the manual: left out for a contract with no version. */
+  versaoContrato?: number;
+  nifEmitente: string;
+  locadores: { nif: string }[];
+  locatarios: EmitirReciboTenant[];
+  tipo: "ARREND";
+  /** The first and last day of the period the rent is for, `YYYY-MM-DD`. */
+  dataInicio: string;
+  dataFim: string;
+  tipoImportancia: "RENDAC";
+  valor: string;
+  dataRecebimento: string;
+}
+
+function tenantElements(tenant: EmitirReciboTenant): string {
+  const id =
+    "nif" in tenant
+      ? element("nif", tenant.nif)
+      : element("docIdentificacao", tenant.docIdentificacao);
+  return id + element("pais", tenant.pais);
+}
+
+/** `emitirRecibo`: one receipt, its elements in the manual's order (§4.1, fields 1.1 to 1.12). */
+export function emitirReciboBody(fields: EmitirReciboFields): string {
+  return (
+    `<ns:emitirReciboRequest xmlns:ns="${ARRENDAMENTO_NS}">` +
+    element("numeroContrato", fields.numeroContrato) +
+    (fields.versaoContrato === undefined ? "" : element("versaoContrato", fields.versaoContrato)) +
+    element("nifEmitente", fields.nifEmitente) +
+    `<locadores>` +
+    fields.locadores
+      .map((landlord) => `<locador>${element("nif", landlord.nif)}</locador>`)
+      .join("") +
+    `</locadores>` +
+    `<locatarios>` +
+    fields.locatarios.map((tenant) => `<locatario>${tenantElements(tenant)}</locatario>`).join("") +
+    `</locatarios>` +
+    element("tipo", fields.tipo) +
+    element("dataInicio", fields.dataInicio) +
+    element("dataFim", fields.dataFim) +
+    element("tipoImportancia", fields.tipoImportancia) +
+    element("valor", fields.valor) +
+    element("dataRecebimento", fields.dataRecebimento) +
+    `</ns:emitirReciboRequest>`
+  );
+}
+
 export interface AtFieldError {
   field?: string;
   message: string;
