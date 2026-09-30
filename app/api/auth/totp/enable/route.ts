@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
-import { readJson, ValidationError } from "@/lib/utils/error-handling";
+import { createErrorResponse, readJson, ValidationError } from "@/lib/utils/error-handling";
 import { encryptPII, decryptPII } from "@/lib/utils/pii-encryption";
 import { totpVerify } from "@/lib/utils/totp";
 import crypto from "crypto";
@@ -56,9 +56,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ backupCodes });
   } catch (err) {
-    if (err instanceof ValidationError) {
-      return NextResponse.json({ error: err.message }, { status: 400 });
-    }
+    if (err instanceof ValidationError) return createErrorResponse(err, 400, request);
     console.error("TOTP enable error", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

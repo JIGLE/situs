@@ -45,6 +45,7 @@ vi.mock("@/lib/utils/error-handling", () => ({
     new Response(JSON.stringify({ error: error.message }), { status }),
   createSuccessResponse: (data: any, status: any = 200) =>
     new Response(JSON.stringify(data), { status }),
+  readJson: (request: any) => request.json(),
   withErrorHandler: (fn: any) => fn,
 }));
 
