@@ -8,6 +8,7 @@ import {
   createErrorResponse,
   createSuccessResponse,
   withErrorHandler,
+  readJson,
 } from "@/lib/utils/error-handling";
 import { propertyService } from "@/lib/services/database/property";
 import { sanitizeForDatabase, sanitizeNumber } from "@/lib/utils/sanitize";
@@ -65,7 +66,7 @@ async function handlePost(request: NextRequest): Promise<Response> {
   const { scopeUserId } = authResult;
 
   try {
-    const body = await request.json();
+    const body = await readJson(request);
 
     // Validate with shared schema
     const validatedData = propertySchema.parse(body);

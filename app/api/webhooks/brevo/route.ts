@@ -21,6 +21,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { readJson } from "@/lib/utils/error-handling";
 
 import { getPrismaClient } from "@/lib/services/database/database";
 import { isWebhookAuthorised } from "@/lib/utils/webhook-auth";
@@ -144,7 +145,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   let body: unknown;
   try {
-    body = await request.json();
+    body = await readJson(request);
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }

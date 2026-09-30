@@ -4,6 +4,8 @@ import {
   createErrorResponse,
   createSuccessResponse,
   withErrorHandler,
+  RawBody,
+  readJson,
 } from "@/lib/utils/error-handling";
 import { ReceiptFiledError, receiptService } from "@/lib/services/database/receipt";
 import { sanitizeForDatabase, sanitizeNumber } from "@/lib/utils/sanitize";
@@ -64,7 +66,7 @@ async function handlePut(
       return createErrorResponse(new Error("Receipt not found"), 404, request);
     }
 
-    const body = await request.json();
+    const body = (await readJson(request)) as RawBody;
 
     // Sanitize input
     const sanitizedBody = {

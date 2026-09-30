@@ -6,6 +6,7 @@ import {
   createSuccessResponse,
   parseBody,
   withErrorHandler,
+  readJson,
 } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { bankTransactionActionSchema } from "@/lib/schemas/bank.schema";
@@ -29,7 +30,7 @@ async function handlePut(
   }
   if (!id) return createErrorResponse(new Error("Invalid request: missing id"), 400, request);
 
-  const body = parseBody(await request.json(), bankTransactionActionSchema);
+  const body = parseBody(await readJson(request), bankTransactionActionSchema);
 
   // The service refuses with typed errors (404, or 409 with a `reason`), which
   // `withErrorHandler` answers as themselves. Catching them here and answering 400 turned

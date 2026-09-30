@@ -9,7 +9,7 @@ import { z } from "zod";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { createRentReceipt, listRentReceipts } from "@/lib/compliance/rent-receipts-pt";
 import { logAudit } from "@/lib/services/audit-log";
-import { withErrorHandler } from "@/lib/utils/error-handling";
+import { withErrorHandler, readJson } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { assertOwnsRelations } from "@/lib/services/database/assert-owned";
 import type { RentReceiptInput } from "@/lib/compliance/rent-receipts-pt";
@@ -71,7 +71,7 @@ async function handlePost(request: NextRequest): Promise<NextResponse> {
   if (authResult instanceof NextResponse) return authResult;
   const { userId } = authResult;
 
-  const rawBody: unknown = await request.json();
+  const rawBody = await readJson(request);
   const parsed = rentReceiptPostSchema.safeParse(rawBody);
   if (!parsed.success) {
     // Audit the validation failure for observability. Use the same action as successful

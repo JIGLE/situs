@@ -5,6 +5,7 @@ import {
   createSuccessResponse,
   parseBody,
   withErrorHandler,
+  readJson,
 } from "@/lib/utils/error-handling";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { assertOwnsRelations } from "@/lib/services/database/assert-owned";
@@ -34,7 +35,7 @@ async function handlePut(
   }
   if (!id) return createErrorResponse(new Error("Invalid request: missing id"), 400, request);
 
-  const json = await request.json();
+  const json = await readJson(request);
 
   // The lease's own terms, and only those the request sent. The body used to be spread into the
   // update whole, so a request could write any column — `userId` included, which moved the lease

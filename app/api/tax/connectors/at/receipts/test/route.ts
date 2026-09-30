@@ -4,10 +4,10 @@ import { handleOptions, requireOwnerAccess } from "@/lib/services/auth/auth-midd
 import { testAtReceipts } from "@/lib/services/tax/at-receipts";
 import { atReceiptsTestSchema } from "@/lib/schemas/at-connection.schema";
 import {
-  ValidationError,
   createSuccessResponse,
   parseBody,
   withErrorHandler,
+  readJson,
 } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 
@@ -23,9 +23,7 @@ async function handlePost(request: NextRequest): Promise<Response> {
   const authResult = await requireOwnerAccess(request);
   if (authResult instanceof Response) return authResult;
 
-  const raw: unknown = await request.json().catch(() => {
-    throw new ValidationError("Invalid request: the body is not JSON");
-  });
+  const raw: unknown = await readJson(request);
   const { receiptIds } = parseBody(raw, atReceiptsTestSchema);
   const receipts = await testAtReceipts(authResult.scopeUserId, receiptIds);
   return createSuccessResponse({ receipts });

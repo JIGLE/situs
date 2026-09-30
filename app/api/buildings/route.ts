@@ -4,6 +4,7 @@ import {
   createErrorResponse,
   createSuccessResponse,
   withErrorHandler,
+  readJson,
 } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { getPrismaClient } from "@/lib/services/database/database";
@@ -51,7 +52,7 @@ async function handlePost(request: NextRequest): Promise<Response> {
   const prisma = getPrismaClient();
 
   try {
-    const json = await request.json();
+    const json = await readJson(request);
     const body = buildingSchema.parse(json);
 
     const building = await prisma.building.create({

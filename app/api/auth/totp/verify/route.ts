@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getServerSession } from "next-auth/next";
 import { getAuthOptions } from "@/lib/services/auth/auth";
 import { getPrismaClient } from "@/lib/services/database/database";
+import { createErrorResponse, readJson, ValidationError } from "@/lib/utils/error-handling";
 import { decryptPII, encryptPII } from "@/lib/utils/pii-encryption";
 import { totpVerify } from "@/lib/utils/totp";
 import crypto from "crypto";
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
   if (limited) return limited;
 
   try {
-    const body = await request.json();
+    const body = await readJson(request);
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: "Invalid code" }, { status: 400 });
   } catch (err) {
+    if (err instanceof ValidationError) return createErrorResponse(err, 400, request);
     console.error("TOTP verify error", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

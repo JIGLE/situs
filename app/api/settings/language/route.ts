@@ -5,10 +5,10 @@ import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { isMockMode } from "@/lib/config/data-mode";
 import {
-  ValidationError,
   createSuccessResponse,
   parseBody,
   withErrorHandler,
+  readJson,
 } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { locales } from "@/lib/i18n/locales";
@@ -31,11 +31,7 @@ async function handlePut(request: NextRequest): Promise<Response> {
   if (authResult instanceof Response) return authResult;
   const { userId } = authResult;
 
-  // A body that is not JSON is the caller's mistake; `withErrorHandler` would answer its
-  // SyntaxError as a server error.
-  const raw: unknown = await request.json().catch(() => {
-    throw new ValidationError("Invalid request: the body is not JSON");
-  });
+  const raw: unknown = await readJson(request);
   const { language } = parseBody(raw, chooseLanguageSchema);
   const languageChosenAt = new Date();
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { z } from "zod";
 import { documentExport } from "@/lib/services/pdf-generator";
+import { createErrorResponse, readJson, ValidationError } from "@/lib/utils/error-handling";
 
 const generateLeaseSchema = z.object({
   landlordName: z.string().min(1),
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const authResult = await requireAuth(request);
     if (authResult instanceof Response) return authResult as NextResponse;
 
-    const body = await request.json();
+    const body = await readJson(request);
     const parsed = generateLeaseSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       },
     });
   } catch (error) {
+    if (error instanceof ValidationError) return createErrorResponse(error, 400, request);
     console.error("Error generating lease template:", error);
     return NextResponse.json({ error: "Failed to generate lease document" }, { status: 500 });
   }

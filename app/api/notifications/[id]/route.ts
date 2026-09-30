@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
+import {
+  createErrorResponse,
+  RawBody,
+  readJson,
+  ValidationError,
+} from "@/lib/utils/error-handling";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -34,7 +40,7 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
     const { userId } = authResult;
     const { id } = await context.params;
 
-    const body = await request.json();
+    const body = (await readJson(request)) as RawBody;
 
     const prisma = getPrismaClient();
     const existing = await prisma.notification.findFirst({
@@ -54,6 +60,7 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
 
     return NextResponse.json(notification);
   } catch (error) {
+    if (error instanceof ValidationError) return createErrorResponse(error, 400, request);
     console.error("Error updating notification:", error);
     return NextResponse.json({ error: "Failed to update notification" }, { status: 500 });
   }

@@ -6,6 +6,7 @@ import {
   createSuccessResponse,
   parseBody,
   withErrorHandler,
+  readJson,
 } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { receiptLifecycleTransitionSchema } from "@/lib/schemas/receipt.schema";
@@ -31,11 +32,7 @@ async function handlePut(
   }
   if (!id) throw new ValidationError("Invalid request: missing id");
 
-  // A body that is not JSON is the caller's mistake; `withErrorHandler` would answer its
-  // SyntaxError as a server error.
-  const raw: unknown = await request.json().catch(() => {
-    throw new ValidationError("Invalid request: the body is not JSON");
-  });
+  const raw: unknown = await readJson(request);
   const body = parseBody(raw, receiptLifecycleTransitionSchema);
   const outcome = await transitionReceipt(scopeUserId, id, body.to, {
     voidReason: body.voidReason,
