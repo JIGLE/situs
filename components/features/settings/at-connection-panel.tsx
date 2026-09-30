@@ -25,7 +25,7 @@ import { AT_USERNAME } from "@/lib/tax/at/username";
 import { TEST_MODES } from "@/lib/tax/connectors/modes";
 import { apiFetch } from "@/lib/utils/api-client";
 import { useApiError } from "@/lib/utils/api-error";
-import { AT_PROBLEM_KEY } from "@/lib/utils/at-call-labels";
+import { atProblemKey } from "@/lib/utils/at-call-labels";
 import { downloadBase64Pdf } from "@/lib/utils/download-pdf";
 import { formatDate } from "@/lib/utils/format-date";
 
@@ -129,7 +129,7 @@ export function AtConnectionPanel() {
           case "unknown":
             return { tone: "error", text: t("result.otherCode", { code: call.code }), atMessage };
           default:
-            return { tone: "error", text: t(AT_PROBLEM_KEY[call.category]), atMessage };
+            return { tone: "error", text: t(atProblemKey(call.category)), atMessage };
         }
       }
       case "fault":

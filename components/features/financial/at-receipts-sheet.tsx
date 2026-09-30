@@ -27,7 +27,7 @@ import { TEST_MODES } from "@/lib/tax/connectors/modes";
 import type { Receipt } from "@/lib/types";
 import { apiFetch } from "@/lib/utils/api-client";
 import { useApiError } from "@/lib/utils/api-error";
-import { AT_PROBLEM_KEY } from "@/lib/utils/at-call-labels";
+import { atProblemKey } from "@/lib/utils/at-call-labels";
 import { AT_BLOCKER_KEY, AT_REFUSAL_KEY } from "@/lib/utils/at-receipt-labels";
 import { countryName } from "@/lib/utils/countries";
 import { downloadBase64Pdf } from "@/lib/utils/download-pdf";
@@ -120,7 +120,7 @@ export function AtReceiptsSheet({ onClose, receipts, onIssue, issuing }: AtRecei
         if (call.category === "unknown") return tAt("result.otherCode", { code: call.code });
         // Only a fetch reaches here with these: AT had no such receipt to give.
         if (call.category === "ok" || call.category === "rejected") return tAt("result.notFound");
-        return tAt(AT_PROBLEM_KEY[call.category]);
+        return tAt(atProblemKey(call.category));
       case "fault":
         return tAt("result.fault", { fault: call.faultString });
       case "not_sent":
