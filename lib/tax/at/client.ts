@@ -1,6 +1,14 @@
 import { categorize, type AtCodeCategory } from "./codes";
 import type { AtMaterial } from "./config";
-import { envelope, obterReciboBody, parseResponse, SOAP_ACTIONS, type AtFieldError } from "./soap";
+import {
+  emitirReciboBody,
+  envelope,
+  obterReciboBody,
+  parseResponse,
+  SOAP_ACTIONS,
+  type AtFieldError,
+  type EmitirReciboFields,
+} from "./soap";
 import { postSoap } from "./transport";
 import { buildUsernameToken, securityHeaderXml, type AtLogin } from "./ws-security";
 
@@ -76,6 +84,18 @@ export function obterRecibo(
   numeroRecibo: number,
 ): Promise<AtOutcome> {
   return call(context, obterReciboBody(numeroContrato, numeroRecibo), SOAP_ACTIONS.obterRecibo);
+}
+
+/**
+ * Issues one receipt (manual §4.1, `emitirRecibo`). AT answers 0 with its receipt number, or −1
+ * with its field errors. Nothing at AT can list or void a receipt, so a request that got no
+ * answer may still have issued one: the caller must not send it again blindly.
+ */
+export function emitirRecibo(
+  context: AtClientContext,
+  fields: EmitirReciboFields,
+): Promise<AtOutcome> {
+  return call(context, emitirReciboBody(fields), SOAP_ACTIONS.emitirRecibo);
 }
 
 /**

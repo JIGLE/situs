@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createServer, type AddressInfo } from "node:net";
 import { answerXml, faultXml, startFakeAt, type FakeAtOptions } from "@/tests/helpers/fake-at";
 import { makeTestPki, type TestPki } from "@/tests/helpers/test-pki";
-import { checkCredentials, obterRecibo, type AtClientContext } from "./client";
+import { checkCredentials, emitirRecibo, obterRecibo, type AtClientContext } from "./client";
 import { readAtConfig, type AtMaterial } from "./config";
 
 /**
@@ -151,5 +151,91 @@ describe("obterRecibo", () => {
       1,
     );
     expect(outcome.outcome).toBe("not_sent");
+  });
+});
+
+describe("emitirRecibo", () => {
+  const fields = {
+    numeroContrato: "1234567",
+    versaoContrato: 2,
+    nifEmitente: "555555555",
+    locadores: [{ nif: "123456789" }],
+    locatarios: [
+      { nif: "234567899", pais: "PT" },
+      { docIdentificacao: "12AB34567", pais: "FR" },
+    ],
+    tipo: "ARREND" as const,
+    dataInicio: "2026-09-01",
+    dataFim: "2026-09-30",
+    tipoImportancia: "RENDAC" as const,
+    valor: "750.00",
+    dataRecebimento: "2026-09-03",
+  };
+
+  it("sends every field as AT reads it, and returns the number AT gave the receipt", async () => {
+    await withFakeAt(
+      {
+        answer: () => ({
+          xml: answerXml("emitirReciboResponse", {
+            codigo: 0,
+            mensagem: "Documento registado com sucesso",
+            numeroRecibo: 42,
+          }),
+        }),
+      },
+      async (context, fake) => {
+        const outcome = await emitirRecibo(context, fields);
+        expect(outcome).toMatchObject({
+          outcome: "answer",
+          code: 0,
+          category: "ok",
+          receiptNumber: 42,
+        });
+        expect(fake.requests).toHaveLength(1);
+        expect(fake.requests[0].operation).toBe("emitirReciboRequest");
+        expect(fake.requests[0].fields).toEqual({
+          numeroContrato: "1234567",
+          versaoContrato: "2",
+          nifEmitente: "555555555",
+          locadores: { locador: { nif: "123456789" } },
+          locatarios: {
+            locatario: [
+              { nif: "234567899", pais: "PT" },
+              { docIdentificacao: "12AB34567", pais: "FR" },
+            ],
+          },
+          tipo: "ARREND",
+          dataInicio: "2026-09-01",
+          dataFim: "2026-09-30",
+          tipoImportancia: "RENDAC",
+          valor: "750.00",
+          dataRecebimento: "2026-09-03",
+        });
+      },
+    );
+  });
+
+  it("returns AT's field errors when it refuses the receipt", async () => {
+    await withFakeAt(
+      {
+        answer: () => ({
+          xml:
+            `<?xml version="1.0" encoding="UTF-8"?>` +
+            `<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/"><S:Body>` +
+            `<ns2:emitirReciboResponse xmlns:ns2="http://at.gov.pt/fake"><codigo>-1</codigo>` +
+            `<mensagem>O recibo apresenta um ou mais erros</mensagem><erros><erro>` +
+            `<campo>numeroContrato</campo><mensagem>Contrato inexistente</mensagem>` +
+            `</erro></erros></ns2:emitirReciboResponse></S:Body></S:Envelope>`,
+        }),
+      },
+      async (context) => {
+        expect(await emitirRecibo(context, fields)).toMatchObject({
+          outcome: "answer",
+          code: -1,
+          category: "rejected",
+          errors: [{ field: "numeroContrato", message: "Contrato inexistente" }],
+        });
+      },
+    );
   });
 });
