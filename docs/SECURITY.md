@@ -65,8 +65,20 @@ An account with an authenticator app (Settings › Security) has to enter a code
 - A session held pending before it had a `sid` is given one at its next refresh, which the code page
   causes by reading the session; a code posted before that answers 401 `mfa_session_unnamed` and
   spends nothing.
+- Signing in fails closed: a sign-in that cannot read whether the account has a second factor is
+  refused (`MFA_STATE_UNREADABLE`), not let in as a full session. The code page leaves only when
+  `update` answers a session that is no longer pending, since next-auth answers `null` rather than
+  throwing when that call fails.
+- The code limiter is per account, not per session, which is what stops guessing across sessions. It
+  also means a sign-in with only the password that keeps posting wrong codes keeps the owner's code
+  page at 429.
 - Turning it off (`DELETE /api/auth/totp/disable`) asks for no code, only a session that has
-  passed its own second factor.
+  passed its own second factor. `GET /api/auth/totp/setup` switches it off as well until the new
+  secret is confirmed, and being a GET that changes state it is outside what `SameSite=Lax` and the
+  proxy's CSRF check protect: a link followed while signed in can do it. Making it a POST is its
+  own change.
+- An accepted TOTP code is not single-use within its 30 seconds, and a backup code is spent by a
+  read and a write that two concurrent posts can both pass. Both need a code in hand.
 
 ## Rate limiting
 

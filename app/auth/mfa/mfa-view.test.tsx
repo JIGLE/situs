@@ -42,11 +42,14 @@ const answer = (status: number, body: unknown = {}) =>
 const codeInput = () => screen.getByLabelText(/código/i);
 const submit = () => screen.getByRole("button", { name: /^(verificar|a verificar)/i });
 
+/** What `update` answers when the session was released: the session as the server now has it. */
+const released = { user: { id: "user-1" }, mfaPending: false };
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.unstubAllGlobals();
   session.current = { data: null, status: "loading" };
-  update.mockResolvedValue(null);
+  update.mockResolvedValue(released);
 });
 
 describe("MfaView", () => {
@@ -95,6 +98,26 @@ describe("MfaView", () => {
     // It comes before the redirect: the proxy reads the cookie that update rewrites.
     expect(update.mock.invocationCallOrder[0]).toBeLessThan(replace.mock.invocationCallOrder[0]);
   });
+
+  it.each([
+    ["null, which is what next-auth answers when the call failed", null],
+    ["a session that is still held", { user: { id: "user-1" }, mfaPending: true }],
+  ])(
+    "does not leave when the update answers %s, since the proxy would send it straight back",
+    async (_label, answerOfUpdate) => {
+      pending();
+      update.mockResolvedValue(answerOfUpdate);
+      vi.stubGlobal("fetch", answer(200, { ok: true, proof: "v1.1800000060000.mac" }));
+      render(<MfaView />, { initialLocale: "pt" });
+
+      fireEvent.change(codeInput(), { target: { value: "123456" } });
+      fireEvent.click(submit());
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("Algo correu mal. Tente de novo.");
+      expect(replace).not.toHaveBeenCalled();
+      expect(codeInput()).toHaveValue("");
+    },
+  );
 
   it("does not leave when the answer carries no proof, since the session would still be held", async () => {
     pending();

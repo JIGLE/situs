@@ -288,8 +288,16 @@ function createBaseAuthOptions(): NextAuthOptions {
                 chosen?.languageChosenAt && hasLocale(locales, chosen.language)
                   ? chosen.language
                   : undefined;
-            } catch {
-              // DB unavailable — allow login without MFA check
+            } catch (err) {
+              // Fails closed. A sign-in that cannot say whether the account has a second factor
+              // is not let in as a full session: with the password alone, trying again until the
+              // read happened to fail would be a way round the code. The user lands on the error
+              // page and signs in again, as when the User row cannot be provisioned above.
+              logger.error(
+                "Could not read the account's second-factor state — refusing the sign-in",
+                err instanceof Error ? err : new Error(String(err)),
+              );
+              throw new Error("MFA_STATE_UNREADABLE");
             }
           }
         } else {

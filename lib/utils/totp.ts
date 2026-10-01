@@ -18,6 +18,9 @@ export function totpGenerate(secret: string): string {
 }
 
 export function totpVerify(token: string, secret: string): boolean {
+  // otplib throws on a token that is not six digits, which would turn a caller's mistake (letters
+  // typed into the box) into a 500 on the two routes that verify one.
+  if (!/^\d{6}$/.test(token)) return false;
   const result = verifySync({ token, secret });
   if (typeof result === "boolean") return result;
   if (result && typeof result === "object") {

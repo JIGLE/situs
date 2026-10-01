@@ -124,6 +124,15 @@ describe("POST /api/auth/totp/verify", () => {
     expect(prisma.user.update).not.toHaveBeenCalled();
   });
 
+  it("answers six letters with a 400, not a 500", async () => {
+    // otplib throws on a token that is not six digits, and the box takes any character.
+    const res = await send("abcdef", pendingAs("sid-1"));
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: "Invalid code" });
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
   it("refuses a session that is not waiting for a code, before reading anything", async () => {
     const res = await send(totpGenerate(TOTP_SECRET), {});
 

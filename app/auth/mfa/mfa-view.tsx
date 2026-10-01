@@ -73,7 +73,15 @@ export function MfaView() {
           setCode("");
           return;
         }
-        await update({ mfaProof: proof });
+        // next-auth answers `null`, and does not throw, when this call fails. Leaving anyway would
+        // send the proxy's redirect straight back here, with the code (a backup code is single-use)
+        // already spent and no word on why.
+        const released = (await update({ mfaProof: proof })) as { mfaPending?: boolean } | null;
+        if (released?.mfaPending !== false) {
+          setProblem("generic");
+          setCode("");
+          return;
+        }
         router.replace("/dashboard");
         return;
       }

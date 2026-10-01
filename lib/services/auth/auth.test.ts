@@ -428,6 +428,24 @@ describe("jwt and session callbacks — the second factor", () => {
     expect(token.sid).toBeUndefined();
   });
 
+  it.each([
+    ["Google", { id: "google-sub-999" }, { provider: "google" }],
+    ["password", { id: "db-cuid-1" }, { provider: "credentials" }],
+  ])(
+    "refuses a %s sign-in it cannot read the second-factor state for, rather than let it in",
+    async (_label, user, account) => {
+      // The read at sign-in is the only thing that sets `mfaPending`. Swallowing its failure would
+      // hand a full session to a first factor alone whenever the database happened to be busy.
+      prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1" });
+      prismaMock.user.findUnique.mockRejectedValue(new Error("database is locked"));
+      const jwt = await loadJwt();
+
+      await expect(
+        jwt({ token: {}, user: { ...user, email: "owner@example.com", name: "Owner" }, account }),
+      ).rejects.toThrow("MFA_STATE_UNREADABLE");
+    },
+  );
+
   it("keeps a session pending through a refresh, whoever verified a code, whenever", async () => {
     // The hole: the owner enters a code, and a sign-in with only the password a minute later is
     // released at its first refresh because the ACCOUNT has a verification from the last five.
