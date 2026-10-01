@@ -424,6 +424,7 @@
     "finance": "Finanzas",
     "contracts": "Contratos",
     "account": "Cuenta",
+    "complete": "Lo que falta",
     "more": "Más",
     "signOut": "Cerrar sesión",
     "coreGroup": "Núcleo",
@@ -491,6 +492,7 @@
     "attentionMovements": "{count, plural, one {# movimiento por revisar} other {# movimientos por revisar}}",
     "attentionReceipts": "{count, plural, one {# recibo por emitir} other {# recibos por emitir}}",
     "attentionLeases": "{count, plural, one {# contrato termina en 60 días} other {# contratos terminan en 60 días}}",
+    "attentionMissing": "{count, plural, one {Falta # dato para tus recibos} other {Faltan # datos para tus recibos}}",
     "recentMovements": "Movimientos recientes",
     "recentMovementsEmpty": "Aún no hay movimientos.",
     "recentPaymentsEmpty": "Aún no hay pagos.",
@@ -501,6 +503,51 @@
     "activityTitle": "Actividad reciente",
     "activityEmpty": "Aún no hay actividad.",
     "activitySeeAll": "Ver todo el historial"
+  },
+  "completion": {
+    "title": "Lo que falta",
+    "left": "{count, plural, one {Falta # dato} other {Faltan # datos}}",
+    "weight": {
+      "blocksReceipt": "Necesario para emitir un recibo",
+      "reminders": "Necesario para recordatorios y conciliación",
+      "niceToHave": "Conviene tenerlo"
+    },
+    "loading": "Cargando…",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "skip": "Omitir",
+    "skippedNote": "Lo que omitas vuelve al final.",
+    "notValid": "{value} no es válido.",
+    "doneTitle": "No falta nada",
+    "doneBody": "Todos los contratos activos tienen lo que un recibo necesita de ti.",
+    "backToDashboard": "Volver al panel",
+    "retry": "Intentar de nuevo",
+    "kind": {
+      "contract_number": {
+        "label": "Número de contrato en la AT",
+        "hint": "El número que la AT asignó al contrato cuando se registró. Solo dígitos.",
+        "placeholder": "1234567",
+        "about": "Contrato de {name}, {property}"
+      },
+      "landlord_nif": {
+        "label": "NIF",
+        "hint": "El NIF del arrendador, nueve dígitos.",
+        "placeholder": "123456789",
+        "about": "{name}, arrendador de {property}"
+      },
+      "tenant_nif": {
+        "label": "NIF",
+        "hint": "El NIF del inquilino, nueve dígitos.",
+        "placeholder": "123456789",
+        "about": "{name}, inquilino de {property}"
+      },
+      "tenant_document": {
+        "label": "Documento de identidad",
+        "hint": "El número del pasaporte o del documento de identidad del inquilino, tal como se emitió en el extranjero.",
+        "placeholder": "AB1234567",
+        "about": "{name}, inquilino de {property}"
+      }
+    }
   },
   "onboarding": {
     "gettingStarted": "Primeros Pasos",

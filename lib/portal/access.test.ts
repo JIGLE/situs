@@ -148,6 +148,42 @@ describe("redirect-only routes survive the portal access guard", () => {
 });
 
 /**
+ * The same trap for a page that renders something. The sweep above asks about the pages that only
+ * forward; /complete was the other kind: a real page, behind the proxy's list, absent from this
+ * one, so `PortalAccessGuard` sent it back to /dashboard a moment after the URL changed. Its own
+ * tests rendered the screen on its own and could not see the guard around it. Only an E2E did.
+ *
+ * So every page folder is asked, not just the stubs, and a page added without an entry fails here
+ * by name, on the commit that adds it.
+ */
+describe("every page under (main) passes the portal access guard", () => {
+  const APP_DIR = path.join(process.cwd(), "app", "[locale]", "(main)");
+
+  const pages = readdirSync(APP_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !/^[[(@]/.test(entry.name))
+    .filter((entry) => existsSync(path.join(APP_DIR, entry.name, "page.tsx")))
+    .map((entry) => `/${entry.name}`);
+
+  it("finds the pages (a zero-length sweep would pass every assertion below)", () => {
+    expect(pages).toEqual(expect.arrayContaining(["/dashboard", "/financials", "/settings"]));
+  });
+
+  it.each(pages)("%s is reachable", (route) => {
+    expect(
+      canAccessPortalPath(route),
+      `app/[locale]/(main)${route} has no entry in PORTAL_NAV_GROUPS (lib/portal/access.ts), so PortalAccessGuard sends it to /dashboard`,
+    ).toBe(true);
+  });
+
+  it("permits /complete without giving it a row in the rail", () => {
+    // A task the dashboard hands over, not a place to browse.
+    const railKeys = getPortalNavigation().flatMap((group) => group.items.map((item) => item.key));
+    expect(canAccessPortalPath("/complete")).toBe(true);
+    expect(railKeys).not.toContain("complete");
+  });
+});
+
+/**
  * Leases was a `hidden` item, "reached from" pages that no longer linked to it, so the screen
  * where leases are created and edited had no way in on either layout.
  */

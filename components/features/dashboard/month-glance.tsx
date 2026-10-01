@@ -21,6 +21,7 @@ const LINKS = {
   tax: "/financials?tab=tax",
   leases: "/leases",
   activity: "/settings?tab=account",
+  complete: "/complete",
 } as const;
 
 /** A section's label: one heading per screen, so these are labels, not headings. */
@@ -226,6 +227,12 @@ export function AttentionList({ attention }: { attention: DashboardMonth["attent
       text: t("attentionLeases", { count: attention.leasesEnding }),
       href: LINKS.leases,
       tone: "info" as const,
+    },
+    attention.missingData > 0 && {
+      key: "missing",
+      text: t("attentionMissing", { count: attention.missingData }),
+      href: LINKS.complete,
+      tone: "warning" as const,
     },
   ].filter((item) => item !== false);
 

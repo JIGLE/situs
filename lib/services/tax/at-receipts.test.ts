@@ -36,6 +36,7 @@ vi.mock("./at-connection", async (importOriginal) => ({
 }));
 
 import { ConflictError } from "@/lib/utils/error-handling";
+import { UNREADABLE_PII } from "@/lib/utils/pii-encryption";
 import { MAX_TEST_MONTHS } from "@/lib/tax/at/receipt-request";
 import { previewAtReceipts, testAtReceipts } from "./at-receipts";
 
@@ -224,6 +225,42 @@ describe("previewAtReceipts", () => {
       ["rcpt-loose", "no_rent_month"],
     ]);
     expect(receipts[0].months[0].blockers).toEqual([{ code: "contract_number_missing" }]);
+  });
+
+  it("treats a NIF or a document it could not decrypt as missing, and sends none of it", async () => {
+    // After the key changed the extension answers UNREADABLE_PII, which is not empty: a foreign
+    // tenant's document would pass, and the sentinel would go to AT as a document number.
+    prismaMock.owner.findMany.mockResolvedValue([
+      { id: "owner-a", name: "Ana Senhoria", taxIdentificationNumber: UNREADABLE_PII },
+    ]);
+    prismaMock.tenant.findMany.mockResolvedValue([
+      {
+        id: "tenant-1",
+        name: "Rui Inquilino",
+        taxId: null,
+        taxCountry: "ES",
+        idDocument: UNREADABLE_PII,
+      },
+    ]);
+    prismaMock.leaseParty.findMany.mockResolvedValue([
+      {
+        id: "party-1",
+        leaseId: "lease-1",
+        role: "tenant",
+        name: "Marie Colocataire",
+        taxId: null,
+        taxCountry: "FR",
+        idDocument: UNREADABLE_PII,
+      },
+    ]);
+
+    const { receipts } = await previewAtReceipts(USER, ["rcpt-1"], NOW);
+    const [month] = receipts[0].months;
+
+    expect(month.blockers.map((blocker) => blocker.code)).toEqual(
+      expect.arrayContaining(["landlord_nif_missing", "tenant_document_missing"]),
+    );
+    expect(JSON.stringify(receipts)).not.toContain(UNREADABLE_PII);
   });
 
   it("lists a receipt's months in order, one per month however many allocations it holds", async () => {
