@@ -187,7 +187,8 @@ export function withErrorHandler<C = unknown>(
 /**
  * A JSON body nobody has validated yet. A few older handlers read its fields one at a time and
  * sanitise each before a schema sees the result, so it is typed as loosely as `request.json()`
- * was. A new handler validates first (`parseBody`, `parseJsonBody`) and has no use for it.
+ * was. `readJsonObject` returns it. A new handler validates first (`parseBody`, `parseJsonBody`)
+ * and has no use for it.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type RawBody = Record<string, any>;
@@ -226,6 +227,26 @@ export async function readJson(request: Pick<Request, "json">): Promise<unknown>
 }
 
 /**
+ * The JSON body of a request when it is an object, or a `ValidationError` (→ 400).
+ *
+ * For a handler that reads fields off the body before any schema sees it. JSON that is not an
+ * object (`null`, an array, a string, a number) is the caller's mistake too, and `null` is the one
+ * that hurts: `raw.tenantId` on it is a `TypeError`, which `withErrorHandler` answers as a 500.
+ * Everything `readJson` refuses is refused here, with its message.
+ *
+ * @example
+ * const raw = await readJsonObject(request);
+ * const data = parseBody({ ...raw, name: sanitizeForDatabase(raw.name) }, schema);
+ */
+export async function readJsonObject(request: Pick<Request, "json">): Promise<RawBody> {
+  const body = await readJson(request);
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    throw new ValidationError("Invalid request: the body must be a JSON object");
+  }
+  return body as RawBody;
+}
+
+/**
  * Validate an already-parsed body object against a Zod schema.
  *
  * Throws `ValidationError` (→ 400) on failure, so callers wrapped in
@@ -234,7 +255,7 @@ export async function readJson(request: Pick<Request, "json">): Promise<unknown>
  * Use this when you need to sanitize the raw body before validation.
  *
  * @example
- * const raw = (await readJson(request)) as RawBody;
+ * const raw = await readJsonObject(request);
  * const data = parseBody({ ...raw, name: sanitizeForDatabase(raw.name) }, schema);
  */
 export function parseBody<T>(body: unknown, schema: ZodSchema<T>): T {

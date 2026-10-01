@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
-import { createErrorResponse, readJson, ValidationError } from "@/lib/utils/error-handling";
+import { createErrorResponse, ValidationError, readJsonObject } from "@/lib/utils/error-handling";
 
 export const runtime = "nodejs";
 
@@ -10,7 +10,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 /** The JSON body, or the 400 for one that is not JSON: this route has no `withErrorHandler`. */
 async function readBody<T>(request: NextRequest): Promise<T | Response> {
   try {
-    return (await readJson(request)) as T;
+    return (await readJsonObject(request)) as T;
   } catch (error) {
     if (error instanceof ValidationError) return createErrorResponse(error, 400, request);
     throw error;

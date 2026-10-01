@@ -3,9 +3,8 @@ import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import {
   createErrorResponse,
   ResourceNotFoundError,
-  RawBody,
-  readJson,
   ValidationError,
+  readJsonObject,
 } from "@/lib/utils/error-handling";
 import {
   calculateDistribution,
@@ -55,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     const { userId } = authResult;
 
-    const data = (await readJson(request)) as RawBody;
+    const data = await readJsonObject(request);
 
     // Validate required fields
     if (!data.propertyId || !data.periodStart || !data.periodEnd) {

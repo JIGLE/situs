@@ -9,8 +9,7 @@ import {
   createSuccessResponse,
   parseBody,
   withErrorHandler,
-  RawBody,
-  readJson,
+  readJsonObject,
 } from "@/lib/utils/error-handling";
 import { tenantService } from "@/lib/services/database/tenant";
 import { sanitizeForDatabase, sanitizeEmail, sanitizeNumber } from "@/lib/utils/sanitize";
@@ -90,7 +89,7 @@ async function handlePost(request: NextRequest): Promise<Response> {
 
   const { scopeUserId } = authResult;
 
-  const raw = (await readJson(request)) as RawBody;
+  const raw = await readJsonObject(request);
   const sanitizedBody = {
     ...raw,
     name: sanitizeForDatabase(raw.name),

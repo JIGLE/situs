@@ -4,8 +4,7 @@ import {
   createErrorResponse,
   createSuccessResponse,
   withErrorHandler,
-  RawBody,
-  readJson,
+  readJsonObject,
 } from "@/lib/utils/error-handling";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { assertOwnsRelations } from "@/lib/services/database/assert-owned";
@@ -108,7 +107,7 @@ async function handlePut(
       return createErrorResponse(new Error("Expense not found"), 404, request);
     }
 
-    const body = (await readJson(request)) as RawBody;
+    const body = await readJsonObject(request);
 
     // Sanitize input
     const sanitizedBody = {
