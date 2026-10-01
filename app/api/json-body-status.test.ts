@@ -15,6 +15,11 @@ import { join } from "node:path";
  * answers 400. This scans the route handlers, so a bare read anywhere under app/api fails the suite
  * instead of shipping.
  *
+ * JSON that is not an object is the caller's mistake too. `null` is the one that hurts: a handler
+ * that reads `raw.tenantId` off it throws a `TypeError`, which answers 500. `readJsonObject` refuses
+ * it with a 400, so a route that reads fields off the body takes it from there, and this refuses the
+ * older way, a `readJson` result cast to `RawBody`.
+ *
  * A handler that answers its own errors rather than through `withErrorHandler` has to catch the
  * `ValidationError` itself, and nothing static can tell that it does:
  * json-body-answers-400.test.ts exercises the ones that exist.
@@ -59,6 +64,16 @@ function bareReads(src: string): number[] {
   return lines;
 }
 
+// A `readJson` result cast to `RawBody`. `[^()]*` is the argument, which has no parentheses of its
+// own here; keeping the pattern flat avoids the nested quantifiers of a backtracking hazard.
+const RAW_CAST = /\breadJson\s*\([^()]*\)\s*\)?\s*as\s+RawBody\b/g;
+
+/** The line of every `readJson(...)` result cast to `RawBody`. */
+function rawCasts(src: string): number[] {
+  const code = withoutComments(src);
+  return [...code.matchAll(RAW_CAST)].map((m) => code.slice(0, m.index).split("\n").length);
+}
+
 describe("app/api reads its JSON bodies through readJson", () => {
   it("finds route files to scan (guards against the walk silently matching nothing)", () => {
     expect(routeFiles().length).toBeGreaterThan(50);
@@ -101,6 +116,39 @@ describe("app/api reads its JSON bodies through readJson", () => {
       `request.json() rejects a body that is not JSON with a SyntaxError, which withErrorHandler\n` +
         `answers as a 500. Read it with readJson(request), or parseJsonBody(request, schema), from\n` +
         `@/lib/utils/error-handling: both answer a ValidationError, which is a 400.\n\n` +
+        offenders.join("\n"),
+    ).toEqual([]);
+  });
+
+  it("recognises a readJson result cast to RawBody", () => {
+    const casts: [string, number[]][] = [
+      ["const raw = (await readJson(request)) as RawBody;", [1]],
+      ["const raw = await readJson(request) as RawBody;", [1]],
+      ["const a = 1;\nconst raw = (await readJson(\n  request,\n)) as RawBody;", [2]],
+    ];
+    for (const [src, lines] of casts) expect(rawCasts(src), src).toEqual(lines);
+
+    const fine = [
+      "const raw = await readJsonObject(request);",
+      "const body = (await readJson(request)) as Body;",
+      "const raw = await readJson(request);",
+      "// was (await readJson(request)) as RawBody;",
+    ];
+    for (const src of fine) expect(rawCasts(src), src).toEqual([]);
+  });
+
+  it("never casts a readJson result to RawBody: JSON null must answer 400, not 500", () => {
+    const offenders: string[] = [];
+    for (const relative of routeFiles()) {
+      const src = readFileSync(join(API_DIR, relative), "utf8");
+      for (const line of rawCasts(src)) offenders.push(`app/api/${relative}:${line}`);
+    }
+
+    expect(
+      offenders,
+      `A body of JSON null, an array, a string or a number passes readJson, and a handler that reads\n` +
+        `raw.field off it throws a TypeError, which answers 500. Read it with readJsonObject(request)\n` +
+        `from @/lib/utils/error-handling: it refuses what is not an object with a 400.\n\n` +
         offenders.join("\n"),
     ).toEqual([]);
   });

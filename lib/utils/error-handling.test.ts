@@ -16,6 +16,7 @@ import {
   parseBody,
   parseJsonBody,
   readJson,
+  readJsonObject,
 } from "@/lib/utils/error-handling";
 
 // ─── Custom Error Classes ─────────────────────────────────────────────────────
@@ -427,5 +428,50 @@ describe("readJson", () => {
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: "Invalid request: the body is not JSON" });
     expect((await handler(post('{"a":1}'))).status).toBe(200);
+  });
+});
+
+// ─── readJsonObject ───────────────────────────────────────────────────────────
+
+describe("readJsonObject", () => {
+  const post = (body?: string) => new NextRequest("http://localhost/", { method: "POST", body });
+
+  it("returns a body that is an object", async () => {
+    await expect(readJsonObject(post('{"a":1}'))).resolves.toEqual({ a: 1 });
+    await expect(readJsonObject(post("{}"))).resolves.toEqual({});
+  });
+
+  it.each([
+    ["null", "null"],
+    ["an array", "[1,2]"],
+    ["a string", '"tenant"'],
+    ["a number", "42"],
+    ["a boolean", "true"],
+  ])("refuses %s as a ValidationError, which is a 400", async (_what, body) => {
+    const error = await readJsonObject(post(body)).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ValidationError);
+    expect((error as ValidationError).message).toBe(
+      "Invalid request: the body must be a JSON object",
+    );
+    expect(createErrorResponse(error as Error, 500).status).toBe(400);
+  });
+
+  it("refuses what readJson refuses, with its message", async () => {
+    const error = await readJsonObject(post("{value: 42")).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ValidationError);
+    expect((error as ValidationError).message).toBe("Invalid request: the body is not JSON");
+  });
+
+  it("lets a handler read a field off what it returns, which null would have crashed", async () => {
+    const handler = withErrorHandler(async (request: NextRequest) => {
+      const raw = await readJsonObject(request);
+      return new Response(String(raw.tenantId));
+    });
+    expect(await (await handler(post('{"tenantId":"t1"}'))).text()).toBe("t1");
+    const refused = await handler(post("null"));
+    expect(refused.status).toBe(400);
+    expect(await refused.json()).toEqual({
+      error: "Invalid request: the body must be a JSON object",
+    });
   });
 });
