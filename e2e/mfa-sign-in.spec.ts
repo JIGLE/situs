@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 import { totpGenerate } from "../lib/utils/totp";
 
-test.use({ storageState: "playwright/.auth/user.json" });
+const STORAGE_STATE = "playwright/.auth/user.json";
+
+test.use({ storageState: STORAGE_STATE });
 
 /**
  * An account with an authenticator app is not signed in until it has entered a code.
@@ -12,19 +14,25 @@ test.use({ storageState: "playwright/.auth/user.json" });
  * `/auth/mfa`.
  *
  * The signed-in demo account turns TOTP on through its own session (which carries no
- * `mfaPending`, so the rest of the suite is untouched), signs in again in a clean browser context,
- * and is held at the code page. The `finally` turns it off again: the account is shared, and the
- * next sign-in anywhere would otherwise ask for a code.
+ * `mfaPending`, so the rest of the suite is untouched), signs in again in a context with no
+ * session, and is held at the code page. The `finally` turns it off again: the account is shared,
+ * and the next sign-in anywhere would otherwise ask for a code.
  */
 
 const EMAIL = process.env.E2E_USER_EMAIL || "demo@situs.local";
 const PASSWORD = process.env.E2E_USER_PASSWORD || "demo123";
 
+/** Actions here have no timeout of their own in this config, so a missing element would wait out the whole test. */
+const STEP = { timeout: 15_000 };
+
 test("an account with an authenticator app is held at the code page until it enters one", async ({
   browser,
   request,
   baseURL,
+  playwright,
 }) => {
+  test.setTimeout(90_000);
+
   let enabled = false;
   try {
     const setup = await request.get("/api/auth/totp/setup");
@@ -37,18 +45,24 @@ test("an account with an authenticator app is held at the code page until it ent
     expect(enable.ok(), `POST /api/auth/totp/enable → ${enable.status()}`).toBe(true);
     enabled = true;
 
-    // A new browser context has no session: the same account signing in from somewhere else.
-    const context = await browser.newContext({ baseURL: baseURL ?? undefined });
+    // A context made through `browser` takes this file's `storageState` as well, which is the
+    // signed-in demo account: sign-in would redirect straight to the dashboard and the form below
+    // would never appear. An empty one is what makes this the same account signing in again from
+    // somewhere else.
+    const context = await browser.newContext({
+      baseURL: baseURL ?? undefined,
+      storageState: { cookies: [], origins: [] },
+    });
     try {
       const page = await context.newPage();
       await page.goto("/auth/signin", { waitUntil: "domcontentloaded" });
-      await page.locator('input[name="email"]').fill(EMAIL);
-      await page.locator('input[name="password"]').fill(PASSWORD);
-      await page.locator('form button[type="submit"]').click();
+      await page.locator('input[name="email"]').fill(EMAIL, STEP);
+      await page.locator('input[name="password"]').fill(PASSWORD, STEP);
+      await page.locator('form button[type="submit"]').click(STEP);
 
       await test.step("the first factor leads to the code page, not the app", async () => {
-        await page.waitForURL((url) => url.pathname === "/auth/mfa", { timeout: 20000 });
-        await expect(page.locator('input[name="code"]')).toBeVisible();
+        await page.waitForURL((url) => url.pathname === "/auth/mfa", { timeout: 20_000 });
+        await expect(page.locator('input[name="code"]')).toBeVisible(STEP);
       });
 
       await test.step("until the code is entered the API refuses the session, and a page leads back", async () => {
@@ -61,20 +75,21 @@ test("an account with an authenticator app is held at the code page until it ent
         expect(disable.status()).toBe(401);
 
         await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-        await page.waitForURL((url) => url.pathname === "/auth/mfa");
+        await page.waitForURL((url) => url.pathname === "/auth/mfa", { timeout: 20_000 });
       });
 
       await test.step("a wrong code is refused on the page, in words", async () => {
-        await page.locator('input[name="code"]').fill("000000");
-        await page.locator('form button[type="submit"]').click();
-        await expect(page.getByRole("alert")).toBeVisible();
+        await page.locator('input[name="code"]').fill("000000", STEP);
+        await page.locator('form button[type="submit"]').click(STEP);
+        // Scoped to the form: Next's route announcer is an alert of its own.
+        await expect(page.locator('form [role="alert"]')).toBeVisible(STEP);
         expect(new URL(page.url()).pathname).toBe("/auth/mfa");
       });
 
       await test.step("the right code opens the app, and the API with it", async () => {
-        await page.locator('input[name="code"]').fill(totpGenerate(secret));
-        await page.locator('form button[type="submit"]').click();
-        await page.waitForURL((url) => !url.pathname.startsWith("/auth/"), { timeout: 20000 });
+        await page.locator('input[name="code"]').fill(totpGenerate(secret), STEP);
+        await page.locator('form button[type="submit"]').click(STEP);
+        await page.waitForURL((url) => !url.pathname.startsWith("/auth/"), { timeout: 20_000 });
 
         const allowed = await page.request.get("/api/properties");
         expect(allowed.status()).toBe(200);
@@ -84,8 +99,18 @@ test("an account with an authenticator app is held at the code page until it ent
     }
   } finally {
     if (enabled) {
-      const disable = await request.delete("/api/auth/totp/disable");
-      expect(disable.ok(), `DELETE /api/auth/totp/disable → ${disable.status()}`).toBe(true);
+      // A request context of its own: the test's is closed when the test times out, and the
+      // account would be left asking for a code.
+      const cleanup = await playwright.request.newContext({
+        baseURL: baseURL ?? undefined,
+        storageState: STORAGE_STATE,
+      });
+      try {
+        const disable = await cleanup.delete("/api/auth/totp/disable", { timeout: 15_000 });
+        expect(disable.ok(), `DELETE /api/auth/totp/disable → ${disable.status()}`).toBe(true);
+      } finally {
+        await cleanup.dispose();
+      }
     }
   }
 });
