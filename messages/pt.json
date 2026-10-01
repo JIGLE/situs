@@ -424,6 +424,7 @@
     "finance": "Finanças",
     "contracts": "Contratos",
     "account": "Conta",
+    "complete": "O que falta",
     "more": "Mais",
     "signOut": "Terminar sessão",
     "coreGroup": "Núcleo",
@@ -502,6 +503,51 @@
     "activityTitle": "Atividade recente",
     "activityEmpty": "Ainda não há atividade.",
     "activitySeeAll": "Ver todo o histórico"
+  },
+  "completion": {
+    "title": "O que falta",
+    "left": "{count, plural, one {Falta # dado} other {Faltam # dados}}",
+    "weight": {
+      "blocksReceipt": "Necessário para emitir um recibo",
+      "reminders": "Necessário para lembretes e correspondência",
+      "niceToHave": "Bom de ter"
+    },
+    "loading": "A carregar…",
+    "save": "Guardar",
+    "saving": "A guardar…",
+    "skip": "Saltar",
+    "skippedNote": "O que saltar volta no fim.",
+    "notValid": "{value} não é válido.",
+    "doneTitle": "Não falta nada",
+    "doneBody": "Todos os contratos ativos têm o que um recibo precisa de si.",
+    "backToDashboard": "Voltar ao painel",
+    "retry": "Tentar de novo",
+    "kind": {
+      "contract_number": {
+        "label": "Número do contrato na AT",
+        "hint": "O número que a AT atribuiu ao contrato quando foi registado. Só dígitos.",
+        "placeholder": "1234567",
+        "about": "Contrato de {name}, {property}"
+      },
+      "landlord_nif": {
+        "label": "NIF",
+        "hint": "O NIF do senhorio, com nove dígitos.",
+        "placeholder": "123456789",
+        "about": "{name}, senhorio de {property}"
+      },
+      "tenant_nif": {
+        "label": "NIF",
+        "hint": "O NIF do inquilino, com nove dígitos.",
+        "placeholder": "123456789",
+        "about": "{name}, inquilino de {property}"
+      },
+      "tenant_document": {
+        "label": "Documento de identificação",
+        "hint": "O número do passaporte ou do cartão de identificação do inquilino, como foi emitido no estrangeiro.",
+        "placeholder": "AB1234567",
+        "about": "{name}, inquilino de {property}"
+      }
+    }
   },
   "onboarding": {
     "gettingStarted": "Primeiros Passos",

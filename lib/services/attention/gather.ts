@@ -11,13 +11,7 @@
  */
 
 import { getPrismaClient } from "@/lib/services/database/database";
-import {
-  attentionCounts,
-  attentionItems,
-  type AttentionCounts,
-  type AttentionItem,
-  type AttentionLease,
-} from "./rules";
+import { attentionCounts, attentionItems, type Attention, type AttentionLease } from "./rules";
 
 const unique = <T>(values: T[]) => [...new Set(values)];
 
@@ -86,11 +80,6 @@ export async function loadAttentionLeases(userId: string): Promise<AttentionLeas
       },
     ];
   });
-}
-
-export interface Attention {
-  items: AttentionItem[];
-  counts: AttentionCounts;
 }
 
 export async function getAttention(userId: string): Promise<Attention> {

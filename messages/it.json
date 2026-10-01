@@ -424,6 +424,7 @@
     "finance": "Finanza",
     "contracts": "Contratti",
     "account": "Account",
+    "complete": "Cosa manca",
     "more": "Altro",
     "signOut": "Esci",
     "coreGroup": "Core",
@@ -502,6 +503,51 @@
     "activityTitle": "Attività recente",
     "activityEmpty": "Ancora nessuna attività.",
     "activitySeeAll": "Vedi tutta la cronologia"
+  },
+  "completion": {
+    "title": "Cosa manca",
+    "left": "{count, plural, one {Manca # dato} other {Mancano # dati}}",
+    "weight": {
+      "blocksReceipt": "Necessario per emettere una ricevuta",
+      "reminders": "Necessario per promemoria e abbinamenti",
+      "niceToHave": "Utile averlo"
+    },
+    "loading": "Caricamento…",
+    "save": "Salva",
+    "saving": "Salvataggio…",
+    "skip": "Salta",
+    "skippedNote": "Ciò che salti torna alla fine.",
+    "notValid": "{value} non è valido.",
+    "doneTitle": "Non manca nulla",
+    "doneBody": "Tutti i contratti attivi hanno ciò che una ricevuta richiede da te.",
+    "backToDashboard": "Torna alla dashboard",
+    "retry": "Riprova",
+    "kind": {
+      "contract_number": {
+        "label": "Numero di contratto presso la AT",
+        "hint": "Il numero che la AT ha assegnato al contratto quando è stato registrato. Solo cifre.",
+        "placeholder": "1234567",
+        "about": "Contratto di {name}, {property}"
+      },
+      "landlord_nif": {
+        "label": "NIF",
+        "hint": "Il NIF del locatore, nove cifre.",
+        "placeholder": "123456789",
+        "about": "{name}, locatore di {property}"
+      },
+      "tenant_nif": {
+        "label": "NIF",
+        "hint": "Il NIF dell'inquilino, nove cifre.",
+        "placeholder": "123456789",
+        "about": "{name}, inquilino di {property}"
+      },
+      "tenant_document": {
+        "label": "Documento d'identità",
+        "hint": "Il numero del passaporto o del documento d'identità dell'inquilino, come rilasciato all'estero.",
+        "placeholder": "AB1234567",
+        "about": "{name}, inquilino di {property}"
+      }
+    }
   },
   "onboarding": {
     "gettingStarted": "Inizia qui",

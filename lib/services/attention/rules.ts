@@ -84,6 +84,12 @@ export interface AttentionLease {
   landlords: ({ id: string } & AtLandlord)[];
 }
 
+/** What `GET /api/attention` answers: the items, most important first, and their counts. */
+export interface Attention {
+  items: AttentionItem[];
+  counts: AttentionCounts;
+}
+
 export interface AttentionCounts {
   total: number;
   blocksReceipt: number;

@@ -3,6 +3,7 @@ import {
   Building2,
   FileText,
   Home,
+  ListChecks,
   Settings,
   ShieldCheck,
   UserCircle,
@@ -129,7 +130,7 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
     ],
   },
   {
-    // Hidden group: routes that no longer own a rail row but must stay reachable/permitted.
+    // Hidden group: routes that own no rail row but must stay reachable/permitted.
     group: "Hidden",
     groupLabelKey: "navigation.systemGroup",
     items: [
@@ -141,6 +142,18 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "Account",
         labelKey: "navigation.account",
         icon: UserCircle,
+        hidden: true,
+      },
+      {
+        // What a receipt still needs from the owner. Opened from the dashboard's "details
+        // missing" line, never from the rail: it is a task the list hands over, not a place to
+        // browse. It has to be here all the same, since a page absent from this list is sent
+        // back to /dashboard by `PortalAccessGuard`, after the URL has already changed.
+        key: "complete",
+        href: "/complete",
+        label: "What is missing",
+        labelKey: "navigation.complete",
+        icon: ListChecks,
         hidden: true,
       },
     ],
