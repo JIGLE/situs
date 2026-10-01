@@ -51,14 +51,17 @@ import { POST as createDistribution } from "./distributions/route";
 import { POST as generateTemplate } from "./leases/generate-template/route";
 import { POST as offerRenewal, PATCH as answerRenewal } from "./leases/[id]/renewal/route";
 
-const notJson = (method: string) =>
-  new NextRequest("http://localhost:3000/api/x", { method, body: "{code: 123456" });
-const jsonNull = (method: string) =>
-  new NextRequest("http://localhost:3000/api/x", { method, body: "null" });
+// A route that checks its own CSRF token (/api/auth/** is public to the proxy) answers a request
+// without one before it reads the body, so it is asked with one.
+const csrf = { cookie: "csrf-token=t0k3n", "x-csrf-token": "t0k3n" };
+const notJson = (method: string, headers?: Record<string, string>) =>
+  new NextRequest("http://localhost:3000/api/x", { method, body: "{code: 123456", headers });
+const jsonNull = (method: string, headers?: Record<string, string>) =>
+  new NextRequest("http://localhost:3000/api/x", { method, body: "null", headers });
 const context = { params: Promise.resolve({ id: "lease-1" }) };
 
 const cases: [string, () => Promise<Response>][] = [
-  ["POST /api/auth/totp/enable", () => totpEnable(notJson("POST"))],
+  ["POST /api/auth/totp/enable", () => totpEnable(notJson("POST", csrf))],
   ["POST /api/auth/totp/verify", () => totpVerify(notJson("POST"))],
   ["POST /api/notifications", () => createNotification(notJson("POST"))],
   ["PUT /api/notifications/[id]", () => updateNotification(notJson("PUT"), context)],
@@ -75,7 +78,7 @@ const nullCases: [string, () => Promise<Response>, string | undefined][] = [
   ["POST /api/distributions", () => createDistribution(jsonNull("POST")), "object"],
   ["POST /api/leases/[id]/renewal", () => offerRenewal(jsonNull("POST"), context), "object"],
   ["PATCH /api/leases/[id]/renewal", () => answerRenewal(jsonNull("PATCH"), context), "object"],
-  ["POST /api/auth/totp/enable", () => totpEnable(jsonNull("POST")), undefined],
+  ["POST /api/auth/totp/enable", () => totpEnable(jsonNull("POST", csrf)), undefined],
   ["POST /api/auth/totp/verify", () => totpVerify(jsonNull("POST")), undefined],
   ["POST /api/notifications", () => createNotification(jsonNull("POST")), undefined],
   ["POST /api/leases/generate-template", () => generateTemplate(jsonNull("POST")), undefined],

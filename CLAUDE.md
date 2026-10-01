@@ -114,6 +114,8 @@ e2e/                    # Playwright E2E tests
   (`docs/SECURITY.md`). A code releases only the session that entered it: the route answers with a
   proof bound to that session's `sid` (`lib/services/auth/mfa-proof.ts`), which the code page gives
   its session through `update({ mfaProof })`. A verification recorded on the account releases nobody.
+  `/api/auth/**` is public to the proxy, so `setup`, `enable` and `disable` check the CSRF token
+  themselves (`app/api/auth/csrf-check.test.ts` names a state-changing handler there that does not).
 - **Reference-month rent ledger**: `RentPeriod` is one row per lease per reference month; its
   `status` is recomputed in the same transaction as every allocation write and never hand-set.
   Waterfall invariant: fill the oldest not-fully-allocated period first
