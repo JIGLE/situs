@@ -19,6 +19,9 @@ vi.mock("@/lib/contexts/csrf-context", () => ({
 
 type Answer = { ok: boolean; status?: number; body?: unknown };
 
+const CHANGED_ELSEWHERE =
+  "A autenticação de dois fatores foi alterada noutra janela. Recarregue a página e tente novamente.";
+
 describe("SettingsSecurity — authenticator app", () => {
   let answers: Record<string, Answer>;
   let fetchMock: ReturnType<typeof vi.fn>;
@@ -57,7 +60,7 @@ describe("SettingsSecurity — authenticator app", () => {
     expect(toast.error).not.toHaveBeenCalled();
   });
 
-  it("says so, and shows no secret, when setup is refused", async () => {
+  it("shows what is true when another window has already turned it on", async () => {
     answers["/api/auth/totp/setup"] = {
       ok: false,
       status: 409,
@@ -67,11 +70,23 @@ describe("SettingsSecurity — authenticator app", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "Configurar 2FA" }));
 
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(CHANGED_ELSEWHERE));
+    expect(await screen.findByRole("button", { name: "Desativar 2FA" })).toBeDefined();
+    expect(screen.queryByAltText("Código QR de dois fatores")).toBeNull();
+  });
+
+  it("says it could not when setup fails for any other reason, and shows no secret", async () => {
+    answers["/api/auth/totp/setup"] = { ok: false, status: 500, body: {} };
+    renderPanel();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Configurar 2FA" }));
+
     await waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith(
         "Não foi possível ativar a autenticação de dois fatores.",
       ),
     );
+    expect(screen.getByRole("button", { name: "Configurar 2FA" })).toBeDefined();
     expect(screen.queryByAltText("Código QR de dois fatores")).toBeNull();
   });
 
@@ -94,6 +109,25 @@ describe("SettingsSecurity — authenticator app", () => {
       },
     ]);
     expect(await screen.findByText("AAAA1111")).toBeDefined();
+  });
+
+  it("goes back to the start when the setup changed in another window while confirming", async () => {
+    answers["/api/auth/totp/enable"] = {
+      ok: false,
+      status: 409,
+      body: { reason: "totp_setup_changed" },
+    };
+    renderPanel();
+    fireEvent.click(await screen.findByRole("button", { name: "Configurar 2FA" }));
+    fireEvent.change(await screen.findByLabelText("Código de verificação"), {
+      target: { value: "123456" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Ativar 2FA" }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(CHANGED_ELSEWHERE));
+    expect(await screen.findByRole("button", { name: "Configurar 2FA" })).toBeDefined();
+    expect(screen.queryByText("AAAA1111")).toBeNull();
   });
 
   it("turns it off with a DELETE that carries the token", async () => {

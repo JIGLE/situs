@@ -22,10 +22,14 @@ const { prisma, session } = vi.hoisted(() => ({
 vi.mock("next-auth/next", () => ({ getServerSession: vi.fn(async () => session.current) }));
 vi.mock("@/lib/services/auth/auth", () => ({ getAuthOptions: () => ({}) }));
 vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prisma }));
-// Encryption has its own tests; here a stored value is its own plaintext.
+// Encryption has its own tests. Here it tags a value, so a route that stored one in clear, or read
+// one it had not decrypted, fails instead of passing on its own plaintext.
 vi.mock("@/lib/utils/pii-encryption", () => ({
-  decryptPII: (value: string) => value,
-  encryptPII: (value: string) => value,
+  encryptPII: (value: string) => `enc:${value}`,
+  decryptPII: (value: string) => {
+    if (!value.startsWith("enc:")) throw new Error("read a value that was never encrypted");
+    return value.slice(4);
+  },
 }));
 
 import * as setupRoute from "./setup/route";
@@ -124,7 +128,7 @@ describe("POST /api/auth/totp/setup", () => {
     expect(body.otpauth).toMatch(/^otpauth:\/\/totp\//);
     expect(prisma.user.updateMany).toHaveBeenCalledWith({
       where: { id: "user-1", totpEnabled: false },
-      data: { totpSecret: body.secret },
+      data: { totpSecret: `enc:${body.secret}` },
     });
     expect(prisma.user.update).not.toHaveBeenCalled();
   });
@@ -134,7 +138,7 @@ describe("POST /api/auth/totp/setup", () => {
       id: "user-1",
       email: "owner@example.test",
       totpEnabled: true,
-      totpSecret: totpGenerateSecret(),
+      totpSecret: `enc:${totpGenerateSecret()}`,
     });
 
     const res = await setup();
@@ -156,12 +160,13 @@ describe("POST /api/auth/totp/setup", () => {
 
 describe("POST /api/auth/totp/enable", () => {
   const secret = totpGenerateSecret();
+  const pending = `enc:${secret}`;
 
   beforeEach(() => {
     prisma.user.findUnique.mockResolvedValue({
       id: "user-1",
       totpEnabled: false,
-      totpSecret: secret,
+      totpSecret: pending,
     });
   });
 
@@ -188,15 +193,30 @@ describe("POST /api/auth/totp/enable", () => {
 
     expect(res.status).toBe(200);
     expect(backupCodes).toHaveLength(10);
-    const stored = prisma.user.update.mock.calls[0][0] as {
-      where: { id: string };
+    const written = prisma.user.updateMany.mock.calls[0][0] as {
+      where: { id: string; totpSecret: string };
       data: { totpEnabled: boolean; totpBackupCodes: string };
     };
-    expect(stored.where).toEqual({ id: "user-1" });
-    expect(stored.data.totpEnabled).toBe(true);
-    expect(JSON.parse(stored.data.totpBackupCodes)).toEqual(
+    // For the secret the code was checked against, and the backup codes stored encrypted and hashed.
+    expect(written.where).toEqual({ id: "user-1", totpSecret: pending });
+    expect(written.data.totpEnabled).toBe(true);
+    expect(written.data.totpBackupCodes.startsWith("enc:")).toBe(true);
+    expect(JSON.parse(written.data.totpBackupCodes.slice(4))).toEqual(
       backupCodes.map((code) => createHash("sha256").update(code).digest("hex")),
     );
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it("does not turn it on when a disable or a new setup changed the secret since it read it", async () => {
+    // The write is for the secret the code was checked against; the row no longer has it.
+    prisma.user.updateMany.mockResolvedValue({ count: 0 });
+
+    const res = await confirm(totpGenerate(secret));
+
+    const body = await res.json();
+    expect(res.status).toBe(409);
+    expect(body).toMatchObject({ reason: "totp_setup_changed" });
+    expect(body).not.toHaveProperty("backupCodes");
   });
 
   it("answers a wrong code with a 400 and turns nothing on", async () => {

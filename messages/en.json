@@ -145,6 +145,7 @@
       "toastEnableFailed": "Couldn't turn on two-factor authentication.",
       "toastDisableFailed": "Couldn't turn off two-factor authentication.",
       "toastVerifyFailed": "That code didn't match. Try again.",
+      "toastChangedElsewhere": "Two-factor authentication was changed in another window. Reload the page and try again.",
       "setUp2fa": "Set up 2FA",
       "verifying": "Verifying…",
       "qrAlt": "Two-factor QR code",

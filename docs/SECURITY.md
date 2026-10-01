@@ -81,8 +81,12 @@ An account with an authenticator app (Settings › Security) has to enter a code
 - `setup` (a POST), `enable` and `disable` check the CSRF token themselves (see CSRF above).
   `setup` writes its pending secret only while the second factor is off and answers 409
   `totp_already_enabled` otherwise, so it cannot switch an enabled one off or replace its secret.
-  Turning it off (`DELETE /api/auth/totp/disable`) asks for no code, only a session that has passed
-  its own second factor.
+  `enable` turns it on only for the secret its code was checked against, and answers 409
+  `totp_setup_changed` when a `disable` or a new `setup` got in between.
+- Turning it off (`DELETE /api/auth/totp/disable`) asks for no code. Any session `requireAuth`
+  accepts can do it, including one that was already open when the second factor was turned on:
+  `mfaPending` is set only at sign-in, and turning the factor on does not end the sessions open
+  before it. Asking for a current code there, and ending the older sessions, are not built.
 - An accepted TOTP code is not single-use within its 30 seconds, and a backup code is spent by a
   read and a write that two concurrent posts can both pass. Both need a code in hand.
 
