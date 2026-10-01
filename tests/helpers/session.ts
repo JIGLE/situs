@@ -18,16 +18,19 @@ export const TEST_NEXTAUTH_SECRET = "proxy-test-secret-0123456789-abcdefghij";
 /**
  * Headers that sign a request in. `getToken` reads a bearer token as well as the session cookie
  * and decodes both the same way; the header keeps a test independent of which cookie name
- * `NEXTAUTH_URL` selects.
+ * `NEXTAUTH_URL` selects. `claims` are added to the token, such as `{ mfaPending: true }` for a
+ * session that has not yet entered its second factor.
  */
-export async function signedInHeaders(): Promise<Record<string, string>> {
+export async function signedInHeaders(
+  claims: Record<string, unknown> = {},
+): Promise<Record<string, string>> {
   // Loaded the way proxy.ts loads `getToken`, and typed by hand for the reason it gives: the
   // package's typings do not resolve under this project's module resolution.
   const { encode } = require("next-auth/jwt") as {
     encode: (params: { token: Record<string, unknown>; secret: string }) => Promise<string>;
   };
   const token = await encode({
-    token: { sub: "user-1", email: "owner@example.test" },
+    token: { sub: "user-1", email: "owner@example.test", ...claims },
     secret: TEST_NEXTAUTH_SECRET,
   });
   return { authorization: `Bearer ${token}` };

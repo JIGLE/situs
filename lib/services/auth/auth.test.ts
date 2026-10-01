@@ -322,3 +322,135 @@ describe("jwt callback — session id provisioning", () => {
     expect(token.uidVerified).toBeUndefined();
   });
 });
+
+/**
+ * The second factor, as the token carries it. `mfaPending` is what the proxy and `requireAuth`
+ * refuse on (`tests/proxy-mfa.test.ts`), so its life has to be exactly this: set at sign-in for an
+ * account with TOTP, kept until a code was verified in the last five minutes, and kept when the
+ * database cannot say. A callback that cleared it on a doubt would turn the check into a formality.
+ */
+describe("jwt and session callbacks — the second factor", () => {
+  type Callbacks = NonNullable<
+    ReturnType<typeof import("@/lib/services/auth/auth").getAuthOptions>["callbacks"]
+  >;
+  type JwtCallback = (args: Record<string, unknown>) => Promise<Record<string, unknown>>;
+
+  const prismaMock = { user: { upsert: vi.fn(), findUnique: vi.fn() } };
+
+  async function loadCallbacks(): Promise<Callbacks> {
+    vi.doMock("@/lib/config/data-mode", () => ({
+      isMockMode: false,
+      isRealMode: true,
+      dataMode: "real",
+    }));
+    vi.doMock("@/lib/services/database/database", () => ({
+      getPrismaClient: () => prismaMock,
+    }));
+    const { getAuthOptions } = await import("@/lib/services/auth/auth");
+    return getAuthOptions().callbacks as Callbacks;
+  }
+
+  /** A token already past sign-in, whose id was verified, so a refresh reads only the TOTP row. */
+  const pendingToken = () => ({
+    sub: "db-cuid-1",
+    id: "db-cuid-1",
+    email: "owner@example.com",
+    uidVerified: true,
+    mfaPending: true,
+  });
+
+  const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60 * 1000);
+
+  beforeEach(() => {
+    vi.resetModules();
+    prismaMock.user.upsert.mockReset();
+    prismaMock.user.findUnique.mockReset();
+    process.env.DATABASE_URL = "file:./dev.db";
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value: "test",
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.doUnmock("@/lib/config/data-mode");
+    vi.doUnmock("@/lib/services/database/database");
+  });
+
+  it("holds a session pending at sign-in when the account has TOTP on", async () => {
+    prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1" });
+    prismaMock.user.findUnique.mockResolvedValue({ totpEnabled: true });
+    const jwt = (await loadCallbacks()).jwt as unknown as JwtCallback;
+
+    const token = await jwt({
+      token: {},
+      user: { id: "google-sub-999", email: "owner@example.com", name: "Owner" },
+      account: { provider: "google" },
+    });
+
+    expect(token.mfaPending).toBe(true);
+  });
+
+  it("holds none pending for an account without TOTP", async () => {
+    prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1" });
+    prismaMock.user.findUnique.mockResolvedValue({ totpEnabled: false });
+    const jwt = (await loadCallbacks()).jwt as unknown as JwtCallback;
+
+    const token = await jwt({
+      token: {},
+      user: { id: "google-sub-999", email: "owner@example.com", name: "Owner" },
+      account: { provider: "google" },
+    });
+
+    expect(token.mfaPending).toBeUndefined();
+  });
+
+  it("keeps a session pending on refresh while no code has been verified", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ totpVerifiedAt: null });
+    const jwt = (await loadCallbacks()).jwt as unknown as JwtCallback;
+
+    expect((await jwt({ token: pendingToken() })).mfaPending).toBe(true);
+  });
+
+  it("clears it on refresh once a code was verified in the last five minutes", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ totpVerifiedAt: minutesAgo(1) });
+    const jwt = (await loadCallbacks()).jwt as unknown as JwtCallback;
+
+    expect((await jwt({ token: pendingToken() })).mfaPending).toBe(false);
+  });
+
+  it("keeps it pending when the last verification is older than five minutes", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ totpVerifiedAt: minutesAgo(6) });
+    const jwt = (await loadCallbacks()).jwt as unknown as JwtCallback;
+
+    expect((await jwt({ token: pendingToken() })).mfaPending).toBe(true);
+  });
+
+  it("keeps it pending when the database cannot be read", async () => {
+    prismaMock.user.findUnique.mockRejectedValue(new Error("connection refused"));
+    const jwt = (await loadCallbacks()).jwt as unknown as JwtCallback;
+
+    expect((await jwt({ token: pendingToken() })).mfaPending).toBe(true);
+  });
+
+  it("puts the token's state on the session, which is where requireAuth reads it", async () => {
+    const session = (await loadCallbacks()).session as unknown as (args: {
+      session: Record<string, unknown>;
+      token: Record<string, unknown>;
+    }) => Promise<Record<string, unknown>>;
+
+    const pending = await session({ session: { user: {} }, token: pendingToken() });
+    const verified = await session({
+      session: { user: {} },
+      token: { ...pendingToken(), mfaPending: false },
+    });
+    const never = await session({ session: { user: {} }, token: { sub: "db-cuid-1" } });
+
+    expect(pending.mfaPending).toBe(true);
+    expect(verified.mfaPending).toBe(false);
+    expect(never.mfaPending).toBe(false);
+  });
+});

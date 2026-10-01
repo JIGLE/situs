@@ -45,6 +45,23 @@ fallback. It runs `prisma db push` and `prisma generate`.
 the cookie, and `apiFetch` (`lib/utils/api-client.ts`) echoes it back. Public routes — webhooks
 among them — skip the check and authenticate by signature or shared secret instead.
 
+## Second factor
+
+An account with an authenticator app (Settings › Security) has to enter a code at every sign-in.
+
+- At sign-in the session gets `mfaPending` (`lib/services/auth/auth.ts`). While it is set,
+  `proxy.ts` answers every API route outside `/api/auth/**` with 401 `mfa_required`, and sends every
+  portal page to `/auth/mfa`. `requireAuth` refuses it as well, for a handler reached some other
+  way. Read the session through `requireAuth`: the one route that reads it directly,
+  `/api/auth/totp/verify`, is the one that has to accept a session still waiting for its code.
+- The code page posts to `/api/auth/totp/verify`, which is rate limited per account and records the
+  verification. Refreshing the session is what clears `mfaPending` on it.
+- A verification counts for five minutes **per account, not per session**: another session of the
+  same account that is still waiting, and refreshes inside that window, is cleared too. Binding a
+  verification to the session that entered the code is not built.
+- Turning it off (`DELETE /api/auth/totp/disable`) asks for no code, only a session that has
+  passed its own second factor.
+
 ## Rate limiting
 
 Rate limits are declared in code; no environment variable sets one. Two change how they behave:

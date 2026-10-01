@@ -176,6 +176,18 @@ export async function proxy(request: NextRequest) {
       return response;
     }
 
+    // A session that has passed the first factor and not the second is not signed in: `mfaPending`
+    // is set at sign-in for an account with TOTP and cleared when its code is verified. Only
+    // /api/auth/** is reachable until then, and it is public above, so the code can still be sent.
+    if (token.mfaPending === true) {
+      const response = NextResponse.json(
+        { error: "Two-factor verification required", reason: "mfa_required" },
+        { status: 401 },
+      );
+      applySecurityHeaders(response, nonce);
+      return response;
+    }
+
     // CSRF check for state-changing requests
     if (requiresCsrfProtection(request.method)) {
       if (!verifyCsrfToken(request)) {
@@ -261,6 +273,15 @@ export async function proxy(request: NextRequest) {
       const signInUrl = new URL("/auth/signin", request.nextUrl.origin);
       signInUrl.searchParams.set("callbackUrl", `${pathname}${request.nextUrl.search}`);
       const response = NextResponse.redirect(signInUrl);
+      applySecurityHeaders(response, nonce);
+      return response;
+    }
+
+    // Signed in with the first factor only: the code page comes before any portal page. The API
+    // refuses such a session above, so without this the screen would load and every call it makes
+    // would answer 401.
+    if (token.mfaPending === true) {
+      const response = NextResponse.redirect(new URL("/auth/mfa", request.nextUrl.origin));
       applySecurityHeaders(response, nonce);
       return response;
     }
