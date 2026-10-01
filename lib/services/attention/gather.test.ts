@@ -18,6 +18,7 @@ const { prismaMock } = vi.hoisted(() => ({
 
 vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prismaMock }));
 
+import { UNREADABLE_PII } from "@/lib/utils/pii-encryption";
 import { getAttention, loadAttentionLeases } from "./gather";
 
 const USER = "owner-1";
@@ -104,6 +105,29 @@ describe("loadAttentionLeases", () => {
     expect(await loadAttentionLeases(USER)).toEqual([]);
   });
 
+  it("reads a NIF or a document the extension could not decrypt as nothing at all", async () => {
+    // After the key changed, the extension answers UNREADABLE_PII: not empty and not a NIF, which
+    // would otherwise be listed as "not valid" with the sentinel offered back in the box, and
+    // would let a foreign tenant's document count as present.
+    prismaMock.tenant.findMany.mockResolvedValue([
+      {
+        id: "tenant-1",
+        name: "Rui Silva",
+        taxId: UNREADABLE_PII,
+        taxCountry: "ES",
+        idDocument: UNREADABLE_PII,
+      },
+    ]);
+    prismaMock.owner.findMany.mockResolvedValue([
+      { id: "owner-a", name: "Ana Costa", taxIdentificationNumber: UNREADABLE_PII },
+    ]);
+
+    const [lease] = await loadAttentionLeases(USER);
+
+    expect(lease.tenant).toMatchObject({ nif: null, document: null });
+    expect(lease.landlords).toEqual([{ id: "owner-a", name: "Ana Costa", nif: null }]);
+  });
+
   it("does not name an owner the scoped read did not return as a landlord", async () => {
     // A share against another account's owner, which the owner read, scoped, leaves out.
     prismaMock.owner.findMany.mockResolvedValue([]);
@@ -123,6 +147,32 @@ describe("getAttention", () => {
       "tenant_nif:tenant-1",
     ]);
     expect(counts).toEqual({ total: 2, blocksReceipt: 2, reminders: 0, niceToHave: 0 });
+  });
+
+  it("asks again for a document or a NIF it cannot read, and never shows the sentinel", async () => {
+    prismaMock.tenant.findMany.mockResolvedValue([
+      {
+        id: "tenant-1",
+        name: "Rui Silva",
+        taxId: null,
+        taxCountry: "ES",
+        idDocument: UNREADABLE_PII,
+      },
+    ]);
+    prismaMock.owner.findMany.mockResolvedValue([
+      { id: "owner-a", name: "Ana Costa", taxIdentificationNumber: UNREADABLE_PII },
+    ]);
+
+    const { items } = await getAttention(USER);
+
+    expect(items.map((item) => item.id)).toEqual(
+      expect.arrayContaining(["landlord_nif:owner-a", "tenant_document:tenant-1"]),
+    );
+    expect(items.find((item) => item.id === "landlord_nif:owner-a")).toMatchObject({
+      problem: "missing",
+      current: null,
+    });
+    expect(JSON.stringify(items)).not.toContain(UNREADABLE_PII);
   });
 
   it("is empty once everything a receipt needs is there", async () => {

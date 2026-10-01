@@ -11,6 +11,7 @@
  */
 
 import { getPrismaClient } from "@/lib/services/database/database";
+import { readablePII } from "@/lib/utils/pii-encryption";
 import { attentionCounts, attentionItems, type Attention, type AttentionLease } from "./rules";
 
 const unique = <T>(values: T[]) => [...new Set(values)];
@@ -60,7 +61,7 @@ export async function loadAttentionLeases(userId: string): Promise<AttentionLeas
       .flatMap((share) => {
         const owner = ownerById.get(share.ownerId);
         return owner
-          ? [{ id: owner.id, name: owner.name, nif: owner.taxIdentificationNumber }]
+          ? [{ id: owner.id, name: owner.name, nif: readablePII(owner.taxIdentificationNumber) }]
           : [];
       });
 
@@ -72,9 +73,9 @@ export async function loadAttentionLeases(userId: string): Promise<AttentionLeas
         tenant: {
           id: tenant.id,
           name: tenant.name,
-          nif: tenant.taxId,
+          nif: readablePII(tenant.taxId),
           country: tenant.taxCountry,
-          document: tenant.idDocument,
+          document: readablePII(tenant.idDocument),
         },
         landlords,
       },

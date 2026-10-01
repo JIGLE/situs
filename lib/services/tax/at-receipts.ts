@@ -27,6 +27,7 @@ import {
 } from "@/lib/tax/at/receipt-request";
 import { TEST_MODES } from "@/lib/tax/connectors/modes";
 import { sumMoney } from "@/lib/utils/money";
+import { readablePII } from "@/lib/utils/pii-encryption";
 import { isIssuable } from "@/lib/utils/receipt-months";
 import { getAtConnection, logCall, prepareCall, toView, type AtCallView } from "./at-connection";
 
@@ -138,7 +139,7 @@ async function gather(
       .filter((share) => share.propertyId === propertyId)
       .flatMap((share) => {
         const owner = ownerById.get(share.ownerId);
-        return owner ? [{ name: owner.name, nif: owner.taxIdentificationNumber }] : [];
+        return owner ? [{ name: owner.name, nif: readablePII(owner.taxIdentificationNumber) }] : [];
       });
 
   const tenantsOf = (lease: { id: string; tenantId: string }): AtTenant[] => {
@@ -149,17 +150,17 @@ async function gather(
         ? [
             {
               name: main.name,
-              nif: main.taxId,
+              nif: readablePII(main.taxId),
               country: main.taxCountry,
-              document: main.idDocument,
+              document: readablePII(main.idDocument),
             },
           ]
         : []),
       ...coTenants.map((party) => ({
         name: party.name,
-        nif: party.taxId ?? null,
+        nif: readablePII(party.taxId),
         country: party.taxCountry ?? null,
-        document: party.idDocument ?? null,
+        document: readablePII(party.idDocument),
       })),
     ];
   };
