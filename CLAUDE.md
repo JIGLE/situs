@@ -115,7 +115,8 @@ e2e/                    # Playwright E2E tests
   cascades from it in the schema (`lib/services/database/history.ts`). The refusal is a
   `ConflictError`: a 409 whose `reason` `apiFetch` keeps and `useApiError` turns into a sentence. A
   lease with nothing paid against it can still be deleted; a tenancy otherwise stops by ending its
-  lease.
+  lease. An owner who is still a landlord of a property, or has income shares, is kept the same
+  way (`owner_has_history`): detach them from the property first.
 - **Bank matching**: a live provider sync → fingerprint dedupe (idempotent) → fuzzy-duplicate
   check → reconciliation rules → weighted confidence scoring (`lib/services/matching/engine.ts`,
   pure). ≥0.85 auto-allocates via a draft `Receipt` (`source: "automation"`); anything lower waits
