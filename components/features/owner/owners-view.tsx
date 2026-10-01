@@ -31,6 +31,7 @@ import jsPDF from "jspdf";
 import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { withEntityDetail } from "@/lib/utils/entity-detail-url";
+import { OwnerNifField } from "./owner-nif-field";
 
 export type OwnersViewRef = {
   openDialog: () => void;
@@ -70,6 +71,7 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
       phone: "",
       address: "",
       notes: "",
+      taxIdentificationNumber: "",
     };
 
     const dialog = useFormDialog<OwnerFormData, Owner>({
@@ -213,10 +215,10 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
               <DialogContent className="bg-[var(--color-card)] border-[var(--color-border)] max-w-lg">
                 <DialogHeader>
                   <DialogTitle className="text-[var(--color-foreground)]">
-                    {dialog.editingItem ? "Edit Owner" : "Add New Owner"}
+                    {dialog.editingItem ? t("editTitle") : t("createTitle")}
                   </DialogTitle>
                   <DialogDescription>
-                    {dialog.editingItem ? "Update owner details" : "Register a new property owner"}
+                    {dialog.editingItem ? t("editDescription") : t("createDescription")}
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={dialog.handleSubmit} className="space-y-4">
@@ -263,6 +265,12 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
                       )}
                     </div>
                   </div>
+
+                  <OwnerNifField
+                    id="taxIdentificationNumber"
+                    value={dialog.formData.taxIdentificationNumber ?? ""}
+                    onChange={(value) => dialog.updateFormData({ taxIdentificationNumber: value })}
+                  />
 
                   <div className="space-y-2">
                     <Label htmlFor="address">{tForms("address")}</Label>

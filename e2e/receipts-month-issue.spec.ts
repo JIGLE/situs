@@ -14,12 +14,19 @@ test.use({ storageState: "playwright/.auth/user.json" });
  * review of what Finanças would receive before issuing.
  * The spec ticks its own row rather than selecting all: other specs may leave drafts in that month,
  * and issuing theirs would change what they read.
+ *
+ * The review names the property's owner as the landlord, by NIF. This owner starts with none, which
+ * the review says, and gets one through `PUT /api/owners/[id]`: nothing in the app could give an
+ * owner a NIF before, so every receipt review stopped at it.
  */
 
 const STAMP = Date.now();
 const RENT = 735;
 const TENANT_NAME = `Issue${STAMP} Payer${STAMP}`;
 const PROPERTY_NAME = `Issue Property ${STAMP}`;
+const OWNER_NAME = `Issue Owner ${STAMP}`;
+/** Nine digits that pass the check digit. Typed with spaces, and stored without. */
+const OWNER_NIF = "123 456 789";
 /** 25 characters like a real PT IBAN, unlike every other spec's. */
 const TENANT_IBAN = `PT517${String(STAMP).padStart(20, "0")}`;
 
@@ -125,6 +132,20 @@ test("a matched draft is listed under its rent month, and issuing it makes it Is
     headers,
   );
 
+  // The landlord a receipt names is the property's owner. This one has no NIF yet.
+  const owner = await postJson<{ id: string }>(
+    request,
+    "/api/owners",
+    { name: OWNER_NAME, email: `issue-owner-${STAMP}@example.test` },
+    headers,
+  );
+  await postJson(
+    request,
+    "/api/property-owners",
+    { propertyId: property.id, ownerId: owner.id, ownershipPercentage: 100 },
+    headers,
+  );
+
   const receiptId =
     await test.step("a bank movement confirmed against the lease makes a draft", async () => {
       const reference = `issue ${STAMP}`;
@@ -188,10 +209,32 @@ test("a matched draft is listed under its rent month, and issuing it makes it Is
     await page.getByRole("button", { name: issueOne }).click();
 
     // Issue opens the review of what Finanças would receive. This lease has no AT contract
-    // number, and the review says so; issuing in Situs goes ahead regardless.
+    // number, and the landlord has no NIF; the review says both, and issuing in Situs goes ahead
+    // regardless.
     const review = page.getByRole("dialog");
+    const atSheet = en.financial.receipts.atSheet;
+    const landlordHasNoNif = atSheet.blocker.landlordNifMissing.replace("{name}", OWNER_NAME);
     await expect(review).toContainText("Issue 1 receipt?");
-    await expect(review).toContainText(en.financial.receipts.atSheet.blocker.contractNumberMissing);
+    await expect(review).toContainText(atSheet.blocker.contractNumberMissing);
+    await expect(review).toContainText(landlordHasNoNif);
+
+    // Giving the owner a NIF, as the owner's edit does, is what clears it.
+    await page.keyboard.press("Escape");
+    await expect(review).toBeHidden();
+    const saved = await putJson<{ taxIdentificationNumber: string | null }>(
+      request,
+      `/api/owners/${owner.id}`,
+      { taxIdentificationNumber: OWNER_NIF },
+      headers,
+    );
+    expect(saved.taxIdentificationNumber, "the NIF is stored as its nine digits").toBe("123456789");
+
+    await page.getByRole("button", { name: issueOne }).click();
+    await expect(review).toContainText(
+      atSheet.byNif.replace("{name}", OWNER_NAME).replace("{nif}", "123456789"),
+    );
+    await expect(review).not.toContainText(landlordHasNoNif);
+    await expect(review).toContainText(atSheet.blocker.contractNumberMissing);
     await review.getByRole("button", { name: issueOne, exact: true }).click();
     await expect(review).toBeHidden();
 

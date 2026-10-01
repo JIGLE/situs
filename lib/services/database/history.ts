@@ -2,7 +2,8 @@ import { getPrismaClient } from "./database";
 import { ConflictError } from "@/lib/utils/error-handling";
 
 /**
- * A tenant, a property or a lease with money history is kept.
+ * A tenant, a property or a lease with money history is kept, and so is an owner who is still
+ * a landlord.
  *
  * In `prisma/schema.prisma`, Lease, Receipt, RentPeriod and RentReceipt are all
  * `onDelete: Cascade` from Tenant and from Property. RentPeriod, and with it every
@@ -14,11 +15,16 @@ import { ConflictError } from "@/lib/utils/error-handling";
  * months but no payments, and deleting it takes only those months.
  */
 
-export type HistoryEntity = "tenant" | "property" | "lease";
+export type HistoryEntity = "tenant" | "property" | "lease" | "owner";
 
 export class HasHistoryError extends ConflictError {
   constructor(entity: HistoryEntity) {
-    super(`This ${entity} has lease or payment history, so it is kept`, `${entity}_has_history`);
+    super(
+      entity === "owner"
+        ? "This owner is a landlord of a property or has income shares, so it is kept"
+        : `This ${entity} has lease or payment history, so it is kept`,
+      `${entity}_has_history`,
+    );
     this.name = "HasHistoryError";
   }
 }
@@ -73,4 +79,20 @@ export async function assertLeaseHasNoHistory(userId: string, leaseId: string): 
     }),
   ]);
   if (kept) throw new HasHistoryError("lease");
+}
+
+/**
+ * The properties it is a landlord of, and the income distributions it has a share in. Both are
+ * `onDelete: Cascade` from Owner, so deleting it would take the landlord off every receipt for
+ * those properties and its share out of every distribution already made. Detaching it from its
+ * properties first is the way to remove one.
+ */
+export async function assertOwnerHasNoHistory(userId: string, ownerId: string): Promise<void> {
+  const prisma = getPrismaClient();
+  const where = { ownerId, owner: { userId } };
+  const kept = await anyOf([
+    prisma.propertyOwner.count({ where }),
+    prisma.incomeDistributionShare.count({ where }),
+  ]);
+  if (kept) throw new HasHistoryError("owner");
 }
