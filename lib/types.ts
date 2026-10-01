@@ -41,8 +41,8 @@ export interface Property {
   buildingName?: string;
 
   type: "apartment" | "house" | "condo" | "townhouse" | "commercial" | "other";
-  bedrooms: number;
-  bathrooms: number;
+  bedrooms: number | null;
+  bathrooms: number | null;
   rent: number;
   status: "occupied" | "vacant" | "maintenance";
   description?: string;
@@ -60,8 +60,8 @@ export interface Tenant {
   id: string;
   userId: string;
   name: string;
-  email: string;
-  phone: string;
+  email: string | null;
+  phone: string | null;
   propertyId?: string;
   propertyName?: string;
   /** @deprecated Derive from active lease's monthlyRent via getActiveLease() */
@@ -112,7 +112,7 @@ export interface Owner {
   id: string;
   userId: string;
   name: string;
-  email: string;
+  email: string | null;
   phone?: string;
   address?: string;
   notes?: string;

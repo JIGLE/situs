@@ -41,8 +41,9 @@ const propertyFields = z.object({
 
   // Property details
   type: z.enum(["apartment", "house", "condo", "townhouse", "commercial", "other"]),
-  bedrooms: z.number().min(0).max(20),
-  bathrooms: z.number().min(0).max(20),
+  // Unknown is null, not 0: Finanças does not say how many rooms a property has, and 0 reads as a studio.
+  bedrooms: z.number().min(0).max(20).nullish(),
+  bathrooms: z.number().min(0).max(20).nullish(),
   rent: z.number().min(0, "Rent must be positive"),
   status: z.enum(["occupied", "vacant", "maintenance"]),
   description: z.string().max(500, "Description too long").optional(),

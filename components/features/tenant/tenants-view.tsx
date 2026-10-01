@@ -109,12 +109,11 @@ function TenantForm({
           <Input
             id="email"
             type="email"
-            value={dialog.formData.email}
+            value={dialog.formData.email ?? ""}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               dialog.updateFormData({ email: e.target.value })
             }
             className={dialog.formErrors.email ? "border-red-500" : ""}
-            required
           />
           {dialog.formErrors.email && (
             <p className="text-sm text-destructive">{dialog.formErrors.email}</p>
@@ -413,7 +412,7 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
               e.stopPropagation();
               dialog.openEditDialog(tenant, (t) => ({
                 name: t.name,
-                email: t.email,
+                email: t.email || "",
                 phone: t.phone || "",
                 propertyId: t.propertyId || "",
                 rent: Number(t.rent),
@@ -431,9 +430,11 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
             {tActions("edit")}
           </DropdownMenuItem>
           <DropdownMenuItem
+            // A tenant read from Finanças may have no address yet; `mailto:null` is not one.
+            disabled={!tenant.email}
             onClick={(e) => {
               e.stopPropagation();
-              window.location.href = `mailto:${tenant.email}`;
+              if (tenant.email) window.location.href = `mailto:${tenant.email}`;
             }}
           >
             <Mail className="h-4 w-4 mr-2" />
@@ -516,8 +517,8 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
         const matchesSearch =
           searchQuery.length === 0 ||
           tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          tenant.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          tenant.phone.toLowerCase().includes(searchQuery.toLowerCase());
+          (tenant.email ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (tenant.phone ?? "").toLowerCase().includes(searchQuery.toLowerCase());
 
         const matchesProperty = propertyFilter === "all" || tenant.propertyId === propertyFilter;
 
@@ -647,9 +648,9 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
                           </span>
                           <span
                             className="block break-words text-xs text-[var(--color-muted-foreground)] md:truncate"
-                            title={tenant.email}
+                            title={tenant.email ?? undefined}
                           >
-                            {tenant.email}
+                            {tenant.email || "—"}
                           </span>
                         </button>
                         <div className="shrink-0">{renderTenantActions(tenant)}</div>
@@ -688,13 +689,13 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
                     {
                       key: "email",
                       header: tForms("email"),
-                      cell: (tenant) => tenant.email,
+                      cell: (tenant) => tenant.email || "—",
                       cellClassName: "text-sm text-[var(--color-muted-foreground)]",
                     },
                     {
                       key: "phone",
                       header: tForms("phone"),
-                      cell: (tenant) => tenant.phone,
+                      cell: (tenant) => tenant.phone || "—",
                       cellClassName: "text-sm text-[var(--color-muted-foreground)]",
                     },
                     {
@@ -824,9 +825,9 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
                                     break the alignment, so truncation is right there. */}
                                 <p
                                   className="break-words text-xs text-[var(--color-muted-foreground)] md:truncate"
-                                  title={tenant.email}
+                                  title={tenant.email ?? undefined}
                                 >
-                                  {tenant.email}
+                                  {tenant.email || "—"}
                                 </p>
                               </div>
                             </div>

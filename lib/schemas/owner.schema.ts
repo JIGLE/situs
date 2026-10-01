@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { validatePortugueseNIF } from "@/lib/utils/tax-id-validation";
+import { optionalEmail } from "./contact";
 
 const ownerFields = {
   name: z.string().min(1, "Name is required").max(100, "Name too long"),
-  email: z.string().email("Invalid email address").max(255, "Email too long"),
+  email: optionalEmail("Invalid email address"),
   phone: z.string().max(20, "Phone number too long").optional(),
   address: z.string().max(200, "Address too long").optional(),
   notes: z.string().max(500, "Notes too long").optional(),

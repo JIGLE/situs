@@ -685,6 +685,7 @@
       "propertyHasHistory": "This property has leases, payments or expenses recorded, so Situs keeps it for your tax records.",
       "leaseHasHistory": "Payments are recorded against this lease, so Situs keeps it for your records. End the lease instead.",
       "ownerHasHistory": "This owner is linked to a property or to income distributions, so Situs keeps them for your records. Remove them from the property first.",
+      "emailInUse": "You already have a record with that email address. Use a different one, or leave it empty.",
       "atPasswordRequired": "Enter the sub-user's password.",
       "atCredentialsNeedKey": "Situs stores the AT password only encrypted, and this instance has no PII_ENCRYPTION_KEY. Set it, then save again.",
       "atFilesNotReady": "The certificate files are missing or invalid. Their state is shown above.",

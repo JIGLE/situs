@@ -2,6 +2,8 @@ import { getPrismaClient } from "../database";
 import { Tenant } from "@/lib/types";
 import { assertOwnsRelations } from "../assert-owned";
 import { assertTenantHasNoHistory } from "../history";
+import { refuseDuplicateEmail } from "../unique-email";
+import { blankToNull } from "@/lib/utils/contact";
 
 export const tenantService = {
   async getAll(userId: string): Promise<Tenant[]> {
@@ -63,26 +65,29 @@ export const tenantService = {
     const leaseEnd = data.leaseEnd
       ? new Date(data.leaseEnd)
       : new Date(leaseStart.getFullYear() + 1, leaseStart.getMonth(), leaseStart.getDate());
-    const tenant = await getPrismaClient().tenant.create({
-      data: {
-        userId,
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        propertyId: data.propertyId,
-        rent: data.rent,
-        leaseStart,
-        leaseEnd,
-        // paymentStatus is left to the column default: the RentPeriod ledger derives it
-        // (lib/services/allocation/service.ts), never the caller.
-        lastPayment: data.lastPayment ? new Date(data.lastPayment) : null,
-        notes: data.notes,
-        taxId: data.taxId ?? null,
-        taxCountry: data.taxCountry ?? "PT",
-        idDocument: data.idDocument ?? null,
-      },
-      include: { property: true },
-    });
+    const tenant = await refuseDuplicateEmail("tenant", () =>
+      getPrismaClient().tenant.create({
+        data: {
+          userId,
+          name: data.name,
+          // An email or a phone the owner does not have is NULL, never "".
+          email: blankToNull(data.email),
+          phone: blankToNull(data.phone),
+          propertyId: data.propertyId,
+          rent: data.rent,
+          leaseStart,
+          leaseEnd,
+          // paymentStatus is left to the column default: the RentPeriod ledger derives it
+          // (lib/services/allocation/service.ts), never the caller.
+          lastPayment: data.lastPayment ? new Date(data.lastPayment) : null,
+          notes: data.notes,
+          taxId: data.taxId ?? null,
+          taxCountry: data.taxCountry ?? "PT",
+          idDocument: data.idDocument ?? null,
+        },
+        include: { property: true },
+      }),
+    );
     return {
       ...tenant,
       propertyId: tenant.propertyId || undefined,
@@ -105,27 +110,30 @@ export const tenantService = {
     // property the caller has no claim to.
     await assertOwnsRelations(userId, { propertyId: data.propertyId });
 
-    const tenant = await getPrismaClient().tenant.update({
-      where: { id, userId },
-      data: {
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        propertyId: data.propertyId,
-        rent: data.rent,
-        leaseStart: data.leaseStart ? new Date(data.leaseStart) : undefined,
-        leaseEnd: data.leaseEnd ? new Date(data.leaseEnd) : undefined,
-        // paymentStatus is derived from the RentPeriod ledger (Situs Migration A —
-        // lib/services/allocation/service.ts), never accepted here.
-        lastPayment: data.lastPayment ? new Date(data.lastPayment) : undefined,
-        notes: data.notes,
-        // Undefined leaves a field as it is; null, from a blank input, clears it.
-        taxId: data.taxId,
-        taxCountry: data.taxCountry,
-        idDocument: data.idDocument,
-      },
-      include: { property: true },
-    });
+    const tenant = await refuseDuplicateEmail("tenant", () =>
+      getPrismaClient().tenant.update({
+        where: { id, userId },
+        data: {
+          name: data.name,
+          // Undefined leaves a field as it is; a blank clears it to NULL.
+          email: data.email === undefined ? undefined : blankToNull(data.email),
+          phone: data.phone === undefined ? undefined : blankToNull(data.phone),
+          propertyId: data.propertyId,
+          rent: data.rent,
+          leaseStart: data.leaseStart ? new Date(data.leaseStart) : undefined,
+          leaseEnd: data.leaseEnd ? new Date(data.leaseEnd) : undefined,
+          // paymentStatus is derived from the RentPeriod ledger (Situs Migration A —
+          // lib/services/allocation/service.ts), never accepted here.
+          lastPayment: data.lastPayment ? new Date(data.lastPayment) : undefined,
+          notes: data.notes,
+          // Undefined leaves a field as it is; null, from a blank input, clears it.
+          taxId: data.taxId,
+          taxCountry: data.taxCountry,
+          idDocument: data.idDocument,
+        },
+        include: { property: true },
+      }),
+    );
     return {
       ...tenant,
       propertyId: tenant.propertyId || undefined,

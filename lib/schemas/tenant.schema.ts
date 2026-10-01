@@ -1,10 +1,11 @@
 import { z } from "zod";
+import { optionalEmail } from "./contact";
 import { checkTaxId, taxIdentityFields } from "./tax-identity";
 
 const tenantFields = z.object({
   name: z.string().min(1, "Tenant name is required").max(100, "Name too long"),
-  email: z.string().email("Invalid email format").max(255, "Email too long"),
-  phone: z.string().max(20, "Phone number too long").optional().default(""),
+  email: optionalEmail("Invalid email format"),
+  phone: z.string().max(20, "Phone number too long").nullish(),
   propertyId: z.string().optional(),
   rent: z.number().min(0, "Rent must be positive").optional().default(0),
   leaseStart: z

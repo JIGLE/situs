@@ -48,6 +48,7 @@ const REASON_KEY = new Map<
   | "propertyHasHistory"
   | "leaseHasHistory"
   | "ownerHasHistory"
+  | "emailInUse"
   | "atPasswordRequired"
   | "atCredentialsNeedKey"
   | "atFilesNotReady"
@@ -68,6 +69,7 @@ const REASON_KEY = new Map<
   ["property_has_history", "propertyHasHistory"],
   ["lease_has_history", "leaseHasHistory"],
   ["owner_has_history", "ownerHasHistory"],
+  ["email_in_use", "emailInUse"],
   ["at_password_required", "atPasswordRequired"],
   ["at_credentials_need_key", "atCredentialsNeedKey"],
   ["at_files_not_ready", "atFilesNotReady"],

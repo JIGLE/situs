@@ -63,6 +63,7 @@ import { PropertyFormDialog, type PropertyFormDialogRef } from "./property-form-
 import { PropertyYearStrip, type YearStripSelection } from "./property-year-strip";
 import { expenseCategoryKey } from "@/lib/utils/expense-labels";
 import { rentPeriodStatusKey } from "@/lib/utils/rent-period-labels";
+import { joinContact } from "@/lib/utils/contact";
 
 interface PropertyDetailViewProps {
   propertyId: string;
@@ -391,12 +392,17 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                 <Badge variant={STATUS_VARIANT[property.status] || "secondary"}>
                   {t(`status.${property.status}`) || property.status}
                 </Badge>
-                <span className="text-sm text-[var(--color-muted-foreground)] flex items-center gap-1">
-                  <Bed className="h-3.5 w-3.5" /> {property.bedrooms}
-                </span>
-                <span className="text-sm text-[var(--color-muted-foreground)] flex items-center gap-1">
-                  <Bath className="h-3.5 w-3.5" /> {property.bathrooms}
-                </span>
+                {/* Unknown is null, and shows nothing: a bare icon would read as none. */}
+                {property.bedrooms != null && (
+                  <span className="text-sm text-[var(--color-muted-foreground)] flex items-center gap-1">
+                    <Bed className="h-3.5 w-3.5" /> {property.bedrooms}
+                  </span>
+                )}
+                {property.bathrooms != null && (
+                  <span className="text-sm text-[var(--color-muted-foreground)] flex items-center gap-1">
+                    <Bath className="h-3.5 w-3.5" /> {property.bathrooms}
+                  </span>
+                )}
                 <span className="text-sm font-medium">{formatCurrency(property.rent)}/mo</span>
               </div>
             </div>
@@ -671,7 +677,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
               <Input
                 id="ten-email"
                 type="email"
-                value={tenantDialog.formData.email}
+                value={tenantDialog.formData.email ?? ""}
                 onChange={(e) => tenantDialog.updateFormData({ email: e.target.value })}
                 className={tenantDialog.formErrors.email ? "border-[var(--color-destructive)]" : ""}
               />
@@ -686,7 +692,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                 <Label htmlFor="ten-phone">{t("phone")}</Label>
                 <Input
                   id="ten-phone"
-                  value={tenantDialog.formData.phone}
+                  value={tenantDialog.formData.phone ?? ""}
                   onChange={(e) => tenantDialog.updateFormData({ phone: e.target.value })}
                 />
               </div>
@@ -901,7 +907,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                   type="tenant"
                   id={tenant.id}
                   title={tenant.name}
-                  subtitle={`${tenant.email} · ${tenant.phone}`}
+                  subtitle={joinContact(tenant.email, tenant.phone) || undefined}
                   status={tenant.paymentStatus}
                   statusVariant={
                     tenant.paymentStatus === "paid"
@@ -1009,9 +1015,11 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                           <p className="text-sm font-medium text-[var(--color-foreground)] truncate">
                             {owner.name}
                           </p>
-                          <p className="text-xs text-[var(--color-muted-foreground)]">
-                            {owner.email}
-                          </p>
+                          {owner.email && (
+                            <p className="text-xs text-[var(--color-muted-foreground)]">
+                              {owner.email}
+                            </p>
+                          )}
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-sm font-semibold text-[var(--color-foreground)]">

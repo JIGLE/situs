@@ -84,7 +84,9 @@ model Owner {
   id                      String    @id @default(cuid())
   userId                  String
   name                    String
-  email                   String    @unique
+  // Optional: Finanças names a landlord by NIF and name, never by an email. Empty is stored as NULL,
+  // which unique indexes allow many of; unique per account, not across them.
+  email                   String?
   phone                   String?
   address                 String?
   notes                   String?
@@ -103,6 +105,7 @@ model Owner {
   documents           Document[]
   incomeDistributions IncomeDistributionShare[]
 
+  @@unique([userId, email])
   @@map("owners")
 }
 
@@ -212,8 +215,8 @@ model Property {
   building Building? @relation(fields: [buildingId], references: [id], onDelete: SetNull)
 
   type        PropertyType
-  bedrooms    Int
-  bathrooms   Int
+  bedrooms    Int? // Unknown is NULL, not 0: Finanças does not say, and 0 reads as a studio
+  bathrooms   Int?
   rent        Float
   status      PropertyStatus
   description String?
@@ -253,8 +256,10 @@ model Tenant {
   id            String        @id @default(cuid())
   userId        String
   name          String
-  email         String        @unique
-  phone         String
+  // Optional, like an owner's: what a receipt names a tenant by is a NIF or a document. Empty is
+  // NULL, and an email is unique per account, not across them.
+  email         String?
+  phone         String?
   propertyId    String?
   rent          Float
   leaseStart    DateTime
@@ -279,6 +284,7 @@ model Tenant {
   rentReceipts RentReceipt[]
   rentPeriods  RentPeriod[]
 
+  @@unique([userId, email])
   // Performance indexes
   @@index([userId])
   @@index([propertyId])
@@ -607,6 +613,11 @@ model Lease {
   // AT's webservice registers contracts but does not list them.
   atContractNumber    String?
   atContractVersion   Int?
+  // What Finanças says of the contract, once Situs has read it: whether AT has it as active (AT
+  // issues receipts only for an active one), and when that was read. Unset until then, which is
+  // not the same as inactive.
+  atActive            Boolean?
+  atReadAt            DateTime?
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 
@@ -916,6 +927,7 @@ model RentReceipt {
   atSubmissionId    String? // AT (Autoridade Tributária) submission ID
   submittedAt       DateTime?
   atResponseCode    String? // Response from AT webservice
+  atReceiptNumber   String? // The number AT gave the receipt, when one was issued in Finanças
   pdfPath           String? // Path to generated PDF
   xmlPayload        String? // Stored XML for AT submission
   // Situs receipt lifecycle (Migration C) — links this fiscal document back
