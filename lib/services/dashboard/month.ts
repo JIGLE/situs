@@ -9,6 +9,7 @@
  */
 
 import { getPrismaClient } from "@/lib/services/database/database";
+import { getAttention } from "@/lib/services/attention/gather";
 import { getAtConnection } from "@/lib/services/tax/at-connection";
 import { periodStatusAt } from "@/lib/services/allocation/rent-matrix";
 import { PSD2_PREFIX } from "@/lib/services/bank/providers/registry";
@@ -50,6 +51,8 @@ export interface DashboardMonth {
     movementsToReview: number;
     receiptsInDraft: number;
     leasesEnding: number;
+    /** What a receipt still needs from the owner: the guided list's count (`/complete`). */
+    missingData: number;
   };
   status: {
     /** Null when no bank is connected. */
@@ -103,6 +106,7 @@ export async function getDashboardMonth(
     connections,
     activity,
     at,
+    missing,
   ] = await Promise.all([
     prisma.rentPeriod.findMany({
       where: { userId, year, month, status: { not: "waived" } },
@@ -149,6 +153,7 @@ export async function getDashboardMonth(
       select: { id: true, action: true, resourceType: true, createdAt: true },
     }),
     getAtConnection(userId),
+    getAttention(userId),
   ]);
 
   const figures = { expected: 0, received: 0, outstanding: 0 };
@@ -203,7 +208,13 @@ export async function getDashboardMonth(
     month,
     figures,
     loop,
-    attention: { monthsOwed, movementsToReview, receiptsInDraft, leasesEnding },
+    attention: {
+      monthsOwed,
+      movementsToReview,
+      receiptsInDraft,
+      leasesEnding,
+      missingData: missing.counts.total,
+    },
     status: { bank: bankStatus(connections, now), taxMode: at.mode },
     recent: await recentMoney(userId, connections.length > 0),
     portfolio: { properties, occupied, leasesEnding },

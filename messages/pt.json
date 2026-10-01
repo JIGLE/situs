@@ -491,6 +491,7 @@
     "attentionMovements": "{count, plural, one {# movimento para rever} other {# movimentos para rever}}",
     "attentionReceipts": "{count, plural, one {# recibo por emitir} other {# recibos por emitir}}",
     "attentionLeases": "{count, plural, one {# contrato termina em 60 dias} other {# contratos terminam em 60 dias}}",
+    "attentionMissing": "{count, plural, one {Falta # dado para os seus recibos} other {Faltam # dados para os seus recibos}}",
     "recentMovements": "Movimentos recentes",
     "recentMovementsEmpty": "Ainda não há movimentos.",
     "recentPaymentsEmpty": "Ainda não há pagamentos.",

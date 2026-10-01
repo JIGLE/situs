@@ -491,6 +491,7 @@
     "attentionMovements": "{count, plural, one {# movement to review} other {# movements to review}}",
     "attentionReceipts": "{count, plural, one {# receipt to issue} other {# receipts to issue}}",
     "attentionLeases": "{count, plural, one {# lease ends within 60 days} other {# leases end within 60 days}}",
+    "attentionMissing": "{count, plural, one {# detail missing for your receipts} other {# details missing for your receipts}}",
     "recentMovements": "Recent movements",
     "recentMovementsEmpty": "No movements yet.",
     "recentPaymentsEmpty": "No payments yet.",

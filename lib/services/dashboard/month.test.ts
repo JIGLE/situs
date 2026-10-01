@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { prismaMock, atMock } = vi.hoisted(() => ({
+const { prismaMock, atMock, attentionMock } = vi.hoisted(() => ({
   prismaMock: {
     rentPeriod: { findMany: vi.fn() },
     bankTransaction: { count: vi.fn(), findMany: vi.fn() },
@@ -11,10 +11,12 @@ const { prismaMock, atMock } = vi.hoisted(() => ({
     auditLog: { findMany: vi.fn() },
   },
   atMock: vi.fn(),
+  attentionMock: vi.fn(),
 }));
 
 vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prismaMock }));
 vi.mock("@/lib/services/tax/at-connection", () => ({ getAtConnection: atMock }));
+vi.mock("@/lib/services/attention/gather", () => ({ getAttention: attentionMock }));
 
 import { getDashboardMonth } from "./month";
 
@@ -70,6 +72,7 @@ beforeEach(() => {
   prismaMock.bankConnection.findMany.mockResolvedValue([]);
   prismaMock.auditLog.findMany.mockResolvedValue([]);
   atMock.mockResolvedValue({ mode: "sandbox" });
+  attentionMock.mockResolvedValue({ items: [], counts: { total: 0 } });
 });
 
 describe("getDashboardMonth — the figures", () => {
@@ -177,6 +180,7 @@ describe("getDashboardMonth — what waits", () => {
       movementsToReview: 3,
       receiptsInDraft: 2,
       leasesEnding: 1,
+      missingData: 0,
     });
     expect(prismaMock.rentPeriod.findMany.mock.calls[1][0].where).toEqual({
       userId: "user-1",
@@ -195,6 +199,15 @@ describe("getDashboardMonth — what waits", () => {
       status: "active",
       endDate: { gt: NOW, lte: new Date("2026-11-26T12:00:00.000Z") },
     });
+  });
+
+  it("counts what a receipt still needs from the owner, from the owner's own list", async () => {
+    attentionMock.mockResolvedValue({ items: [], counts: { total: 3 } });
+
+    const month = await getDashboardMonth("user-1", 2026, 9, NOW);
+
+    expect(month.attention.missingData).toBe(3);
+    expect(attentionMock).toHaveBeenCalledWith("user-1");
   });
 
   it("gives the portfolio as counts", async () => {

@@ -65,6 +65,7 @@ function month(overrides: Partial<DashboardMonth> = {}): DashboardMonth {
       movementsToReview: 0,
       receiptsInDraft: 0,
       leasesEnding: 0,
+      missingData: 0,
     },
     status: { bank: null, taxMode: "sandbox" },
     recent: { source: "payments", items: [] },
@@ -182,6 +183,7 @@ describe("OverviewView — what waits", () => {
           movementsToReview: 3,
           receiptsInDraft: 1,
           leasesEnding: 0,
+          missingData: 4,
         },
       }),
     );
@@ -197,7 +199,24 @@ describe("OverviewView — what waits", () => {
       "/financials?tab=bank",
     );
     expect(within(list).getByRole("link", { name: "1 recibo por emitir" })).toBeInTheDocument();
+    // What a receipt still needs from the owner opens the guided list, one field at a time.
+    expect(
+      within(list).getByRole("link", { name: "Faltam 4 dados para os seus recibos" }),
+    ).toHaveAttribute("href", "/complete");
     expect(within(list).queryByText(/contrato/)).not.toBeInTheDocument();
+  });
+
+  it("says a single missing field in the singular", async () => {
+    show(
+      month({
+        attention: { ...month().attention, missingData: 1 },
+      }),
+    );
+
+    const list = await screen.findByTestId("dashboard-attention");
+    expect(
+      within(list).getByRole("link", { name: "Falta 1 dado para os seus recibos" }),
+    ).toBeInTheDocument();
   });
 
   it("shows no list when nothing waits", async () => {
