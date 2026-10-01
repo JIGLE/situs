@@ -144,3 +144,45 @@ describe("OwnerDetailModal, the NIF", () => {
     expect(screen.getByText(`${owners.propertiesOwned} (1)`)).toBeTruthy();
   });
 });
+
+/**
+ * An owner read from Finanças has a name and a NIF, and no email: it is null. The modal printed it
+ * beside the envelope icon whatever it was, and put it in the edit box as `value={null}`, which
+ * React warns about and treats as uncontrolled.
+ */
+describe("OwnerDetailModal, an owner with no email", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    state.owners = [{ ...ana, email: null }];
+    updateOwnerMock.mockResolvedValue(undefined);
+  });
+
+  it("shows the owner without an email line, and never the word null", () => {
+    open();
+
+    expect(screen.getByText("Ana Costa")).toBeTruthy();
+    expect(screen.queryByText("ana@example.pt")).toBeNull();
+    expect(screen.queryByText(/null/)).toBeNull();
+  });
+
+  it("opens the edit form with an empty email box, without a warning", async () => {
+    const warn = vi.spyOn(console, "error").mockImplementation(() => {});
+    open();
+    await startEditing();
+
+    expect((screen.getByLabelText(ptMessages.forms.email) as HTMLInputElement).value).toBe("");
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("saves the owner with the email still blank", async () => {
+    open();
+    await startEditing();
+
+    await userEvent.click(screen.getByRole("button", { name: ptMessages.actions.save }));
+
+    // Still none: null as it was loaded, or blank. Never the text "null", and it validates as it is.
+    expect(updateOwnerMock).toHaveBeenCalledTimes(1);
+    expect(updateOwnerMock.mock.calls[0][1].email ?? "").toBe("");
+  });
+});

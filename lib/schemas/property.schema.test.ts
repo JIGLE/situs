@@ -37,3 +37,28 @@ describe("updatePropertySchema", () => {
     expect(propertySchema.parse(property)).toMatchObject({ addressVerified: false });
   });
 });
+
+/**
+ * Finanças does not say how many rooms a property has. Unknown is null, not 0: 0 is a studio.
+ */
+describe("propertySchema, the rooms", () => {
+  it.each([undefined, null])("takes bedrooms and bathrooms of %j for unknown", (rooms) => {
+    const result = propertySchema.safeParse({ ...property, bedrooms: rooms, bathrooms: rooms });
+
+    expect(result.success).toBe(true);
+    expect(result.data?.bedrooms).toBe(rooms);
+  });
+
+  it("keeps 0, which is a studio, and not unknown", () => {
+    expect(propertySchema.parse({ ...property, bedrooms: 0 }).bedrooms).toBe(0);
+  });
+
+  it.each([-1, 21])("still refuses %j rooms", (rooms) => {
+    expect(propertySchema.safeParse({ ...property, bedrooms: rooms }).success).toBe(false);
+    expect(propertySchema.safeParse({ ...property, bathrooms: rooms }).success).toBe(false);
+  });
+
+  it("lets an edit set the rooms back to unknown", () => {
+    expect(updatePropertySchema.parse({ bedrooms: null })).toEqual({ bedrooms: null });
+  });
+});

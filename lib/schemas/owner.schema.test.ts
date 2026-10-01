@@ -51,6 +51,23 @@ describe("ownerSchema, the NIF", () => {
   });
 });
 
+describe("ownerSchema, the email", () => {
+  it.each([undefined, null, "", "   "])("takes an email of %j for none", (email) => {
+    expect(ownerSchema.safeParse({ name: "Ana Costa", email }).success).toBe(true);
+  });
+
+  it("takes an owner with only a name", () => {
+    expect(ownerSchema.safeParse({ name: "Ana Costa" }).success).toBe(true);
+  });
+
+  it("still refuses one that is not an address, with its message", () => {
+    const result = ownerSchema.safeParse({ name: "Ana Costa", email: "nope" });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].message).toBe("Invalid email address");
+  });
+});
+
 describe("updateOwnerSchema", () => {
   it("takes only what an edit changes", () => {
     expect(updateOwnerSchema.safeParse({}).success).toBe(true);
@@ -65,6 +82,12 @@ describe("updateOwnerSchema", () => {
       false,
     );
     expect(updateOwnerSchema.safeParse({ name: "" }).success).toBe(false);
+  });
+
+  it("lets an edit clear the email", () => {
+    expect(updateOwnerSchema.safeParse({ email: "" }).success).toBe(true);
+    expect(updateOwnerSchema.safeParse({ email: null }).success).toBe(true);
+    expect(updateOwnerSchema.safeParse({ email: "nope" }).success).toBe(false);
   });
 
   it("lets an edit clear the NIF", () => {
