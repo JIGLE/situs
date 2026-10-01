@@ -4,8 +4,8 @@ import {
   createSuccessResponse,
   createErrorResponse,
   parseBody,
-  ValidationError,
-  readJsonObject,
+  parseJsonBody,
+  ResourceNotFoundError,
 } from "@/lib/utils/error-handling";
 import { emailService } from "@/lib/services/email/email-service";
 import { z } from "zod";
@@ -16,6 +16,10 @@ const querySchema = z.object({
     .optional()
     .transform((val) => (val ? parseInt(val) : 30)),
 });
+
+// A string, not whatever the body holds: the service finds the log with `findFirst`, which reads an
+// object as a filter, so `{ "startsWith": "" }` would pick one of the caller's logs at random.
+const retrySchema = z.object({ emailLogId: z.string().min(1, "emailLogId is required") });
 
 /**
  * GET /api/email/metrics - Get comprehensive email delivery metrics
@@ -64,30 +68,28 @@ export async function GET(request: NextRequest): Promise<Response | NextResponse
 }
 
 /**
- * POST /api/email/metrics/retry - Retry a failed email
+ * POST /api/email/metrics - Retry a failed email
  *
  * Body:
- * - emailLogId: ID of the email log to retry
+ * - emailLogId: ID of the email log to retry. It has to be one of the caller's own: another
+ *   account's log answers 404, the same as an id that does not exist.
  */
 export async function POST(request: NextRequest): Promise<Response | NextResponse> {
   const authResult = await requireAuth(request);
   if (authResult instanceof Response) return authResult;
 
   try {
-    const body = await readJsonObject(request);
-    const { emailLogId } = body;
-
-    if (!emailLogId) {
-      return createErrorResponse(new ValidationError("emailLogId is required"), 400, request);
-    }
+    const { emailLogId } = await parseJsonBody(request, retrySchema);
 
     const result = await emailService.retryFailedEmail(emailLogId, authResult.userId);
 
     if (result.success) {
       return createSuccessResponse({ message: "Email retry initiated successfully" });
-    } else {
-      return createErrorResponse(new Error(result.error || "Failed to retry email"), 400, request);
     }
+    if (result.notFound) {
+      return createErrorResponse(new ResourceNotFoundError("Email log"), 404, request);
+    }
+    return createErrorResponse(new Error(result.error || "Failed to retry email"), 400, request);
   } catch (error: unknown) {
     console.error("Email retry error:", error);
     return createErrorResponse(
