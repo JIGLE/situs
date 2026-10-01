@@ -75,6 +75,9 @@ export async function seedDemoData(userId: string): Promise<void> {
       phone: "+351 912 345 678",
       address: "Avenida da Liberdade 120, 1250-144 Lisbon",
       notes: "Primary corporate vehicle for Lisbon and Porto holdings.",
+      // A made-up number that passes the check digit, so a receipt review in the demo is not
+      // stopped at its first step.
+      taxIdentificationNumber: "502000007",
     },
   });
 
