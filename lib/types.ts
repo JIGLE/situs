@@ -146,7 +146,7 @@ export interface Lease {
   tenantName?: string;
   tenant?: {
     name: string;
-    email: string;
+    email: string | null;
   };
   startDate: string;
   endDate: string;

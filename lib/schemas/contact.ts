@@ -6,7 +6,7 @@ import { z } from "zod";
  * Absent, `null` and `""` all mean none: a blank input sends `""`, and a record read back from the
  * API carries `null` for an empty column, so an edit form that loads a record as it is must still
  * validate. Anything else has to be an address. The service stores none as NULL
- * (`lib/utils/contact.ts`), never `""`.
+ * (`blankToNull`, `lib/schemas/tax-identity.ts`), never `""`.
  *
  * Optional because Finanças names a landlord or a tenant by NIF and name, and Situs reads them
  * from there before anyone has typed an address.

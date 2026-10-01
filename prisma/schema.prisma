@@ -613,11 +613,6 @@ model Lease {
   // AT's webservice registers contracts but does not list them.
   atContractNumber    String?
   atContractVersion   Int?
-  // What Finanças says of the contract, once Situs has read it: whether AT has it as active (AT
-  // issues receipts only for an active one), and when that was read. Unset until then, which is
-  // not the same as inactive.
-  atActive            Boolean?
-  atReadAt            DateTime?
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 
@@ -927,7 +922,6 @@ model RentReceipt {
   atSubmissionId    String? // AT (Autoridade Tributária) submission ID
   submittedAt       DateTime?
   atResponseCode    String? // Response from AT webservice
-  atReceiptNumber   String? // The number AT gave the receipt, when one was issued in Finanças
   pdfPath           String? // Path to generated PDF
   xmlPayload        String? // Stored XML for AT submission
   // Situs receipt lifecycle (Migration C) — links this fiscal document back

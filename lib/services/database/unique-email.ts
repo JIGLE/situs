@@ -6,7 +6,8 @@ import { ConflictError } from "@/lib/utils/error-handling";
  * It used to be unique across every account, so a second tenant with an address already on file
  * answered "Internal server error", and a landlord could learn, from the refusal, that someone
  * else's tenant had it. Now it is only refused within the account, in words, and a record with no
- * email is stored as NULL, which a unique index admits any number of (`lib/utils/contact.ts`).
+ * email is stored as NULL (`blankToNull`, `lib/schemas/tax-identity.ts`), which a unique index admits
+ * any number of.
  *
  * Neither model has another unique index a caller can reach, so Prisma's P2002 on a write to one of
  * them is this one.

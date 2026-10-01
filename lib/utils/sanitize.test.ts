@@ -56,7 +56,7 @@ describe("sanitize utilities", () => {
 
   it("sanitizeOptionalEmail takes a blank or missing email for none, and not an invalid one", () => {
     // None: a tenant read from Finanças has no address.
-    for (const none of [undefined, null, "", "   ", 42]) {
+    for (const none of [undefined, null, "", "   "]) {
       expect(sanitizeOptionalEmail(none)).toBeNull();
     }
     expect(sanitizeOptionalEmail(" Test@Example.COM ")).toBe("test@example.com");
@@ -64,6 +64,9 @@ describe("sanitize utilities", () => {
     // for a mistyped address, in silence. It comes back as typed, for the schema to refuse.
     expect(sanitizeEmail(" BAD_EMAIL ")).toBeNull();
     expect(sanitizeOptionalEmail(" BAD_EMAIL ")).toBe("BAD_EMAIL");
+    // Nor is a value that is not text: it is handed on, to be refused, not read as "clear it".
+    expect(sanitizeOptionalEmail(42)).toBe(42);
+    expect(sanitizeOptionalEmail(["a@b.pt"])).toEqual(["a@b.pt"]);
   });
 
   it("sanitizeEmail returns null for invalid emails and lowercases valid ones", () => {

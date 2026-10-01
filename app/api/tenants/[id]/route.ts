@@ -91,7 +91,12 @@ async function handlePut(
       ...body,
       name: body.name ? sanitizeForDatabase(body.name) : undefined,
       email: body.email === undefined ? undefined : sanitizeOptionalEmail(body.email),
-      phone: body.phone === undefined ? undefined : sanitizeForDatabase(body.phone),
+      // `sanitizeForDatabase` turns a value that is not text into "", which would clear the phone: a
+      // number is a mistake, so it goes to the schema as it came, and is refused.
+      phone:
+        typeof body.phone === "string" || body.phone === null
+          ? sanitizeForDatabase(body.phone)
+          : body.phone,
       propertyId: body.propertyId ? sanitizeForDatabase(body.propertyId) : undefined,
       rent: body.rent !== undefined ? sanitizeNumber(body.rent, 0, 0) : undefined,
       notes: body.notes ? sanitizeForDatabase(body.notes) : undefined,

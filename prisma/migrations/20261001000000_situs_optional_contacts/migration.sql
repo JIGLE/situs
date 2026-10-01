@@ -12,9 +12,6 @@
 -- `tenants_email_key` and `owners_email_key`, go with the old tables; every row that satisfied them
 -- satisfies the new ones.
 --
--- Three nullable columns for what the Finanças reader will record: `leases.atActive` and
--- `leases.atReadAt`, and `rent_receipts.atReceiptNumber`. Nothing writes them yet.
---
 -- SQLite cannot relax a NOT NULL or replace a unique index in place, so `owners`, `properties` and
 -- `tenants` are rebuilt: every row is copied across unchanged, with foreign keys off while it is,
 -- so nothing cascades. Nothing is lost.
@@ -22,13 +19,6 @@
 -- Generated with `prisma migrate diff` from the previous schema to this one, which touches no
 -- database. As docs/DATABASE_STRATEGY.md says, nothing applies migration files: the image's
 -- startup `prisma db push` makes the same change.
--- AlterTable
-ALTER TABLE "leases" ADD COLUMN "atActive" BOOLEAN;
-ALTER TABLE "leases" ADD COLUMN "atReadAt" DATETIME;
-
--- AlterTable
-ALTER TABLE "rent_receipts" ADD COLUMN "atReceiptNumber" TEXT;
-
 -- RedefineTables
 PRAGMA defer_foreign_keys=ON;
 PRAGMA foreign_keys=OFF;

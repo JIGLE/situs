@@ -46,6 +46,26 @@ describe("POST /api/owners", () => {
     });
   });
 
+  it("never writes another account's id, nor a column the schema does not name", async () => {
+    const res = await POST(
+      postRequest({
+        name: "Ana Costa",
+        email: "ana@example.pt",
+        userId: "someone-else",
+        id: "o-chosen",
+        role: "ADMIN",
+        portalAccess: true,
+      }),
+    );
+
+    expect(res.status).toBe(201);
+    const { data } = prismaMock.owner.create.mock.calls[0][0];
+    expect(data).toMatchObject({ userId: "user-123" });
+    expect(data).not.toHaveProperty("id");
+    expect(data).not.toHaveProperty("role");
+    expect(data).not.toHaveProperty("portalAccess");
+  });
+
   it("returns 400 when a required field is missing", async () => {
     const res = await POST(postRequest({ email: "ana@example.pt" }));
 
