@@ -92,7 +92,29 @@ export function monthBounds(year: number, month: number): { start: string; end: 
 
 const isPortuguese = (country: string | null) => (country || "PT").toUpperCase() === "PT";
 
-function tenantBlockers(tenant: AtTenant): AtReceiptBlocker[] {
+/**
+ * What stops AT's contract number being sent. These three checks, and the landlord's and the
+ * tenant's below, are exported so that anything else that asks "is this field good enough for a
+ * receipt?", such as the owner's list of missing data, shares this answer with the review.
+ */
+export function contractNumberBlocker(
+  contractNumber: string | null | undefined,
+): "contract_number_missing" | "contract_number_invalid" | null {
+  const contract = contractNumber?.trim();
+  if (!contract) return "contract_number_missing";
+  return CONTRACT_NUMBER.test(contract) ? null : "contract_number_invalid";
+}
+
+/** A landlord is named by a valid NIF. */
+export function landlordBlockers(landlord: AtLandlord): AtReceiptBlocker[] {
+  const name = landlord.name;
+  if (!landlord.nif) return [{ code: "landlord_nif_missing", name }];
+  if (!validatePortugueseNIF(landlord.nif)) return [{ code: "landlord_nif_invalid", name }];
+  return [];
+}
+
+/** A tenant is named by a valid individual's NIF, or, from abroad, by a document. */
+export function tenantBlockers(tenant: AtTenant): AtReceiptBlocker[] {
   const name = tenant.name;
   if (!isPortuguese(tenant.country)) {
     return tenant.document?.trim() ? [] : [{ code: "tenant_document_missing", name }];
@@ -107,17 +129,11 @@ function tenantBlockers(tenant: AtTenant): AtReceiptBlocker[] {
 export function receiptBlockers(input: AtReceiptInput): AtReceiptBlocker[] {
   const blockers: AtReceiptBlocker[] = [];
 
-  const contract = input.contractNumber?.trim();
-  if (!contract) blockers.push({ code: "contract_number_missing" });
-  else if (!CONTRACT_NUMBER.test(contract)) blockers.push({ code: "contract_number_invalid" });
+  const contract = contractNumberBlocker(input.contractNumber);
+  if (contract) blockers.push({ code: contract });
 
   if (input.landlords.length === 0) blockers.push({ code: "landlord_missing" });
-  for (const landlord of input.landlords) {
-    if (!landlord.nif) blockers.push({ code: "landlord_nif_missing", name: landlord.name });
-    else if (!validatePortugueseNIF(landlord.nif)) {
-      blockers.push({ code: "landlord_nif_invalid", name: landlord.name });
-    }
-  }
+  for (const landlord of input.landlords) blockers.push(...landlordBlockers(landlord));
 
   if (input.tenants.length === 0) blockers.push({ code: "tenant_missing" });
   for (const tenant of input.tenants) blockers.push(...tenantBlockers(tenant));

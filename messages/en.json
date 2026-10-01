@@ -424,6 +424,7 @@
     "finance": "Finance",
     "contracts": "Contracts",
     "account": "Account",
+    "complete": "What is missing",
     "more": "More",
     "signOut": "Sign out",
     "coreGroup": "Core",
@@ -491,6 +492,7 @@
     "attentionMovements": "{count, plural, one {# movement to review} other {# movements to review}}",
     "attentionReceipts": "{count, plural, one {# receipt to issue} other {# receipts to issue}}",
     "attentionLeases": "{count, plural, one {# lease ends within 60 days} other {# leases end within 60 days}}",
+    "attentionMissing": "{count, plural, one {# detail missing for your receipts} other {# details missing for your receipts}}",
     "recentMovements": "Recent movements",
     "recentMovementsEmpty": "No movements yet.",
     "recentPaymentsEmpty": "No payments yet.",
@@ -501,6 +503,51 @@
     "activityTitle": "Recent activity",
     "activityEmpty": "No activity yet.",
     "activitySeeAll": "See the full history"
+  },
+  "completion": {
+    "title": "What is missing",
+    "left": "{count, plural, one {# item left} other {# items left}}",
+    "weight": {
+      "blocksReceipt": "Needed to issue a receipt",
+      "reminders": "Needed for reminders and matching",
+      "niceToHave": "Nice to have"
+    },
+    "loading": "Loading…",
+    "save": "Save",
+    "saving": "Saving…",
+    "skip": "Skip",
+    "skippedNote": "What you skip comes back at the end.",
+    "notValid": "{value} is not valid.",
+    "doneTitle": "Nothing is missing",
+    "doneBody": "Every active lease has what a receipt needs from you.",
+    "backToDashboard": "Back to the dashboard",
+    "retry": "Try again",
+    "kind": {
+      "contract_number": {
+        "label": "AT contract number",
+        "hint": "The number AT gave the contract when it was registered. Digits only.",
+        "placeholder": "1234567",
+        "about": "Lease of {name}, {property}"
+      },
+      "landlord_nif": {
+        "label": "NIF",
+        "hint": "The landlord's NIF, nine digits.",
+        "placeholder": "123456789",
+        "about": "{name}, landlord of {property}"
+      },
+      "tenant_nif": {
+        "label": "NIF",
+        "hint": "The tenant's NIF, nine digits.",
+        "placeholder": "123456789",
+        "about": "{name}, tenant of {property}"
+      },
+      "tenant_document": {
+        "label": "Identity document",
+        "hint": "The number of the tenant's passport or identity card, as issued abroad.",
+        "placeholder": "AB1234567",
+        "about": "{name}, tenant of {property}"
+      }
+    }
   },
   "onboarding": {
     "gettingStarted": "Getting Started",

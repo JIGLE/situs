@@ -260,6 +260,7 @@ export async function proxy(request: NextRequest) {
     rest.startsWith("insights") ||
     rest.startsWith("overview") ||
     rest.startsWith("documents") ||
+    rest.startsWith("complete") ||
     rest.startsWith("owners") ||
     rest.startsWith("settings");
 

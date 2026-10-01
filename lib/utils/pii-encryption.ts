@@ -65,6 +65,22 @@ export function encryptPII(plaintext: string): string {
 }
 
 /**
+ * What `decryptPII` returns for a value it cannot read: no key, a malformed value, or a key that
+ * has changed. It is not empty and it is not the value, so a reader that checks "is there one?"
+ * has to check for this too (`lib/services/attention/gather.ts`).
+ */
+export const UNREADABLE_PII = "[ENCRYPTED]";
+
+/**
+ * A stored value as a reader should see it: nothing when it could not be decrypted. A NIF or a
+ * document that reads `UNREADABLE_PII` is not there, so it is asked for again, rather than a
+ * foreign tenant's document being called present, or the sentinel being offered back in a box or
+ * sent on as if it were what the owner typed.
+ */
+export const readablePII = (value: string | null | undefined): string | null =>
+  value == null || value === UNREADABLE_PII ? null : value;
+
+/**
  * Decrypt an encrypted PII string. If not prefixed, assumes plaintext.
  */
 export function decryptPII(ciphertext: string): string {
@@ -73,13 +89,13 @@ export function decryptPII(ciphertext: string): string {
   const key = getEncryptionKey();
   if (!key) {
     console.warn("[PII] Encrypted data found but PII_ENCRYPTION_KEY not set — cannot decrypt");
-    return "[ENCRYPTED]";
+    return UNREADABLE_PII;
   }
 
   const parts = ciphertext.slice(ENCRYPTED_PREFIX.length).split(":");
   if (parts.length !== 3) {
     console.warn("[PII] Malformed encrypted value");
-    return "[ENCRYPTED]";
+    return UNREADABLE_PII;
   }
 
   // The three ways this can fail are NOT equivalent, and only two were handled.
@@ -113,7 +129,7 @@ export function decryptPII(ciphertext: string): string {
         "PII_ENCRYPTION_KEY has changed since the row was written. Run " +
         "scripts/backfill-pii-encryption.js after a deliberate key rotation.",
     );
-    return "[ENCRYPTED]";
+    return UNREADABLE_PII;
   }
 }
 

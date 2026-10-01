@@ -7,6 +7,8 @@ import {
   encryptPII,
   isEncrypted,
   isEncryptedFile,
+  readablePII,
+  UNREADABLE_PII,
 } from "./pii-encryption";
 
 /**
@@ -106,7 +108,8 @@ describe("the other two failure modes still degrade the same way", () => {
   });
 
   it("returns the placeholder for a malformed value", () => {
-    expect(decryptPII("enc:only-one-part")).toBe("[ENCRYPTED]");
+    expect(decryptPII("enc:only-one-part")).toBe(UNREADABLE_PII);
+    expect(UNREADABLE_PII).toBe("[ENCRYPTED]");
   });
 
   it("returns the placeholder for a corrupted ciphertext body", () => {
@@ -168,5 +171,28 @@ describe("files", () => {
 
     expect(decryptFile(stored.subarray(0, 20))).toBeNull();
     expect(decryptFile(tampered)).toBeNull();
+  });
+});
+
+/**
+ * A reader that asks "is there a value?" must not count the sentinel, which is not empty: a foreign
+ * tenant's document that could not be decrypted would pass for one, and the sentinel would be
+ * offered back in a box or sent to AT as a document number.
+ */
+describe("readablePII", () => {
+  it("is nothing for a value that could not be decrypted, and for no value", () => {
+    expect(readablePII(UNREADABLE_PII)).toBeNull();
+    expect(readablePII(null)).toBeNull();
+    expect(readablePII(undefined)).toBeNull();
+  });
+
+  it("is the value otherwise, as it is", () => {
+    expect(readablePII("234567899")).toBe("234567899");
+    expect(readablePII("12AB34567")).toBe("12AB34567");
+    expect(readablePII("")).toBe("");
+  });
+
+  it("is what decryptPII's own failures come to", () => {
+    expect(readablePII(decryptPII("enc:only-one-part"))).toBeNull();
   });
 });

@@ -212,6 +212,9 @@ const SURFACES = [
   { id: "signin", path: "/auth/signin", auth: false },
   { id: "signup", path: "/auth/signup", auth: false },
   { id: "dashboard", path: "/dashboard" },
+  // What a receipt still needs from the owner, one field at a time. The demo data has leases
+  // waiting for AT's number, so this measures a question and not the empty state.
+  { id: "complete", path: "/complete" },
   { id: "portfolio", path: "/portfolio" },
   // Detail overlays open via `?detail=<type>:<id>` (see lib/utils/entity-detail-url.ts).
   { id: "detail-property", path: "/portfolio?detail=property:{propertyId}", overlay: true },

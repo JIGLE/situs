@@ -183,6 +183,15 @@ e2e/                    # Playwright E2E tests
   from a non-reversed `PaymentAllocation` and clears once the period has a `RentReceipt` filing.
   `paid`/`paid_late`/`waived` periods are never chased — `waived` is missing from the
   `RentPeriodStatus` union, so it is listed explicitly rather than derived from that type.
+- **What a receipt still needs from the owner**: `lib/services/attention/`. The rules (`rules.ts`,
+  pure) ask `receiptBlockers`' own checks, exported from `lib/tax/at/receipt-request.ts`, so the
+  list and the receipt review cannot disagree about what is valid. `gather.ts` reads the active
+  leases with their tenants and landlords, scoped to the owner and through each person's own model,
+  so the NIFs are decrypted. `GET /api/attention` serves it, the dashboard's attention list counts
+  it, and `/complete` walks it one field at a time, saving through the record's own action. A
+  company tenant stops a receipt but is not listed (nothing to type in), and co-tenants are not
+  listed yet. A new page under `app/[locale]/(main)` needs a line in `proxy.ts`'s
+  `isMainPortalPage`; `tests/proxy-portal-pages.test.ts` names one that lacks it.
 - **Audit trail**: `components/shared/audit-trail.tsx` + `GET /api/audit-trail` — pass
   `resourceIds` to scope to records (property detail Audit tab) or omit it for the account-wide
   trail. Backed by `AuditLog.resourceType`/`resourceId`, written on every workflow mutation.
