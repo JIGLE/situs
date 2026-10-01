@@ -13,7 +13,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * cannot be made without a code and cannot be used by another session. It lives for a minute:
  * long enough for the browser to hand it over, short enough that a copy is worth nothing.
  */
-export const MFA_PROOF_TTL_MS = 60_000;
+export const VALID_FOR_MS = 60_000;
 
 const VERSION = "v1";
 
@@ -31,7 +31,7 @@ const mac = (secret: string, { userId, sid }: MfaSession, expires: number): stri
 
 export function signMfaProof(secret: string, session: MfaSession, now = Date.now()): string {
   if (!secret) throw new Error("A proof cannot be signed without the server's secret");
-  const expires = now + MFA_PROOF_TTL_MS;
+  const expires = now + VALID_FOR_MS;
   return `${VERSION}.${expires}.${mac(secret, session, expires)}`;
 }
 
@@ -51,7 +51,7 @@ export function verifyMfaProof(
   // The number as it was signed, written the way it was written: no other spelling of it counts.
   if (!Number.isSafeInteger(expires) || String(expires) !== parts[1]) return false;
   // Not expired, and not made for a lifetime longer than a proof has.
-  if (expires <= now || expires > now + MFA_PROOF_TTL_MS) return false;
+  if (expires <= now || expires > now + VALID_FOR_MS) return false;
 
   const expected = Buffer.from(mac(secret, session, expires));
   const given = Buffer.from(parts[2]);

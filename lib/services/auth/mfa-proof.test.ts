@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
-import { MFA_PROOF_TTL_MS, signMfaProof, verifyMfaProof } from "./mfa-proof";
+import { VALID_FOR_MS, signMfaProof, verifyMfaProof } from "./mfa-proof";
 
 /**
  * A proof is what lets one session out of the second factor: made when a code is accepted, valid
@@ -17,7 +17,7 @@ const fresh = () => signMfaProof(SECRET, SESSION, NOW);
 describe("a proof of the second factor", () => {
   it("is accepted for the session it was made for, while it lives", () => {
     expect(verifyMfaProof(SECRET, fresh(), SESSION, NOW)).toBe(true);
-    expect(verifyMfaProof(SECRET, fresh(), SESSION, NOW + MFA_PROOF_TTL_MS - 1)).toBe(true);
+    expect(verifyMfaProof(SECRET, fresh(), SESSION, NOW + VALID_FOR_MS - 1)).toBe(true);
   });
 
   it("is refused for another session of the same account", () => {
@@ -31,12 +31,12 @@ describe("a proof of the second factor", () => {
   });
 
   it("is refused once it has expired", () => {
-    expect(verifyMfaProof(SECRET, fresh(), SESSION, NOW + MFA_PROOF_TTL_MS)).toBe(false);
-    expect(verifyMfaProof(SECRET, fresh(), SESSION, NOW + MFA_PROOF_TTL_MS + 1)).toBe(false);
+    expect(verifyMfaProof(SECRET, fresh(), SESSION, NOW + VALID_FOR_MS)).toBe(false);
+    expect(verifyMfaProof(SECRET, fresh(), SESSION, NOW + VALID_FOR_MS + 1)).toBe(false);
   });
 
   it("is refused when it was made to live longer than a proof does", () => {
-    const overlong = signMfaProof(SECRET, SESSION, NOW + 10 * MFA_PROOF_TTL_MS);
+    const overlong = signMfaProof(SECRET, SESSION, NOW + 10 * VALID_FOR_MS);
     expect(verifyMfaProof(SECRET, overlong, SESSION, NOW)).toBe(false);
   });
 
