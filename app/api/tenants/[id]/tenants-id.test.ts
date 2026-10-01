@@ -65,6 +65,7 @@ vi.mock("@/lib/utils/error-handling", () => ({
 vi.mock("@/lib/utils/sanitize", () => ({
   sanitizeForDatabase: (val: any) => val,
   sanitizeEmail: (val: any) => val,
+  sanitizeOptionalEmail: (val: any) => (typeof val === "string" && val.trim() ? val.trim() : null),
   sanitizeNumber: (val: any, min: any, _minBound: any) => Math.max(val, min),
 }));
 
@@ -375,5 +376,63 @@ describe("Tenants API - PUT /api/tenants/[id]: the NIF", () => {
     await put({ taxId: "" });
 
     expect(vi.mocked(tenantService.update).mock.calls.at(-1)?.[2]).toMatchObject({ taxId: null });
+  });
+});
+
+/**
+ * An email and a phone are optional now, so an edit can empty them. A blank used to be dropped
+ * here (`body.email ? ... : undefined`), which left the old value in place without a word.
+ */
+describe("Tenants API - PUT /api/tenants/[id]: an email or a phone cleared", () => {
+  const put = (body: Record<string, unknown>) =>
+    updateTenant(
+      new NextRequest("http://localhost:3000/api/tenants/tenant-123", {
+        method: "PUT",
+        headers: new Headers({ Authorization: "Bearer valid-token" }),
+        body: JSON.stringify(body),
+      }),
+      { params: { id: "tenant-123" } },
+    );
+  const updated = async () => {
+    const { tenantService } = await import("@/lib/services/database/tenant");
+    return vi.mocked(tenantService.update).mock.calls.at(-1)?.[2];
+  };
+
+  it.each([
+    ["an empty string", ""],
+    ["spaces", "   "],
+    ["null", null],
+  ])("clears an email sent as %s, and says so to the service", async (_why, email) => {
+    const response = await put({ email });
+
+    expect(response.status).toBe(200);
+    expect(await updated()).toHaveProperty("email", null);
+  });
+
+  it("clears a phone sent blank or null, and says so to the service", async () => {
+    await put({ phone: null });
+    expect(await updated()).toHaveProperty("phone", null);
+
+    await put({ phone: "" });
+    expect((await updated())?.phone).toBe("");
+  });
+
+  it("leaves both alone when the edit does not send them", async () => {
+    const response = await put({ name: "Jane Doe" });
+
+    expect(response.status).toBe(200);
+    const data = await updated();
+    expect(data?.email).toBeUndefined();
+    expect(data?.phone).toBeUndefined();
+  });
+
+  it("still refuses an email that is not an address, and saves nothing", async () => {
+    const { tenantService } = await import("@/lib/services/database/tenant");
+    vi.mocked(tenantService.update).mockClear();
+
+    const response = await put({ email: "not-an-email" });
+
+    expect(response.status).toBe(400);
+    expect(tenantService.update).not.toHaveBeenCalled();
   });
 });

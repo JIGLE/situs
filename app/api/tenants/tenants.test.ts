@@ -89,6 +89,7 @@ vi.mock("@/lib/utils/pagination", () => ({
 vi.mock("@/lib/utils/sanitize", () => ({
   sanitizeForDatabase: (val: any) => val,
   sanitizeEmail: (val: any) => val,
+  sanitizeOptionalEmail: (val: any) => (typeof val === "string" && val.trim() ? val.trim() : null),
   sanitizeNumber: (val: any, min: any, _minBound: any) => Math.max(val, min),
 }));
 
@@ -379,5 +380,60 @@ describe("Tenants API - POST /api/tenants: the NIF", () => {
 
     expect(response.status).toBe(201);
     expect((await created())?.taxId).toBeUndefined();
+  });
+});
+
+/**
+ * Finanças names a tenant by NIF and name, so an email and a phone are optional. The service stores
+ * what is not there as NULL; this route has to let such a tenant through, and still refuse an email
+ * that is not an address rather than read it as none.
+ */
+describe("Tenants API - POST /api/tenants: an email or a phone the owner does not have", () => {
+  const post = (body: Record<string, unknown>) =>
+    postTenants(
+      new NextRequest("http://localhost:3000/api/tenants", {
+        method: "POST",
+        headers: new Headers({ Authorization: "Bearer valid-token" }),
+        body: JSON.stringify({ name: "Ana Costa", rent: 900, ...body }),
+      }),
+    );
+  const created = async () => {
+    const { tenantService } = await import("@/lib/services/database/tenant");
+    return vi.mocked(tenantService.create).mock.calls.at(-1)?.[1];
+  };
+
+  it("creates a tenant with only a name and a rent, with no email", async () => {
+    const response = await post({});
+
+    expect(response.status).toBe(201);
+    expect(await created()).toMatchObject({ name: "Ana Costa", email: null });
+  });
+
+  it.each([
+    ["an empty string", ""],
+    ["spaces", "   "],
+    ["null", null],
+  ])("takes an email sent as %s for none", async (_why, email) => {
+    const response = await post({ email });
+
+    expect(response.status).toBe(201);
+    expect(await created()).toMatchObject({ email: null });
+  });
+
+  it("still refuses an email that is not an address, and creates nothing", async () => {
+    const { tenantService } = await import("@/lib/services/database/tenant");
+    vi.mocked(tenantService.create).mockClear();
+
+    const response = await post({ email: "not-an-email" });
+
+    expect(response.status).toBe(400);
+    expect(tenantService.create).not.toHaveBeenCalled();
+  });
+
+  it("passes an email that is there on, as typed", async () => {
+    const response = await post({ email: "ana@example.com" });
+
+    expect(response.status).toBe(201);
+    expect(await created()).toMatchObject({ email: "ana@example.com" });
   });
 });

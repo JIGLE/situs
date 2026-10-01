@@ -128,6 +128,13 @@ e2e/                    # Playwright E2E tests
   lease with nothing paid against it can still be deleted; a tenancy otherwise stops by ending its
   lease. An owner who is still a landlord of a property, or has income shares, is kept the same
   way (`owner_has_history`): detach them from the property first.
+- **Optional contacts**: `Tenant.email` and `phone`, `Owner.email`, `Property.bedrooms` and
+  `bathrooms` are nullable, since Finanças names a person by NIF and name and gives a property no
+  rooms. A blank is NULL, never `""` (`blankToNull`, `lib/schemas/tax-identity.ts`; undefined leaves a
+  field alone), and unknown rooms are NULL, not 0, which is a studio. An email is unique per account,
+  `@@unique([userId, email])`: wrap a tenant or owner write in `refuseDuplicateEmail`
+  (`lib/services/database/unique-email.ts`) so a duplicate is a 409 `email_in_use`, not a 500. Code
+  that reads one takes null (`joinContact`, `lib/utils/contact.ts`).
 - **Bank matching**: a live provider sync → fingerprint dedupe (idempotent) → fuzzy-duplicate
   check → reconciliation rules → weighted confidence scoring (`lib/services/matching/engine.ts`,
   pure). ≥0.85 auto-allocates via a draft `Receipt` (`source: "automation"`); anything lower waits

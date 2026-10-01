@@ -126,10 +126,12 @@ export function OwnerDetailModal({ ownerId, onClose }: OwnerDetailModalProps) {
                   {isEditing ? t("editTitle") : owner.name}
                 </h2>
                 <div className="flex flex-col gap-1 mt-1 text-sm text-[var(--color-muted-foreground)]">
-                  <span className="flex items-center gap-1">
-                    <Mail className="h-3 w-3" />
-                    {owner.email}
-                  </span>
+                  {owner.email && (
+                    <span className="flex items-center gap-1">
+                      <Mail className="h-3 w-3" />
+                      {owner.email}
+                    </span>
+                  )}
                   {owner.phone && (
                     <span className="flex items-center gap-1">
                       <Phone className="h-3 w-3" />
@@ -172,7 +174,7 @@ export function OwnerDetailModal({ ownerId, onClose }: OwnerDetailModalProps) {
                     <Input
                       id="email"
                       type="email"
-                      value={formData.email}
+                      value={formData.email ?? ""}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     />
                   </div>

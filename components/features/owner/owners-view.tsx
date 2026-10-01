@@ -180,7 +180,7 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
         const matchesSearch =
           searchQuery === "" ||
           owner.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          owner.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (owner.email ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
           (owner.phone && owner.phone.toLowerCase().includes(searchQuery.toLowerCase()));
 
         // Property filter
@@ -242,7 +242,7 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
                       <Input
                         id="email"
                         type="email"
-                        value={dialog.formData.email}
+                        value={dialog.formData.email ?? ""}
                         onChange={(e) => dialog.updateFormData({ email: e.target.value })}
                         className={dialog.formErrors.email ? "border-red-500" : ""}
                         placeholder={t("emailPlaceholder")}
@@ -391,10 +391,12 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3 mt-2">
-                        <div className="flex items-center gap-2 text-sm text-[var(--color-muted-foreground)]">
-                          <Mail className="w-4 h-4" />
-                          <span>{owner.email}</span>
-                        </div>
+                        {owner.email && (
+                          <div className="flex items-center gap-2 text-sm text-[var(--color-muted-foreground)]">
+                            <Mail className="w-4 h-4" />
+                            <span>{owner.email}</span>
+                          </div>
+                        )}
                         {owner.phone && (
                           <div className="flex items-center gap-2 text-sm text-[var(--color-muted-foreground)]">
                             <Phone className="w-4 h-4" />

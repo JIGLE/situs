@@ -267,7 +267,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                 <div className="flex items-center gap-2 mt-0.5 text-sm text-[var(--color-muted-foreground)]">
                   <span className="flex items-center gap-1 text-xs">
                     <Mail className="h-3 w-3" />
-                    {tenant.email || "No email"}
+                    {tenant.email || t("modal.noEmail")}
                   </span>
                 </div>
               </div>
@@ -308,7 +308,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                 <Input
                   id="email"
                   type="email"
-                  value={formData.email}
+                  value={formData.email ?? ""}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
@@ -316,7 +316,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                 <Label htmlFor="phone">{tForms("phone")}</Label>
                 <Input
                   id="phone"
-                  value={formData.phone}
+                  value={formData.phone ?? ""}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 />
               </div>

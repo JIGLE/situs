@@ -90,6 +90,35 @@ describe("piiEncryptionExtension — transform logic", () => {
     expect(decrypted[1].tenantNif).toBe("000111222");
   });
 
+  // A tenant or an owner read from Finanças has no phone. NULL is not a value to encrypt, and not
+  // one to decrypt: it must stay NULL, not become "enc:..." on the way in or "[ENCRYPTED]" on the
+  // way out, and the fields that are there are still protected.
+  it("leaves a PII field that is NULL as NULL, in and out, and still encrypts the ones that are there", () => {
+    const written = encryptArgs(
+      { data: { name: "Ana Costa", phone: null, taxId: "123456789" } },
+      PII_FIELDS.Tenant,
+    ) as { data: { phone: string | null; taxId: string } };
+
+    expect(written.data.phone).toBeNull();
+    expect(isEncrypted(written.data.taxId)).toBe(true);
+
+    const read = decryptResult(
+      { name: "Ana Costa", phone: null, taxId: written.data.taxId },
+      PII_FIELDS.Tenant,
+    ) as { phone: string | null; taxId: string };
+
+    expect(read.phone).toBeNull();
+    expect(read.taxId).toBe("123456789");
+  });
+
+  it("does not add a field an update does not mention", () => {
+    const written = encryptArgs({ data: { name: "Ana Costa-Silva" } }, PII_FIELDS.Tenant) as {
+      data: Record<string, unknown>;
+    };
+
+    expect(written.data).toEqual({ name: "Ana Costa-Silva" });
+  });
+
   it("passes through non-object / missing-field results untouched", () => {
     expect(decryptResult(null, PII_FIELDS.Tenant)).toBeNull();
     expect(decryptResult(5, PII_FIELDS.Tenant)).toBe(5);

@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { requireOwnerAccess, handleOptions } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { ownerSchema } from "@/lib/schemas/owner.schema";
-import { normalizeTaxId } from "@/lib/schemas/tax-identity";
+import { blankToNull, normalizeTaxId } from "@/lib/schemas/tax-identity";
+import { refuseDuplicateEmail } from "@/lib/services/database/unique-email";
 import { isMockMode } from "@/lib/config/data-mode";
 import { createSuccessResponse, parseJsonBody, withErrorHandler } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
@@ -44,14 +45,19 @@ async function handlePost(request: NextRequest): Promise<Response> {
 
   const body = await parseJsonBody(request, ownerSchema);
 
-  const owner = await prisma.owner.create({
-    data: {
-      ...body,
-      // Stored as its nine digits, as a tenant's is.
-      taxIdentificationNumber: normalizeTaxId(body.taxIdentificationNumber, "PT"),
-      userId: scopeUserId,
-    },
-  });
+  const owner = await refuseDuplicateEmail("owner", () =>
+    prisma.owner.create({
+      data: {
+        ...body,
+        // An email or a phone the owner does not have is NULL, never "".
+        email: blankToNull(body.email) ?? null,
+        phone: blankToNull(body.phone) ?? null,
+        // Stored as its nine digits, as a tenant's is.
+        taxIdentificationNumber: normalizeTaxId(body.taxIdentificationNumber, "PT"),
+        userId: scopeUserId,
+      },
+    }),
+  );
 
   return createSuccessResponse(owner, 201);
 }

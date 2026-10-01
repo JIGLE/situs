@@ -804,9 +804,11 @@ export function LeasesView(): React.ReactElement {
                               <SelectItem key={tenant.id} value={tenant.id}>
                                 <div className="flex flex-col">
                                   <span className="font-medium">{tenant.name}</span>
-                                  <span className="text-xs text-[var(--color-muted-foreground)]">
-                                    {tenant.email}
-                                  </span>
+                                  {tenant.email && (
+                                    <span className="text-xs text-[var(--color-muted-foreground)]">
+                                      {tenant.email}
+                                    </span>
+                                  )}
                                 </div>
                               </SelectItem>
                             ))

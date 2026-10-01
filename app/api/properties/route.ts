@@ -88,8 +88,12 @@ async function handlePost(request: NextRequest): Promise<Response> {
         ? sanitizeForDatabase(validatedData.cadasterReference)
         : undefined,
       fraction: validatedData.fraction ? sanitizeForDatabase(validatedData.fraction) : undefined,
-      bedrooms: sanitizeNumber(validatedData.bedrooms, 0, 0, 20),
-      bathrooms: sanitizeNumber(validatedData.bathrooms, 0, 0, 20),
+      // Unknown is NULL, not 0: `sanitizeNumber(null)` would answer its default, and 0 reads as a
+      // studio.
+      bedrooms:
+        validatedData.bedrooms == null ? null : sanitizeNumber(validatedData.bedrooms, 0, 0, 20),
+      bathrooms:
+        validatedData.bathrooms == null ? null : sanitizeNumber(validatedData.bathrooms, 0, 0, 20),
       rent: sanitizeNumber(validatedData.rent, 0, 0),
     };
 

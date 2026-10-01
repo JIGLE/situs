@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { handleOptions, requireOwnerAccess } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { assertOwnerHasNoHistory } from "@/lib/services/database/history";
-import { normalizeTaxId } from "@/lib/schemas/tax-identity";
+import { refuseDuplicateEmail } from "@/lib/services/database/unique-email";
+import { blankToNull, normalizeTaxId } from "@/lib/schemas/tax-identity";
 import { updateOwnerSchema } from "@/lib/schemas/owner.schema";
 import {
   ResourceNotFoundError,
@@ -48,17 +49,22 @@ async function handlePut(request: NextRequest, context?: Context): Promise<Respo
     updateOwnerSchema,
   );
 
-  const owner = await prisma.owner.update({
-    where: { id },
-    data: {
-      ...fields,
-      // A blank clears it, and a NIF is stored as its nine digits, as a tenant's is.
-      ...(taxIdentificationNumber !== undefined && {
-        taxIdentificationNumber: normalizeTaxId(taxIdentificationNumber, "PT"),
-      }),
-    },
-    include: ownerInclude,
-  });
+  const owner = await refuseDuplicateEmail("owner", () =>
+    prisma.owner.update({
+      where: { id },
+      data: {
+        ...fields,
+        // Undefined leaves them as they are; a blank clears them to NULL.
+        email: blankToNull(fields.email),
+        phone: blankToNull(fields.phone),
+        // A blank clears it, and a NIF is stored as its nine digits, as a tenant's is.
+        ...(taxIdentificationNumber !== undefined && {
+          taxIdentificationNumber: normalizeTaxId(taxIdentificationNumber, "PT"),
+        }),
+      },
+      include: ownerInclude,
+    }),
+  );
 
   return createSuccessResponse(owner);
 }

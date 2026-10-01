@@ -38,6 +38,7 @@ import { EntityLink } from "@/components/shared/entity-link";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
 import { csrfHeaders } from "@/lib/utils/api-client";
 import { wasReported } from "@/lib/utils/api-error";
+import { joinContact } from "@/lib/utils/contact";
 import { downloadContract } from "./lease-contract";
 
 interface LeaseDetailViewProps {
@@ -274,7 +275,7 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
             type="tenant"
             id={tenant.id}
             title={tenant.name}
-            subtitle={`${tenant.email} · ${tenant.phone}`}
+            subtitle={joinContact(tenant.email, tenant.phone) || undefined}
             status={tenant.paymentStatus}
             statusVariant={
               tenant.paymentStatus === "paid"

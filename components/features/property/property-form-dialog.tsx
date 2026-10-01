@@ -116,7 +116,7 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
       // On edit, auto-expand details if the property already has them filled
       if (dialog.isOpen && dialog.editingItem) {
         const item = dialog.editingItem;
-        if (item.bedrooms > 1 || item.bathrooms > 1 || item.description) {
+        if ((item.bedrooms ?? 0) > 1 || (item.bathrooms ?? 0) > 1 || item.description) {
           setShowDetails(true);
         }
       }
@@ -467,10 +467,12 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                           type="number"
                           min="0"
                           max="20"
-                          value={dialog.formData.bedrooms}
+                          value={dialog.formData.bedrooms ?? ""}
                           onChange={(e) =>
                             dialog.updateFormData({
-                              bedrooms: parseInt(e.target.value) || 0,
+                              // Cleared is unknown, not 0: 0 reads as a studio.
+                              bedrooms:
+                                e.target.value === "" ? null : parseInt(e.target.value) || 0,
                             })
                           }
                           className={
@@ -489,10 +491,11 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                           min="0"
                           max="20"
                           step="0.5"
-                          value={dialog.formData.bathrooms}
+                          value={dialog.formData.bathrooms ?? ""}
                           onChange={(e) =>
                             dialog.updateFormData({
-                              bathrooms: parseFloat(e.target.value) || 0,
+                              bathrooms:
+                                e.target.value === "" ? null : parseFloat(e.target.value) || 0,
                             })
                           }
                           className={

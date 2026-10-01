@@ -73,8 +73,9 @@ export const propertyService = {
         buildingId: data.buildingId,
         buildingName: data.buildingName,
         type: data.type as PropertyType,
-        bedrooms: data.bedrooms,
-        bathrooms: data.bathrooms,
+        // Unknown is NULL: Finanças does not say how many rooms a property has.
+        bedrooms: data.bedrooms ?? null,
+        bathrooms: data.bathrooms ?? null,
         rent: data.rent,
         status: data.status,
         description: data.description,

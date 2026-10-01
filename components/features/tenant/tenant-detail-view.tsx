@@ -86,13 +86,17 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
           <div>
             <h1 className="text-2xl font-bold text-[var(--color-foreground)]">{tenant.name}</h1>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-1 text-sm text-[var(--color-muted-foreground)]">
-              <span className="flex items-center gap-1">
-                <Mail className="h-3.5 w-3.5" /> {tenant.email}
-              </span>
-              <span className="hidden sm:inline">·</span>
-              <span className="flex items-center gap-1">
-                <Phone className="h-3.5 w-3.5" /> {tenant.phone}
-              </span>
+              {tenant.email && (
+                <span className="flex items-center gap-1">
+                  <Mail className="h-3.5 w-3.5" /> {tenant.email}
+                </span>
+              )}
+              {tenant.email && tenant.phone && <span className="hidden sm:inline">·</span>}
+              {tenant.phone && (
+                <span className="flex items-center gap-1">
+                  <Phone className="h-3.5 w-3.5" /> {tenant.phone}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-3 mt-2">
               <Badge variant={PAYMENT_STATUS_VARIANT[tenant.paymentStatus] || "secondary"}>
@@ -116,8 +120,10 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
           <Button
             variant="outline"
             size="sm"
+            // Without an address there is nothing to write to; `mailto:null` is not one.
+            disabled={!tenant.email}
             onClick={() => {
-              window.location.href = `mailto:${tenant.email}`;
+              if (tenant.email) window.location.href = `mailto:${tenant.email}`;
             }}
           >
             <Mail className="h-4 w-4 mr-1" /> {t("contact")}

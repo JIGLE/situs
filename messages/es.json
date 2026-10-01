@@ -686,6 +686,7 @@
       "propertyHasHistory": "Esta propiedad tiene contratos, pagos o gastos registrados, así que Situs la conserva para su historial fiscal.",
       "leaseHasHistory": "Hay pagos registrados en este contrato, así que Situs lo conserva en sus registros. Finalice el contrato en lugar de eliminarlo.",
       "ownerHasHistory": "Este propietario está vinculado a una propiedad o a distribuciones de ingresos, así que Situs lo conserva en sus registros. Quítelo primero de la propiedad.",
+      "emailInUse": "Ya tiene un registro con esa dirección de correo. Use otra, o déjela vacía.",
       "atPasswordRequired": "Introduzca la contraseña del subusuario.",
       "atCredentialsNeedKey": "Situs solo guarda la contraseña de la AT cifrada, y esta instancia no tiene PII_ENCRYPTION_KEY. Defínala y vuelva a guardar.",
       "atFilesNotReady": "Faltan los archivos del certificado o no son válidos. Su estado aparece arriba.",
