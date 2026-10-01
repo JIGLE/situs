@@ -98,8 +98,8 @@ test.describe("Critical Path: Tenant management", () => {
     // Submit empty form
     await dialog.getByRole("button", { name: /add tenant|create/i }).click();
 
-    // This form validates natively: Name and Email carry `required`, so the browser blocks
-    // submission and `dialog.handleSubmit` never runs — which means no React `formErrors` are
+    // This form validates natively: Name carries `required` (the email is optional), so the browser
+    // blocks submission and `dialog.handleSubmit` never runs — which means no React `formErrors` are
     // set and no `.text-destructive` element is ever rendered. The old assertion looked for that
     // element and could only ever fail. Assert the behaviour that actually exists: the dialog
     // stays open, and the first required field reports itself invalid.
