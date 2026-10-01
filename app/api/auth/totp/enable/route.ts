@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { csrfProtection } from "@/lib/middleware/csrf";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { createErrorResponse, readJson, ValidationError } from "@/lib/utils/error-handling";
@@ -18,9 +19,14 @@ function hashCode(code: string): string {
 }
 
 // POST /api/auth/totp/enable — verify code and enable TOTP; returns backup codes
+//
+// Checks its own CSRF token: /api/auth/** is public in proxy.ts, so the proxy checks none here.
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth(request);
   if (authResult instanceof Response) return authResult;
+
+  const csrfError = await csrfProtection(request);
+  if (csrfError) return csrfError;
 
   const { userId } = authResult;
 
@@ -46,13 +52,22 @@ export async function POST(request: NextRequest) {
     const backupCodes = generateBackupCodes();
     const hashedCodes = backupCodes.map(hashCode);
 
-    await prisma.user.update({
-      where: { id: userId },
+    // Turned on only for the secret the code was just checked against. A `disable` or a new `setup`
+    // that landed since the read has changed it, and turning the factor on then would leave it on
+    // with no secret, or with one that was never confirmed.
+    const stored = await prisma.user.updateMany({
+      where: { id: userId, totpSecret: user.totpSecret },
       data: {
         totpEnabled: true,
         totpBackupCodes: encryptPII(JSON.stringify(hashedCodes)),
       },
     });
+    if (stored.count === 0) {
+      return NextResponse.json(
+        { error: "Two-factor setup changed; start again", reason: "totp_setup_changed" },
+        { status: 409 },
+      );
+    }
 
     return NextResponse.json({ backupCodes });
   } catch (err) {

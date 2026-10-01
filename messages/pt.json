@@ -145,6 +145,7 @@
       "toastEnableFailed": "Não foi possível ativar a autenticação de dois fatores.",
       "toastDisableFailed": "Não foi possível desativar a autenticação de dois fatores.",
       "toastVerifyFailed": "O código não corresponde. Tente novamente.",
+      "toastChangedElsewhere": "A autenticação de dois fatores foi alterada noutra janela. Recarregue a página e tente novamente.",
       "setUp2fa": "Configurar 2FA",
       "verifying": "A verificar…",
       "qrAlt": "Código QR de dois fatores",

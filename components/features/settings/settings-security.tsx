@@ -91,7 +91,16 @@ export function SettingsSecurity() {
   const startTotpSetup = async () => {
     setTotpWorking(true);
     try {
-      const res = await fetch("/api/auth/totp/setup");
+      const res = await fetch("/api/auth/totp/setup", {
+        method: "POST",
+        headers: { "X-CSRF-Token": csrfToken || "" },
+      });
+      if (res.status === 409) {
+        // Turned on in another window since this panel loaded: it says so, and shows what is true.
+        setTotpEnabled(true);
+        showError(t("toastChangedElsewhere"));
+        return;
+      }
       if (!res.ok) throw new Error("Setup failed");
       const d = await res.json();
       setTotpQr(d.qrDataUrl);
@@ -113,6 +122,12 @@ export function SettingsSecurity() {
         headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken || "" },
         body: JSON.stringify({ code: totpCode }),
       });
+      if (res.status === 409) {
+        // A disable or a new setup in another window changed what this code was for.
+        setTotpSetupStep("idle");
+        showError(t("toastChangedElsewhere"));
+        return;
+      }
       if (!res.ok) {
         const d = await res.json();
         showError(d.error ?? "Invalid code");
