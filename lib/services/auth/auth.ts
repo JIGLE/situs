@@ -1,6 +1,8 @@
+import { randomUUID } from "node:crypto";
 import type { Session, User as NextAuthUser } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import { logger } from "@/lib/utils/logger";
+import { verifyMfaProof } from "@/lib/services/auth/mfa-proof";
 
 // Minimal local typing for NextAuth options we use to avoid fragile cross-package type imports
 type NextAuthOptions = {
@@ -158,10 +160,15 @@ function createBaseAuthOptions(): NextAuthOptions {
         token,
         user,
         account,
+        trigger,
+        session: update,
       }: {
         token: JWT;
         user?: NextAuthUser | null;
         account?: { provider?: string } | null;
+        /** "update" when the browser called `useSession().update(data)`; `data` is `session`. */
+        trigger?: "signIn" | "signUp" | "update";
+        session?: unknown;
       }): Promise<JWT> {
         // If no user yet and dev auth is enabled, inject dev session
         if (
@@ -199,6 +206,7 @@ function createBaseAuthOptions(): NextAuthOptions {
             picture?: string;
             role?: string;
             mfaPending?: boolean;
+            sid?: string;
             locale?: Locale;
           };
           // Resolve the id that owned records (properties, tenants, settings…)
@@ -268,6 +276,8 @@ function createBaseAuthOptions(): NextAuthOptions {
               });
               if (dbUser?.totpEnabled) {
                 t.mfaPending = true;
+                // The name a proof of this session's code is made for (`mfa-proof.ts`).
+                t.sid = randomUUID();
               }
               // Carried from sign-in so a device with no language of its own can take it on
               // (`LanguageSync`). Read once, here: a choice made later on another device does
@@ -278,8 +288,16 @@ function createBaseAuthOptions(): NextAuthOptions {
                 chosen?.languageChosenAt && hasLocale(locales, chosen.language)
                   ? chosen.language
                   : undefined;
-            } catch {
-              // DB unavailable — allow login without MFA check
+            } catch (err) {
+              // Fails closed. A sign-in that cannot say whether the account has a second factor
+              // is not let in as a full session: with the password alone, trying again until the
+              // read happened to fail would be a way round the code. The user lands on the error
+              // page and signs in again, as when the User row cannot be provisioned above.
+              logger.error(
+                "Could not read the account's second-factor state — refusing the sign-in",
+                err instanceof Error ? err : new Error(String(err)),
+              );
+              throw new Error("MFA_STATE_UNREADABLE");
             }
           }
         } else {
@@ -289,6 +307,7 @@ function createBaseAuthOptions(): NextAuthOptions {
             sub?: string;
             email?: string;
             mfaPending?: boolean;
+            sid?: string;
             isDevAuth?: boolean;
             uidVerified?: boolean;
           };
@@ -345,24 +364,22 @@ function createBaseAuthOptions(): NextAuthOptions {
           }
 
           if (t.mfaPending) {
+            // A session held pending before sessions had names (signed in before this was
+            // deployed) is given one now, so a proof can be made for it.
+            if (!t.sid) t.sid = randomUUID();
+
+            // Cleared by this session's own proof (`mfa-proof.ts`) and by nothing else. A
+            // verification recorded on the ACCOUNT is not enough: it says that some session
+            // entered a code, and a sign-in with only the password is another session.
             const uid = t.sub || t.id;
-            if (uid && !isMockMode) {
-              try {
-                const prisma = getPrismaClient();
-                const dbUser = await prisma.user.findUnique({
-                  where: { id: uid },
-                  select: { totpVerifiedAt: true },
-                });
-                // Accept verification within the last 5 minutes
-                if (
-                  dbUser?.totpVerifiedAt &&
-                  Date.now() - dbUser.totpVerifiedAt.getTime() < 5 * 60 * 1000
-                ) {
-                  t.mfaPending = false;
-                }
-              } catch {
-                // DB unavailable — keep pending
-              }
+            const proof = (update as { mfaProof?: unknown } | null | undefined)?.mfaProof;
+            if (
+              trigger === "update" &&
+              uid &&
+              verifyMfaProof(secret, proof, { userId: uid, sid: t.sid })
+            ) {
+              t.mfaPending = false;
+              delete t.sid;
             }
           }
         }

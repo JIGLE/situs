@@ -25,7 +25,7 @@ model User {
   totpSecret      String? // AES-256-GCM encrypted TOTP secret
   totpEnabled     Boolean   @default(false)
   totpBackupCodes String? // JSON array of hashed one-time backup codes
-  totpVerifiedAt  DateTime? // Set when user completes MFA challenge; jwt callback reads this
+  totpVerifiedAt  DateTime? // When a code was last verified. A record only: a session is released by its own proof (lib/services/auth/mfa-proof.ts), never by this
 
   accounts  Account[]
   sessions  Session[]

@@ -6,8 +6,18 @@ import { getPrismaClient } from "@/lib/services/database/database";
 import { createErrorResponse, readJson, ValidationError } from "@/lib/utils/error-handling";
 import { decryptPII, encryptPII } from "@/lib/utils/pii-encryption";
 import { totpVerify } from "@/lib/utils/totp";
+import { signMfaProof } from "@/lib/services/auth/mfa-proof";
 import crypto from "crypto";
 import { RateLimits, rateLimit } from "@/lib/middleware/rate-limit";
+
+// next-auth/jwt's typings reference next's GetServerSidePropsContext, which does not resolve under
+// moduleResolution:bundler: it is loaded by value and typed by hand, as proxy.ts does.
+const { getToken } = require("next-auth/jwt") as {
+  getToken: (params: {
+    req: NextRequest;
+    secret?: string;
+  }) => Promise<Record<string, unknown> | null>;
+};
 
 const schema = z.object({ code: z.string().min(6).max(8) });
 
@@ -16,7 +26,10 @@ function hashCode(code: string): string {
 }
 
 // POST /api/auth/totp/verify — verify TOTP or backup code during MFA challenge
-// Called by the /auth/mfa page; session must have mfaPending=true
+// Called by the /auth/mfa page; session must have mfaPending=true. A code that is accepted is
+// answered with a proof made for THIS session (`mfa-proof.ts`), which the page hands to its
+// session through `update({ mfaProof })`: that is what clears `mfaPending`, not the verification
+// recorded on the account, so a code entered by one session releases no other.
 export async function POST(request: NextRequest) {
   const session = await getServerSession(
     getAuthOptions() as Parameters<typeof getServerSession>[0],
@@ -46,6 +59,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
 
+    // Whose code this is, before any code is looked at: a backup code is spent when it is
+    // accepted, and one spent for a session that cannot be released would be lost.
+    const sessionToken = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    if (sessionToken?.mfaPending !== true) {
+      return NextResponse.json(
+        { error: "No code is waiting on this session", reason: "mfa_not_pending" },
+        { status: 409 },
+      );
+    }
+    // A pending session gets its name at its next refresh if it has none yet, which the code page
+    // causes by reading the session, so this is only a request that raced it.
+    const sid = typeof sessionToken.sid === "string" ? sessionToken.sid : null;
+    if (!sid) {
+      return NextResponse.json(
+        { error: "This sign-in has to be refreshed first", reason: "mfa_session_unnamed" },
+        { status: 401 },
+      );
+    }
+
     const prisma = getPrismaClient();
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user?.totpSecret || !user.totpEnabled) {
@@ -59,8 +91,9 @@ export async function POST(request: NextRequest) {
     if (code.length === 6) {
       const isValid = totpVerify(code, secret);
       if (isValid) {
+        const proof = signMfaProof(process.env.NEXTAUTH_SECRET ?? "", { userId, sid });
         await prisma.user.update({ where: { id: userId }, data: { totpVerifiedAt: new Date() } });
-        return NextResponse.json({ ok: true });
+        return NextResponse.json({ ok: true, proof });
       }
     }
 
@@ -78,6 +111,7 @@ export async function POST(request: NextRequest) {
       if (idx !== -1) {
         // Invalidate used backup code
         codes.splice(idx, 1);
+        const proof = signMfaProof(process.env.NEXTAUTH_SECRET ?? "", { userId, sid });
         await prisma.user.update({
           where: { id: userId },
           data: {
@@ -85,7 +119,7 @@ export async function POST(request: NextRequest) {
             totpVerifiedAt: new Date(),
           },
         });
-        return NextResponse.json({ ok: true });
+        return NextResponse.json({ ok: true, proof });
       }
     }
 

@@ -30,6 +30,18 @@ export async function requireAuth(_request: NextRequest): Promise<
       });
     }
 
+    // A session that has passed the first factor and not yet the second is not signed in.
+    // `mfaPending` is set at sign-in for an account with TOTP and cleared when its code is
+    // verified (`lib/services/auth/auth.ts`). The proxy refuses it first; this is the same
+    // refusal for a handler reached some other way. Without it the second factor was a redirect
+    // and nothing more: any request carrying the first factor's session was served.
+    if ((session as Session & { mfaPending?: boolean }).mfaPending === true) {
+      return new NextResponse(
+        JSON.stringify({ error: "Two-factor verification required", reason: "mfa_required" }),
+        { status: 401, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
     // In dev auth mode, use session data directly without database lookup
     if (isDevAuthEnabled()) {
       const userId = session.user?.id || session.user?.email || "dev-user";

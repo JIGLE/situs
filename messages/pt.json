@@ -1570,6 +1570,24 @@
       "switchText": "Já tem conta?",
       "switchAction": "Entrar"
     },
+    "mfa": {
+      "eyebrow": "Autenticação de dois fatores",
+      "heading": "Introduza o seu código",
+      "subheadingApp": "Introduza o código de 6 dígitos da sua aplicação autenticadora.",
+      "subheadingBackup": "Introduza um dos seus códigos de recuperação. Cada um funciona uma vez.",
+      "codeLabel": "Código de autenticação",
+      "backupLabel": "Código de recuperação",
+      "verify": "Verificar",
+      "verifying": "A verificar…",
+      "useBackup": "Usar um código de recuperação",
+      "useApp": "Usar a aplicação autenticadora",
+      "signOut": "Terminar sessão",
+      "errors": {
+        "invalid": "Esse código não está certo.",
+        "tooMany": "Demasiadas tentativas. Aguarde um momento e tente de novo.",
+        "generic": "Algo correu mal. Tente de novo."
+      }
+    },
     "brand": {
       "system": "Sovereign Capital System",
       "tagline": "Rendimentos, recibos e prova fiscal sob controlo.",

@@ -45,6 +45,41 @@ fallback. It runs `prisma db push` and `prisma generate`.
 the cookie, and `apiFetch` (`lib/utils/api-client.ts`) echoes it back. Public routes — webhooks
 among them — skip the check and authenticate by signature or shared secret instead.
 
+## Second factor
+
+An account with an authenticator app (Settings › Security) has to enter a code at every sign-in.
+
+- At sign-in the session gets `mfaPending` (`lib/services/auth/auth.ts`). While it is set,
+  `proxy.ts` answers every API route outside `/api/auth/**` with 401 `mfa_required`, and sends every
+  portal page to `/auth/mfa`. `requireAuth` refuses it as well, for a handler reached some other
+  way. Read the session through `requireAuth`: the one route that reads it directly,
+  `/api/auth/totp/verify`, is the one that has to accept a session still waiting for its code.
+- The code page posts to `/api/auth/totp/verify`, which is rate limited per account and answers an
+  accepted code with a proof made for the session that sent it (`lib/services/auth/mfa-proof.ts`: a
+  MAC, under `NEXTAUTH_SECRET`, over the user and the session's `sid`, good for a minute). The page
+  gives it to its own session, `update({ mfaProof })`, and the `jwt` callback clears `mfaPending`
+  for a proof made for that session and for nothing else.
+- A code releases the session that entered it and no other. A sign-in with only the password,
+  made a moment after the owner's own, stays held. `User.totpVerifiedAt` is still written as a
+  record of the last verification, and nothing reads it.
+- A session held pending before it had a `sid` is given one at its next refresh, which the code page
+  causes by reading the session; a code posted before that answers 401 `mfa_session_unnamed` and
+  spends nothing.
+- Signing in fails closed: a sign-in that cannot read whether the account has a second factor is
+  refused (`MFA_STATE_UNREADABLE`), not let in as a full session. The code page leaves only when
+  `update` answers a session that is no longer pending, since next-auth answers `null` rather than
+  throwing when that call fails.
+- The code limiter is per account, not per session, which is what stops guessing across sessions. It
+  also means a sign-in with only the password that keeps posting wrong codes keeps the owner's code
+  page at 429.
+- Turning it off (`DELETE /api/auth/totp/disable`) asks for no code, only a session that has
+  passed its own second factor. `GET /api/auth/totp/setup` switches it off as well until the new
+  secret is confirmed, and being a GET that changes state it is outside what `SameSite=Lax` and the
+  proxy's CSRF check protect: a link followed while signed in can do it. Making it a POST is its
+  own change.
+- An accepted TOTP code is not single-use within its 30 seconds, and a backup code is spent by a
+  read and a write that two concurrent posts can both pass. Both need a code in hand.
+
 ## Rate limiting
 
 Rate limits are declared in code; no environment variable sets one. Two change how they behave:

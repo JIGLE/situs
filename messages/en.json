@@ -1570,6 +1570,24 @@
       "switchText": "Already have an account?",
       "switchAction": "Sign in"
     },
+    "mfa": {
+      "eyebrow": "Two-factor authentication",
+      "heading": "Enter your code",
+      "subheadingApp": "Enter the 6-digit code from your authenticator app.",
+      "subheadingBackup": "Enter one of your backup codes. Each one works once.",
+      "codeLabel": "Authentication code",
+      "backupLabel": "Backup code",
+      "verify": "Verify",
+      "verifying": "Verifying…",
+      "useBackup": "Use a backup code instead",
+      "useApp": "Use the authenticator app instead",
+      "signOut": "Sign out",
+      "errors": {
+        "invalid": "That code is not right.",
+        "tooMany": "Too many attempts. Wait a moment and try again.",
+        "generic": "Something went wrong. Try again."
+      }
+    },
     "brand": {
       "system": "Sovereign Capital System",
       "tagline": "Property income, receipts and tax evidence under control.",
