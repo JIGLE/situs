@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { totpGenerate } from "../lib/utils/totp";
 
 const STORAGE_STATE = "playwright/.auth/user.json";
@@ -17,6 +17,11 @@ test.use({ storageState: STORAGE_STATE });
  * `mfaPending`, so the rest of the suite is untouched), signs in again in a context with no
  * session, and is held at the code page. The `finally` turns it off again: the account is shared,
  * and the next sign-in anywhere would otherwise ask for a code.
+ *
+ * A code entered by one session releases that session and no other. It used to be recorded on the
+ * account, and any session that refreshed in the next five minutes was released by it: the second
+ * run of this file, a minute after the first, found its sign-in already let through. So after the
+ * code is entered, a third sign-in with only the password is made at once and must still be held.
  */
 
 const EMAIL = process.env.E2E_USER_EMAIL || "demo@situs.local";
@@ -24,6 +29,14 @@ const PASSWORD = process.env.E2E_USER_PASSWORD || "demo123";
 
 /** Actions here have no timeout of their own in this config, so a missing element would wait out the whole test. */
 const STEP = { timeout: 15_000 };
+
+/** The first factor, on a page with no session. */
+async function signInWithPassword(page: Page) {
+  await page.goto("/auth/signin", { waitUntil: "domcontentloaded" });
+  await page.locator('input[name="email"]').fill(EMAIL, STEP);
+  await page.locator('input[name="password"]').fill(PASSWORD, STEP);
+  await page.locator('form button[type="submit"]').click(STEP);
+}
 
 test("an account with an authenticator app is held at the code page until it enters one", async ({
   browser,
@@ -55,10 +68,7 @@ test("an account with an authenticator app is held at the code page until it ent
     });
     try {
       const page = await context.newPage();
-      await page.goto("/auth/signin", { waitUntil: "domcontentloaded" });
-      await page.locator('input[name="email"]').fill(EMAIL, STEP);
-      await page.locator('input[name="password"]').fill(PASSWORD, STEP);
-      await page.locator('form button[type="submit"]').click(STEP);
+      await signInWithPassword(page);
 
       await test.step("the first factor leads to the code page, not the app", async () => {
         await page.waitForURL((url) => url.pathname === "/auth/mfa", { timeout: 20_000 });
@@ -93,6 +103,28 @@ test("an account with an authenticator app is held at the code page until it ent
 
         const allowed = await page.request.get("/api/properties");
         expect(allowed.status()).toBe(200);
+      });
+
+      await test.step("a sign-in with only the password, a moment after, is still held", async () => {
+        const elsewhere = await browser.newContext({
+          baseURL: baseURL ?? undefined,
+          storageState: { cookies: [], origins: [] },
+        });
+        try {
+          const other = await elsewhere.newPage();
+          await signInWithPassword(other);
+
+          // Held at the code page, which reads the session as it loads: the read that used to
+          // release it. If it were released, the page would leave and the box would never show.
+          await other.waitForURL((url) => url.pathname === "/auth/mfa", { timeout: 20_000 });
+          await expect(other.locator('input[name="code"]')).toBeVisible(STEP);
+
+          const blocked = await other.request.get("/api/properties");
+          expect(blocked.status()).toBe(401);
+          expect(await blocked.json()).toMatchObject({ reason: "mfa_required" });
+        } finally {
+          await elsewhere.close();
+        }
       });
     } finally {
       await context.close();

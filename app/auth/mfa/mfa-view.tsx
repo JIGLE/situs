@@ -20,8 +20,9 @@ const problemOf = (status: number): Problem =>
  *
  * The proxy sends a session that has passed the first factor here, and refuses it everywhere else
  * until its code is verified (`proxy.ts`, `requireAuth`). The code goes to
- * `/api/auth/totp/verify`, which records the verification on the account; refreshing the session
- * is what clears `mfaPending` on this one (`lib/services/auth/auth.ts`).
+ * `/api/auth/totp/verify`, which answers with a proof made for this session; giving that proof to
+ * the session, `update({ mfaProof })`, is what clears `mfaPending` on it
+ * (`lib/services/auth/auth.ts`, `mfa-proof.ts`).
  *
  * The server's answer is never shown: its words are English, so the screen says its own by status.
  */
@@ -64,7 +65,15 @@ export function MfaView() {
         body: JSON.stringify({ code }),
       });
       if (res.ok) {
-        await update();
+        // The answer carries a proof made for this session. Handing it to the session is what
+        // releases it: the same code entered anywhere else releases nothing here.
+        const { proof } = (await res.json()) as { proof?: unknown };
+        if (typeof proof !== "string") {
+          setProblem("generic");
+          setCode("");
+          return;
+        }
+        await update({ mfaProof: proof });
         router.replace("/dashboard");
         return;
       }

@@ -525,6 +525,16 @@ const RETIRED_CLAIMS = [
       "only the DB init endpoint",
   },
   {
+    pattern:
+      /counts for five minutes\s+\*\*per account|Refreshing the session is what clears `mfaPending`/i,
+    retired: "2026-10-01 (second factor)",
+    because:
+      "a code releases the session that entered it and no other: /api/auth/totp/verify answers " +
+      "with a proof made for that session's sid, which the code page gives its session through " +
+      "update({ mfaProof }) (lib/services/auth/mfa-proof.ts); the verification recorded on the " +
+      "account releases nobody",
+  },
+  {
     pattern: /no rate-limit environment variables/i,
     retired: "2026-09-23 (audit findings)",
     because:

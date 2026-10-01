@@ -109,7 +109,9 @@ e2e/                    # Playwright E2E tests
   `proxy.ts` and `requireAuth` both refuse such a session (401 `mfa_required`; pages go to
   `/auth/mfa`). Read the session through `requireAuth`, never `getServerSession` in a new handler:
   the one route that does, `/api/auth/totp/verify`, is the one that must accept a pending session
-  (`docs/SECURITY.md`).
+  (`docs/SECURITY.md`). A code releases only the session that entered it: the route answers with a
+  proof bound to that session's `sid` (`lib/services/auth/mfa-proof.ts`), which the code page gives
+  its session through `update({ mfaProof })`. A verification recorded on the account releases nobody.
 - **Reference-month rent ledger**: `RentPeriod` is one row per lease per reference month; its
   `status` is recomputed in the same transaction as every allocation write and never hand-set.
   Waterfall invariant: fill the oldest not-fully-allocated period first

@@ -326,8 +326,10 @@ describe("jwt callback — session id provisioning", () => {
 /**
  * The second factor, as the token carries it. `mfaPending` is what the proxy and `requireAuth`
  * refuse on (`tests/proxy-mfa.test.ts`), so its life has to be exactly this: set at sign-in for an
- * account with TOTP, kept until a code was verified in the last five minutes, and kept when the
- * database cannot say. A callback that cleared it on a doubt would turn the check into a formality.
+ * account with TOTP, together with a name for the session, and cleared only by a proof of a code
+ * made for that session (`mfa-proof.ts`). It used to clear on any code verified on the ACCOUNT in
+ * the last five minutes, which released a sign-in with only the password a minute after the
+ * owner's own. A callback that cleared it on anything less would turn the check into a formality.
  */
 describe("jwt and session callbacks — the second factor", () => {
   type Callbacks = NonNullable<
@@ -335,6 +337,7 @@ describe("jwt and session callbacks — the second factor", () => {
   >;
   type JwtCallback = (args: Record<string, unknown>) => Promise<Record<string, unknown>>;
 
+  const SECRET = "second-factor-test-secret-0123456789-abcdefghij";
   const prismaMock = { user: { upsert: vi.fn(), findUnique: vi.fn() } };
 
   async function loadCallbacks(): Promise<Callbacks> {
@@ -350,19 +353,28 @@ describe("jwt and session callbacks — the second factor", () => {
     return getAuthOptions().callbacks as Callbacks;
   }
 
-  /** A token already past sign-in, whose id was verified, so a refresh reads only the TOTP row. */
-  const pendingToken = () => ({
+  const loadJwt = async () => (await loadCallbacks()).jwt as unknown as JwtCallback;
+
+  /** A token already past sign-in, whose id was verified, so a refresh reads nothing. */
+  const pendingToken = (sid: string | undefined = "sid-1") => ({
     sub: "db-cuid-1",
     id: "db-cuid-1",
     email: "owner@example.com",
     uidVerified: true,
     mfaPending: true,
+    ...(sid ? { sid } : {}),
   });
 
-  const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60 * 1000);
+  /** The browser's `update({ mfaProof })`, which NextAuth hands the callback as `trigger: "update"`. */
+  const update = (token: Record<string, unknown>, mfaProof: unknown) => ({
+    token,
+    trigger: "update",
+    session: { mfaProof },
+  });
 
   beforeEach(() => {
     vi.resetModules();
+    vi.stubEnv("NEXTAUTH_SECRET", SECRET);
     prismaMock.user.upsert.mockReset();
     prismaMock.user.findUnique.mockReset();
     process.env.DATABASE_URL = "file:./dev.db";
@@ -376,28 +388,35 @@ describe("jwt and session callbacks — the second factor", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
     vi.doUnmock("@/lib/config/data-mode");
     vi.doUnmock("@/lib/services/database/database");
   });
 
-  it("holds a session pending at sign-in when the account has TOTP on", async () => {
+  it("holds a session pending at sign-in when the account has TOTP on, and names it", async () => {
     prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1" });
     prismaMock.user.findUnique.mockResolvedValue({ totpEnabled: true });
-    const jwt = (await loadCallbacks()).jwt as unknown as JwtCallback;
+    const jwt = await loadJwt();
+    const signIn = () =>
+      jwt({
+        token: {},
+        user: { id: "google-sub-999", email: "owner@example.com", name: "Owner" },
+        account: { provider: "google" },
+      });
 
-    const token = await jwt({
-      token: {},
-      user: { id: "google-sub-999", email: "owner@example.com", name: "Owner" },
-      account: { provider: "google" },
-    });
+    const first = await signIn();
+    const second = await signIn();
 
-    expect(token.mfaPending).toBe(true);
+    expect(first.mfaPending).toBe(true);
+    expect(typeof first.sid).toBe("string");
+    // Two sign-ins of one account are two sessions: a proof for one must not fit the other.
+    expect(second.sid).not.toBe(first.sid);
   });
 
   it("holds none pending for an account without TOTP", async () => {
     prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1" });
     prismaMock.user.findUnique.mockResolvedValue({ totpEnabled: false });
-    const jwt = (await loadCallbacks()).jwt as unknown as JwtCallback;
+    const jwt = await loadJwt();
 
     const token = await jwt({
       token: {},
@@ -406,34 +425,110 @@ describe("jwt and session callbacks — the second factor", () => {
     });
 
     expect(token.mfaPending).toBeUndefined();
+    expect(token.sid).toBeUndefined();
   });
 
-  it("keeps a session pending on refresh while no code has been verified", async () => {
-    prismaMock.user.findUnique.mockResolvedValue({ totpVerifiedAt: null });
-    const jwt = (await loadCallbacks()).jwt as unknown as JwtCallback;
+  it("keeps a session pending through a refresh, whoever verified a code, whenever", async () => {
+    // The hole: the owner enters a code, and a sign-in with only the password a minute later is
+    // released at its first refresh because the ACCOUNT has a verification from the last five.
+    prismaMock.user.findUnique.mockResolvedValue({ totpVerifiedAt: new Date() });
+    const jwt = await loadJwt();
 
-    expect((await jwt({ token: pendingToken() })).mfaPending).toBe(true);
+    const refreshed = await jwt({ token: pendingToken() });
+    const read = await jwt({ token: refreshed, trigger: undefined });
+
+    expect(refreshed.mfaPending).toBe(true);
+    expect(read.mfaPending).toBe(true);
+    // Nothing on the account is consulted: it cannot say which session entered a code.
+    expect(prismaMock.user.findUnique).not.toHaveBeenCalled();
   });
 
-  it("clears it on refresh once a code was verified in the last five minutes", async () => {
-    prismaMock.user.findUnique.mockResolvedValue({ totpVerifiedAt: minutesAgo(1) });
-    const jwt = (await loadCallbacks()).jwt as unknown as JwtCallback;
+  it("clears it for this session's own proof, and drops the name it no longer needs", async () => {
+    const { signMfaProof } = await import("@/lib/services/auth/mfa-proof");
+    const jwt = await loadJwt();
+    const proof = signMfaProof(SECRET, { userId: "db-cuid-1", sid: "sid-1" });
 
-    expect((await jwt({ token: pendingToken() })).mfaPending).toBe(false);
+    const token = await jwt(update(pendingToken("sid-1"), proof));
+
+    expect(token.mfaPending).toBe(false);
+    expect(token.sid).toBeUndefined();
   });
 
-  it("keeps it pending when the last verification is older than five minutes", async () => {
-    prismaMock.user.findUnique.mockResolvedValue({ totpVerifiedAt: minutesAgo(6) });
-    const jwt = (await loadCallbacks()).jwt as unknown as JwtCallback;
+  it.each([
+    ["another session's", { userId: "db-cuid-1", sid: "sid-2" }, undefined],
+    ["another account's", { userId: "db-cuid-2", sid: "sid-1" }, undefined],
+    ["an expired", { userId: "db-cuid-1", sid: "sid-1" }, Date.now() - 2 * 60 * 1000],
+  ])("keeps it pending for %s proof", async (_label, made, at) => {
+    const { signMfaProof } = await import("@/lib/services/auth/mfa-proof");
+    const jwt = await loadJwt();
+    const proof = signMfaProof(SECRET, made, at);
 
-    expect((await jwt({ token: pendingToken() })).mfaPending).toBe(true);
+    expect((await jwt(update(pendingToken("sid-1"), proof))).mfaPending).toBe(true);
   });
 
-  it("keeps it pending when the database cannot be read", async () => {
-    prismaMock.user.findUnique.mockRejectedValue(new Error("connection refused"));
-    const jwt = (await loadCallbacks()).jwt as unknown as JwtCallback;
+  it.each([
+    ["none", undefined],
+    ["a word", "verified"],
+    ["a flag", true],
+    ["a number", 1],
+  ])("keeps it pending for %s in place of a proof", async (_label, notAProof) => {
+    const jwt = await loadJwt();
 
-    expect((await jwt({ token: pendingToken() })).mfaPending).toBe(true);
+    expect((await jwt(update(pendingToken(), notAProof))).mfaPending).toBe(true);
+  });
+
+  it("keeps it pending for a proof signed under another secret", async () => {
+    const { signMfaProof } = await import("@/lib/services/auth/mfa-proof");
+    const jwt = await loadJwt();
+    const forged = signMfaProof("not-the-servers-secret-0123456789-abcdefgh", {
+      userId: "db-cuid-1",
+      sid: "sid-1",
+    });
+
+    expect((await jwt(update(pendingToken("sid-1"), forged))).mfaPending).toBe(true);
+  });
+
+  it("clears only on an update: a proof carried by anything else is not read", async () => {
+    const { signMfaProof } = await import("@/lib/services/auth/mfa-proof");
+    const jwt = await loadJwt();
+    const proof = signMfaProof(SECRET, { userId: "db-cuid-1", sid: "sid-1" });
+
+    const token = await jwt({
+      token: pendingToken("sid-1"),
+      session: { mfaProof: proof },
+    });
+
+    expect(token.mfaPending).toBe(true);
+  });
+
+  it("names a session that was held pending before sessions had names", async () => {
+    const { signMfaProof } = await import("@/lib/services/auth/mfa-proof");
+    const jwt = await loadJwt();
+
+    const named = await jwt({ token: pendingToken(undefined) });
+
+    expect(named.mfaPending).toBe(true);
+    expect(typeof named.sid).toBe("string");
+    // And a proof made for that name releases it.
+    const proof = signMfaProof(SECRET, { userId: "db-cuid-1", sid: named.sid as string });
+    expect((await jwt(update(named, proof))).mfaPending).toBe(false);
+  });
+
+  it("leaves a session that is not pending alone, proof or no proof", async () => {
+    const { signMfaProof } = await import("@/lib/services/auth/mfa-proof");
+    const jwt = await loadJwt();
+    const proof = signMfaProof(SECRET, { userId: "db-cuid-1", sid: "sid-1" });
+    const plain = {
+      sub: "db-cuid-1",
+      id: "db-cuid-1",
+      email: "owner@example.com",
+      uidVerified: true,
+    };
+
+    const token = await jwt(update(plain, proof));
+
+    expect(token.mfaPending).toBeUndefined();
+    expect(token.sid).toBeUndefined();
   });
 
   it("puts the token's state on the session, which is where requireAuth reads it", async () => {
@@ -452,5 +547,16 @@ describe("jwt and session callbacks — the second factor", () => {
     expect(pending.mfaPending).toBe(true);
     expect(verified.mfaPending).toBe(false);
     expect(never.mfaPending).toBe(false);
+  });
+
+  it("never puts the session's name on the session the browser reads", async () => {
+    const session = (await loadCallbacks()).session as unknown as (args: {
+      session: Record<string, unknown>;
+      token: Record<string, unknown>;
+    }) => Promise<Record<string, unknown>>;
+
+    const shown = await session({ session: { user: {} }, token: pendingToken("sid-secret-1") });
+
+    expect(JSON.stringify(shown)).not.toContain("sid-secret-1");
   });
 });

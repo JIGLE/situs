@@ -54,11 +54,17 @@ An account with an authenticator app (Settings › Security) has to enter a code
   portal page to `/auth/mfa`. `requireAuth` refuses it as well, for a handler reached some other
   way. Read the session through `requireAuth`: the one route that reads it directly,
   `/api/auth/totp/verify`, is the one that has to accept a session still waiting for its code.
-- The code page posts to `/api/auth/totp/verify`, which is rate limited per account and records the
-  verification. Refreshing the session is what clears `mfaPending` on it.
-- A verification counts for five minutes **per account, not per session**: another session of the
-  same account that is still waiting, and refreshes inside that window, is cleared too. Binding a
-  verification to the session that entered the code is not built.
+- The code page posts to `/api/auth/totp/verify`, which is rate limited per account and answers an
+  accepted code with a proof made for the session that sent it (`lib/services/auth/mfa-proof.ts`: a
+  MAC, under `NEXTAUTH_SECRET`, over the user and the session's `sid`, good for a minute). The page
+  gives it to its own session, `update({ mfaProof })`, and the `jwt` callback clears `mfaPending`
+  for a proof made for that session and for nothing else.
+- A code releases the session that entered it and no other. A sign-in with only the password,
+  made a moment after the owner's own, stays held. `User.totpVerifiedAt` is still written as a
+  record of the last verification, and nothing reads it.
+- A session held pending before it had a `sid` is given one at its next refresh, which the code page
+  causes by reading the session; a code posted before that answers 401 `mfa_session_unnamed` and
+  spends nothing.
 - Turning it off (`DELETE /api/auth/totp/disable`) asks for no code, only a session that has
   passed its own second factor.
 

@@ -75,9 +75,9 @@ describe("MfaView", () => {
     expect(submit()).toBeEnabled();
   });
 
-  it("sends the code, refreshes the session so it is no longer pending, then goes to the app", async () => {
+  it("sends the code, gives the session the proof it is answered with, then goes to the app", async () => {
     pending();
-    const fetchMock = answer(200, { ok: true });
+    const fetchMock = answer(200, { ok: true, proof: "v1.1800000060000.mac" });
     vi.stubGlobal("fetch", fetchMock);
     render(<MfaView />, { initialLocale: "pt" });
 
@@ -89,9 +89,24 @@ describe("MfaView", () => {
       "/api/auth/totp/verify",
       expect.objectContaining({ method: "POST", body: JSON.stringify({ code: "123456" }) }),
     );
+    // The proof is what clears the session; a bare refresh would clear nothing.
     expect(update).toHaveBeenCalledTimes(1);
-    // The refresh comes before the redirect: the proxy reads the cookie that refresh rewrites.
+    expect(update).toHaveBeenCalledWith({ mfaProof: "v1.1800000060000.mac" });
+    // It comes before the redirect: the proxy reads the cookie that update rewrites.
     expect(update.mock.invocationCallOrder[0]).toBeLessThan(replace.mock.invocationCallOrder[0]);
+  });
+
+  it("does not leave when the answer carries no proof, since the session would still be held", async () => {
+    pending();
+    vi.stubGlobal("fetch", answer(200, { ok: true }));
+    render(<MfaView />, { initialLocale: "pt" });
+
+    fireEvent.change(codeInput(), { target: { value: "123456" } });
+    fireEvent.click(submit());
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Algo correu mal. Tente de novo.");
+    expect(update).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it("says a wrong code is wrong in Portuguese, never in the server's English, and clears it", async () => {
