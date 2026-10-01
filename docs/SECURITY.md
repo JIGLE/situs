@@ -45,6 +45,12 @@ fallback. It runs `prisma db push` and `prisma generate`.
 the cookie, and `apiFetch` (`lib/utils/api-client.ts`) echoes it back. Public routes — webhooks
 among them — skip the check and authenticate by signature or shared secret instead.
 
+`/api/auth/**` is public to the proxy too, and holds routes that a session authenticates: the TOTP
+routes that change state (`setup`, `enable`, `disable`) call `csrfProtection`
+(`lib/middleware/csrf.ts`) themselves, and `app/api/auth/csrf-check.test.ts` names any handler there
+that does not. `verify` is the one exception: a session waiting for its code need not hold a CSRF
+cookie, since the proxy seeds it for portal pages, which that session is kept out of.
+
 ## Second factor
 
 An account with an authenticator app (Settings › Security) has to enter a code at every sign-in.
@@ -72,11 +78,11 @@ An account with an authenticator app (Settings › Security) has to enter a code
 - The code limiter is per account, not per session, which is what stops guessing across sessions. It
   also means a sign-in with only the password that keeps posting wrong codes keeps the owner's code
   page at 429.
-- Turning it off (`DELETE /api/auth/totp/disable`) asks for no code, only a session that has
-  passed its own second factor. `GET /api/auth/totp/setup` switches it off as well until the new
-  secret is confirmed, and being a GET that changes state it is outside what `SameSite=Lax` and the
-  proxy's CSRF check protect: a link followed while signed in can do it. Making it a POST is its
-  own change.
+- `setup` (a POST), `enable` and `disable` check the CSRF token themselves (see CSRF above).
+  `setup` writes its pending secret only while the second factor is off and answers 409
+  `totp_already_enabled` otherwise, so it cannot switch an enabled one off or replace its secret.
+  Turning it off (`DELETE /api/auth/totp/disable`) asks for no code, only a session that has passed
+  its own second factor.
 - An accepted TOTP code is not single-use within its 30 seconds, and a backup code is spent by a
   read and a write that two concurrent posts can both pass. Both need a code in hand.
 

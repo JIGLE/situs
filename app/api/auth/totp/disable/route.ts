@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { csrfProtection } from "@/lib/middleware/csrf";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
 
 // DELETE /api/auth/totp/disable — remove TOTP from the account
+//
+// Checks its own CSRF token: /api/auth/** is public in proxy.ts, so the proxy checks none here.
 export async function DELETE(request: NextRequest) {
   const authResult = await requireAuth(request);
   if (authResult instanceof Response) return authResult;
+
+  const csrfError = await csrfProtection(request);
+  if (csrfError) return csrfError;
 
   const { userId } = authResult;
 

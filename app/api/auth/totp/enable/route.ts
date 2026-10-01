@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { csrfProtection } from "@/lib/middleware/csrf";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { createErrorResponse, readJson, ValidationError } from "@/lib/utils/error-handling";
@@ -18,9 +19,14 @@ function hashCode(code: string): string {
 }
 
 // POST /api/auth/totp/enable — verify code and enable TOTP; returns backup codes
+//
+// Checks its own CSRF token: /api/auth/** is public in proxy.ts, so the proxy checks none here.
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth(request);
   if (authResult instanceof Response) return authResult;
+
+  const csrfError = await csrfProtection(request);
+  if (csrfError) return csrfError;
 
   const { userId } = authResult;
 

@@ -535,6 +535,16 @@ const RETIRED_CLAIMS = [
       "account releases nobody",
   },
   {
+    // setup was a GET that wrote totpEnabled:false, outside every CSRF check.
+    pattern:
+      /`GET \/api\/auth\/totp\/setup` switches it off|a link followed while signed in can do it|Making it a POST is its\s+own change/i,
+    retired: "2026-10-01 (second factor)",
+    because:
+      "POST /api/auth/totp/setup, enable and DELETE disable check the CSRF token themselves " +
+      "(/api/auth/** is public to the proxy), and setup answers 409 totp_already_enabled for an " +
+      "account whose second factor is on instead of switching it off",
+  },
+  {
     pattern: /no rate-limit environment variables/i,
     retired: "2026-09-23 (audit findings)",
     because:

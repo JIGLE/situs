@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type APIRequestContext, type Page } from "@playwright/test";
 import { totpGenerate } from "../lib/utils/totp";
 
 const STORAGE_STATE = "playwright/.auth/user.json";
@@ -38,6 +38,18 @@ async function signInWithPassword(page: Page) {
   await page.locator('form button[type="submit"]').click(STEP);
 }
 
+/**
+ * `/api/auth/**` is public to the proxy, so the TOTP routes check the CSRF token themselves: the
+ * cookie `GET /api/csrf-token` sets, echoed in a header, as the app's own client does.
+ */
+async function csrfHeaders(request: APIRequestContext): Promise<Record<string, string>> {
+  await request.get("/api/csrf-token");
+  const { cookies } = await request.storageState();
+  const token = cookies.find((c) => c.name === "csrf-token")?.value;
+  expect(token, "no csrf-token cookie after GET /api/csrf-token").toBeTruthy();
+  return { "x-csrf-token": token as string };
+}
+
 test("an account with an authenticator app is held at the code page until it enters one", async ({
   browser,
   request,
@@ -48,15 +60,32 @@ test("an account with an authenticator app is held at the code page until it ent
 
   let enabled = false;
   try {
-    const setup = await request.get("/api/auth/totp/setup");
-    expect(setup.ok(), `GET /api/auth/totp/setup → ${setup.status()}`).toBe(true);
+    const headers = await csrfHeaders(request);
+    const setup = await request.post("/api/auth/totp/setup", { headers });
+    expect(setup.ok(), `POST /api/auth/totp/setup → ${setup.status()}`).toBe(true);
     const { secret } = (await setup.json()) as { secret: string };
 
     const enable = await request.post("/api/auth/totp/enable", {
+      headers,
       data: { code: totpGenerate(secret) },
     });
     expect(enable.ok(), `POST /api/auth/totp/enable → ${enable.status()}`).toBe(true);
     enabled = true;
+
+    await test.step("a link cannot switch it off, and setup cannot replace what is on", async () => {
+      // A GET is not a method of the route any more, so following a link does nothing.
+      expect((await request.get("/api/auth/totp/setup")).status()).toBe(405);
+      // Without the token the app's own client sends, a signed-in request is refused all the same.
+      expect((await request.post("/api/auth/totp/setup")).status()).toBe(403);
+      expect((await request.delete("/api/auth/totp/disable")).status()).toBe(403);
+      // With the token, setup still leaves a second factor that is on alone.
+      const again = await request.post("/api/auth/totp/setup", { headers });
+      expect(again.status()).toBe(409);
+      expect(await again.json()).toMatchObject({ reason: "totp_already_enabled" });
+
+      const status = await request.get("/api/auth/totp/status");
+      expect(await status.json()).toMatchObject({ totpEnabled: true });
+    });
 
     // A context made through `browser` takes this file's `storageState` as well, which is the
     // signed-in demo account: sign-in would redirect straight to the dashboard and the form below
@@ -138,7 +167,10 @@ test("an account with an authenticator app is held at the code page until it ent
         storageState: STORAGE_STATE,
       });
       try {
-        const disable = await cleanup.delete("/api/auth/totp/disable", { timeout: 15_000 });
+        const disable = await cleanup.delete("/api/auth/totp/disable", {
+          headers: await csrfHeaders(cleanup),
+          timeout: 15_000,
+        });
         expect(disable.ok(), `DELETE /api/auth/totp/disable → ${disable.status()}`).toBe(true);
       } finally {
         await cleanup.dispose();

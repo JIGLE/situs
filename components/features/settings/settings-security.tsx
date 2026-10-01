@@ -91,7 +91,10 @@ export function SettingsSecurity() {
   const startTotpSetup = async () => {
     setTotpWorking(true);
     try {
-      const res = await fetch("/api/auth/totp/setup");
+      const res = await fetch("/api/auth/totp/setup", {
+        method: "POST",
+        headers: { "X-CSRF-Token": csrfToken || "" },
+      });
       if (!res.ok) throw new Error("Setup failed");
       const d = await res.json();
       setTotpQr(d.qrDataUrl);
