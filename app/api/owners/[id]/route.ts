@@ -3,8 +3,7 @@ import { handleOptions, requireOwnerAccess } from "@/lib/services/auth/auth-midd
 import { getPrismaClient } from "@/lib/services/database/database";
 import { assertOwnerHasNoHistory } from "@/lib/services/database/history";
 import { refuseDuplicateEmail } from "@/lib/services/database/unique-email";
-import { blankToNull } from "@/lib/utils/contact";
-import { normalizeTaxId } from "@/lib/schemas/tax-identity";
+import { blankToNull, normalizeTaxId } from "@/lib/schemas/tax-identity";
 import { updateOwnerSchema } from "@/lib/schemas/owner.schema";
 import {
   ResourceNotFoundError,
@@ -56,8 +55,8 @@ async function handlePut(request: NextRequest, context?: Context): Promise<Respo
       data: {
         ...fields,
         // Undefined leaves them as they are; a blank clears them to NULL.
-        ...(fields.email !== undefined && { email: blankToNull(fields.email) }),
-        ...(fields.phone !== undefined && { phone: blankToNull(fields.phone) }),
+        email: blankToNull(fields.email),
+        phone: blankToNull(fields.phone),
         // A blank clears it, and a NIF is stored as its nine digits, as a tenant's is.
         ...(taxIdentificationNumber !== undefined && {
           taxIdentificationNumber: normalizeTaxId(taxIdentificationNumber, "PT"),

@@ -12,10 +12,11 @@ import {
   readJsonObject,
 } from "@/lib/utils/error-handling";
 import { tenantService } from "@/lib/services/database/tenant";
-import { sanitizeForDatabase, sanitizeEmail, sanitizeNumber } from "@/lib/utils/sanitize";
+import { sanitizeForDatabase, sanitizeOptionalEmail, sanitizeNumber } from "@/lib/utils/sanitize";
 import { getPaginationFromRequest, createPaginatedResponse } from "@/lib/utils/pagination";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { getPrismaClient } from "@/lib/services/database/database";
+import { optionalEmail } from "@/lib/schemas/contact";
 import {
   blankToNull,
   checkTaxId,
@@ -28,7 +29,7 @@ import { z } from "zod";
 const createTenantSchema = z
   .object({
     name: z.string().min(1).max(200),
-    email: z.string().email(),
+    email: optionalEmail("Invalid email address"),
     phone: z.string().max(20).optional().default(""),
     propertyId: z.string().optional(),
     rent: z.number().min(0).optional().default(0),
@@ -93,7 +94,8 @@ async function handlePost(request: NextRequest): Promise<Response> {
   const sanitizedBody = {
     ...raw,
     name: sanitizeForDatabase(raw.name),
-    email: sanitizeEmail(raw.email),
+    // Optional: a tenant read from Finanças has a NIF and a name, and no address.
+    email: sanitizeOptionalEmail(raw.email),
     phone: sanitizeForDatabase(raw.phone),
     propertyId: raw.propertyId ? sanitizeForDatabase(raw.propertyId) : undefined,
     rent: sanitizeNumber(raw.rent, 0, 0),
@@ -106,6 +108,7 @@ async function handlePost(request: NextRequest): Promise<Response> {
   const taxCountry = validatedData.taxCountry ?? "PT";
   const tenant = await tenantService.create(scopeUserId, {
     ...validatedData,
+    email: validatedData.email ?? null,
     taxCountry,
     taxId: normalizeTaxId(validatedData.taxId, taxCountry),
     idDocument: blankToNull(validatedData.idDocument),

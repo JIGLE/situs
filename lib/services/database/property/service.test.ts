@@ -56,6 +56,23 @@ describe("propertyService", () => {
     ).rejects.toThrow("Building not found");
     expect(prismaMock.property.update).not.toHaveBeenCalled();
   });
+  // Finanças does not say how many rooms a property has. Unknown is NULL; 0 is a studio, and a
+  // property that is one has to keep saying so.
+  it("files unknown rooms as NULL, and a studio's none as 0", async () => {
+    await propertyService.create("user-1", {
+      ...property,
+      bedrooms: undefined,
+      bathrooms: null,
+    } as unknown as Parameters<typeof propertyService.create>[1]);
+    await propertyService.create("user-1", { ...property, bedrooms: 0, bathrooms: 1 });
+
+    const [unknown, studio] = prismaMock.property.create.mock.calls.map(([call]) => call.data);
+    expect(unknown.bedrooms).toBeNull();
+    expect(unknown.bathrooms).toBeNull();
+    expect(studio.bedrooms).toBe(0);
+    expect(studio.bathrooms).toBe(1);
+  });
+
   // The service writes an explicit field list, so a field the schema accepts but the list leaves
   // out is dropped without a word. That is how the property form lost fields until #399.
   it("writes the matriz article and the fraction, on create and on update", async () => {

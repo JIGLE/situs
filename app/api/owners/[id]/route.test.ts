@@ -84,6 +84,25 @@ describe("PUT /api/owners/[id]", () => {
     );
   });
 
+  it("clears an email or a phone sent blank, and leaves them alone when they are not sent", async () => {
+    await put({ email: "", phone: "" });
+    expect(prismaMock.owner.update.mock.calls[0][0].data).toEqual({ email: null, phone: null });
+
+    await put({ name: "Ana Costa-Silva" });
+    const { data } = prismaMock.owner.update.mock.calls[1][0];
+    expect(data.email).toBeUndefined();
+    expect(data.phone).toBeUndefined();
+  });
+
+  it("answers an email another owner of the account has as a 409 the screen can word", async () => {
+    prismaMock.owner.update.mockRejectedValue({ code: "P2002" });
+
+    const res = await put({ email: "ana@example.pt" });
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ reason: "email_in_use" });
+  });
+
   it("answers a NIF whose check digit does not match as a 400, and saves nothing", async () => {
     const res = await put({ taxIdentificationNumber: "123456788" });
 

@@ -4,6 +4,7 @@ import {
   sanitizeForDatabase,
   sanitizeFilename,
   sanitizeEmail,
+  sanitizeOptionalEmail,
   sanitizeNumber,
 } from "@/lib/utils/sanitize";
 
@@ -51,6 +52,18 @@ describe("sanitize utilities", () => {
       "my_file__name_.txt".replace(/__+/g, "_").replace(/^_+|_+$/g, ""),
     );
     expect(sanitizeFilename(null as unknown)).toBe("file");
+  });
+
+  it("sanitizeOptionalEmail takes a blank or missing email for none, and not an invalid one", () => {
+    // None: a tenant read from Finanças has no address.
+    for (const none of [undefined, null, "", "   ", 42]) {
+      expect(sanitizeOptionalEmail(none)).toBeNull();
+    }
+    expect(sanitizeOptionalEmail(" Test@Example.COM ")).toBe("test@example.com");
+    // Not none: `sanitizeEmail` answers null here too, and a route that took it would store nothing
+    // for a mistyped address, in silence. It comes back as typed, for the schema to refuse.
+    expect(sanitizeEmail(" BAD_EMAIL ")).toBeNull();
+    expect(sanitizeOptionalEmail(" BAD_EMAIL ")).toBe("BAD_EMAIL");
   });
 
   it("sanitizeEmail returns null for invalid emails and lowercases valid ones", () => {

@@ -3,7 +3,7 @@ import { Tenant } from "@/lib/types";
 import { assertOwnsRelations } from "../assert-owned";
 import { assertTenantHasNoHistory } from "../history";
 import { refuseDuplicateEmail } from "../unique-email";
-import { blankToNull } from "@/lib/utils/contact";
+import { blankToNull } from "@/lib/schemas/tax-identity";
 
 export const tenantService = {
   async getAll(userId: string): Promise<Tenant[]> {
@@ -71,8 +71,8 @@ export const tenantService = {
           userId,
           name: data.name,
           // An email or a phone the owner does not have is NULL, never "".
-          email: blankToNull(data.email),
-          phone: blankToNull(data.phone),
+          email: blankToNull(data.email) ?? null,
+          phone: blankToNull(data.phone) ?? null,
           propertyId: data.propertyId,
           rent: data.rent,
           leaseStart,
@@ -116,8 +116,8 @@ export const tenantService = {
         data: {
           name: data.name,
           // Undefined leaves a field as it is; a blank clears it to NULL.
-          email: data.email === undefined ? undefined : blankToNull(data.email),
-          phone: data.phone === undefined ? undefined : blankToNull(data.phone),
+          email: blankToNull(data.email),
+          phone: blankToNull(data.phone),
           propertyId: data.propertyId,
           rent: data.rent,
           leaseStart: data.leaseStart ? new Date(data.leaseStart) : undefined,

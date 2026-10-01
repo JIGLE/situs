@@ -7,7 +7,8 @@ import {
   readJsonObject,
 } from "@/lib/utils/error-handling";
 import { tenantService } from "@/lib/services/database/tenant";
-import { sanitizeForDatabase, sanitizeEmail, sanitizeNumber } from "@/lib/utils/sanitize";
+import { optionalEmail } from "@/lib/schemas/contact";
+import { sanitizeForDatabase, sanitizeOptionalEmail, sanitizeNumber } from "@/lib/utils/sanitize";
 import { blankToNull, normalizeTaxId, taxIdentityFields } from "@/lib/schemas/tax-identity";
 import { validatePortugueseNIF } from "@/lib/utils/tax-id-validation";
 import { z } from "zod";
@@ -15,8 +16,9 @@ import { z } from "zod";
 // Validation schema for updates
 const updateTenantSchema = z.object({
   name: z.string().min(1).max(200).optional(),
-  email: z.string().email().optional(),
-  phone: z.string().min(1).max(20).optional(),
+  // Absent leaves them as they are; null or blank clears them (an email and a phone are optional).
+  email: optionalEmail("Invalid email address"),
+  phone: z.string().max(20).nullish(),
   propertyId: z.string().optional(),
   rent: z.number().min(0).optional(),
   leaseStart: z.string().datetime().optional(),
@@ -88,8 +90,8 @@ async function handlePut(
     const sanitizedBody = {
       ...body,
       name: body.name ? sanitizeForDatabase(body.name) : undefined,
-      email: body.email ? sanitizeEmail(body.email) : undefined,
-      phone: body.phone ? sanitizeForDatabase(body.phone) : undefined,
+      email: body.email === undefined ? undefined : sanitizeOptionalEmail(body.email),
+      phone: body.phone === undefined ? undefined : sanitizeForDatabase(body.phone),
       propertyId: body.propertyId ? sanitizeForDatabase(body.propertyId) : undefined,
       rent: body.rent !== undefined ? sanitizeNumber(body.rent, 0, 0) : undefined,
       notes: body.notes ? sanitizeForDatabase(body.notes) : undefined,

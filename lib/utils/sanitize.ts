@@ -155,6 +155,19 @@ export function sanitizeEmail(email: unknown): string | null {
 }
 
 /**
+ * An email that may be left out: blank, missing or not a string is none (null); anything else is
+ * sanitized.
+ *
+ * `sanitizeEmail` answers null for a blank email and for one that is not an address alike, so a
+ * route that took its answer would read a bad address as none and store nothing, in silence. A
+ * non-blank string that is not an address comes back as typed, for the schema to refuse.
+ */
+export function sanitizeOptionalEmail(email: unknown): string | null {
+  if (typeof email !== "string" || !email.trim()) return null;
+  return sanitizeEmail(email) ?? email.trim();
+}
+
+/**
  * Sanitizes numeric input
  * @param input - The input to convert to number
  * @param defaultValue - Default value if conversion fails

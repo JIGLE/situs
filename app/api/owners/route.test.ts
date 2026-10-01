@@ -42,7 +42,7 @@ describe("POST /api/owners", () => {
 
     expect(res.status).toBe(201);
     expect(prismaMock.owner.create).toHaveBeenCalledWith({
-      data: { name: "Ana Costa", email: "ana@example.pt", userId: "user-123" },
+      data: { name: "Ana Costa", email: "ana@example.pt", phone: null, userId: "user-123" },
     });
   });
 
@@ -112,6 +112,64 @@ describe("POST /api/owners", () => {
 
     expect(res.status).toBe(403);
     expect(prismaMock.owner.create).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * Finanças names a landlord by NIF and name, so an email and a phone are optional. One that is not
+ * there is NULL, never "": an empty string reads as a value, and collides on the unique index.
+ */
+describe("POST /api/owners: an email or a phone the owner does not have", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    requireOwnerAccessMock.mockResolvedValue({ userId: "user-123", scopeUserId: "user-123" });
+    prismaMock.owner.create.mockResolvedValue({ id: "owner-1", name: "Ana Costa" });
+  });
+
+  it("creates an owner with only a name, and stores neither", async () => {
+    const res = await POST(postRequest({ name: "Ana Costa" }));
+
+    expect(res.status).toBe(201);
+    expect(prismaMock.owner.create.mock.calls[0][0].data).toMatchObject({
+      email: null,
+      phone: null,
+    });
+  });
+
+  it.each([
+    ["an empty string", { email: "", phone: "" }],
+    ["spaces", { email: "   ", phone: "   " }],
+    ["null, for an email", { email: null }],
+  ])(
+    "stores an email and a phone sent as %s as NULL, not as an empty string",
+    async (_why, blank) => {
+      const res = await POST(postRequest({ name: "Ana Costa", ...blank }));
+
+      expect(res.status).toBe(201);
+      expect(prismaMock.owner.create.mock.calls[0][0].data).toMatchObject({
+        email: null,
+        phone: null,
+      });
+    },
+  );
+
+  it("answers an email the account already has as a 409 the screen can word", async () => {
+    // Prisma's error for a write that breaks the account's (userId, email) unique index.
+    prismaMock.owner.create.mockRejectedValue({ code: "P2002" });
+
+    const res = await POST(postRequest({ name: "Ana Costa", email: "ana@example.pt" }));
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ reason: "email_in_use" });
+  });
+
+  it("does not take another failure for a duplicate email", async () => {
+    prismaMock.owner.create.mockRejectedValue(new Error("database is locked"));
+
+    const res = await POST(postRequest({ name: "Ana Costa", email: "ana@example.pt" }));
+
+    expect(res.status).toBe(500);
   });
 });
 
