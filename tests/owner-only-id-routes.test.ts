@@ -1,5 +1,5 @@
 /**
- * The collection routes of leases, receipts, properties and tenants admit owners only
+ * The collection routes of leases, receipts, properties, tenants and owners admit owners only
  * (`requireOwnerAccess`), but their `[id]` routes checked for nothing more than a session
  * (`requireAuth`). A USER-role session, refused at every collection, could still read, change and
  * delete single records by id. The role check has to run before anything reaches the database,
@@ -27,6 +27,7 @@ import * as leases from "@/app/api/leases/[id]/route";
 import * as receipts from "@/app/api/receipts/[id]/route";
 import * as properties from "@/app/api/properties/[id]/route";
 import * as tenants from "@/app/api/tenants/[id]/route";
+import * as owners from "@/app/api/owners/[id]/route";
 import * as bankConnection from "@/app/api/bank/connections/[id]/route";
 import * as bankSync from "@/app/api/bank/connections/[id]/sync/route";
 import * as bankRenew from "@/app/api/bank/connections/[id]/renew/route";
@@ -42,6 +43,7 @@ const routes: Record<string, Record<string, unknown>> = {
   "receipts/[id]": receipts,
   "properties/[id]": properties,
   "tenants/[id]": tenants,
+  "owners/[id]": owners,
   "bank/connections/[id]": bankConnection,
   "bank/connections/[id]/sync": bankSync,
   "bank/connections/[id]/renew": bankRenew,
@@ -56,9 +58,9 @@ const cases = Object.entries(routes).flatMap(([name, route]) =>
 
 describe("[id] routes admit owners only, as their collections do", () => {
   it("covers every handler of the routes", () => {
-    // leases/[id] has PUT and DELETE; the other three records have GET, PUT and DELETE; a bank
-    // connection has PATCH and DELETE, and each of its actions is one POST.
-    expect(cases).toHaveLength(16);
+    // leases/[id] and owners/[id] have PUT and DELETE; the other three records have GET, PUT and
+    // DELETE; a bank connection has PATCH and DELETE, and each of its actions is one POST.
+    expect(cases).toHaveLength(18);
   });
 
   it.each(cases)("%s refuses a USER-role session", async (_name, method, handler) => {

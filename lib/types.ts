@@ -116,6 +116,8 @@ export interface Owner {
   phone?: string;
   address?: string;
   notes?: string;
+  /** What AT names the owner by on a receipt: a Portuguese NIF, stored as its nine digits. */
+  taxIdentificationNumber?: string | null;
   createdAt: string;
   updatedAt: string;
   properties?: PropertyOwner[];

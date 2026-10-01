@@ -14,6 +14,7 @@ import { useSaveFailureMessage } from "@/lib/utils/api-error";
 import { ownerSchema, type OwnerFormData } from "@/lib/schemas/owner.schema";
 import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { OwnerNifField } from "./owner-nif-field";
 
 interface OwnerDetailModalProps {
   ownerId: string;
@@ -27,6 +28,7 @@ export function OwnerDetailModal({ ownerId, onClose }: OwnerDetailModalProps) {
   const saveFailure = useSaveFailureMessage();
   const t = useTranslations("owners");
   const tForms = useTranslations("forms");
+  const tIdentity = useTranslations("taxIdentity");
   const tActions = useTranslations("actions");
   const confirmDialog = useConfirmDialog();
   const [isEditing, setIsEditing] = useState(false);
@@ -36,6 +38,7 @@ export function OwnerDetailModal({ ownerId, onClose }: OwnerDetailModalProps) {
     phone: "",
     address: "",
     notes: "",
+    taxIdentificationNumber: "",
   });
 
   // Initialize form data when owner changes
@@ -47,6 +50,7 @@ export function OwnerDetailModal({ ownerId, onClose }: OwnerDetailModalProps) {
         phone: owner.phone || "",
         address: owner.address || "",
         notes: owner.notes || "",
+        taxIdentificationNumber: owner.taxIdentificationNumber || "",
       });
     }
   }, [owner]);
@@ -97,6 +101,7 @@ export function OwnerDetailModal({ ownerId, onClose }: OwnerDetailModalProps) {
       phone: owner.phone || "",
       address: owner.address || "",
       notes: owner.notes || "",
+      taxIdentificationNumber: owner.taxIdentificationNumber || "",
     });
     setIsEditing(false);
   };
@@ -118,7 +123,7 @@ export function OwnerDetailModal({ ownerId, onClose }: OwnerDetailModalProps) {
               </div>
               <div>
                 <h2 className="text-2xl font-semibold leading-none tracking-tight text-[var(--color-foreground)]">
-                  {isEditing ? "Edit Owner" : owner.name}
+                  {isEditing ? t("editTitle") : owner.name}
                 </h2>
                 <div className="flex flex-col gap-1 mt-1 text-sm text-[var(--color-muted-foreground)]">
                   <span className="flex items-center gap-1">
@@ -129,6 +134,11 @@ export function OwnerDetailModal({ ownerId, onClose }: OwnerDetailModalProps) {
                     <span className="flex items-center gap-1">
                       <Phone className="h-3 w-3" />
                       {owner.phone}
+                    </span>
+                  )}
+                  {owner.taxIdentificationNumber && (
+                    <span data-testid="owner-nif">
+                      {tIdentity("nif")} {owner.taxIdentificationNumber}
                     </span>
                   )}
                 </div>
@@ -174,6 +184,13 @@ export function OwnerDetailModal({ ownerId, onClose }: OwnerDetailModalProps) {
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     />
                   </div>
+                  <OwnerNifField
+                    id="taxIdentificationNumber"
+                    value={formData.taxIdentificationNumber ?? ""}
+                    onChange={(value) =>
+                      setFormData({ ...formData, taxIdentificationNumber: value })
+                    }
+                  />
                 </CardContent>
               </Card>
 
@@ -247,7 +264,7 @@ export function OwnerDetailModal({ ownerId, onClose }: OwnerDetailModalProps) {
                 <CardHeader>
                   <CardTitle className="text-sm text-[var(--color-muted-foreground)] flex items-center gap-2">
                     <Building2 className="h-4 w-4" />
-                    Properties Owned ({owner.properties.length})
+                    {t("propertiesOwned")} ({owner.properties.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

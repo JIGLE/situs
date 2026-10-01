@@ -53,6 +53,8 @@ import { POST as offerRenewal, PATCH as answerRenewal } from "./leases/[id]/rene
 
 const notJson = (method: string) =>
   new NextRequest("http://localhost:3000/api/x", { method, body: "{code: 123456" });
+const jsonNull = (method: string) =>
+  new NextRequest("http://localhost:3000/api/x", { method, body: "null" });
 const context = { params: Promise.resolve({ id: "lease-1" }) };
 
 const cases: [string, () => Promise<Response>][] = [
@@ -66,6 +68,19 @@ const cases: [string, () => Promise<Response>][] = [
   ["PATCH /api/leases/[id]/renewal", () => answerRenewal(notJson("PATCH"), context)],
 ];
 
+// JSON that is not an object. The first four read fields off the body before any schema, so they
+// say it is not an object; the others hand `null` to their schema, which refuses it in its own words.
+const nullCases: [string, () => Promise<Response>, string | undefined][] = [
+  ["PUT /api/notifications/[id]", () => updateNotification(jsonNull("PUT"), context), "object"],
+  ["POST /api/distributions", () => createDistribution(jsonNull("POST")), "object"],
+  ["POST /api/leases/[id]/renewal", () => offerRenewal(jsonNull("POST"), context), "object"],
+  ["PATCH /api/leases/[id]/renewal", () => answerRenewal(jsonNull("PATCH"), context), "object"],
+  ["POST /api/auth/totp/enable", () => totpEnable(jsonNull("POST")), undefined],
+  ["POST /api/auth/totp/verify", () => totpVerify(jsonNull("POST")), undefined],
+  ["POST /api/notifications", () => createNotification(jsonNull("POST")), undefined],
+  ["POST /api/leases/generate-template", () => generateTemplate(jsonNull("POST")), undefined],
+];
+
 describe("routes that answer their own errors", () => {
   beforeEach(() => vi.spyOn(console, "error").mockImplementation(() => {}));
 
@@ -75,4 +90,14 @@ describe("routes that answer their own errors", () => {
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: "Invalid request: the body is not JSON" });
   });
+
+  it.each(nullCases)(
+    "%s answers a JSON null body as a 400, not a 500",
+    async (_name, call, says) => {
+      const res = await call();
+
+      expect(res.status).toBe(400);
+      if (says) expect((await res.json()).error).toContain(says);
+    },
+  );
 });

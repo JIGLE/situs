@@ -84,7 +84,9 @@ e2e/                    # Playwright E2E tests
 - **API routes**: one folder per domain under `app/api/`. Validate with Zod, check the NextAuth
   session before touching the database. Read a body with `readJson` (or `parseJsonBody`, when the
   schema is all a handler needs) from `lib/utils/error-handling.ts`: a body that is not JSON is a 400,
-  and a bare `request.json()` answers it 500. `app/api/json-body-status.test.ts` refuses one.
+  and a bare `request.json()` answers it 500. A handler that reads fields off the body before a
+  schema sees it takes `readJsonObject`, since JSON `null` would crash it.
+  `app/api/json-body-status.test.ts` refuses both mistakes.
 - **Compliance**: `/api/compliance/rent-receipts`, Portugal's rent receipts. Tax logic lives in
   `lib/tax/` and `lib/services/tax/connector-service.ts`.
 - **PII encryption**: AES-256-GCM via `lib/utils/pii-encryption.ts`, keyed off
@@ -122,7 +124,8 @@ e2e/                    # Playwright E2E tests
   cascades from it in the schema (`lib/services/database/history.ts`). The refusal is a
   `ConflictError`: a 409 whose `reason` `apiFetch` keeps and `useApiError` turns into a sentence. A
   lease with nothing paid against it can still be deleted; a tenancy otherwise stops by ending its
-  lease.
+  lease. An owner who is still a landlord of a property, or has income shares, is kept the same
+  way (`owner_has_history`): detach them from the property first.
 - **Bank matching**: a live provider sync → fingerprint dedupe (idempotent) → fuzzy-duplicate
   check → reconciliation rules → weighted confidence scoring (`lib/services/matching/engine.ts`,
   pure). ≥0.85 auto-allocates via a draft `Receipt` (`source: "automation"`); anything lower waits

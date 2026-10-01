@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
-import {
-  createErrorResponse,
-  RawBody,
-  readJson,
-  ValidationError,
-} from "@/lib/utils/error-handling";
+import { createErrorResponse, ValidationError, readJsonObject } from "@/lib/utils/error-handling";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -40,7 +35,7 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
     const { userId } = authResult;
     const { id } = await context.params;
 
-    const body = (await readJson(request)) as RawBody;
+    const body = await readJsonObject(request);
 
     const prisma = getPrismaClient();
     const existing = await prisma.notification.findFirst({

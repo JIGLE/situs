@@ -330,6 +330,7 @@ export class EmailService {
       const stats = await prisma.emailLog.groupBy({
         by: ["status"],
         where: {
+          userId,
           sentAt: {
             gte: startDate,
           },
@@ -370,6 +371,7 @@ export class EmailService {
       const stats = await prisma.emailLog.groupBy({
         by: ["status"],
         where: {
+          userId,
           sentAt: { gte: startDate },
         },
         _count: { id: true },
@@ -481,21 +483,25 @@ export class EmailService {
   }
 
   /**
-   * Retry a failed email by ID
+   * Retry a failed email by ID.
+   *
+   * The log is found by its owner as well as its id. A retry mails the log's recipient from this
+   * account, so another account's log has to read as absent, exactly like an id that does not
+   * exist; `notFound` is how a caller tells that from a send that failed.
    */
   public async retryFailedEmail(
     emailLogId: string,
     userId: string,
-  ): Promise<{ success: boolean; error?: string }> {
+  ): Promise<{ success: boolean; error?: string; notFound?: boolean }> {
     try {
       const prisma: PrismaClient = getPrismaClient();
 
-      const emailLog = await prisma.emailLog.findUnique({
-        where: { id: emailLogId },
+      const emailLog = await prisma.emailLog.findFirst({
+        where: { id: emailLogId, userId },
       });
 
       if (!emailLog) {
-        return { success: false, error: "Email log not found" };
+        return { success: false, error: "Email log not found", notFound: true };
       }
 
       if (emailLog.status !== "failed") {
