@@ -18,9 +18,16 @@ import crypto from "crypto";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { logAudit } from "@/lib/services/audit-log";
 import { ConflictError, ResourceNotFoundError } from "@/lib/utils/error-handling";
+import { MONEY_EPSILON } from "@/lib/utils/money";
 import { encryptPII } from "@/lib/utils/pii-encryption";
 import { allocateReceipt } from "@/lib/services/allocation/service";
 import { isTestConnection } from "@/lib/services/bank/metadata";
+import {
+  findLinkablePayment,
+  recordedPaymentsFor,
+  summarizeRecordedPayment,
+  type RecordedPaymentSummary,
+} from "@/lib/services/bank/recorded-payments";
 import { redactRowForStorage } from "@/lib/services/bank/rows";
 import {
   classifyMatch,
@@ -462,6 +469,20 @@ export async function importBankRows(
         warnings.push("test_connection_not_allocated");
       }
 
+      // A payment the owner already recorded by hand is not allocated a second time: the waterfall
+      // would pay the next month with it. The row waits and the inbox asks which payment it is.
+      // After the quarantine, so a test connection's sandbox money never reads real receipts.
+      if (status === "auto_matched" && suggestedLeaseId) {
+        const recorded = await recordedPaymentsFor(userId, suggestedLeaseId, {
+          amount: row.amount,
+          bookingDate,
+        });
+        if (recorded.length > 0) {
+          status = "needs_review";
+          warnings.push("possible_recorded_payment");
+        }
+      }
+
       const txn = await prisma.bankTransaction.create({
         data: {
           userId,
@@ -560,7 +581,102 @@ export async function importBankRows(
   return summary;
 }
 
-export type TransactionAction = "confirm" | "reassign" | "ignore" | "restore";
+export type TransactionAction = "confirm" | "reassign" | "ignore" | "restore" | "link";
+
+/** What an action carries besides the lease. */
+export interface TransactionActionOptions {
+  /** `link`: the payment the owner recorded that this movement is. */
+  receiptId?: string;
+  /** `confirm` and `reassign`: the owner says this is a new payment, whatever they recorded. */
+  newPayment?: boolean;
+}
+
+export interface TransactionActionResult {
+  status: string;
+  receiptId: string | null;
+  /**
+   * Set when a confirm or a reassign waited instead of allocating: the payments the owner recorded
+   * on that lease that this movement may be. Nothing was allocated.
+   */
+  recordedPayments?: RecordedPaymentSummary[];
+}
+
+/**
+ * The owner says this movement is a payment they recorded by hand. The movement is linked to that
+ * receipt and nothing is allocated, because the receipt already counts: the month it paid is now
+ * reconciled, and the money is not counted twice.
+ */
+async function linkToRecordedPayment(
+  userId: string,
+  txn: {
+    id: string;
+    amount: number;
+    status: string;
+    receiptId: string | null;
+    suggestedLeaseId: string | null;
+    bankAccountId: string;
+  },
+  receiptId: string | undefined,
+): Promise<TransactionActionResult> {
+  const prisma = getPrismaClient();
+
+  if (!receiptId) {
+    throw new ConflictError("A recorded payment is required", "bank_payment_required");
+  }
+  if (txn.amount <= 0) {
+    throw new ConflictError("Outflows cannot be linked to a payment", "bank_outflow_not_rent");
+  }
+  if (txn.receiptId) {
+    // The same link asked for twice is done. Any other receipt is not ours to replace.
+    if (txn.receiptId === receiptId) return { status: txn.status, receiptId };
+    throw new ConflictError("This movement already has a receipt", "bank_movement_has_receipt");
+  }
+  if (txn.status !== "needs_review" && txn.status !== "imported") {
+    throw new ConflictError(
+      "Only a movement waiting for review can be linked",
+      "bank_movement_not_waiting",
+    );
+  }
+
+  // A test connection's movements are sandbox money: they never stand for a real payment.
+  const account = await prisma.bankAccount.findFirst({
+    where: { id: txn.bankAccountId, userId },
+    select: { connection: { select: { metadata: true } } },
+  });
+  if (isTestConnection(account?.connection.metadata ?? null)) {
+    throw new ConflictError("A test connection's movement cannot be linked", "bank_test_movement");
+  }
+
+  const payment = await findLinkablePayment(userId, receiptId);
+  if (!payment) throw new ResourceNotFoundError("Recorded payment");
+  if (Math.abs(payment.amount - txn.amount) > MONEY_EPSILON) {
+    throw new ConflictError("The amounts differ", "bank_payment_amount_differs");
+  }
+
+  const leaseId = payment.leaseId ?? txn.suggestedLeaseId;
+  await prisma.$transaction(async (tx) => {
+    // Read again inside the transaction: two movements asking for one payment must not both get it.
+    if ((await tx.bankTransaction.count({ where: { receiptId: payment.id } })) > 0) {
+      throw new ConflictError(
+        "That payment is already linked to a movement",
+        "bank_payment_already_linked",
+      );
+    }
+    await tx.bankTransaction.update({
+      where: { id: txn.id },
+      data: { receiptId: payment.id, status: "matched_confirmed", suggestedLeaseId: leaseId },
+    });
+  });
+  await logAudit({
+    userId,
+    action: "LINK_PAYMENT",
+    resourceType: "bank_transaction",
+    resourceId: txn.id,
+    details: { receiptId: payment.id, leaseId, amount: txn.amount },
+  });
+
+  return { status: "matched_confirmed", receiptId: payment.id };
+}
 
 /**
  * Inbox row actions. `confirm` accepts the suggestion; `reassign` overrides it
@@ -568,6 +684,11 @@ export type TransactionAction = "confirm" | "reassign" | "ignore" | "restore";
  * `restore` takes an ignored row back to review. Confirm/reassign create the
  * automation Receipt and run the waterfall unless the movement already has one
  * (idempotent).
+ *
+ * Unless the lease already has a payment the owner recorded by hand for this amount around this
+ * date: that money may be the one already counted, and allocating it again would pay the next
+ * month. Then the movement waits with the lease the owner chose, and the answer carries the
+ * recorded payments, for the owner to say `link` (it is that payment) or `newPayment: true`.
  *
  * A refusal is a typed error with a `reason`, so the inbox can say why in the
  * owner's language instead of reporting a lost connection.
@@ -577,7 +698,8 @@ export async function applyTransactionAction(
   transactionId: string,
   action: TransactionAction,
   leaseId?: string,
-): Promise<{ status: string; receiptId: string | null }> {
+  options: TransactionActionOptions = {},
+): Promise<TransactionActionResult> {
   const prisma = getPrismaClient();
   const txn = await prisma.bankTransaction.findFirst({
     where: { id: transactionId, userId },
@@ -632,6 +754,8 @@ export async function applyTransactionAction(
     return { status: "ignored", receiptId: null };
   }
 
+  if (action === "link") return linkToRecordedPayment(userId, txn, options.receiptId);
+
   if (txn.status === "matched_confirmed") {
     return { status: txn.status, receiptId: txn.receiptId };
   }
@@ -651,6 +775,23 @@ export async function applyTransactionAction(
   if (!lease) throw new ResourceNotFoundError("Lease");
 
   let receiptId = txn.receiptId;
+  if (!receiptId && !options.newPayment) {
+    const recorded = await recordedPaymentsFor(userId, targetLeaseId, {
+      amount: txn.amount,
+      bookingDate: txn.bookingDate,
+    });
+    if (recorded.length > 0) {
+      await prisma.bankTransaction.update({
+        where: { id: txn.id },
+        data: { status: "needs_review", suggestedLeaseId: targetLeaseId },
+      });
+      return {
+        status: "needs_review",
+        receiptId: null,
+        recordedPayments: recorded.map(summarizeRecordedPayment),
+      };
+    }
+  }
   if (!receiptId) {
     receiptId = await createReceiptAndAllocate(userId, targetLeaseId, {
       id: txn.id,

@@ -14,7 +14,7 @@ import { applyTransactionAction } from "@/lib/services/bank/import";
 
 export const runtime = "nodejs";
 
-// PUT /api/bank/transactions/[id] — confirm | reassign | ignore | restore a movement.
+// PUT /api/bank/transactions/[id] — confirm | reassign | ignore | restore | link a movement.
 async function handlePut(
   request: NextRequest,
   context?: { params?: Record<string, string> | Promise<Record<string, string>> },
@@ -35,7 +35,10 @@ async function handlePut(
   // The service refuses with typed errors (404, or 409 with a `reason`), which
   // `withErrorHandler` answers as themselves. Catching them here and answering 400 turned
   // every refusal into "Internal server error", and the inbox into "no connection".
-  const result = await applyTransactionAction(scopeUserId, id, body.action, body.leaseId);
+  const result = await applyTransactionAction(scopeUserId, id, body.action, body.leaseId, {
+    receiptId: body.receiptId,
+    newPayment: body.newPayment,
+  });
   return createSuccessResponse(result);
 }
 

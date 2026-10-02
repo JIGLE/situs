@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   AUTO_MATCH_THRESHOLD,
+  RECORDED_PAYMENT_WINDOW_DAYS,
   classifyMatch,
   findPossibleDuplicate,
+  findRecordedPayments,
   parseReferenceMonth,
   scoreCandidate,
   type LeaseCandidate,
+  type RecordedPayment,
   type TransactionInput,
 } from "./engine";
 
@@ -123,6 +126,62 @@ describe("findPossibleDuplicate", () => {
       bookingDate: new Date("2026-05-31"),
     });
     expect(findPossibleDuplicate(noIban, [priorNoIban])).toBe("txn-0");
+  });
+});
+
+describe("findRecordedPayments", () => {
+  const booked = { amount: RENT, bookingDate: new Date("2026-06-10") };
+  const recorded = (id: string, date: string, amount = RENT): RecordedPayment => ({
+    id,
+    amount,
+    date: new Date(date),
+  });
+
+  it("finds a payment for the same amount recorded around the booking date", () => {
+    expect(findRecordedPayments(booked, [recorded("r-1", "2026-06-02")])).toEqual([
+      recorded("r-1", "2026-06-02"),
+    ]);
+  });
+
+  it("is the same money only to the cent", () => {
+    expect(findRecordedPayments(booked, [recorded("r-1", "2026-06-10", RENT + 0.01)])).toEqual([]);
+    expect(findRecordedPayments(booked, [recorded("r-1", "2026-06-10", RENT - 0.01)])).toEqual([]);
+    // Float noise from a sum of cents is not a difference.
+    expect(findRecordedPayments(booked, [recorded("r-1", "2026-06-10", RENT + 1e-9)])).toHaveLength(
+      1,
+    );
+  });
+
+  it(`looks ${RECORDED_PAYMENT_WINDOW_DAYS} days either side of the booking, and no further`, () => {
+    expect(RECORDED_PAYMENT_WINDOW_DAYS).toBe(10);
+    const ids = (dates: string[]) =>
+      findRecordedPayments(
+        booked,
+        dates.map((date) => recorded(`r-${date}`, date)),
+      ).map((payment) => payment.id);
+
+    expect(ids(["2026-05-31", "2026-06-20"])).toEqual(["r-2026-05-31", "r-2026-06-20"]);
+    expect(ids(["2026-05-30"])).toEqual([]);
+    expect(ids(["2026-06-21"])).toEqual([]);
+  });
+
+  it("gives every payment that fits, nearest first, and picks none", () => {
+    const found = findRecordedPayments(booked, [
+      recorded("r-far", "2026-06-01"),
+      recorded("r-near", "2026-06-09"),
+      recorded("r-b", "2026-06-12"),
+      recorded("r-a", "2026-06-08"),
+      recorded("r-wrong-amount", "2026-06-10", RENT * 2),
+    ]);
+
+    // r-a and r-b are both two days off: the tie goes to the id, so the order is stable.
+    expect(found.map((payment) => payment.id)).toEqual(["r-near", "r-a", "r-b", "r-far"]);
+  });
+
+  it("finds nothing among nothing, and takes a window of its own", () => {
+    expect(findRecordedPayments(booked, [])).toEqual([]);
+    expect(findRecordedPayments(booked, [recorded("r-1", "2026-06-02")], 7)).toHaveLength(0);
+    expect(findRecordedPayments(booked, [recorded("r-1", "2026-06-02")], 8)).toHaveLength(1);
   });
 });
 

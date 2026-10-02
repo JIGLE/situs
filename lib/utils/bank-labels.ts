@@ -36,6 +36,7 @@ const SIGNAL_KEY = {
   amount_remainder: "signals.amountRemainder",
   reference_hit: "signals.referenceHit",
   possible_duplicate: "signals.possibleDuplicate",
+  possible_recorded_payment: "signals.possibleRecordedPayment",
   negative_amount: "signals.negativeAmount",
   ambiguous_candidates: "signals.ambiguousCandidates",
   test_connection_not_allocated: "signals.testConnectionNotAllocated",
@@ -44,6 +45,7 @@ const SIGNAL_KEY = {
 /** Every warning `importBankRows` writes without a parameter. A test holds this to its source. */
 export const IMPORT_WARNING_CODES = [
   "possible_duplicate",
+  "possible_recorded_payment",
   "negative_amount",
   "ambiguous_candidates",
   "test_connection_not_allocated",
