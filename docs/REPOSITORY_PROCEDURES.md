@@ -92,6 +92,9 @@ The fix is to group by what constrains what: TypeScript travels with the eslint 
 pins its range, and everything else bumps independently. When a group fails to resolve, read the
 `npm error` block rather than re-running — ERESOLVE names the conflicting peer exactly.
 
+The group cannot help while the plugins lag a TypeScript major, as they did for 7.0 (PR #436), so
+`dependabot.yml` also holds TypeScript's major bumps; its `ignore` entry says how to lift the hold.
+
 ## 5. Images and releases
 
 **Every merge to `main` publishes a development image.** `deploy-ghcr.yml` runs on each push to
