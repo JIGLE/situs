@@ -22,8 +22,14 @@ const STAMP = Date.now();
 const RENT = 777;
 /** 25 characters like a real PT IBAN, unique to this run, and ending in 4821. */
 const IBAN = `PT50${String(STAMP).padStart(17, "0").slice(-17)}4821`;
-/** A name and a reference that say nothing of the tenant: only the account and the amount can match. */
+/** A name that says nothing of the tenant: only the account and the amount can match. */
 const PAYER = `Unrelated Payer ${STAMP} Lda`;
+/**
+ * A reference that says nothing either, unique to this run: hexadecimal, so it holds no rent word and
+ * none of the property's own words (its name and address carry the decimal stamp), which would add a
+ * tenth to a score that has to reach 0.85 on the account and the amount alone.
+ */
+const TAG = STAMP.toString(16);
 
 /** UTC first-of-month, N months back from today. */
 function monthStart(monthsAgo: number): Date {
@@ -127,7 +133,7 @@ test("an account confirmed once is remembered, matched on its own for the rent, 
   let counter = 0;
   /** One movement from the payer's account, through the real import, and what the inbox says of it. */
   async function pay(month: Date, amount: number) {
-    const reference = `transfer ${STAMP} ${counter++}`;
+    const reference = `xfer ${TAG} ${counter++}`;
     const summary = await postJson<{ imported: number; autoMatched: number; needsReview: number }>(
       request,
       "/api/debug/bank/movements",
