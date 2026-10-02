@@ -392,7 +392,9 @@ provisioned `ADMIN`; every other email is refused at the `signIn` callback befor
 written (`lib/services/auth/registration.ts`). `AUTH_ALLOWED_EMAILS` admits a deliberate second
 user. The gate fails closed: a database it cannot read refuses the sign-in. It exists because a
 public instance otherwise made any Google account an administrator — and a live bank connection
-requires public reachability.
+requires public reachability. A session carries the role stored on the account, read at sign-in
+(`lib/services/auth/auth.ts`); one that cannot be read is `USER`, which the owner routes refuse, and
+a role changed in the database applies at the next sign-in, since the token lives a day.
 
 Optional:
 

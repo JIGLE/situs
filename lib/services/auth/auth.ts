@@ -216,6 +216,8 @@ function createBaseAuthOptions(): NextAuthOptions {
           // one here and use its DB id, otherwise every owned-entity create fails
           // with "Foreign key constraint violated".
           let resolvedId = user.id;
+          // The role stored on that row, when this branch read one (see where `t.role` is set).
+          let storedRole: string | undefined;
           if (
             !isMockMode &&
             user.email &&
@@ -238,9 +240,10 @@ function createBaseAuthOptions(): NextAuthOptions {
                   role: "ADMIN",
                   imageConsent: true,
                 },
-                select: { id: true },
+                select: { id: true, role: true },
               });
               resolvedId = dbUser.id;
+              storedRole = dbUser.role;
             } catch (err) {
               // Do NOT fall through to user.id here. That is the OAuth provider's
               // account id, not a DB id, so the session would be issued against a
@@ -261,7 +264,23 @@ function createBaseAuthOptions(): NextAuthOptions {
           t.email = user.email ?? undefined;
           t.name = user.name ?? undefined;
           t.picture = user.image ?? undefined;
-          t.role = (user as NextAuthUser & { role?: string }).role ?? t.role ?? "ADMIN";
+          // The role the session carries is the one stored on the account, read at sign-in. A
+          // provider's profile has none, so for Google this line fell through to "ADMIN" whatever
+          // the row said, and a MANAGER or USER account signed in as an administrator. The
+          // credentials provider hands back its row's role itself. An identity with no database to
+          // read (mock mode) keeps the demo's ADMIN; one whose role could not be read is no
+          // administrator, and the owner routes refuse a USER.
+          t.role =
+            storedRole ??
+            (user as NextAuthUser & { role?: string }).role ??
+            (isMockMode ? "ADMIN" : "USER");
+          if (t.role === "USER") {
+            // Said once, at sign-in, because the owner routes refuse this role and a Google
+            // sign-in used to be let through as an administrator whatever the row said.
+            logger.warn("Signed in as a USER: the owner routes refuse this role", {
+              userId: resolvedId,
+            });
+          }
 
           // Check TOTP enrollment for non-mock users, and read the language the account chose.
           if (!isMockMode && resolvedId && resolvedId !== "demo-user") {
@@ -416,7 +435,8 @@ function createBaseAuthOptions(): NextAuthOptions {
             if (t.email) sessionUser.email = t.email;
             if (t.name) sessionUser.name = t.name;
             if (t.picture) sessionUser.image = t.picture;
-            session.user.role = t.role || session.user.role || "ADMIN";
+            // Every token the sign-in mints has a role, so one without is not an administrator.
+            session.user.role = t.role || session.user.role || "USER";
             (session as unknown as Record<string, unknown>).mfaPending = t.mfaPending ?? false;
             if (t.locale) session.locale = t.locale;
 
