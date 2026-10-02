@@ -616,7 +616,7 @@ export interface TransactionActionResult {
   recordedPayments?: RecordedPaymentSummary[];
   /**
    * True when this confirmation taught an account the owner had not confirmed for that tenant before:
-   * from now on a payment from it for exactly the rent is matched on its own.
+   * from now on a payment from it for the same amount as the rent is matched on its own.
    */
   remembered?: boolean;
 }

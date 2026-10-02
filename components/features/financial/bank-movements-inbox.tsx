@@ -68,7 +68,7 @@ interface ActionResult {
   status: string;
   receiptId: string | null;
   recordedPayments?: InboxRow["recordedPayments"];
-  /** The confirmation taught an account: its exact rent is matched on its own from now on. */
+  /** The confirmation taught an account: the same amount as the rent from it is matched on its own. */
   remembered?: boolean;
 }
 

@@ -5,11 +5,11 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 /**
- * An account the owner confirmed is remembered for that tenant, and from then on the exact rent from
- * it is matched on its own. Whether that holds is a question about rows and about the real waterfall:
- * whose accounts, which tenant's leases, what the next movement scores against them. So it is asked of
- * a real SQLite file, through the real import and the real confirmation, not of a mock that would
- * answer whatever the code assumed.
+ * An account the owner confirmed is remembered for that tenant, and from then on the same amount as
+ * the rent from it is matched on its own. Whether that holds is a question about rows and about the
+ * real waterfall: whose accounts, which tenant's leases, what the next movement scores against them.
+ * So it is asked of a real SQLite file, through the real import and the real confirmation, not of a
+ * mock that would answer whatever the code assumed.
  *
  * The schema is pushed WITHOUT `--accept-data-loss`: a fresh file needs no such consent, and the flag
  * is the one thing a development environment may refuse to run.
