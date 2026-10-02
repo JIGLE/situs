@@ -137,10 +137,17 @@ e2e/                    # Playwright E2E tests
   that reads one takes null (`joinContact`, `lib/utils/contact.ts`).
 - **Bank matching**: a live provider sync → fingerprint dedupe (idempotent) → fuzzy-duplicate
   check → reconciliation rules → weighted confidence scoring (`lib/services/matching/engine.ts`,
-  pure). ≥0.85 auto-allocates via a draft `Receipt` (`source: "automation"`); anything lower waits
+  pure). ≥0.85 auto-allocates via a draft `Receipt` (`source: "automation"`), unless the lease has a
+  payment the owner recorded by hand for the same amount (below); anything lower waits
   in the Bank Movements inbox (Finance tab) for a human to confirm, reassign or ignore. Money going
   out waits too, under its own filter, and is never counted as work (`lib/utils/bank-inbox.ts`,
-  `GET /api/bank/transactions/summary`). The live
+  `GET /api/bank/transactions/summary`). **A payment recorded by hand is never allocated twice**
+  (`lib/services/bank/recorded-payments.ts`): a movement whose lease has paid rent of the same amount
+  to the cent, dated within 10 days, with live allocations and no movement linked, waits instead of
+  allocating, whether the import or a Confirm or Assign would have done it (`possible_recorded_payment`;
+  the answer carries `recordedPayments`). The owner then says `link` (it is that payment: the movement
+  takes the receipt, nothing is allocated, the month reads as reconciled; refused for a test
+  connection's movement) or `newPayment: true` (allocate as before). The live
   connection is the only way movements arrive: there is no file import. E2E and development feed
   the same `importBankRows` through `POST /api/debug/bank/movements`, which answers 403 unless
   `ALLOW_DEMO_MODE` is set or the server runs in development.
