@@ -494,6 +494,43 @@ describe("remembered payer accounts — real Prisma client + real SQLite file", 
     expect(await prisma.payerAccount.count({ where: { userId: w.user.id } })).toBe(0);
   });
 
+  it("answers that an account it already has is not new, and keeps one row", async () => {
+    const w = await world("direct");
+    const { movement } = await teach(w);
+    const stored = await prisma.bankTransaction.findUniqueOrThrow({ where: { id: movement.id } });
+
+    expect(await accounts.rememberPayerAccount(w.user.id, w.tenant.id, stored)).toBe(false);
+    expect(await prisma.payerAccount.count({ where: { tenantId: w.tenant.id } })).toBe(1);
+  });
+
+  it("has nothing to remember from a movement with no account", async () => {
+    const w = await world("noaccount");
+    const stored = await prisma.bankTransaction.create({
+      data: {
+        userId: w.user.id,
+        bankAccountId: (
+          await prisma.bankAccount.create({
+            data: {
+              userId: w.user.id,
+              label: "Conta sem IBAN",
+              connectionId: (
+                await prisma.bankConnection.create({
+                  data: { userId: w.user.id, institutionName: "Banco Sem IBAN" },
+                })
+              ).id,
+            },
+          })
+        ).id,
+        fingerprint: `no-iban-${w.user.id}`,
+        amount: RENT,
+        bookingDate: new Date("2026-06-10"),
+      },
+    });
+
+    expect(await accounts.rememberPayerAccount(w.user.id, w.tenant.id, stored)).toBe(false);
+    expect(await prisma.payerAccount.count({ where: { tenantId: w.tenant.id } })).toBe(0);
+  });
+
   it("never writes for a tenant that is not the caller's", async () => {
     const mine = await world("guard-mine");
     const theirs = await world("guard-theirs");
