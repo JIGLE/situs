@@ -46,8 +46,9 @@ contain anything a person typed, which is a reason to keep them no longer than n
 than a reason to treat the app as processing Article 9 data.
 
 **No automated decision-making with legal effect** (Art. 22). Bank matching scores a movement
-against a lease and, above 0.85, creates a draft receipt; below that a human decides. Nothing
-terminates a tenancy or refuses anyone anything.
+against a lease and, above 0.85, creates a draft receipt, unless a payment the owner recorded by
+hand already looks like it; otherwise a human decides. Nothing terminates a tenancy or refuses
+anyone anything.
 
 ## 3. Categories of data
 

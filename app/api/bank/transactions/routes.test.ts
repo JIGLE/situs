@@ -10,6 +10,7 @@ const { prismaMock, access, actionMock } = vi.hoisted(() => ({
   prismaMock: {
     bankTransaction: { findMany: vi.fn(), groupBy: vi.fn(), count: vi.fn() },
     lease: { findMany: vi.fn() },
+    receipt: { findMany: vi.fn() },
   },
   access: vi.fn(),
   actionMock: vi.fn(),
@@ -42,6 +43,7 @@ beforeEach(() => {
   access.mockResolvedValue({ userId: "user-1", scopeUserId: "user-1" });
   prismaMock.bankTransaction.findMany.mockResolvedValue([]);
   prismaMock.lease.findMany.mockResolvedValue([]);
+  prismaMock.receipt.findMany.mockResolvedValue([]);
 });
 
 describe("GET /api/bank/transactions", () => {
@@ -71,6 +73,90 @@ describe("GET /api/bank/transactions", () => {
     expect(prismaMock.bankTransaction.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { userId: "user-1", status: "ignored" } }),
     );
+  });
+});
+
+describe("GET /api/bank/transactions, payments the owner recorded", () => {
+  const waiting = {
+    id: "txn-waiting",
+    amount: 850,
+    status: "needs_review",
+    suggestedLeaseId: "lease-1",
+    receiptId: null,
+    bookingDate: new Date("2026-09-01T00:00:00.000Z"),
+    // The connection's metadata is read to tell a test connection apart, and never sent on.
+    bankAccount: { label: "Conta", connection: { metadata: null as string | null } },
+  };
+  const recorded = {
+    id: "rcpt-1",
+    leaseId: "lease-1",
+    amount: 850,
+    date: new Date("2026-08-30T00:00:00.000Z"),
+  };
+
+  it("names the payment a movement waiting for review may be the same money as", async () => {
+    prismaMock.bankTransaction.findMany.mockResolvedValue([waiting]);
+    prismaMock.receipt.findMany.mockResolvedValue([recorded]);
+
+    const body = await (await list(request("?status=needs_review&direction=in"))).json();
+
+    expect(body.data[0].recordedPayments).toEqual([
+      { id: "rcpt-1", date: "2026-08-30", amount: 850 },
+    ]);
+    expect(prismaMock.receipt.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ userId: "user-1", leaseId: { in: ["lease-1"] } }),
+      }),
+    );
+  });
+
+  it("names none for a movement with no lease suggested, a receipt of its own, or another amount", async () => {
+    prismaMock.bankTransaction.findMany.mockResolvedValue([
+      { ...waiting, id: "txn-no-lease", suggestedLeaseId: null },
+      { ...waiting, id: "txn-confirmed", status: "matched_confirmed", receiptId: "rcpt-9" },
+      { ...waiting, id: "txn-other-amount", amount: 900 },
+    ]);
+    prismaMock.receipt.findMany.mockResolvedValue([recorded]);
+
+    const body = await (await list(request(""))).json();
+
+    expect(body.data.map((row: { recordedPayments: unknown[] }) => row.recordedPayments)).toEqual([
+      [],
+      [],
+      [],
+    ]);
+  });
+
+  it("offers nothing to a test connection's movement, and never sends its metadata on", async () => {
+    prismaMock.bankTransaction.findMany.mockResolvedValue([
+      {
+        ...waiting,
+        bankAccount: {
+          label: "Conta de teste",
+          connection: { metadata: JSON.stringify({ isTest: true, reference: "secret-ref" }) },
+        },
+      },
+    ]);
+    prismaMock.receipt.findMany.mockResolvedValue([recorded]);
+
+    const res = await list(request("?status=needs_review&direction=in"));
+    const body = await res.json();
+
+    expect(body.data[0].recordedPayments).toEqual([]);
+    expect(body.data[0].bankAccount).toEqual({ label: "Conta de teste" });
+    expect(JSON.stringify(body)).not.toMatch(/metadata|secret-ref|isTest/);
+    // Nothing else was waiting, so nothing was asked of the receipts.
+    expect(prismaMock.receipt.findMany).not.toHaveBeenCalled();
+  });
+
+  it("asks the database nothing when no movement could have one", async () => {
+    prismaMock.bankTransaction.findMany.mockResolvedValue([
+      { ...waiting, status: "auto_matched", receiptId: "rcpt-9" },
+    ]);
+
+    await list(request("?status=auto_matched"));
+
+    expect(prismaMock.receipt.findMany).not.toHaveBeenCalled();
   });
 });
 
@@ -115,7 +201,54 @@ describe("PUT /api/bank/transactions/[id]", () => {
     const res = await act(request("/txn-1", "PUT", { action: "restore" }), withId("txn-1"));
 
     expect(res.status).toBe(200);
-    expect(actionMock).toHaveBeenCalledWith("user-1", "txn-1", "restore", undefined);
+    expect(actionMock).toHaveBeenCalledWith("user-1", "txn-1", "restore", undefined, {
+      receiptId: undefined,
+      newPayment: undefined,
+    });
+  });
+
+  it("links a movement to the payment the owner recorded", async () => {
+    actionMock.mockResolvedValue({ status: "matched_confirmed", receiptId: "rcpt-1" });
+
+    const res = await act(
+      request("/txn-1", "PUT", { action: "link", receiptId: "rcpt-1" }),
+      withId("txn-1"),
+    );
+
+    expect(res.status).toBe(200);
+    expect(actionMock).toHaveBeenCalledWith("user-1", "txn-1", "link", undefined, {
+      receiptId: "rcpt-1",
+      newPayment: undefined,
+    });
+  });
+
+  it("refuses a link that names no payment, without acting", async () => {
+    const res = await act(request("/txn-1", "PUT", { action: "link" }), withId("txn-1"));
+
+    expect(res.status).toBe(400);
+    expect(actionMock).not.toHaveBeenCalled();
+  });
+
+  it("passes on that a confirmation is a new payment, and refuses anything else for it", async () => {
+    actionMock.mockResolvedValue({ status: "matched_confirmed", receiptId: "rcpt-2" });
+
+    const ok = await act(
+      request("/txn-1", "PUT", { action: "confirm", newPayment: true }),
+      withId("txn-1"),
+    );
+    expect(ok.status).toBe(200);
+    expect(actionMock).toHaveBeenCalledWith("user-1", "txn-1", "confirm", undefined, {
+      receiptId: undefined,
+      newPayment: true,
+    });
+
+    actionMock.mockClear();
+    const refused = await act(
+      request("/txn-1", "PUT", { action: "confirm", newPayment: "yes" }),
+      withId("txn-1"),
+    );
+    expect(refused.status).toBe(400);
+    expect(actionMock).not.toHaveBeenCalled();
   });
 
   it("answers a refusal as a 409 with its reason", async () => {

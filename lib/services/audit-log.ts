@@ -62,6 +62,8 @@ export type AuditAction =
   | "OVERRIDE_MATCH"
   | "IGNORE_TRANSACTION"
   | "RESTORE_TRANSACTION"
+  // A movement that is a payment the owner had recorded by hand: linked, nothing allocated.
+  | "LINK_PAYMENT"
   | "APPLY_RECONCILIATION_RULE"
   // Live bank connection (PSD2 account information)
   | "BANK_CONNECTION_CREATED"

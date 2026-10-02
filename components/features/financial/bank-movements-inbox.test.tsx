@@ -162,6 +162,138 @@ describe("BankMovementsInbox", () => {
   });
 });
 
+/**
+ * A movement that may be a payment the owner recorded by hand. Whether it is, is the owner's to
+ * say: Confirm, which would allocate it again, gives way to "same payment" and "a new payment".
+ */
+describe("a movement that looks like a payment the owner recorded", () => {
+  const RECORDED = { id: "rcpt-1", date: "2026-08-30", amount: 850 };
+  const withRecorded = (...recordedPayments: (typeof RECORDED)[]) => ({
+    ...MONEY_IN,
+    recordedPayments,
+  });
+  /** The PUT bodies sent so far. */
+  const puts = () =>
+    vi
+      .mocked(fetch)
+      .mock.calls.filter(([, init]) => init?.method === "PUT")
+      .map(([, init]) => JSON.parse(String(init?.body)));
+
+  it("shows what was recorded, and offers the two answers instead of Confirm", async () => {
+    rows = [withRecorded(RECORDED)];
+    render(<BankMovementsInbox />, { initialLocale: "pt" });
+
+    expect(
+      (await screen.findAllByText(`Registou €850,00 em ${formatDate(RECORDED.date, "pt")}`)).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /Mesmo pagamento/ }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /Um novo pagamento/ }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: /Confirmar/ })).not.toBeInTheDocument();
+    // Assigning to another lease and ignoring stay.
+    expect(screen.getAllByRole("button", { name: "Atribuir" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Ignorar" }).length).toBeGreaterThan(0);
+  });
+
+  it("still offers Confirm when nothing was recorded", async () => {
+    rows = [withRecorded()];
+    render(<BankMovementsInbox />, { initialLocale: "pt" });
+
+    expect((await screen.findAllByRole("button", { name: /Confirmar/ })).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: /Mesmo pagamento/ })).not.toBeInTheDocument();
+  });
+
+  it("links it to the payment, says nothing was counted twice, and creates no receipt", async () => {
+    const user = userEvent.setup();
+    const onChanged = vi.fn();
+    onPut = () => ({ body: { data: { status: "matched_confirmed", receiptId: "rcpt-1" } } });
+    rows = [withRecorded(RECORDED)];
+    render(<BankMovementsInbox onChanged={onChanged} />, { initialLocale: "pt" });
+
+    await user.click((await screen.findAllByRole("button", { name: /Mesmo pagamento/ }))[0]);
+
+    await vi.waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith(
+        "Ligado ao pagamento que registou. Nada foi contado duas vezes.",
+      ),
+    );
+    expect(puts()).toEqual([{ action: "link", receiptId: "rcpt-1" }]);
+    // A link makes no receipt and pays no month, so there is nothing for the app state to reload.
+    expect(refreshData).not.toHaveBeenCalled();
+    expect(onChanged).toHaveBeenCalled();
+  });
+
+  it("confirms it as a new payment, which does create the receipt", async () => {
+    const user = userEvent.setup();
+    rows = [withRecorded(RECORDED)];
+    render(<BankMovementsInbox />, { initialLocale: "pt" });
+
+    await user.click((await screen.findAllByRole("button", { name: /Um novo pagamento/ }))[0]);
+
+    await vi.waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith(
+        "Pagamento de Maria Silva confirmado: foi criado um recibo.",
+      ),
+    );
+    expect(puts()).toEqual([{ action: "confirm", newPayment: true }]);
+    expect(refreshData).toHaveBeenCalled();
+  });
+
+  it("says nothing was confirmed when the server held the movement instead", async () => {
+    const user = userEvent.setup();
+    // A row the list showed with nothing recorded, confirmed after the owner recorded a payment.
+    onPut = () => ({
+      body: { data: { status: "needs_review", receiptId: null, recordedPayments: [RECORDED] } },
+    });
+    rows = [MONEY_IN];
+    render(<BankMovementsInbox />, { initialLocale: "pt" });
+
+    await user.click((await screen.findAllByRole("button", { name: /Confirmar/ }))[0]);
+
+    await vi.waitFor(() =>
+      expect(toast.info).toHaveBeenCalledWith(
+        "Maria Silva tem um pagamento deste valor registado por volta desta data. Diga se é o mesmo pagamento.",
+      ),
+    );
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(refreshData).not.toHaveBeenCalled();
+  });
+
+  it("names each payment by its date when more than one fits", async () => {
+    const earlier = { id: "rcpt-0", date: "2026-08-28", amount: 850 };
+    rows = [withRecorded(RECORDED, earlier)];
+    render(<BankMovementsInbox />, { initialLocale: "pt" });
+
+    expect(
+      (
+        await screen.findAllByRole("button", {
+          name: `Mesmo pagamento, ${formatDate(RECORDED.date, "pt")}`,
+        })
+      ).length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole("button", {
+        name: `Mesmo pagamento, ${formatDate(earlier.date, "pt")}`,
+      }).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("says why a link was refused, in words", async () => {
+    const user = userEvent.setup();
+    onPut = () => ({
+      status: 409,
+      body: { error: "That payment is already linked", reason: "bank_payment_already_linked" },
+    });
+    rows = [withRecorded(RECORDED)];
+    render(<BankMovementsInbox />, { initialLocale: "pt" });
+
+    await user.click((await screen.findAllByRole("button", { name: /Mesmo pagamento/ }))[0]);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Esse pagamento já está ligado a outro movimento.",
+    );
+  });
+});
+
 describe("the bank strip above the inbox", () => {
   const bank = (overrides: Record<string, unknown> = {}) => ({
     id: "conn-1",

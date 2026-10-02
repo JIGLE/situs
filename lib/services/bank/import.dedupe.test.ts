@@ -81,6 +81,8 @@ const { prismaMock, store, resetStore } = vi.hoisted(() => {
         return [];
       }),
       update: vi.fn(),
+      // The receipt is back-linked only if the movement still has none.
+      updateMany: vi.fn(async () => ({ count: 1 })),
     },
     lease: {
       findMany: vi.fn(async () => [
@@ -95,7 +97,11 @@ const { prismaMock, store, resetStore } = vi.hoisted(() => {
     },
     rentPeriod: { findMany: vi.fn(async () => []) },
     reconciliationRule: { findMany: vi.fn(async () => []), update: vi.fn() },
-    receipt: { create: vi.fn(async () => ({ id: "receipt-1" })) },
+    // `findMany` answers what the owner recorded by hand: nothing, unless a test says otherwise.
+    receipt: {
+      create: vi.fn(async () => ({ id: "receipt-1" })),
+      findMany: vi.fn(async (): Promise<Record<string, unknown>[]> => []),
+    },
   };
 
   const resetStore = () => {
@@ -139,6 +145,9 @@ beforeEach(() => {
   resetStore();
   logAuditMock.mockResolvedValue(undefined);
   allocateReceiptMock.mockResolvedValue(null);
+  // `clearAllMocks` keeps implementations, so the test-connection suite's marker would otherwise
+  // outlive it and quarantine every ordinary import that follows.
+  prismaMock.bankConnection.findUnique.mockResolvedValue({ metadata: null });
 });
 
 describe("importBankRows — re-importing the same statement", () => {
@@ -228,6 +237,102 @@ describe("importBankRows — a test connection never allocates", () => {
     expect(JSON.parse(written.matchReasons as string).warnings).toContain(
       "test_connection_not_allocated",
     );
+  });
+});
+
+/**
+ * A payment the owner already recorded by hand is not allocated a second time.
+ *
+ * Nothing linked a movement to a receipt it did not create, so the bank's copy of a payment the
+ * owner had recorded was allocated on top of it: the waterfall filled the next open month. The
+ * fixture is the one that auto-matches above, so if the hold were dropped these assertions would
+ * fail rather than pass vacuously.
+ */
+describe("importBankRows — a payment the owner already recorded", () => {
+  /** What `receipt.findMany` returns for the lease: a payment recorded for the same money. */
+  const recorded = (overrides: Record<string, unknown> = {}) => ({
+    id: "rcpt-recorded",
+    leaseId: LEASE_ID,
+    amount: rentRow.amount,
+    date: new Date("2026-06-02T00:00:00.000Z"),
+    ...overrides,
+  });
+
+  it("is allocated as before when nothing was recorded", async () => {
+    // Load-bearing precondition: without it every hold assertion below could pass on a fixture
+    // that had stopped auto-matching.
+    const summary = await importBankRows(USER_ID, [rentRow]);
+
+    expect(summary.autoMatched).toBe(1);
+    expect(allocateReceiptMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("waits for the owner instead of being allocated, and says why", async () => {
+    prismaMock.receipt.findMany.mockResolvedValueOnce([recorded()]);
+
+    const summary = await importBankRows(USER_ID, [rentRow]);
+
+    expect(summary).toMatchObject({ imported: 1, autoMatched: 0, needsReview: 1 });
+    expect(prismaMock.receipt.create).not.toHaveBeenCalled();
+    expect(allocateReceiptMock).not.toHaveBeenCalled();
+
+    const written = prismaMock.bankTransaction.create.mock.calls[0][0].data;
+    expect(written.status).toBe("needs_review");
+    // The suggestion and its confidence stay: the owner still sees who it looks like.
+    expect(written.suggestedLeaseId).toBe(LEASE_ID);
+    expect(written.matchConfidence).toBeGreaterThanOrEqual(0.85);
+    expect(JSON.parse(written.matchReasons as string).warnings).toContain(
+      "possible_recorded_payment",
+    );
+    expect(logAuditMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: "MATCH_PAYMENT" }),
+    );
+  });
+
+  it("is asked of the account's own receipts, on the lease the movement matched", async () => {
+    await importBankRows(USER_ID, [rentRow]);
+
+    expect(prismaMock.receipt.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          userId: USER_ID,
+          leaseId: LEASE_ID,
+          type: "rent",
+          bankTransactions: { none: {} },
+        }),
+      }),
+    );
+  });
+
+  it("is not held by a payment for another amount or from another time", async () => {
+    // The query is narrowed by the database; the match is then made here, in the pure function, so
+    // a receipt it returns for the wrong money or the wrong weeks must not hold anything.
+    prismaMock.receipt.findMany.mockResolvedValueOnce([
+      recorded({ amount: rentRow.amount + 50 }),
+      recorded({ id: "rcpt-old", date: new Date("2026-03-02T00:00:00.000Z") }),
+    ]);
+
+    const summary = await importBankRows(USER_ID, [rentRow]);
+
+    expect(summary.autoMatched).toBe(1);
+    expect(allocateReceiptMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("is not looked for when the row was not going to be allocated anyway", async () => {
+    // Waiting in review already: nothing to hold, and no query to spend on it.
+    await importBankRows(USER_ID, [{ ...rentRow, amount: 1, counterpartyName: "Stranger" }]);
+
+    expect(prismaMock.receipt.findMany).not.toHaveBeenCalled();
+  });
+
+  it("is never looked for by a test connection, whose money stands for no payment", async () => {
+    prismaMock.bankConnection.findUnique.mockResolvedValue({
+      metadata: JSON.stringify({ reference: "abc", isTest: true }),
+    });
+
+    await importBankRows(USER_ID, [rentRow]);
+
+    expect(prismaMock.receipt.findMany).not.toHaveBeenCalled();
   });
 });
 

@@ -10,6 +10,8 @@
  * No IO, no Prisma — the service layer feeds snapshots and applies results.
  */
 
+import { MONEY_EPSILON } from "@/lib/utils/money";
+
 export interface TransactionInput {
   id: string;
   amount: number;
@@ -178,6 +180,41 @@ export function findPossibleDuplicate(
     }
   }
   return null;
+}
+
+/**
+ * A payment the owner recorded by hand that a bank movement could be the same money as. Only what
+ * the match needs: the service layer reads these off receipts.
+ */
+export interface RecordedPayment {
+  id: string;
+  amount: number;
+  date: Date;
+}
+
+/** How far a recorded payment's date may sit from the movement's booking date. */
+export const RECORDED_PAYMENT_WINDOW_DAYS = 10;
+
+/**
+ * The recorded payments a movement may be the same money as: the same amount to the cent, dated
+ * within `windowDays` of the booking, nearest first. The caller has already narrowed them to one
+ * lease's paid rent that no movement is linked to. There can be more than one, and which of them
+ * the movement is is the owner's to say, so nothing here picks.
+ */
+export function findRecordedPayments(
+  txn: Pick<TransactionInput, "amount" | "bookingDate">,
+  recorded: RecordedPayment[],
+  windowDays = RECORDED_PAYMENT_WINDOW_DAYS,
+): RecordedPayment[] {
+  const windowMs = windowDays * 24 * 60 * 60 * 1000;
+  const distance = (payment: RecordedPayment) =>
+    Math.abs(payment.date.getTime() - txn.bookingDate.getTime());
+  return recorded
+    .filter(
+      (payment) =>
+        Math.abs(payment.amount - txn.amount) <= MONEY_EPSILON && distance(payment) <= windowMs,
+    )
+    .sort((a, b) => distance(a) - distance(b) || a.id.localeCompare(b.id));
 }
 
 /**

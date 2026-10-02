@@ -21,14 +21,24 @@ export const debugBankMovementsSchema = z.object({
   rows: z.array(bankRowSchema).min(1).max(1000),
 });
 
-/** PUT /api/bank/transactions/[id] — inbox row actions; `restore` takes an ignored one back. */
+/**
+ * PUT /api/bank/transactions/[id] — inbox row actions; `restore` takes an ignored one back.
+ *
+ * `link` says the movement is a payment the owner had recorded by hand (`receiptId`), so nothing is
+ * allocated. `newPayment` says a confirm or a reassign is a new payment, whatever was recorded.
+ */
 export const bankTransactionActionSchema = z
   .object({
-    action: z.enum(["confirm", "reassign", "ignore", "restore"]),
+    action: z.enum(["confirm", "reassign", "ignore", "restore", "link"]),
     leaseId: z.string().optional(),
+    receiptId: z.string().optional(),
+    newPayment: z.boolean().optional(),
   })
   .refine((body) => body.action !== "reassign" || !!body.leaseId, {
     message: "reassign requires a leaseId",
+  })
+  .refine((body) => body.action !== "link" || !!body.receiptId, {
+    message: "link requires a receiptId",
   });
 
 export type BankTransactionActionInput = z.infer<typeof bankTransactionActionSchema>;

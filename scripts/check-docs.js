@@ -46,6 +46,16 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // J5a: a movement that looks like a payment the owner recorded by hand waits for the owner
+    // instead of auto-allocating, so "above 0.85 it allocates" is no longer the whole rule.
+    pattern:
+      /0\.85 auto-allocates(; anything lower| via a draft `Receipt` \(`source: "automation"`\); anything lower)|above 0\.85, creates a draft receipt; below that a human decides/,
+    retired: "2026-10-02 (recorded payments)",
+    because:
+      "a movement that looks like a payment the owner recorded by hand waits for the owner " +
+      "(link it or record a new one) even above 0.85, so the threshold alone does not allocate",
+  },
+  {
     // UI-B1: Integrations became two tabs, Bancos and Finanças, and the cards under them lost the
     // titles that repeated the tab. The AT login is found under the Finanças tab.
     pattern: /Integrations › Finanças \(AT\)|Classificador simulado|mock classifier/i,
