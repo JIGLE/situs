@@ -47,8 +47,10 @@ than a reason to treat the app as processing Article 9 data.
 
 **No automated decision-making with legal effect** (Art. 22). Bank matching scores a movement
 against a lease and, above 0.85, creates a draft receipt, unless a payment the owner recorded by
-hand already looks like it; otherwise a human decides. Nothing terminates a tenancy or refuses
-anyone anything.
+hand already looks like it; otherwise a human decides. An account the owner confirmed for a tenant
+reaches 0.85 with the rent alone: the owner's own standing instruction, which they can withdraw from
+the tenant, and which allocates no other amount. Nothing terminates a tenancy or refuses anyone
+anything.
 
 ## 3. Categories of data
 
@@ -103,6 +105,9 @@ Recorded here deliberately rather than left implicit:
 | `BankTransaction`      | `counterpartyName` | The matching engine reads it to score a movement against a lease                                           |
 | `BankTransaction`      | `reference`        | The remittance line. Read for reference-month parsing. **Free text: may contain anything the payer typed** |
 | `BankAccount`          | `ibanLast4`        | Four digits, displayed so a human can tell two accounts apart                                              |
+| `PayerAccount`         | `ibanHash`         | A hash of the IBAN of an account the owner confirmed pays this tenant: all matching reads of it            |
+| `PayerAccount`         | `ibanLast4`        | Four digits, so the owner can tell two remembered accounts apart on the tenant                             |
+| `PayerAccount`         | `holderName`       | The name the bank showed on the movement that was confirmed. Removed with the tenant, or when forgotten    |
 | `BankConnection`       | `label`            | Shown instead of the bank's name. **Free text: may contain anything the owner typed**                      |
 | `UserSettings`         | `residenceCountry` | The owner's country of tax residence, as a two-letter code, shown under their name in the side bar         |
 | `Property`, `Building` | address fields     | Personal data where a tenant lives there; core to the product                                              |
@@ -172,6 +177,8 @@ Three rules that are not simply "delete old things":
   retention of the receipt it evidences.
 - **Consent reaping only touches connections holding no accounts.** Deleting a `BankConnection`
   cascades to `BankAccount` and `BankTransaction`, so the guard is on both status and emptiness.
+- **Remembered payer accounts are not on this schedule.** A `PayerAccount` belongs to a tenant: it
+  goes when the tenant does, or when the owner forgets it on the tenant's Payments tab.
 
 **Nothing runs on a schedule until `CRON_SECRET` is set** and something calls
 `/api/cron/data-retention`; the endpoint returns 503 until then. An instance that has never set

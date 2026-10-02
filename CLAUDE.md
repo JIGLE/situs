@@ -141,7 +141,13 @@ e2e/                    # Playwright E2E tests
   check → reconciliation rules → weighted confidence scoring (`lib/services/matching/engine.ts`,
   pure). ≥0.85 auto-allocates via a draft `Receipt` (`source: "automation"`), unless the lease has a
   payment the owner recorded by hand for the same amount (below); anything lower waits
-  in the Bank Movements inbox (Finance tab) for a human to confirm, reassign or ignore. Money going
+  in the Bank Movements inbox (Finance tab) for a human to confirm, reassign or ignore. **An account
+  the owner confirms is remembered for that tenant** (`PayerAccount`, `lib/services/bank/payer-accounts.ts`):
+  a confirm, an assign or a link stores the IBAN's hash, its last four digits and the payer's name,
+  never the IBAN, and nothing else teaches one (not an auto-match, an ignore, or a test connection).
+  `learned_account` scores 0.65 where a known IBAN scores 0.45, so with `amount_exact` it is 0.85
+  alone and allocates; any other amount scores as a known account does and waits. It is the tenant's,
+  so a renewal inherits it, and the tenant's Payments tab lists it with Forget. Money going
   out waits too, under its own filter, and is never counted as work (`lib/utils/bank-inbox.ts`,
   `GET /api/bank/transactions/summary`). **A payment recorded by hand is never allocated twice**
   (`lib/services/bank/recorded-payments.ts`): a movement whose lease has paid rent of the same amount

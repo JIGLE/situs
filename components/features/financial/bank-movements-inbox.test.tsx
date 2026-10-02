@@ -137,6 +137,23 @@ describe("BankMovementsInbox", () => {
     expect(onChanged).toHaveBeenCalled();
   });
 
+  it("says so when the confirmation taught an account, and what that means from now on", async () => {
+    const user = userEvent.setup();
+    onPut = () => ({
+      body: { data: { status: "matched_confirmed", receiptId: "r1", remembered: true } },
+    });
+    render(<BankMovementsInbox />, { initialLocale: "pt" });
+
+    await user.click((await screen.findAllByRole("button", { name: /Confirmar/ }))[0]);
+
+    await vi.waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith(
+        "Pagamento de Maria Silva confirmado: foi criado um recibo. A partir de agora, um pagamento desta conta com o mesmo valor da renda é conciliado automaticamente.",
+      ),
+    );
+    expect(toast.success).toHaveBeenCalledTimes(1);
+  });
+
   it("says where an ignored movement went, and offers to restore one", async () => {
     const user = userEvent.setup();
     onPut = ({ action }) => ({ body: { data: { status: action, receiptId: null } } });
@@ -220,6 +237,23 @@ describe("a movement that looks like a payment the owner recorded", () => {
     // A link makes no receipt and pays no month, so there is nothing for the app state to reload.
     expect(refreshData).not.toHaveBeenCalled();
     expect(onChanged).toHaveBeenCalled();
+  });
+
+  it("says so when linking it taught the account too", async () => {
+    const user = userEvent.setup();
+    onPut = () => ({
+      body: { data: { status: "matched_confirmed", receiptId: "rcpt-1", remembered: true } },
+    });
+    rows = [withRecorded(RECORDED)];
+    render(<BankMovementsInbox />, { initialLocale: "pt" });
+
+    await user.click((await screen.findAllByRole("button", { name: /Mesmo pagamento/ }))[0]);
+
+    await vi.waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith(
+        "Ligado ao pagamento que registou. Nada foi contado duas vezes. A partir de agora, um pagamento desta conta com o mesmo valor da renda é conciliado automaticamente.",
+      ),
+    );
   });
 
   it("confirms it as a new payment, which does create the receipt", async () => {

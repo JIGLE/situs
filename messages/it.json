@@ -1349,7 +1349,7 @@
         "confirmed": "Pagamento di {tenant} confermato: è stata creata una ricevuta.",
         "confirmedRemembered": "Pagamento di {tenant} confermato: è stata creata una ricevuta. D'ora in poi un pagamento da questo conto con lo stesso importo dell'affitto viene riconciliato da solo.",
         "linked": "Collegato al pagamento che hai registrato. Niente è stato contato due volte.",
-        "linkedRemembered": "Collegato al pagamento che hai registrato. Nulla è stato contato due volte. D'ora in poi un pagamento da questo conto con lo stesso importo dell'affitto viene riconciliato da solo.",
+        "linkedRemembered": "Collegato al pagamento che hai registrato. Niente è stato contato due volte. D'ora in poi un pagamento da questo conto con lo stesso importo dell'affitto viene riconciliato da solo.",
         "heldForRecorded": "{tenant} ha un pagamento di questo importo registrato in quel periodo. Indica se è lo stesso pagamento.",
         "ignored": "Movimento ignorato. Resta in Ignorati.",
         "restored": "Movimento di nuovo in Da rivedere."
@@ -1812,7 +1812,7 @@
       "use5": "Per adempiere agli obblighi di legge portoghesi.",
       "bankTitle": "Accesso al conto bancario",
       "bankBody": "Il collegamento a una banca utilizza l'accesso alle informazioni sui conti previsto dalla PSD2, tramite Enable Banking, prestatore autorizzato di servizi di informazione sui conti. L'accesso è in sola lettura: questa istanza può leggere i dati del conto e i movimenti e non può mai disporre pagamenti. L'autorizzazione viene concessa presso la vostra banca, non qui, e scade — 90 giorni, salvo termine più breve stabilito dalla banca — dopodiché va rinnovata.",
-      "bankStorage": "Gli IBAN sono cifrati a riposo con AES-256-GCM. La riconciliazione e il rilevamento dei duplicati operano su un hash unidirezionale anziché sul valore memorizzato, quindi l'IBAN non deve mai essere decifrato per erogare il servizio. Vengono mostrate solo le ultime quattro cifre.",
+      "bankStorage": "Gli IBAN sono cifrati a riposo con AES-256-GCM. La riconciliazione e il rilevamento dei duplicati operano su un hash unidirezionale anziché sul valore memorizzato, quindi l'IBAN non deve mai essere decifrato per erogare il servizio. Vengono mostrate solo le ultime quattro cifre. Quando confermate un pagamento, il conto da cui proviene viene ricordato per quell'inquilino: lo stesso hash unidirezionale, le ultime quattro cifre e il nome del pagatore come lo ha mostrato la vostra banca, così il pagamento successivo può essere riconciliato. Potete dimenticarlo in qualsiasi momento dal profilo dell'inquilino, e viene eliminato insieme all'inquilino.",
       "bankRetention": "Un movimento non riconciliato con una ricevuta viene eliminato dopo due anni. Un movimento riconciliato è conservato quanto la ricevuta che documenta, poiché ne attesta la provenienza.",
       "retentionTitle": "Per quanto tempo li conserviamo",
       "retentionIntro": "Quanto segue viene eliminato automaticamente. Ciò che non è elencato è conservato finché esiste il vostro account e viene rimosso quando lo eliminate.",

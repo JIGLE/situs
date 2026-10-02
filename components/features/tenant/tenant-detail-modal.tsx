@@ -38,6 +38,7 @@ import { tenantSchema, type TenantFormData } from "@/lib/schemas/tenant.schema";
 import { getActiveLease } from "@/lib/utils/lease-helpers";
 import { useSaveFailureMessage } from "@/lib/utils/api-error";
 import { TenantRelationshipMap } from "@/components/features/tenant/tenant-relationship-map";
+import { PayerAccountsPanel } from "@/components/features/tenant/payer-accounts-panel";
 
 interface TenantDetailModalProps {
   tenantId: string;
@@ -567,6 +568,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                     ))}
                   </div>
                 )}
+                <PayerAccountsPanel tenantId={tenant.id} tenantName={tenant.name} />
               </TabsContent>
 
               {/* Activity tab — relationship-map strip */}

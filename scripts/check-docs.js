@@ -46,6 +46,14 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // J5c: the last planned step of the bank history shipped, so the row that promised it is gone.
+    pattern: /Each tenant's account is learned from the first payment the owner confirms/,
+    retired: "2026-10-02 (remembered accounts)",
+    because:
+      "an account the owner confirms is already remembered for that tenant, so the bank " +
+      "history is no longer planned",
+  },
+  {
     // J5b: the month sheet names the movement behind each payment, so the planned row that
     // promised it is gone and only the learned accounts remain.
     pattern: /Each paid month shows the movement that paid it/,
