@@ -28,6 +28,14 @@ updates:
       # #387 proposed 13.0.3; it was held back. Lift this once the adapter accepts 13.
       - dependency-name: "better-sqlite3"
         update-types: ["version-update:semver-major"]
+      # TypeScript's own major bumps are held. 7.0 is the native-compiler rewrite, and
+      # @typescript-eslint/eslint-plugin declares `peer typescript@">=4.8.4 <6.1.0"`, so the
+      # group PR fails `npm ci` with ERESOLVE (#384, then #436) and holds back the two plugin
+      # patches that travel in it. 6.x is a migration of its own, so it waits too. Lift this once
+      # the plugin's peer range admits the major you want:
+      # `npm view @typescript-eslint/eslint-plugin peerDependencies.typescript`.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     groups:
       # FIRST on purpose. Dependabot assigns a package to the first group it matches, so this
       # has to precede dev-dependencies or TypeScript minors would land there instead.
