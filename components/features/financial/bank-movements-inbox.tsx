@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, RotateCcw, X } from "lucide-react";
+import { Check, Link2, Plus, RotateCcw, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -57,9 +57,18 @@ interface InboxRow {
   receiptId: string | null;
   bankAccount: { label: string };
   suggestedLease: { tenantName: string; propertyName: string } | null;
+  /** Payments the owner recorded by hand that this movement may be the same money as. */
+  recordedPayments: { id: string; date: string; amount: number }[];
 }
 
-type InboxAction = "confirm" | "reassign" | "ignore" | "restore";
+type InboxAction = "confirm" | "reassign" | "ignore" | "restore" | "link";
+
+/** What `PUT /api/bank/transactions/[id]` answers: `recordedPayments` is set when nothing was allocated. */
+interface ActionResult {
+  status: string;
+  receiptId: string | null;
+  recordedPayments?: InboxRow["recordedPayments"];
+}
 
 const STATUS_STYLES: Record<string, string> = {
   auto_matched: "bg-[var(--semantic-success-soft)] text-[var(--semantic-success-readable)]",
@@ -128,7 +137,11 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
         const data = await apiFetch<InboxRow[]>(
           `/api/bank/transactions${INBOX_FILTER_QUERY[target]}`,
         );
-        setRows(Array.isArray(data) ? data : []);
+        setRows(
+          Array.isArray(data)
+            ? data.map((row) => ({ ...row, recordedPayments: row.recordedPayments ?? [] }))
+            : [],
+        );
       } catch (err) {
         setError(apiError(err));
         if (!quiet) setRows([]);
@@ -143,27 +156,45 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
     void load(filter);
   }, [filter, load]);
 
+  /** The tenant an action is about: the one of the lease the owner picked, else the suggested one. */
+  function tenantOf(row: InboxRow, action: InboxAction, leaseId?: string): string {
+    return action === "reassign"
+      ? (leaseOptions.find((lease) => lease.id === leaseId)?.tenantName ?? "—")
+      : (row.suggestedLease?.tenantName ?? "—");
+  }
+
   /** What to tell the owner once an action has worked. */
   function doneMessage(row: InboxRow, action: InboxAction, leaseId?: string): string {
     if (action === "ignore") return t("toast.ignored");
     if (action === "restore") return t("toast.restored");
-    const tenant =
-      action === "reassign"
-        ? (leaseOptions.find((lease) => lease.id === leaseId)?.tenantName ?? "—")
-        : (row.suggestedLease?.tenantName ?? "—");
-    return t("toast.confirmed", { tenant });
+    if (action === "link") return t("toast.linked");
+    return t("toast.confirmed", { tenant: tenantOf(row, action, leaseId) });
   }
 
-  const act = async (row: InboxRow, action: InboxAction, leaseId?: string) => {
+  const act = async (
+    row: InboxRow,
+    action: InboxAction,
+    leaseId?: string,
+    extra: { receiptId?: string; newPayment?: boolean } = {},
+  ) => {
     setBusyId(row.id);
     setError(null);
     try {
-      await apiFetch(`/api/bank/transactions/${row.id}`, csrfToken, "PUT", { action, leaseId });
+      const result = await apiFetch<ActionResult>(
+        `/api/bank/transactions/${row.id}`,
+        csrfToken,
+        "PUT",
+        { action, leaseId, ...extra },
+      );
       setReassigningId(null);
-      toast.success(doneMessage(row, action, leaseId));
+      // Nothing was allocated: the lease has a payment recorded for this amount around this date, so
+      // the movement waits and the row now asks which payment it is.
+      const held = (result?.recordedPayments?.length ?? 0) > 0;
+      if (held) toast.info(t("toast.heldForRecorded", { tenant: tenantOf(row, action, leaseId) }));
+      else toast.success(doneMessage(row, action, leaseId));
       // A confirmed movement is a new receipt and a paid month: the rest of the app reads those
-      // from app state, which would otherwise show them only after a reload.
-      if (action === "confirm" || action === "reassign") await refreshData();
+      // from app state, which would otherwise show them only after a reload. A link makes none.
+      if ((action === "confirm" || action === "reassign") && !held) await refreshData();
       await load(filter, true);
       onChanged?.();
     } catch (err) {
@@ -224,6 +255,14 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
         {signals ? (
           <span className="block text-xs text-[var(--color-muted-foreground)]">{signals}</span>
         ) : null}
+        {row.recordedPayments.map((payment) => (
+          <span key={payment.id} className="block text-xs text-[var(--semantic-warning-readable)]">
+            {t("recordedPayment", {
+              amount: formatMovementAmount(payment.amount, row.currency),
+              date: formatDate(payment.date, locale),
+            })}
+          </span>
+        ))}
       </>
     );
   };
@@ -301,8 +340,38 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
       );
     }
     return (
-      <div className="flex items-center gap-1">
-        {row.suggestedLeaseId && row.amount > 0 ? (
+      <div className="flex flex-wrap items-center gap-1">
+        {row.recordedPayments.length > 0 && row.amount > 0 ? (
+          <>
+            {/* The lease has a payment recorded for this amount around this date: whether this is
+                that payment is the owner's to say, so Confirm gives way to the two answers. */}
+            {row.recordedPayments.map((payment) => (
+              <Button
+                key={payment.id}
+                variant="ghost"
+                size="sm"
+                className="h-7 rounded-none px-2 text-xs"
+                onClick={() => void act(row, "link", undefined, { receiptId: payment.id })}
+                disabled={busyId === row.id}
+              >
+                <Link2 className="mr-1 h-3 w-3" />
+                {row.recordedPayments.length === 1
+                  ? t("samePayment")
+                  : t("samePaymentOn", { date: formatDate(payment.date, locale) })}
+              </Button>
+            ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 rounded-none px-2 text-xs"
+              onClick={() => void act(row, "confirm", undefined, { newPayment: true })}
+              disabled={busyId === row.id}
+            >
+              <Plus className="mr-1 h-3 w-3" />
+              {t("newPayment")}
+            </Button>
+          </>
+        ) : row.suggestedLeaseId && row.amount > 0 ? (
           <Button
             variant="ghost"
             size="sm"
