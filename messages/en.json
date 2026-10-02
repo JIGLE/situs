@@ -1702,7 +1702,7 @@
     },
     "leaseExpiresInDays": "{days}d left",
     "payerAccounts": {
-      "title": "Accounts payments come from",
+      "title": "Accounts that pay this tenant's rent",
       "description": "You confirmed these. A payment from one of them for the same amount as the rent is matched to {tenant} on its own; any other amount still waits for you.",
       "ending": "Account ending {last4}",
       "account": "Account",

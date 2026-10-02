@@ -102,6 +102,7 @@ export function PayerAccountsPanel({ tenantId, tenantName }: Props) {
               <Button
                 variant="outline"
                 size="sm"
+                className="shrink-0"
                 disabled={forgetting === account.id}
                 aria-label={t("forgetAccount", { account: name })}
                 onClick={() => void forget(account)}
