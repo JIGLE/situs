@@ -139,10 +139,21 @@ export async function getRentMatrix(
   return { year, rows: sorted, totals };
 }
 
+/** The bank movement a payment's receipt is linked to: where the money came from. */
+export interface RentMonthMovement {
+  /** The day the bank booked it, which is the receipt's date unless the owner recorded it first. */
+  bookingDate: string;
+  counterpartyName: string | null;
+  reference: string | null;
+  accountLabel: string;
+}
+
 export interface RentMonthPayment {
   amount: number;
   allocatedAt: string;
   receipt: { id: string; date: string; amount: number; lifecycle: string; source: string } | null;
+  /** Empty for a payment recorded by hand, which no bank movement is linked to. */
+  movements: RentMonthMovement[];
 }
 
 export interface RentMonth {
@@ -234,6 +245,33 @@ export async function getRentMonth(
       })
     : [];
 
+  // The movements behind those receipts, in one query. A receipt is the caller's through the
+  // allocation it came from, and the movement, and the account it names, are scoped to the caller
+  // all the same: nothing here rests on the links between them being consistent.
+  const receiptIds = [...new Set(allocations.flatMap((a) => (a.receipt ? [a.receipt.id] : [])))];
+  const movements = receiptIds.length
+    ? await prisma.bankTransaction.findMany({
+        where: { userId, receiptId: { in: receiptIds }, bankAccount: { userId } },
+        orderBy: [{ bookingDate: "asc" }, { createdAt: "asc" }],
+        select: {
+          receiptId: true,
+          bookingDate: true,
+          counterpartyName: true,
+          reference: true,
+          bankAccount: { select: { label: true } },
+        },
+      })
+    : [];
+  const movementsOf = (receiptId: string): RentMonthMovement[] =>
+    movements
+      .filter((m) => m.receiptId === receiptId)
+      .map((m) => ({
+        bookingDate: m.bookingDate.toISOString().slice(0, 10),
+        counterpartyName: m.counterpartyName,
+        reference: m.reference,
+        accountLabel: m.bankAccount.label,
+      }));
+
   return {
     lease: {
       id: lease.id,
@@ -268,6 +306,7 @@ export async function getRentMonth(
             source: a.receipt.source,
           }
         : null,
+      movements: a.receipt ? movementsOf(a.receipt.id) : [],
     })),
     olderUnpaid: older ? { year: older.year, month: older.month } : null,
   };

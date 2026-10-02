@@ -5,6 +5,7 @@ import { within } from "@testing-library/dom";
 import { renderWithProviders, screen, waitFor } from "@/tests/helpers/render-with-providers";
 import ptMessages from "@/messages/pt.json";
 import { formatEuro } from "@/lib/utils/currency";
+import { formatDate } from "@/lib/utils/format-date";
 import { YearlyRentMatrix } from "./yearly-rent-matrix";
 
 /**
@@ -116,6 +117,12 @@ const MONTH = {
         lifecycle: "emitted",
         source: "manual",
       },
+      movements: [] as {
+        bookingDate: string;
+        counterpartyName: string | null;
+        reference: string | null;
+        accountLabel: string;
+      }[],
     },
   ],
   olderUnpaid: null as { year: number; month: number } | null,
@@ -275,6 +282,93 @@ describe("YearlyRentMatrix", () => {
     const sheet = await screen.findByRole("dialog", { name: /agosto de 2026/ });
     expect(await within(sheet).findByText("Em falta")).toBeInTheDocument();
     expect(within(sheet).queryByRole("button", { name: "Registar pagamento" })).toBeNull();
+  });
+
+  describe("where each payment came from", () => {
+    const withPayment = (payment: Record<string, unknown>) => {
+      monthResponse = {
+        status: 200,
+        body: {
+          data: {
+            ...MONTH,
+            payments: [{ ...MONTH.payments[0], ...payment }],
+          },
+        },
+      };
+      nav.search = "month=lease-1:2026-08";
+    };
+    const receipt = (fields: Record<string, unknown>) => ({
+      ...MONTH.payments[0].receipt,
+      ...fields,
+    });
+    const movement = {
+      bookingDate: "2026-08-04",
+      counterpartyName: "ANA COSTA",
+      reference: "Renda agosto",
+      accountLabel: "Conta ordenado",
+    };
+
+    it("names the bank movement that paid it: who paid, into which account, with what reference", async () => {
+      withPayment({ receipt: receipt({ source: "automation" }), movements: [movement] });
+      render();
+
+      const sheet = await screen.findByRole("dialog", { name: /agosto de 2026/ });
+      expect(
+        await within(sheet).findByText(
+          "Movimento bancário · ANA COSTA · Conta ordenado · Renda agosto",
+        ),
+      ).toBeInTheDocument();
+      expect(within(sheet).queryByText("Registado à mão")).toBeNull();
+    });
+
+    it("says it was recorded by hand when no bank movement is linked to it", async () => {
+      withPayment({});
+      render();
+
+      const sheet = await screen.findByRole("dialog", { name: /agosto de 2026/ });
+      expect(await within(sheet).findByText("Registado à mão")).toBeInTheDocument();
+      expect(within(sheet).queryByText(/Movimento bancário/)).toBeNull();
+    });
+
+    it("gives the day the bank booked a movement that is not the day the payment is dated", async () => {
+      // The owner recorded it on the 2nd and linked the bank's copy, booked on the 4th.
+      withPayment({
+        receipt: receipt({ date: "2026-08-02" }),
+        movements: [{ ...movement, reference: null }],
+      });
+      render();
+
+      const sheet = await screen.findByRole("dialog", { name: /agosto de 2026/ });
+      expect(
+        await within(sheet).findByText(
+          `Movimento bancário de ${formatDate("2026-08-04", "pt")} · ANA COSTA · Conta ordenado`,
+        ),
+      ).toBeInTheDocument();
+      expect(within(sheet).queryByText("Registado à mão")).toBeNull();
+    });
+
+    it("leaves the line out for a movement without a payer or a reference", async () => {
+      withPayment({
+        receipt: receipt({ source: "automation" }),
+        movements: [{ ...movement, counterpartyName: null, reference: null }],
+      });
+      render();
+
+      const sheet = await screen.findByRole("dialog", { name: /agosto de 2026/ });
+      expect(
+        await within(sheet).findByText("Movimento bancário · Conta ordenado"),
+      ).toBeInTheDocument();
+    });
+
+    it("claims nothing about a bank payment whose movement is gone", async () => {
+      withPayment({ receipt: receipt({ source: "automation" }), movements: [] });
+      render();
+
+      const sheet = await screen.findByRole("dialog", { name: /agosto de 2026/ });
+      expect(await within(sheet).findByText(/Emitido/)).toBeInTheDocument();
+      expect(within(sheet).queryByText("Registado à mão")).toBeNull();
+      expect(within(sheet).queryByText(/Movimento bancário/)).toBeNull();
+    });
   });
 
   it("says in Portuguese when the month cannot be read", async () => {

@@ -1394,6 +1394,9 @@
       "owed": "Owed",
       "payments": "Payments",
       "noPayments": "Nothing paid towards this month yet.",
+      "viaBank": "Bank movement",
+      "viaBankOn": "Bank movement of {date}",
+      "recordedByHand": "Recorded by hand",
       "coversOlderFirst": "A payment recorded now settles {month} first: the oldest month still owed.",
       "recordPayment": "Record payment"
     },

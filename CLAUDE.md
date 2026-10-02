@@ -120,7 +120,9 @@ e2e/                    # Playwright E2E tests
   `status` is recomputed in the same transaction as every allocation write and never hand-set.
   Waterfall invariant: fill the oldest not-fully-allocated period first
   (`lib/services/allocation/engine.ts`, pure). `Tenant.paymentStatus` is derived from the ledger —
-  never write it from an API route.
+  never write it from an API route. The month sheet (`getRentMonth`) says where each payment came
+  from by reading the movement linked to its receipt (`BankTransaction.receiptId`), or "recorded by
+  hand" for a manual receipt with none; nothing about the origin is stored on the ledger.
 - **Deletes keep money history**: a tenant, property or lease with leases, receipts, rent months,
   live allocations, expenses or AT filings recorded against it is refused, since every one of those
   cascades from it in the schema (`lib/services/database/history.ts`). The refusal is a

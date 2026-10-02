@@ -150,21 +150,46 @@ export function RentMonthSheet({ monthRef, open, onClose, onChanged }: Props) {
                     <ul className="divide-y divide-[var(--color-border)] text-sm">
                       {data.payments.map((payment, index) => {
                         const stage = receiptLifecycleKey(payment.receipt?.lifecycle);
+                        const paidOn = payment.receipt?.date ?? payment.allocatedAt;
+                        // Where the money came from: the bank movement it is linked to, or nothing
+                        // but the owner's word when it was recorded by hand.
+                        const origins = payment.movements.map((movement) =>
+                          [
+                            movement.bookingDate === paidOn
+                              ? t("viaBank")
+                              : t("viaBankOn", { date: formatDate(movement.bookingDate, locale) }),
+                            movement.counterpartyName,
+                            movement.accountLabel,
+                            movement.reference,
+                          ]
+                            .filter(Boolean)
+                            .join(" · "),
+                        );
+                        if (origins.length === 0 && payment.receipt?.source === "manual") {
+                          origins.push(t("recordedByHand"));
+                        }
                         return (
-                          <li
-                            key={payment.receipt?.id ?? index}
-                            className="flex items-center justify-between gap-3 py-2"
-                          >
-                            <span>
-                              {formatDate(payment.receipt?.date ?? payment.allocatedAt, locale)}
-                              {stage ? (
-                                <span className="text-[var(--color-muted-foreground)]">
-                                  {" "}
-                                  · {tReceipts(stage)}
-                                </span>
-                              ) : null}
-                            </span>
-                            <span className="tabular-nums">{formatEuro(payment.amount)}</span>
+                          <li key={payment.receipt?.id ?? index} className="py-2">
+                            <div className="flex items-center justify-between gap-3">
+                              <span>
+                                {formatDate(paidOn, locale)}
+                                {stage ? (
+                                  <span className="text-[var(--color-muted-foreground)]">
+                                    {" "}
+                                    · {tReceipts(stage)}
+                                  </span>
+                                ) : null}
+                              </span>
+                              <span className="tabular-nums">{formatEuro(payment.amount)}</span>
+                            </div>
+                            {origins.map((origin, line) => (
+                              <p
+                                key={line}
+                                className="mt-0.5 break-words text-xs text-[var(--color-muted-foreground)]"
+                              >
+                                {origin}
+                              </p>
+                            ))}
                           </li>
                         );
                       })}
