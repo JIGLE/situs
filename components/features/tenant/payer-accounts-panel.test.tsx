@@ -38,9 +38,12 @@ interface Reply {
 
 let accounts: unknown[];
 let onDelete: () => Reply;
+/** While set, a DELETE does not answer until it is released. */
+let gate: Promise<void> | null;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  gate = null;
   accounts = [ANA];
   onDelete = () => {
     accounts = [];
@@ -49,6 +52,7 @@ beforeEach(() => {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (_url: string, init?: RequestInit) => {
+      if (init?.method === "DELETE" && gate) await gate;
       const reply: Reply = init?.method === "DELETE" ? onDelete() : { body: { data: accounts } };
       const status = reply.status ?? 200;
       return { ok: status < 400, status, statusText: "", json: async () => reply.body } as Response;
@@ -108,6 +112,22 @@ describe("PayerAccountsPanel", () => {
     await vi.waitFor(() =>
       expect(screen.queryByText("Contas de onde vêm os pagamentos")).not.toBeInTheDocument(),
     );
+  });
+
+  it("does not send the same forgetting twice while one is on its way", async () => {
+    const user = userEvent.setup();
+    let release!: () => void;
+    gate = new Promise<void>((resolve) => (release = resolve));
+    render(<PayerAccountsPanel tenantId="t1" tenantName="Maria Silva" />, { initialLocale: "pt" });
+    const forget = await screen.findByRole("button", { name: /^Esquecer ANA COSTA/ });
+
+    await user.click(forget);
+    await vi.waitFor(() => expect(forget).toBeDisabled());
+    await user.click(forget);
+    release();
+
+    await vi.waitFor(() => expect(toast.success).toHaveBeenCalledTimes(1));
+    expect(calls().filter(([, method]) => method === "DELETE")).toHaveLength(1);
   });
 
   it("says in words why forgetting was refused, and keeps the account listed", async () => {

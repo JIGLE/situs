@@ -511,6 +511,11 @@ describe("the account a confirmation came from", () => {
       remembered: true,
     });
     expect(rememberMock).toHaveBeenCalledWith(USER, "tenant-1", taught);
+    // The tenant is read off the caller's own lease, whatever lease the movement named.
+    expect(prismaMock.lease.findFirst).toHaveBeenCalledWith({
+      where: { id: "lease-1", userId: USER },
+      select: { tenantId: true },
+    });
   });
 
   it("waits while the confirmation waits for the owner to say whether it is new", async () => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { execSync } from "node:child_process";
 import { mkdtempSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -529,6 +529,47 @@ describe("remembered payer accounts — real Prisma client + real SQLite file", 
 
     expect(await accounts.rememberPayerAccount(w.user.id, w.tenant.id, stored)).toBe(false);
     expect(await prisma.payerAccount.count({ where: { tenantId: w.tenant.id } })).toBe(0);
+  });
+
+  it("keeps what is remembered for one tenant apart from another tenant of the same owner", async () => {
+    const w = await world("two-tenants");
+    await teach(w);
+    const [account] = await accounts.payerAccountsFor(w.user.id, w.tenant.id);
+    const other = await prisma.tenant.create({
+      data: {
+        userId: w.user.id,
+        name: `Other ${w.user.id}`,
+        rent: RENT,
+        leaseStart: new Date("2026-01-01"),
+        leaseEnd: new Date("2026-12-31"),
+      },
+    });
+
+    expect(await accounts.payerAccountsFor(w.user.id, other.id)).toEqual([]);
+    expect((await accounts.learnedHashesByTenant(w.user.id)).get(other.id)).toBeUndefined();
+    await expect(
+      accounts.forgetPayerAccount(w.user.id, other.id, account.id),
+    ).rejects.toMatchObject({ name: "ResourceNotFoundError" });
+    expect(await accounts.payerAccountsFor(w.user.id, w.tenant.id)).toHaveLength(1);
+  });
+
+  it("keeps no digits for an IBAN it cannot read, not the placeholder's", async () => {
+    const w = await world("unreadable");
+    const { movement } = await pay(w, "2026-06-10", RENT);
+    const stored = await prisma.bankTransaction.findUniqueOrThrow({ where: { id: movement.id } });
+
+    // In the encrypted form but damaged, as after a key rotation: it reads as the placeholder.
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const taught = await accounts.rememberPayerAccount(w.user.id, w.tenant.id, {
+      ...stored,
+      counterpartyIban: "enc:damaged",
+    });
+    warn.mockRestore();
+
+    expect(taught).toBe(true);
+    expect(await accounts.payerAccountsFor(w.user.id, w.tenant.id)).toEqual([
+      expect.objectContaining({ ibanLast4: null, holderName: PAYER }),
+    ]);
   });
 
   it("never writes for a tenant that is not the caller's", async () => {
