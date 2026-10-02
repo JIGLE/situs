@@ -383,9 +383,56 @@ describe("getRentMonth", () => {
 
       expect(prismaMock.bankTransaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { userId: "user-1", receiptId: { in: ["receipt-1"] } },
+          where: {
+            userId: "user-1",
+            receiptId: { in: ["receipt-1"] },
+            bankAccount: { userId: "user-1" },
+          },
         }),
       );
+    });
+
+    it("asks the database for the five fields the sheet shows and nothing else", async () => {
+      prismaMock.paymentAllocation.findMany.mockResolvedValue([allocation("receipt-1")]);
+
+      await getRentMonth("user-1", "lease-ze", 2026, 8, NOW);
+
+      expect(prismaMock.bankTransaction.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          select: {
+            receiptId: true,
+            bookingDate: true,
+            counterpartyName: true,
+            reference: true,
+            bankAccount: { select: { label: true } },
+          },
+        }),
+      );
+    });
+
+    it("sends on only the four fields the sheet shows, whatever else the row carries", async () => {
+      prismaMock.paymentAllocation.findMany.mockResolvedValue([allocation("receipt-1")]);
+      prismaMock.bankTransaction.findMany.mockResolvedValue([
+        movement("receipt-1", {
+          counterpartyIban: "PT50000201231234567890154",
+          counterpartyIbanHash: "hash-of-the-payers-iban",
+          rawData: '{"original":"row"}',
+          matchReasons: '{"reasons":["iban_match"]}',
+          amount: 400,
+          id: "txn-1",
+        }),
+      ]);
+
+      const result = await getRentMonth("user-1", "lease-ze", 2026, 8, NOW);
+
+      const [sent] = result?.payments[0].movements ?? [];
+      expect(Object.keys(sent).sort()).toEqual([
+        "accountLabel",
+        "bookingDate",
+        "counterpartyName",
+        "reference",
+      ]);
+      expect(JSON.stringify(result)).not.toMatch(/PT50|hash-of-the|original|iban_match|txn-1/);
     });
 
     it("reads every payment's movements in one query, and gives each payment its own", async () => {
@@ -403,7 +450,11 @@ describe("getRentMonth", () => {
       expect(prismaMock.bankTransaction.findMany).toHaveBeenCalledTimes(1);
       expect(prismaMock.bankTransaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { userId: "user-1", receiptId: { in: ["receipt-1", "receipt-2"] } },
+          where: {
+            userId: "user-1",
+            receiptId: { in: ["receipt-1", "receipt-2"] },
+            bankAccount: { userId: "user-1" },
+          },
         }),
       );
       expect(result?.payments.map((p) => p.movements.map((m) => m.counterpartyName))).toEqual([

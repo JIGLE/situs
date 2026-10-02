@@ -246,11 +246,12 @@ export async function getRentMonth(
     : [];
 
   // The movements behind those receipts, in one query. A receipt is the caller's through the
-  // allocation it came from, and the movement is scoped to the caller all the same.
+  // allocation it came from, and the movement, and the account it names, are scoped to the caller
+  // all the same: nothing here rests on the links between them being consistent.
   const receiptIds = [...new Set(allocations.flatMap((a) => (a.receipt ? [a.receipt.id] : [])))];
   const movements = receiptIds.length
     ? await prisma.bankTransaction.findMany({
-        where: { userId, receiptId: { in: receiptIds } },
+        where: { userId, receiptId: { in: receiptIds }, bankAccount: { userId } },
         orderBy: [{ bookingDate: "asc" }, { createdAt: "asc" }],
         select: {
           receiptId: true,
