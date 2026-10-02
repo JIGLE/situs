@@ -107,7 +107,7 @@ field at a time. Each row is one PR; the Decisions Log entries of 30 September s
 | 3     | Welcome and setup   | The first sign-in leads through the welcome, the bank, Finanças and the import            |
 | 4     | Guided completion   | The fields still missing, one at a time, those that block a receipt first; one list for   |
 |       |                     | everything else that needs the owner                                                      |
-| 5     | Bank history        | Each paid month shows the movement that paid it, and each tenant's account is learned     |
+| 5     | Bank history        | Each tenant's account is learned from the first payment the owner confirms                |
 | 6     | Going live at AT    | Receipts issued through AT's webservice for real, with AT's number and PDF, once the      |
 |       |                     | owner's test run passes                                                                   |
 | Later | The rest            | Admin with tabs, sign-up toggles, users and roles; the account menu; phone forms;         |

@@ -46,6 +46,15 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // J5b: the month sheet names the movement behind each payment, so the planned row that
+    // promised it is gone and only the learned accounts remain.
+    pattern: /Each paid month shows the movement that paid it/,
+    retired: "2026-10-02 (month sheet)",
+    because:
+      "the month sheet already names the bank movement behind each payment, or says it was " +
+      "recorded by hand, so it is no longer planned",
+  },
+  {
     // J5a: a movement that looks like a payment the owner recorded by hand waits for the owner
     // instead of auto-allocating, so "above 0.85 it allocates" is no longer the whole rule.
     pattern:
