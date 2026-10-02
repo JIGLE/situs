@@ -1331,6 +1331,7 @@
       },
       "signals": {
         "ibanMatch": "IBAN conhecido",
+        "learnedAccount": "Conta que confirmou",
         "nameMatch": "Nome coincide",
         "amountExact": "Igual à renda",
         "amountMultiple": "Várias rendas",
@@ -1346,7 +1347,9 @@
       },
       "toast": {
         "confirmed": "Pagamento de {tenant} confirmado: foi criado um recibo.",
+        "confirmedRemembered": "Pagamento de {tenant} confirmado: foi criado um recibo. A partir de agora, um pagamento desta conta com o mesmo valor da renda é conciliado automaticamente.",
         "linked": "Ligado ao pagamento que registou. Nada foi contado duas vezes.",
+        "linkedRemembered": "Associado ao pagamento que registou. Nada foi contado duas vezes. A partir de agora, um pagamento desta conta com o mesmo valor da renda é conciliado automaticamente.",
         "heldForRecorded": "{tenant} tem um pagamento deste valor registado por volta desta data. Diga se é o mesmo pagamento.",
         "ignored": "Movimento ignorado. Fica em Ignorados.",
         "restored": "Movimento de volta a A rever."
@@ -1697,7 +1700,17 @@
       "receipts": "Recibos",
       "taxLog": "Registo fiscal"
     },
-    "leaseExpiresInDays": "faltam {days}d"
+    "leaseExpiresInDays": "faltam {days}d",
+    "payerAccounts": {
+      "title": "Contas de onde vêm os pagamentos",
+      "description": "Foram confirmadas por si. Um pagamento de uma destas contas com o mesmo valor da renda é conciliado com {tenant} automaticamente; qualquer outro valor continua a aguardar a sua decisão.",
+      "ending": "Conta terminada em {last4}",
+      "account": "Conta",
+      "since": "Memorizada em {date}",
+      "forget": "Esquecer",
+      "forgetAccount": "Esquecer {account}",
+      "forgotten": "Conta esquecida. Os pagamentos desta conta voltam a aguardar a sua decisão."
+    }
   },
   "pwa": {
     "install": "Instalar o Situs",
@@ -1918,6 +1931,8 @@
     "ignoreTransaction": "Movimento ignorado",
     "restoreTransaction": "Movimento reposto para revisão",
     "linkPayment": "Movimento ligado a um pagamento registado",
+    "rememberPayerAccount": "Conta do pagador memorizada",
+    "forgetPayerAccount": "Conta do pagador esquecida",
     "applyReconciliationRule": "Regra de conciliação aplicada",
     "bankConnectionCreated": "Banco ligado",
     "bankConnectionDeleted": "Ligação bancária de teste eliminada",

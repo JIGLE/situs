@@ -1331,6 +1331,7 @@
       },
       "signals": {
         "ibanMatch": "IBAN conocido",
+        "learnedAccount": "Cuenta que confirmaste",
         "nameMatch": "El nombre coincide",
         "amountExact": "Igual a la renta",
         "amountMultiple": "Varias rentas",
@@ -1346,7 +1347,9 @@
       },
       "toast": {
         "confirmed": "Pago de {tenant} confirmado: se ha creado un recibo.",
+        "confirmedRemembered": "Pago de {tenant} confirmado: se ha creado un recibo. Desde ahora, un pago de esta cuenta por el mismo importe que el alquiler se concilia solo.",
         "linked": "Vinculado al pago que registraste. No se ha contado nada dos veces.",
+        "linkedRemembered": "Vinculado al pago que registraste. No se contó dos veces. Desde ahora, un pago de esta cuenta por el mismo importe que el alquiler se concilia solo.",
         "heldForRecorded": "{tenant} tiene un pago de ese importe registrado por esas fechas. Indica si es el mismo pago.",
         "ignored": "Movimiento ignorado. Queda en Ignorados.",
         "restored": "Movimiento de nuevo en Por revisar."
@@ -1697,7 +1700,17 @@
       "receipts": "Recibos",
       "taxLog": "Registro fiscal"
     },
-    "leaseExpiresInDays": "faltan {days}d"
+    "leaseExpiresInDays": "faltan {days}d",
+    "payerAccounts": {
+      "title": "Cuentas desde las que se paga",
+      "description": "Las confirmaste tú. Un pago de una de ellas por el mismo importe que el alquiler se concilia con {tenant} solo; cualquier otro importe sigue esperando tu decisión.",
+      "ending": "Cuenta terminada en {last4}",
+      "account": "Cuenta",
+      "since": "Memorizada el {date}",
+      "forget": "Olvidar",
+      "forgetAccount": "Olvidar {account}",
+      "forgotten": "Cuenta olvidada. Sus pagos vuelven a esperar tu decisión."
+    }
   },
   "pwa": {
     "install": "Instalar Situs",
@@ -1918,6 +1931,8 @@
     "ignoreTransaction": "Movimiento ignorado",
     "restoreTransaction": "Movimiento devuelto a revisión",
     "linkPayment": "Movimiento vinculado a un pago registrado",
+    "rememberPayerAccount": "Cuenta del pagador memorizada",
+    "forgetPayerAccount": "Cuenta del pagador olvidada",
     "applyReconciliationRule": "Regla de conciliación aplicada",
     "bankConnectionCreated": "Banco conectado",
     "bankConnectionDeleted": "Conexión bancaria de prueba eliminada",

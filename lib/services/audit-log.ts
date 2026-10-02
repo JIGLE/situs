@@ -64,6 +64,10 @@ export type AuditAction =
   | "RESTORE_TRANSACTION"
   // A movement that is a payment the owner had recorded by hand: linked, nothing allocated.
   | "LINK_PAYMENT"
+  // An account the owner confirmed pays a tenant's rent: remembered after a confirmation, and
+  // forgotten when the owner says so.
+  | "REMEMBER_PAYER_ACCOUNT"
+  | "FORGET_PAYER_ACCOUNT"
   | "APPLY_RECONCILIATION_RULE"
   // Live bank connection (PSD2 account information)
   | "BANK_CONNECTION_CREATED"

@@ -30,6 +30,7 @@ export function bankStatusKey(status: string): BankStatusKey | null {
 /** The matching engine's reasons (`MatchReason`), then the warnings the import adds. */
 const SIGNAL_KEY = {
   iban_match: "signals.ibanMatch",
+  learned_account: "signals.learnedAccount",
   name_match: "signals.nameMatch",
   amount_exact: "signals.amountExact",
   amount_multiple: "signals.amountMultiple",

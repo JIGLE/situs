@@ -1331,6 +1331,7 @@
       },
       "signals": {
         "ibanMatch": "IBAN noto",
+        "learnedAccount": "Conto che hai confermato",
         "nameMatch": "Il nome corrisponde",
         "amountExact": "Uguale al canone",
         "amountMultiple": "Più canoni",
@@ -1346,7 +1347,9 @@
       },
       "toast": {
         "confirmed": "Pagamento di {tenant} confermato: è stata creata una ricevuta.",
+        "confirmedRemembered": "Pagamento di {tenant} confermato: è stata creata una ricevuta. D'ora in poi un pagamento da questo conto con lo stesso importo dell'affitto viene riconciliato da solo.",
         "linked": "Collegato al pagamento che hai registrato. Niente è stato contato due volte.",
+        "linkedRemembered": "Collegato al pagamento che hai registrato. Nulla è stato contato due volte. D'ora in poi un pagamento da questo conto con lo stesso importo dell'affitto viene riconciliato da solo.",
         "heldForRecorded": "{tenant} ha un pagamento di questo importo registrato in quel periodo. Indica se è lo stesso pagamento.",
         "ignored": "Movimento ignorato. Resta in Ignorati.",
         "restored": "Movimento di nuovo in Da rivedere."
@@ -1697,7 +1700,17 @@
       "receipts": "Ricevute",
       "taxLog": "Registro fiscale"
     },
-    "leaseExpiresInDays": "{days}g rimasti"
+    "leaseExpiresInDays": "{days}g rimasti",
+    "payerAccounts": {
+      "title": "Conti da cui arrivano i pagamenti",
+      "description": "Li hai confermati tu. Un pagamento da uno di questi conti con lo stesso importo dell'affitto viene riconciliato con {tenant} da solo; qualsiasi altro importo resta in attesa di te.",
+      "ending": "Conto che termina con {last4}",
+      "account": "Conto",
+      "since": "Memorizzato il {date}",
+      "forget": "Dimentica",
+      "forgetAccount": "Dimentica {account}",
+      "forgotten": "Conto dimenticato. I suoi pagamenti tornano ad attendere la tua decisione."
+    }
   },
   "pwa": {
     "install": "Installa Situs",
@@ -1918,6 +1931,8 @@
     "ignoreTransaction": "Movimento ignorato",
     "restoreTransaction": "Movimento riportato in revisione",
     "linkPayment": "Movimento collegato a un pagamento registrato",
+    "rememberPayerAccount": "Conto del pagatore memorizzato",
+    "forgetPayerAccount": "Conto del pagatore dimenticato",
     "applyReconciliationRule": "Regola di riconciliazione applicata",
     "bankConnectionCreated": "Banca collegata",
     "bankConnectionDeleted": "Collegamento bancario di prova eliminato",

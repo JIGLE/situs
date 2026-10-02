@@ -19,9 +19,20 @@ const { prismaMock, logAuditMock, allocateReceiptMock } = vi.hoisted(() => ({
   allocateReceiptMock: vi.fn(),
 }));
 
+const { rememberMock, learnedMock, loggerMock } = vi.hoisted(() => ({
+  rememberMock: vi.fn(),
+  learnedMock: vi.fn(),
+  loggerMock: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() },
+}));
+
 vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prismaMock }));
 vi.mock("@/lib/services/audit-log", () => ({ logAudit: logAuditMock }));
 vi.mock("@/lib/services/allocation/service", () => ({ allocateReceipt: allocateReceiptMock }));
+vi.mock("@/lib/services/bank/payer-accounts", () => ({
+  rememberPayerAccount: rememberMock,
+  learnedHashesByTenant: learnedMock,
+}));
+vi.mock("@/lib/utils/logger", () => ({ logger: loggerMock }));
 
 import { applyTransactionAction } from "./import";
 
@@ -53,6 +64,7 @@ beforeEach(() => {
   prismaMock.bankAccount.findFirst.mockResolvedValue({ connection: { metadata: null } });
   prismaMock.lease.findFirst.mockResolvedValue({ id: "lease-1" });
   prismaMock.receipt.findMany.mockResolvedValue([]);
+  rememberMock.mockResolvedValue(false);
   prismaMock.$transaction.mockImplementation(async (work: (tx: typeof prismaMock) => unknown) =>
     work(prismaMock),
   );
@@ -426,6 +438,137 @@ describe("link", () => {
 
     await expect(link()).rejects.toEqual(notFound);
     expect(prismaMock.bankTransaction.updateMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("the account a confirmation came from", () => {
+  const ana = () =>
+    movement({
+      counterpartyIban: "enc:PT50000201231234567890154",
+      counterpartyIbanHash: "hash-ana",
+    });
+  const taught = expect.objectContaining({
+    id: "txn-1",
+    counterpartyName: "Maria Silva",
+    counterpartyIbanHash: "hash-ana",
+  });
+  const recorded = {
+    id: "rcpt-recorded",
+    leaseId: "lease-1",
+    amount: 850,
+    date: new Date("2026-08-30T00:00:00.000Z"),
+  };
+
+  beforeEach(() => {
+    prismaMock.bankTransaction.findFirst.mockResolvedValue(ana());
+    prismaMock.lease.findFirst.mockResolvedValue({ id: "lease-1", tenantId: "tenant-1" });
+    prismaMock.lease.findUniqueOrThrow.mockResolvedValue({
+      tenantId: "tenant-1",
+      propertyId: "p1",
+    });
+    prismaMock.receipt.create.mockResolvedValue({ id: "rcpt-new" });
+    rememberMock.mockResolvedValue(true);
+  });
+
+  it("is remembered for the tenant of the lease the owner confirmed, and the answer says so", async () => {
+    const result = await applyTransactionAction(USER, "txn-1", "confirm");
+
+    expect(result).toEqual({
+      status: "matched_confirmed",
+      receiptId: "rcpt-new",
+      remembered: true,
+    });
+    expect(rememberMock).toHaveBeenCalledWith(USER, "tenant-1", taught);
+  });
+
+  it("is remembered for the tenant of the lease the owner assigned it to, not the one suggested", async () => {
+    prismaMock.lease.findFirst.mockResolvedValue({ id: "lease-2", tenantId: "tenant-2" });
+
+    await applyTransactionAction(USER, "txn-1", "reassign", "lease-2");
+
+    expect(rememberMock).toHaveBeenCalledWith(USER, "tenant-2", taught);
+  });
+
+  it("says nothing of it when the tenant already had that account", async () => {
+    rememberMock.mockResolvedValue(false);
+
+    const result = await applyTransactionAction(USER, "txn-1", "confirm");
+
+    expect(result).toEqual({ status: "matched_confirmed", receiptId: "rcpt-new" });
+    expect(rememberMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("is remembered when the owner links the movement to the payment they recorded", async () => {
+    prismaMock.receipt.findMany.mockResolvedValue([recorded]);
+
+    const result = await applyTransactionAction(USER, "txn-1", "link", undefined, {
+      receiptId: "rcpt-recorded",
+    });
+
+    expect(result).toEqual({
+      status: "matched_confirmed",
+      receiptId: "rcpt-recorded",
+      remembered: true,
+    });
+    expect(rememberMock).toHaveBeenCalledWith(USER, "tenant-1", taught);
+  });
+
+  it("waits while the confirmation waits for the owner to say whether it is new", async () => {
+    prismaMock.receipt.findMany.mockResolvedValue([recorded]);
+
+    const held = await applyTransactionAction(USER, "txn-1", "confirm");
+    expect(held.status).toBe("needs_review");
+    expect(rememberMock).not.toHaveBeenCalled();
+
+    const added = await applyTransactionAction(USER, "txn-1", "confirm", undefined, {
+      newPayment: true,
+    });
+    expect(added.remembered).toBe(true);
+    expect(rememberMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("is not remembered from a movement with no account to remember", async () => {
+    prismaMock.bankTransaction.findFirst.mockResolvedValue(movement());
+
+    await applyTransactionAction(USER, "txn-1", "confirm");
+
+    expect(rememberMock).not.toHaveBeenCalled();
+  });
+
+  it("is never remembered from sandbox money", async () => {
+    prismaMock.bankAccount.findFirst.mockResolvedValue({
+      connection: { metadata: JSON.stringify({ isTest: true }) },
+    });
+
+    const result = await applyTransactionAction(USER, "txn-1", "confirm");
+
+    expect(result).toEqual({ status: "matched_confirmed", receiptId: "rcpt-new" });
+    expect(rememberMock).not.toHaveBeenCalled();
+  });
+
+  it("is not remembered again from a movement that was confirmed already", async () => {
+    prismaMock.bankTransaction.findFirst.mockResolvedValue({
+      ...ana(),
+      status: "matched_confirmed",
+      receiptId: "rcpt-old",
+    });
+
+    await applyTransactionAction(USER, "txn-1", "confirm");
+
+    expect(rememberMock).not.toHaveBeenCalled();
+  });
+
+  it("never undoes a confirmation when the account cannot be remembered", async () => {
+    rememberMock.mockRejectedValue(new Error("database is locked"));
+
+    const result = await applyTransactionAction(USER, "txn-1", "confirm");
+
+    expect(result).toEqual({ status: "matched_confirmed", receiptId: "rcpt-new" });
+    expect(allocateReceiptMock).toHaveBeenCalledWith("rcpt-new");
+    expect(loggerMock.warn).toHaveBeenCalledWith(
+      "A confirmed movement's account could not be remembered",
+      { transactionId: "txn-1", error: "database is locked" },
+    );
   });
 });
 

@@ -1331,6 +1331,7 @@
       },
       "signals": {
         "ibanMatch": "Known IBAN",
+        "learnedAccount": "Account you confirmed",
         "nameMatch": "Name matches",
         "amountExact": "Same as the rent",
         "amountMultiple": "Several months' rent",
@@ -1346,7 +1347,9 @@
       },
       "toast": {
         "confirmed": "{tenant}'s payment confirmed: a receipt was created.",
+        "confirmedRemembered": "{tenant}'s payment confirmed: a receipt was created. From now on, a payment from this account for the same amount as the rent is matched on its own.",
         "linked": "Linked to the payment you recorded. Nothing was counted twice.",
+        "linkedRemembered": "Linked to the payment you recorded. Nothing was counted twice. From now on, a payment from this account for the same amount as the rent is matched on its own.",
         "heldForRecorded": "{tenant} has a payment of that amount recorded around then. Say whether this is the same payment.",
         "ignored": "Movement ignored. It stays under Ignored.",
         "restored": "Movement back under Needs review."
@@ -1697,7 +1700,17 @@
       "receipts": "Receipts",
       "taxLog": "Tax log"
     },
-    "leaseExpiresInDays": "{days}d left"
+    "leaseExpiresInDays": "{days}d left",
+    "payerAccounts": {
+      "title": "Accounts payments come from",
+      "description": "You confirmed these. A payment from one of them for the same amount as the rent is matched to {tenant} on its own; any other amount still waits for you.",
+      "ending": "Account ending {last4}",
+      "account": "Account",
+      "since": "Remembered {date}",
+      "forget": "Forget",
+      "forgetAccount": "Forget {account}",
+      "forgotten": "Account forgotten. Its payments wait for you again."
+    }
   },
   "pwa": {
     "install": "Install Situs",
@@ -1918,6 +1931,8 @@
     "ignoreTransaction": "Movement ignored",
     "restoreTransaction": "Movement back to review",
     "linkPayment": "Movement linked to a recorded payment",
+    "rememberPayerAccount": "Payer account remembered",
+    "forgetPayerAccount": "Payer account forgotten",
     "applyReconciliationRule": "Reconciliation rule applied",
     "bankConnectionCreated": "Bank connected",
     "bankConnectionDeleted": "Test bank connection deleted",

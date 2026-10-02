@@ -18,9 +18,15 @@ import crypto from "crypto";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { logAudit } from "@/lib/services/audit-log";
 import { ConflictError, ResourceNotFoundError } from "@/lib/utils/error-handling";
+import { logger } from "@/lib/utils/logger";
 import { encryptPII } from "@/lib/utils/pii-encryption";
 import { allocateReceipt } from "@/lib/services/allocation/service";
 import { isTestConnection } from "@/lib/services/bank/metadata";
+import {
+  learnedHashesByTenant,
+  rememberPayerAccount,
+  type ConfirmedMovement,
+} from "@/lib/services/bank/payer-accounts";
 import {
   recordedPaymentsFor,
   summarizeRecordedPayment,
@@ -125,12 +131,16 @@ export async function buildLeaseCandidates(userId: string): Promise<LeaseCandida
     where: { userId, status: "active" },
     select: {
       id: true,
+      tenantId: true,
       monthlyRent: true,
       tenant: { select: { name: true } },
       property: { select: { name: true, address: true } },
     },
   });
   if (leases.length === 0) return [];
+
+  // The accounts the owner confirmed, by tenant: a tenant's new lease inherits them.
+  const learnedByTenant = await learnedHashesByTenant(userId);
 
   const knownTxns = await prisma.bankTransaction.findMany({
     where: {
@@ -169,6 +179,7 @@ export async function buildLeaseCandidates(userId: string): Promise<LeaseCandida
     tenantName: lease.tenant.name,
     monthlyRent: lease.monthlyRent,
     knownIbanHashes: [...(ibansByLease.get(lease.id) ?? [])],
+    learnedIbanHashes: learnedByTenant.get(lease.tenantId) ?? [],
     knownRemainder: remainderByLease.get(lease.id),
     propertyTokens: [lease.property.name, lease.property.address]
       .filter(Boolean)
@@ -603,6 +614,11 @@ export interface TransactionActionResult {
    * on that lease that this movement may be. Nothing was allocated.
    */
   recordedPayments?: RecordedPaymentSummary[];
+  /**
+   * True when this confirmation taught an account the owner had not confirmed for that tenant before:
+   * from now on a payment from it for exactly the rent is matched on its own.
+   */
+  remembered?: boolean;
 }
 
 /**
@@ -616,6 +632,30 @@ async function isTestMovement(userId: string, bankAccountId: string): Promise<bo
   });
   if (!account) throw new ResourceNotFoundError("Bank account");
   return isTestConnection(account.connection.metadata);
+}
+
+/**
+ * The owner has said which tenant this movement's payer is, so the account it came from is remembered
+ * for that tenant. A test connection's movement stands for no real payment and teaches nothing.
+ * Learning never undoes a confirmation that is already made: a failure is logged, and the account is
+ * learned the next time one is confirmed.
+ */
+async function learnFromConfirmation(
+  userId: string,
+  tenantId: string | null,
+  txn: ConfirmedMovement & { bankAccountId: string },
+): Promise<boolean> {
+  if (!tenantId || !txn.counterpartyIbanHash) return false;
+  try {
+    if (await isTestMovement(userId, txn.bankAccountId)) return false;
+    return await rememberPayerAccount(userId, tenantId, txn);
+  } catch (error) {
+    logger.warn("A confirmed movement's account could not be remembered", {
+      transactionId: txn.id,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
 }
 
 /**
@@ -636,6 +676,9 @@ async function linkToRecordedPayment(
     suggestedLeaseId: string | null;
     bankAccountId: string;
     bookingDate: Date;
+    counterpartyName: string | null;
+    counterpartyIban: string | null;
+    counterpartyIbanHash: string | null;
   },
   receiptId: string | undefined,
 ): Promise<TransactionActionResult> {
@@ -704,7 +747,18 @@ async function linkToRecordedPayment(
     details: { receiptId: payment.id, leaseId, amount: txn.amount },
   });
 
-  return { status: "matched_confirmed", receiptId: payment.id };
+  // The owner has said this movement is their tenant's rent: so is the account it came from.
+  const lease = await prisma.lease.findFirst({
+    where: { id: leaseId, userId },
+    select: { tenantId: true },
+  });
+  const remembered = await learnFromConfirmation(userId, lease?.tenantId ?? null, txn);
+
+  return {
+    status: "matched_confirmed",
+    receiptId: payment.id,
+    ...(remembered ? { remembered } : {}),
+  };
 }
 
 /**
@@ -799,7 +853,7 @@ export async function applyTransactionAction(
 
   const lease = await prisma.lease.findFirst({
     where: { id: targetLeaseId, userId },
-    select: { id: true },
+    select: { id: true, tenantId: true },
   });
   if (!lease) throw new ResourceNotFoundError("Lease");
 
@@ -848,5 +902,6 @@ export async function applyTransactionAction(
     },
   });
 
-  return { status: "matched_confirmed", receiptId };
+  const remembered = await learnFromConfirmation(userId, lease.tenantId, txn);
+  return { status: "matched_confirmed", receiptId, ...(remembered ? { remembered } : {}) };
 }
