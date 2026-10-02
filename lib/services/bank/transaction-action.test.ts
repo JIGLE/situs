@@ -532,6 +532,38 @@ describe("the account a confirmation came from", () => {
     expect(rememberMock).toHaveBeenCalledTimes(1);
   });
 
+  it("is remembered when the owner confirms a movement that matched on its own", async () => {
+    prismaMock.bankTransaction.findFirst.mockResolvedValue({
+      ...ana(),
+      status: "auto_matched",
+      receiptId: "rcpt-auto",
+    });
+
+    const result = await applyTransactionAction(USER, "txn-1", "confirm");
+
+    expect(result).toEqual({
+      status: "matched_confirmed",
+      receiptId: "rcpt-auto",
+      remembered: true,
+    });
+    expect(rememberMock).toHaveBeenCalledWith(USER, "tenant-1", taught);
+  });
+
+  it("is not remembered for a contract the movement's receipt is not on", async () => {
+    // It matched on its own and paid lease-1; naming lease-2 here moves no money.
+    prismaMock.bankTransaction.findFirst.mockResolvedValue({
+      ...ana(),
+      status: "auto_matched",
+      receiptId: "rcpt-auto",
+    });
+    prismaMock.lease.findFirst.mockResolvedValue({ id: "lease-2", tenantId: "tenant-2" });
+
+    const result = await applyTransactionAction(USER, "txn-1", "reassign", "lease-2");
+
+    expect(result).toEqual({ status: "matched_confirmed", receiptId: "rcpt-auto" });
+    expect(rememberMock).not.toHaveBeenCalled();
+  });
+
   it("is not remembered from a movement with no account to remember", async () => {
     prismaMock.bankTransaction.findFirst.mockResolvedValue(movement());
 

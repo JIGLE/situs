@@ -401,6 +401,56 @@ describe("remembered payer accounts — real Prisma client + real SQLite file", 
     expect(await prisma.payerAccount.count({ where: { tenantId: linked.tenant.id } })).toBe(1);
   });
 
+  it("does not teach the tenant of a contract that a movement's receipt stays away from", async () => {
+    const w = await world("kept-receipt");
+    await teach(w);
+    // The next payment matches on its own and its receipt lands on the first contract.
+    const { summary, movement } = await pay(w, "2026-07-10", RENT);
+    expect(summary.autoMatched).toBe(1);
+
+    // A hand-made request names a contract of another tenant of the same owner.
+    const lease = await prisma.lease.create({
+      data: {
+        userId: w.user.id,
+        propertyId: (
+          await prisma.property.create({
+            data: {
+              userId: w.user.id,
+              name: `Elsewhere ${w.user.id}`,
+              address: `Elsewhere ${w.user.id}, Lisboa`,
+              type: "other",
+              rent: RENT + 300,
+              status: "occupied",
+            },
+          })
+        ).id,
+        tenantId: (
+          await prisma.tenant.create({
+            data: {
+              userId: w.user.id,
+              name: `Elsewhere ${w.user.id}`,
+              rent: RENT + 300,
+              leaseStart: new Date("2026-01-01"),
+              leaseEnd: new Date("2026-12-31"),
+            },
+          })
+        ).id,
+        startDate: new Date("2026-01-01"),
+        endDate: new Date("2026-12-31"),
+        monthlyRent: RENT + 300,
+      },
+    });
+
+    const result = await applyTransactionAction(w.user.id, movement.id, "reassign", lease.id);
+
+    expect(result).toEqual({ status: "matched_confirmed", receiptId: movement.receiptId });
+    expect(await accounts.payerAccountsFor(w.user.id, lease.tenantId)).toEqual([]);
+    expect(await accounts.payerAccountsFor(w.user.id, w.tenant.id)).toHaveLength(1);
+    expect(
+      (await prisma.receipt.findFirstOrThrow({ where: { id: movement.receiptId! } })).leaseId,
+    ).toBe(w.lease.id);
+  });
+
   it("is not taught by a movement the owner did not confirm, nor by one that matched on its own", async () => {
     const w = await world("untaught");
     await teach(w);

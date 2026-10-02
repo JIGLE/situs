@@ -902,6 +902,11 @@ export async function applyTransactionAction(
     },
   });
 
-  const remembered = await learnFromConfirmation(userId, lease.tenantId, txn);
+  // A movement that already had its receipt keeps it on that contract, so naming another one here
+  // moves no money: an account is not remembered for the tenant of a contract it pays nothing on.
+  const receiptStaysElsewhere = Boolean(txn.receiptId) && txn.suggestedLeaseId !== targetLeaseId;
+  const remembered = receiptStaysElsewhere
+    ? false
+    : await learnFromConfirmation(userId, lease.tenantId, txn);
   return { status: "matched_confirmed", receiptId, ...(remembered ? { remembered } : {}) };
 }
