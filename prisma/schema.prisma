@@ -52,6 +52,7 @@ model User {
   bankTransactions       BankTransaction[]
   bankSyncJobs           BankSyncJob[]
   reconciliationRules    ReconciliationRule[]
+  payerAccounts          PayerAccount[]
   taxAuthorityConnectors TaxAuthorityConnector[]
   taxSubmissionLogs      TaxSubmissionLog[]
 }
@@ -276,13 +277,14 @@ model Tenant {
   updatedAt     DateTime      @updatedAt
 
   // Relations
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property     Property?     @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  receipts     Receipt[]
-  leases       Lease[]
-  documents    Document[]
-  rentReceipts RentReceipt[]
-  rentPeriods  RentPeriod[]
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property      Property?      @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  receipts      Receipt[]
+  leases        Lease[]
+  documents     Document[]
+  rentReceipts  RentReceipt[]
+  rentPeriods   RentPeriod[]
+  payerAccounts PayerAccount[]
 
   @@unique([userId, email])
   // Performance indexes
@@ -534,6 +536,28 @@ model ReconciliationRule {
 
   @@index([userId, priority])
   @@map("reconciliation_rules")
+}
+
+// A bank account the owner confirmed pays this tenant's rent: learned from a confirmation, never
+// from a guess, and the owner can forget it. Matching reads `ibanHash`, the same hash a movement
+// carries, so the IBAN itself is not stored here. `sourceTransactionId` names the movement whose
+// confirmation taught it, with no foreign key so removing a movement never removes the account.
+model PayerAccount {
+  id                  String   @id @default(cuid())
+  userId              String
+  tenantId            String
+  ibanHash            String
+  ibanLast4           String? // four digits, so the owner can tell two accounts apart
+  holderName          String? // the name the bank showed on that movement
+  sourceTransactionId String?
+  createdAt           DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, ibanHash])
+  @@index([userId])
+  @@map("payer_accounts")
 }
 
 model Expense {

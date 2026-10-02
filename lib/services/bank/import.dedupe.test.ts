@@ -88,6 +88,7 @@ const { prismaMock, store, resetStore } = vi.hoisted(() => {
       findMany: vi.fn(async () => [
         {
           id: "lease-1",
+          tenantId: "tenant-1",
           monthlyRent: 1250,
           tenant: { name: "Maria Silva" },
           property: { name: "Rua Augusta 12", address: "Lisboa" },
@@ -97,6 +98,10 @@ const { prismaMock, store, resetStore } = vi.hoisted(() => {
     },
     rentPeriod: { findMany: vi.fn(async () => []) },
     reconciliationRule: { findMany: vi.fn(async () => []), update: vi.fn() },
+    // The accounts the owner confirmed: none, unless a test says otherwise.
+    payerAccount: {
+      findMany: vi.fn(async (): Promise<{ tenantId: string; ibanHash: string }[]> => []),
+    },
     // `findMany` answers what the owner recorded by hand: nothing, unless a test says otherwise.
     receipt: {
       create: vi.fn(async () => ({ id: "receipt-1" })),

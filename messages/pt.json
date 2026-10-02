@@ -1331,6 +1331,7 @@
       },
       "signals": {
         "ibanMatch": "IBAN conhecido",
+        "learnedAccount": "Conta que confirmou",
         "nameMatch": "Nome coincide",
         "amountExact": "Igual à renda",
         "amountMultiple": "Várias rendas",
@@ -1346,7 +1347,9 @@
       },
       "toast": {
         "confirmed": "Pagamento de {tenant} confirmado: foi criado um recibo.",
+        "confirmedRemembered": "Pagamento de {tenant} confirmado: foi criado um recibo. A partir de agora, um pagamento desta conta com o mesmo valor da renda é conciliado automaticamente.",
         "linked": "Ligado ao pagamento que registou. Nada foi contado duas vezes.",
+        "linkedRemembered": "Ligado ao pagamento que registou. Nada foi contado duas vezes. A partir de agora, um pagamento desta conta com o mesmo valor da renda é conciliado automaticamente.",
         "heldForRecorded": "{tenant} tem um pagamento deste valor registado por volta desta data. Diga se é o mesmo pagamento.",
         "ignored": "Movimento ignorado. Fica em Ignorados.",
         "restored": "Movimento de volta a A rever."
@@ -1697,7 +1700,17 @@
       "receipts": "Recibos",
       "taxLog": "Registo fiscal"
     },
-    "leaseExpiresInDays": "faltam {days}d"
+    "leaseExpiresInDays": "faltam {days}d",
+    "payerAccounts": {
+      "title": "Contas de onde vêm os pagamentos",
+      "description": "Foram confirmadas por si. Um pagamento de uma destas contas com o mesmo valor da renda é conciliado com {tenant} automaticamente; qualquer outro valor continua a aguardar a sua decisão.",
+      "ending": "Conta terminada em {last4}",
+      "account": "Conta",
+      "since": "Memorizada em {date}",
+      "forget": "Esquecer",
+      "forgetAccount": "Esquecer {account}",
+      "forgotten": "Conta esquecida. Os pagamentos desta conta voltam a aguardar a sua decisão."
+    }
   },
   "pwa": {
     "install": "Instalar o Situs",
@@ -1799,7 +1812,7 @@
       "use5": "Para cumprir obrigações legais ao abrigo do direito português.",
       "bankTitle": "Acesso à conta bancária",
       "bankBody": "A ligação a um banco utiliza o acesso a informação de conta previsto na DSP2, através da Enable Banking, prestador licenciado de serviços de informação sobre contas. O acesso é apenas de leitura: esta instância lê dados da conta e movimentos e nunca pode movimentar dinheiro. A autorização é dada no seu próprio banco, não aqui, e caduca — 90 dias, salvo prazo mais curto definido pelo banco — tendo depois de ser concedida de novo.",
-      "bankStorage": "Os IBAN são cifrados em repouso com AES-256-GCM. A correspondência e a deteção de duplicados funcionam a partir de um hash unidirecional e não do valor armazenado, pelo que o IBAN nunca precisa de ser decifrado para o serviço funcionar. Apenas os últimos quatro dígitos são apresentados.",
+      "bankStorage": "Os IBAN são cifrados em repouso com AES-256-GCM. A correspondência e a deteção de duplicados funcionam a partir de um hash unidirecional e não do valor armazenado, pelo que o IBAN nunca precisa de ser decifrado para o serviço funcionar. Apenas os últimos quatro dígitos são apresentados. Quando confirma um pagamento, a conta de onde veio fica memorizada para esse inquilino: o mesmo hash unidirecional, os seus últimos quatro dígitos e o nome do pagador tal como o banco o mostrou, para que o pagamento seguinte possa ser conciliado. Pode esquecê-la a qualquer momento a partir do inquilino, e ela é removida com o inquilino.",
       "bankRetention": "Um movimento que não tenha sido reconciliado com um recibo é eliminado ao fim de dois anos. Um movimento reconciliado é conservado enquanto o recibo que comprova, por ser o registo da origem desse dinheiro.",
       "retentionTitle": "Durante quanto tempo conservamos",
       "retentionIntro": "Os seguintes dados são eliminados automaticamente. O que não estiver listado é conservado enquanto a sua conta existir e é removido quando a elimina.",
@@ -1918,6 +1931,8 @@
     "ignoreTransaction": "Movimento ignorado",
     "restoreTransaction": "Movimento reposto para revisão",
     "linkPayment": "Movimento ligado a um pagamento registado",
+    "rememberPayerAccount": "Conta do pagador memorizada",
+    "forgetPayerAccount": "Conta do pagador esquecida",
     "applyReconciliationRule": "Regra de conciliação aplicada",
     "bankConnectionCreated": "Banco ligado",
     "bankConnectionDeleted": "Ligação bancária de teste eliminada",

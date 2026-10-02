@@ -52,6 +52,9 @@ describe("GDPR export scope", () => {
       "bankAccounts",
       "bankTransactions",
       "bankSyncJobs",
+      // The accounts the owner confirmed pay a tenant's rent: a payer's name and the end of their
+      // account number, so a subject access request has to carry them too.
+      "payerAccounts",
     ]) {
       expect(include, `${relation} missing from the GDPR export`).toHaveProperty(relation, true);
     }

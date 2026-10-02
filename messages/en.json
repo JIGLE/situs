@@ -1331,6 +1331,7 @@
       },
       "signals": {
         "ibanMatch": "Known IBAN",
+        "learnedAccount": "Account you confirmed",
         "nameMatch": "Name matches",
         "amountExact": "Same as the rent",
         "amountMultiple": "Several months' rent",
@@ -1346,7 +1347,9 @@
       },
       "toast": {
         "confirmed": "{tenant}'s payment confirmed: a receipt was created.",
+        "confirmedRemembered": "{tenant}'s payment confirmed: a receipt was created. From now on, a payment from this account for the same amount as the rent is matched on its own.",
         "linked": "Linked to the payment you recorded. Nothing was counted twice.",
+        "linkedRemembered": "Linked to the payment you recorded. Nothing was counted twice. From now on, a payment from this account for the same amount as the rent is matched on its own.",
         "heldForRecorded": "{tenant} has a payment of that amount recorded around then. Say whether this is the same payment.",
         "ignored": "Movement ignored. It stays under Ignored.",
         "restored": "Movement back under Needs review."
@@ -1697,7 +1700,17 @@
       "receipts": "Receipts",
       "taxLog": "Tax log"
     },
-    "leaseExpiresInDays": "{days}d left"
+    "leaseExpiresInDays": "{days}d left",
+    "payerAccounts": {
+      "title": "Accounts that pay this tenant's rent",
+      "description": "You confirmed these. A payment from one of them for the same amount as the rent is matched to {tenant} on its own; any other amount still waits for you.",
+      "ending": "Account ending {last4}",
+      "account": "Account",
+      "since": "Remembered {date}",
+      "forget": "Forget",
+      "forgetAccount": "Forget {account}",
+      "forgotten": "Account forgotten. Its payments wait for you again."
+    }
   },
   "pwa": {
     "install": "Install Situs",
@@ -1799,7 +1812,7 @@
       "use5": "To meet legal obligations under Portuguese law.",
       "bankTitle": "Bank account access",
       "bankBody": "Connecting a bank uses PSD2 account information access through Enable Banking, a licensed account information service provider. Access is read-only: this instance can read account details and transactions, and can never move money. You authorise the access at your own bank, not here, and the authorisation expires — 90 days unless your bank sets a shorter period — after which it must be granted again.",
-      "bankStorage": "IBANs are encrypted at rest with AES-256-GCM. Matching and duplicate detection work from a one-way hash rather than the stored value, so the IBAN never needs to be decrypted to run the service. Only the last four digits are ever displayed.",
+      "bankStorage": "IBANs are encrypted at rest with AES-256-GCM. Matching and duplicate detection work from a one-way hash rather than the stored value, so the IBAN never needs to be decrypted to run the service. Only the last four digits are ever displayed. When you confirm a payment, the account it came from is remembered for that tenant: the same one-way hash, its last four digits and the payer's name as your bank showed it, so the next payment can be matched. You can forget it from the tenant at any time, and it is removed with the tenant.",
       "bankRetention": "A movement that has not been reconciled against a receipt is deleted after two years. A movement that has been reconciled is kept for as long as the receipt it evidences, because it is the record of where that money came from.",
       "retentionTitle": "How long we keep it",
       "retentionIntro": "The following are deleted automatically. Anything not listed is kept while your account exists and is removed when you delete it.",
@@ -1918,6 +1931,8 @@
     "ignoreTransaction": "Movement ignored",
     "restoreTransaction": "Movement back to review",
     "linkPayment": "Movement linked to a recorded payment",
+    "rememberPayerAccount": "Payer account remembered",
+    "forgetPayerAccount": "Payer account forgotten",
     "applyReconciliationRule": "Reconciliation rule applied",
     "bankConnectionCreated": "Bank connected",
     "bankConnectionDeleted": "Test bank connection deleted",

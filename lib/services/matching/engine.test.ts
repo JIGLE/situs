@@ -73,6 +73,117 @@ describe("scoreCandidate", () => {
   });
 });
 
+describe("an account the owner confirmed", () => {
+  /** Nothing but the account and the amount: not the name, not a rent word, no earlier match. */
+  const bare = (overrides: Partial<TransactionInput> = {}) =>
+    txn({
+      counterpartyIbanHash: "hash-ana",
+      counterpartyName: "Unrelated Corp Lda",
+      reference: "transfer 998877",
+      ...overrides,
+    });
+  const confirmed: LeaseCandidate = {
+    leaseId: "lease-1",
+    tenantName: "João Silva",
+    monthlyRent: RENT,
+    learnedIbanHashes: ["hash-ana"],
+  };
+
+  it("paying exactly the rent reaches the auto-match threshold on that alone", () => {
+    const score = scoreCandidate(bare(), confirmed);
+
+    expect(score.reasons).toEqual(["learned_account", "amount_exact"]);
+    expect(score.confidence).toBe(AUTO_MATCH_THRESHOLD);
+    expect(classifyMatch(bare(), [confirmed]).status).toBe("auto_matched");
+  });
+
+  it("paying anything else is only a known account, which waits for the owner", () => {
+    for (const amount of [500, RENT * 2, RENT * 3, 1200]) {
+      const score = scoreCandidate(bare({ amount }), confirmed);
+
+      expect(score.reasons).not.toContain("learned_account");
+      expect(score.reasons).toContain("iban_match");
+      expect(classifyMatch(bare({ amount }), [confirmed]).status).toBe("needs_review");
+    }
+  });
+
+  it("scores any other amount exactly as a known account does today: nothing is added", () => {
+    const known: LeaseCandidate = {
+      ...confirmed,
+      learnedIbanHashes: [],
+      knownIbanHashes: ["hash-ana"],
+    };
+    const evidence = [
+      bare({ amount: 500 }),
+      bare({ amount: RENT * 2, counterpartyName: "Joao Silva", reference: "renda duas" }),
+      bare({ amount: RENT * 3, counterpartyName: "Joao Silva" }),
+      bare({ amount: 1200, reference: "renda" }),
+    ];
+
+    for (const movement of evidence) {
+      expect(scoreCandidate(movement, confirmed)).toEqual(scoreCandidate(movement, known));
+    }
+  });
+
+  it("counts once: a confirmed account that is also a known one is not scored twice", () => {
+    const both = { ...confirmed, knownIbanHashes: ["hash-ana"] };
+    const score = scoreCandidate(bare(), both);
+
+    expect(score.reasons).toEqual(["learned_account", "amount_exact"]);
+    expect(score.confidence).toBe(AUTO_MATCH_THRESHOLD);
+  });
+
+  it("never scores above one, whatever else agrees", () => {
+    const score = scoreCandidate(
+      bare({ counterpartyName: "Joao Silva", reference: "Renda Junho Rua Augusta" }),
+      { ...confirmed, propertyTokens: ["Rua Augusta"] },
+    );
+
+    expect(score.reasons).toEqual(
+      expect.arrayContaining(["learned_account", "name_match", "amount_exact", "reference_hit"]),
+    );
+    expect(score.confidence).toBe(1);
+  });
+
+  it("is only the accounts the owner confirmed: another hash gets nothing from it", () => {
+    const score = scoreCandidate(bare({ counterpartyIbanHash: "hash-someone-else" }), confirmed);
+
+    expect(score.reasons).toEqual(["amount_exact"]);
+    expect(score.confidence).toBeLessThan(AUTO_MATCH_THRESHOLD);
+  });
+
+  it("is still a known account for a candidate that has no other record of it", () => {
+    const score = scoreCandidate(bare({ amount: 500 }), { ...confirmed, knownIbanHashes: [] });
+
+    expect(score.reasons).toEqual(["iban_match"]);
+  });
+
+  describe("shared by two contracts", () => {
+    const flat = { ...confirmed, leaseId: "flat", monthlyRent: 910 };
+    const garage = { ...confirmed, leaseId: "garage", monthlyRent: 95 };
+
+    it("the rent tells them apart, and the flat's rent allocates to the flat", () => {
+      const result = classifyMatch(bare({ amount: 910 }), [garage, flat]);
+
+      expect(result.best?.leaseId).toBe("flat");
+      expect(result.ambiguous).toBe(false);
+      expect(result.status).toBe("auto_matched");
+    });
+
+    it("an amount that is neither rent waits", () => {
+      expect(classifyMatch(bare({ amount: 500 }), [garage, flat]).status).toBe("needs_review");
+    });
+
+    it("two contracts at one rent are too close to call, and wait", () => {
+      const twin = { ...flat, leaseId: "twin" };
+      const result = classifyMatch(bare({ amount: 910 }), [flat, twin]);
+
+      expect(result.ambiguous).toBe(true);
+      expect(result.status).toBe("needs_review");
+    });
+  });
+});
+
 describe("classifyMatch", () => {
   const leaseB: LeaseCandidate = {
     leaseId: "lease-2",

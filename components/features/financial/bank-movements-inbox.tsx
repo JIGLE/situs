@@ -68,6 +68,8 @@ interface ActionResult {
   status: string;
   receiptId: string | null;
   recordedPayments?: InboxRow["recordedPayments"];
+  /** The confirmation taught an account: the same amount as the rent from it is matched on its own. */
+  remembered?: boolean;
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -164,11 +166,17 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
   }
 
   /** What to tell the owner once an action has worked. */
-  function doneMessage(row: InboxRow, action: InboxAction, leaseId?: string): string {
+  function doneMessage(
+    row: InboxRow,
+    action: InboxAction,
+    leaseId?: string,
+    remembered = false,
+  ): string {
     if (action === "ignore") return t("toast.ignored");
     if (action === "restore") return t("toast.restored");
-    if (action === "link") return t("toast.linked");
-    return t("toast.confirmed", { tenant: tenantOf(row, action, leaseId) });
+    if (action === "link") return t(remembered ? "toast.linkedRemembered" : "toast.linked");
+    const tenant = tenantOf(row, action, leaseId);
+    return t(remembered ? "toast.confirmedRemembered" : "toast.confirmed", { tenant });
   }
 
   const act = async (
@@ -191,7 +199,7 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
       // the movement waits and the row now asks which payment it is.
       const held = (result?.recordedPayments?.length ?? 0) > 0;
       if (held) toast.info(t("toast.heldForRecorded", { tenant: tenantOf(row, action, leaseId) }));
-      else toast.success(doneMessage(row, action, leaseId));
+      else toast.success(doneMessage(row, action, leaseId, result?.remembered === true));
       // A confirmed movement is a new receipt and a paid month: the rest of the app reads those
       // from app state, which would otherwise show them only after a reload. A link makes none.
       if ((action === "confirm" || action === "reassign") && !held) await refreshData();

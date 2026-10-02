@@ -27,6 +27,11 @@ export interface LeaseCandidate {
   monthlyRent: number;
   /** Hashes of IBANs known for this tenant (payment methods, confirmed txns). */
   knownIbanHashes?: string[];
+  /**
+   * Hashes of the accounts the owner confirmed pay this tenant's rent, one confirmation each. They
+   * count for more than a known IBAN, but only for the rent itself: see `scoreCandidate`.
+   */
+  learnedIbanHashes?: string[];
   /** Outstanding remainder of a partially paid period, if any. */
   knownRemainder?: number;
   /** Tokens that identify the property in remittance text (street, unit no.). */
@@ -35,6 +40,7 @@ export interface LeaseCandidate {
 
 export type MatchReason =
   | "iban_match"
+  | "learned_account"
   | "name_match"
   | "amount_exact"
   | "amount_multiple"
@@ -59,6 +65,13 @@ export interface MatchResult {
 
 export const MATCH_WEIGHTS = {
   iban: 0.45,
+  /**
+   * An account the owner confirmed, paying the rent. With the amount's 0.2 it is exactly
+   * `AUTO_MATCH_THRESHOLD`, so a payment from an account the owner has vouched for allocates by
+   * itself when it is the same amount as the rent (the 1% `amount_exact` already allows) and for no
+   * other amount: any other scores the plain `iban` weight.
+   */
+  learnedAccount: 0.65,
   name: 0.25,
   amount: 0.2,
   reference: 0.1,
@@ -100,7 +113,13 @@ export function scoreCandidate(txn: TransactionInput, candidate: LeaseCandidate)
   let confidence = 0;
   const reasons: MatchReason[] = [];
 
-  if (txn.counterpartyIbanHash && candidate.knownIbanHashes?.includes(txn.counterpartyIbanHash)) {
+  const exactRent = within(txn.amount, candidate.monthlyRent, AMOUNT_TOLERANCE);
+  const ibanHash = txn.counterpartyIbanHash;
+  const learned = !!ibanHash && !!candidate.learnedIbanHashes?.includes(ibanHash);
+  if (learned && exactRent) {
+    confidence += MATCH_WEIGHTS.learnedAccount;
+    reasons.push("learned_account");
+  } else if (learned || (!!ibanHash && !!candidate.knownIbanHashes?.includes(ibanHash))) {
     confidence += MATCH_WEIGHTS.iban;
     reasons.push("iban_match");
   }
@@ -110,7 +129,7 @@ export function scoreCandidate(txn: TransactionInput, candidate: LeaseCandidate)
     reasons.push("name_match");
   }
 
-  if (within(txn.amount, candidate.monthlyRent, AMOUNT_TOLERANCE)) {
+  if (exactRent) {
     confidence += MATCH_WEIGHTS.amount;
     reasons.push("amount_exact");
   } else if (
@@ -136,7 +155,8 @@ export function scoreCandidate(txn: TransactionInput, candidate: LeaseCandidate)
     }
   }
 
-  return { leaseId: candidate.leaseId, confidence: round3(confidence), reasons };
+  // A confirmed account can add up to more than every other signal together: a score is out of one.
+  return { leaseId: candidate.leaseId, confidence: round3(Math.min(1, confidence)), reasons };
 }
 
 export function classifyMatch(txn: TransactionInput, candidates: LeaseCandidate[]): MatchResult {
