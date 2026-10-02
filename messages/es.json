@@ -1394,6 +1394,9 @@
       "owed": "Pendiente",
       "payments": "Pagos",
       "noPayments": "Aún no se ha pagado nada de este mes.",
+      "viaBank": "Movimiento bancario",
+      "viaBankOn": "Movimiento bancario del {date}",
+      "recordedByHand": "Registrado a mano",
       "coversOlderFirst": "Un pago registrado ahora cubre primero {month}, el mes más antiguo pendiente.",
       "recordPayment": "Registrar pago"
     },

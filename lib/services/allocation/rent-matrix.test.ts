@@ -15,6 +15,7 @@ const { prismaMock } = vi.hoisted(() => ({
     rentPeriod: { findMany: vi.fn() },
     lease: { findFirst: vi.fn() },
     paymentAllocation: { findMany: vi.fn() },
+    bankTransaction: { findMany: vi.fn() },
   },
 }));
 
@@ -193,6 +194,7 @@ describe("getRentMonth", () => {
     vi.clearAllMocks();
     prismaMock.lease.findFirst.mockResolvedValue(lease);
     prismaMock.paymentAllocation.findMany.mockResolvedValue([]);
+    prismaMock.bankTransaction.findMany.mockResolvedValue([]);
   });
 
   it("is null for a lease that is not the caller's, and reads nothing else", async () => {
@@ -204,6 +206,7 @@ describe("getRentMonth", () => {
     );
     expect(prismaMock.rentPeriod.findMany).not.toHaveBeenCalled();
     expect(prismaMock.paymentAllocation.findMany).not.toHaveBeenCalled();
+    expect(prismaMock.bankTransaction.findMany).not.toHaveBeenCalled();
   });
 
   it("gives the month's figures with its status as of now", async () => {
@@ -270,6 +273,7 @@ describe("getRentMonth", () => {
           lifecycle: "emitted",
           source: "automation",
         },
+        movements: [],
       },
     ]);
   });
@@ -325,5 +329,112 @@ describe("getRentMonth", () => {
     expect(prismaMock.paymentAllocation.findMany).not.toHaveBeenCalled();
     // An earlier month the lease still owes is named all the same.
     expect(result?.olderUnpaid).toEqual({ year: 2026, month: 6 });
+    expect(prismaMock.bankTransaction.findMany).not.toHaveBeenCalled();
+  });
+
+  describe("where the money came from", () => {
+    const allocation = (receiptId: string, receipt: Record<string, unknown> = {}) => ({
+      amount: 400,
+      allocatedAt: new Date("2026-08-02T09:30:00.000Z"),
+      receipt: {
+        id: receiptId,
+        date: new Date("2026-08-01T00:00:00.000Z"),
+        amount: 400,
+        lifecycle: "emitted",
+        source: "automation",
+        ...receipt,
+      },
+    });
+    const movement = (receiptId: string, figures: Record<string, unknown> = {}) => ({
+      receiptId,
+      bookingDate: new Date("2026-08-01T00:00:00.000Z"),
+      counterpartyName: "ANA COSTA",
+      reference: "Renda agosto",
+      bankAccount: { label: "Conta ordenado" },
+      ...figures,
+    });
+
+    beforeEach(() => {
+      prismaMock.rentPeriod.findMany.mockResolvedValue([
+        month(2026, 8, { status: "paid", allocatedAmount: 800, paidAt: due(2026, 8) }),
+      ]);
+    });
+
+    it("names the bank movement behind a payment: who paid, into which account, and the day", async () => {
+      prismaMock.paymentAllocation.findMany.mockResolvedValue([allocation("receipt-1")]);
+      prismaMock.bankTransaction.findMany.mockResolvedValue([movement("receipt-1")]);
+
+      const result = await getRentMonth("user-1", "lease-ze", 2026, 8, NOW);
+
+      expect(result?.payments[0].movements).toEqual([
+        {
+          bookingDate: "2026-08-01",
+          counterpartyName: "ANA COSTA",
+          reference: "Renda agosto",
+          accountLabel: "Conta ordenado",
+        },
+      ]);
+    });
+
+    it("reads the movements of the caller's account only, for the receipts of this month's payments", async () => {
+      prismaMock.paymentAllocation.findMany.mockResolvedValue([allocation("receipt-1")]);
+
+      await getRentMonth("user-1", "lease-ze", 2026, 8, NOW);
+
+      expect(prismaMock.bankTransaction.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: "user-1", receiptId: { in: ["receipt-1"] } },
+        }),
+      );
+    });
+
+    it("reads every payment's movements in one query, and gives each payment its own", async () => {
+      prismaMock.paymentAllocation.findMany.mockResolvedValue([
+        allocation("receipt-1"),
+        allocation("receipt-2"),
+      ]);
+      prismaMock.bankTransaction.findMany.mockResolvedValue([
+        movement("receipt-2", { counterpartyName: "RUI COSTA", reference: null }),
+        movement("receipt-1"),
+      ]);
+
+      const result = await getRentMonth("user-1", "lease-ze", 2026, 8, NOW);
+
+      expect(prismaMock.bankTransaction.findMany).toHaveBeenCalledTimes(1);
+      expect(prismaMock.bankTransaction.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: "user-1", receiptId: { in: ["receipt-1", "receipt-2"] } },
+        }),
+      );
+      expect(result?.payments.map((p) => p.movements.map((m) => m.counterpartyName))).toEqual([
+        ["ANA COSTA"],
+        ["RUI COSTA"],
+      ]);
+      expect(result?.payments[1].movements[0].reference).toBeNull();
+    });
+
+    it("has no movement for a payment recorded by hand, which none is linked to", async () => {
+      prismaMock.paymentAllocation.findMany.mockResolvedValue([
+        allocation("receipt-1", { source: "manual" }),
+      ]);
+
+      const result = await getRentMonth("user-1", "lease-ze", 2026, 8, NOW);
+
+      expect(result?.payments[0].movements).toEqual([]);
+      expect(result?.payments[0].receipt?.source).toBe("manual");
+    });
+
+    it("reads no movements for a payment that has no receipt", async () => {
+      prismaMock.paymentAllocation.findMany.mockResolvedValue([
+        { amount: 400, allocatedAt: new Date("2026-08-02T09:30:00.000Z"), receipt: null },
+      ]);
+
+      const result = await getRentMonth("user-1", "lease-ze", 2026, 8, NOW);
+
+      expect(prismaMock.bankTransaction.findMany).not.toHaveBeenCalled();
+      expect(result?.payments).toEqual([
+        { amount: 400, allocatedAt: "2026-08-02T09:30:00.000Z", receipt: null, movements: [] },
+      ]);
+    });
   });
 });

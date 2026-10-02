@@ -1394,6 +1394,9 @@
       "owed": "Da pagare",
       "payments": "Pagamenti",
       "noPayments": "Ancora nulla pagato per questo mese.",
+      "viaBank": "Movimento bancario",
+      "viaBankOn": "Movimento bancario del {date}",
+      "recordedByHand": "Registrato a mano",
       "coversOlderFirst": "Un pagamento registrato ora copre prima {month}, il mese più vecchio ancora da pagare.",
       "recordPayment": "Registra pagamento"
     },
