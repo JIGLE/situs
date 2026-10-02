@@ -84,6 +84,8 @@ describe("GET /api/bank/transactions, payments the owner recorded", () => {
     suggestedLeaseId: "lease-1",
     receiptId: null,
     bookingDate: new Date("2026-09-01T00:00:00.000Z"),
+    // The connection's metadata is read to tell a test connection apart, and never sent on.
+    bankAccount: { label: "Conta", connection: { metadata: null as string | null } },
   };
   const recorded = {
     id: "rcpt-1",
@@ -123,6 +125,28 @@ describe("GET /api/bank/transactions, payments the owner recorded", () => {
       [],
       [],
     ]);
+  });
+
+  it("offers nothing to a test connection's movement, and never sends its metadata on", async () => {
+    prismaMock.bankTransaction.findMany.mockResolvedValue([
+      {
+        ...waiting,
+        bankAccount: {
+          label: "Conta de teste",
+          connection: { metadata: JSON.stringify({ isTest: true, reference: "secret-ref" }) },
+        },
+      },
+    ]);
+    prismaMock.receipt.findMany.mockResolvedValue([recorded]);
+
+    const res = await list(request("?status=needs_review&direction=in"));
+    const body = await res.json();
+
+    expect(body.data[0].recordedPayments).toEqual([]);
+    expect(body.data[0].bankAccount).toEqual({ label: "Conta de teste" });
+    expect(JSON.stringify(body)).not.toMatch(/metadata|secret-ref|isTest/);
+    // Nothing else was waiting, so nothing was asked of the receipts.
+    expect(prismaMock.receipt.findMany).not.toHaveBeenCalled();
   });
 
   it("asks the database nothing when no movement could have one", async () => {

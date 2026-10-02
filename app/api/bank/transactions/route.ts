@@ -4,6 +4,7 @@ import { handleOptions, requireOwnerAccess } from "@/lib/services/auth/auth-midd
 import { createSuccessResponse, withErrorHandler } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { getPrismaClient } from "@/lib/services/database/database";
+import { isTestConnection } from "@/lib/services/bank/metadata";
 import {
   recordedPaymentsForMovements,
   summarizeRecordedPayment,
@@ -60,7 +61,8 @@ async function handleGet(request: NextRequest): Promise<Response> {
       matchReasons: true,
       duplicateOfId: true,
       receiptId: true,
-      bankAccount: { select: { label: true } },
+      // Only to tell a test connection's movements apart: the metadata never leaves this route.
+      bankAccount: { select: { label: true, connection: { select: { metadata: true } } } },
     },
   });
 
@@ -83,11 +85,17 @@ async function handleGet(request: NextRequest): Promise<Response> {
   );
 
   // The payments the owner recorded by hand that a movement still waiting may be the same money as,
-  // for the ones with a lease suggested and no receipt of their own, in one query.
+  // for the ones with a lease suggested and no receipt of their own, in one query. A test
+  // connection's movements stand for no real payment, so they are never offered one.
   const recorded = await recordedPaymentsForMovements(
     scopeUserId,
     transactions
-      .filter((t) => (t.status === "needs_review" || t.status === "imported") && !t.receiptId)
+      .filter(
+        (t) =>
+          (t.status === "needs_review" || t.status === "imported") &&
+          !t.receiptId &&
+          !isTestConnection(t.bankAccount.connection.metadata),
+      )
       .map((t) => ({
         id: t.id,
         suggestedLeaseId: t.suggestedLeaseId,
@@ -97,8 +105,9 @@ async function handleGet(request: NextRequest): Promise<Response> {
   );
 
   return createSuccessResponse(
-    transactions.map((t) => ({
+    transactions.map(({ bankAccount, ...t }) => ({
       ...t,
+      bankAccount: { label: bankAccount.label },
       suggestedLease: t.suggestedLeaseId ? (leaseNames.get(t.suggestedLeaseId) ?? null) : null,
       recordedPayments: (recorded.get(t.id) ?? []).map(summarizeRecordedPayment),
     })),

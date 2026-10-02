@@ -60,21 +60,6 @@ export interface MovementToCheck extends MovementFigures {
   suggestedLeaseId: string | null;
 }
 
-/**
- * One recorded payment, if it can still be linked to a movement: the caller's own, paid rent that
- * counts on the ledger and has no movement yet. The same test as the search, so a payment the inbox
- * offered cannot be refused for being something else.
- */
-export async function findLinkablePayment(
-  userId: string,
-  receiptId: string,
-): Promise<{ id: string; leaseId: string | null; amount: number; date: Date } | null> {
-  return getPrismaClient().receipt.findFirst({
-    where: { ...recordedRent(userId), id: receiptId },
-    select: { id: true, leaseId: true, amount: true, date: true },
-  });
-}
-
 /** The payments recorded on one lease that this movement may be, nearest first. */
 export async function recordedPaymentsFor(
   userId: string,

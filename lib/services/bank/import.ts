@@ -18,12 +18,10 @@ import crypto from "crypto";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { logAudit } from "@/lib/services/audit-log";
 import { ConflictError, ResourceNotFoundError } from "@/lib/utils/error-handling";
-import { MONEY_EPSILON } from "@/lib/utils/money";
 import { encryptPII } from "@/lib/utils/pii-encryption";
 import { allocateReceipt } from "@/lib/services/allocation/service";
 import { isTestConnection } from "@/lib/services/bank/metadata";
 import {
-  findLinkablePayment,
   recordedPaymentsFor,
   summarizeRecordedPayment,
   type RecordedPaymentSummary,
@@ -265,10 +263,16 @@ async function createReceiptAndAllocate(
         : "Bank movement",
     },
   });
-  await prisma.bankTransaction.update({
-    where: { id: txn.id },
+  // The movement takes the receipt only if it still has none: a link, or another confirmation, may
+  // have settled it since this request read it, and its receipt would then count beside this one.
+  const { count } = await prisma.bankTransaction.updateMany({
+    where: { id: txn.id, receiptId: null },
     data: { receiptId: receipt.id },
   });
+  if (count !== 1) {
+    await prisma.receipt.delete({ where: { id: receipt.id } });
+    throw new ConflictError("This movement already has a receipt", "bank_movement_has_receipt");
+  }
   await allocateReceipt(receipt.id);
   return receipt.id;
 }
@@ -602,9 +606,25 @@ export interface TransactionActionResult {
 }
 
 /**
+ * Whether a movement came through a connection made to prove the chain works: sandbox money, which
+ * never stands for a real payment. An account that is not there is refused rather than trusted.
+ */
+async function isTestMovement(userId: string, bankAccountId: string): Promise<boolean> {
+  const account = await getPrismaClient().bankAccount.findFirst({
+    where: { id: bankAccountId, userId },
+    select: { connection: { select: { metadata: true } } },
+  });
+  if (!account) throw new ResourceNotFoundError("Bank account");
+  return isTestConnection(account.connection.metadata);
+}
+
+/**
  * The owner says this movement is a payment they recorded by hand. The movement is linked to that
  * receipt and nothing is allocated, because the receipt already counts: the month it paid is now
  * reconciled, and the money is not counted twice.
+ *
+ * Only a payment the inbox could have offered can be linked: on the movement's suggested lease, for
+ * this amount, around this date. Anything else, another account's included, is one 404.
  */
 async function linkToRecordedPayment(
   userId: string,
@@ -615,6 +635,7 @@ async function linkToRecordedPayment(
     receiptId: string | null;
     suggestedLeaseId: string | null;
     bankAccountId: string;
+    bookingDate: Date;
   },
   receiptId: string | undefined,
 ): Promise<TransactionActionResult> {
@@ -637,23 +658,21 @@ async function linkToRecordedPayment(
       "bank_movement_not_waiting",
     );
   }
-
-  // A test connection's movements are sandbox money: they never stand for a real payment.
-  const account = await prisma.bankAccount.findFirst({
-    where: { id: txn.bankAccountId, userId },
-    select: { connection: { select: { metadata: true } } },
-  });
-  if (isTestConnection(account?.connection.metadata ?? null)) {
+  const leaseId = txn.suggestedLeaseId;
+  if (!leaseId) {
+    throw new ConflictError("A lease is required to link this movement", "bank_lease_required");
+  }
+  if (await isTestMovement(userId, txn.bankAccountId)) {
     throw new ConflictError("A test connection's movement cannot be linked", "bank_test_movement");
   }
 
-  const payment = await findLinkablePayment(userId, receiptId);
+  const offered = await recordedPaymentsFor(userId, leaseId, {
+    amount: txn.amount,
+    bookingDate: txn.bookingDate,
+  });
+  const payment = offered.find((candidate) => candidate.id === receiptId);
   if (!payment) throw new ResourceNotFoundError("Recorded payment");
-  if (Math.abs(payment.amount - txn.amount) > MONEY_EPSILON) {
-    throw new ConflictError("The amounts differ", "bank_payment_amount_differs");
-  }
 
-  const leaseId = payment.leaseId ?? txn.suggestedLeaseId;
   await prisma.$transaction(async (tx) => {
     // Read again inside the transaction: two movements asking for one payment must not both get it.
     if ((await tx.bankTransaction.count({ where: { receiptId: payment.id } })) > 0) {
@@ -662,10 +681,20 @@ async function linkToRecordedPayment(
         "bank_payment_already_linked",
       );
     }
-    await tx.bankTransaction.update({
-      where: { id: txn.id },
-      data: { receiptId: payment.id, status: "matched_confirmed", suggestedLeaseId: leaseId },
+    // And the movement takes it only if it is still waiting with no receipt: a confirmation that
+    // overlapped this request may have given it one.
+    const { count } = await tx.bankTransaction.updateMany({
+      where: {
+        id: txn.id,
+        userId,
+        receiptId: null,
+        status: { in: ["needs_review", "imported"] },
+      },
+      data: { receiptId: payment.id, status: "matched_confirmed" },
     });
+    if (count !== 1) {
+      throw new ConflictError("This movement already has a receipt", "bank_movement_has_receipt");
+    }
   });
   await logAudit({
     userId,
@@ -780,7 +809,8 @@ export async function applyTransactionAction(
       amount: txn.amount,
       bookingDate: txn.bookingDate,
     });
-    if (recorded.length > 0) {
+    // A test connection's movement stands for no real payment, so it is never held for one.
+    if (recorded.length > 0 && !(await isTestMovement(userId, txn.bankAccountId))) {
       await prisma.bankTransaction.update({
         where: { id: txn.id },
         data: { status: "needs_review", suggestedLeaseId: targetLeaseId },

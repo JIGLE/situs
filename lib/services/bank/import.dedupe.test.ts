@@ -81,6 +81,8 @@ const { prismaMock, store, resetStore } = vi.hoisted(() => {
         return [];
       }),
       update: vi.fn(),
+      // The receipt is back-linked only if the movement still has none.
+      updateMany: vi.fn(async () => ({ count: 1 })),
     },
     lease: {
       findMany: vi.fn(async () => [

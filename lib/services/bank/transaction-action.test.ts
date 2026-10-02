@@ -9,10 +9,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { prismaMock, logAuditMock, allocateReceiptMock } = vi.hoisted(() => ({
   prismaMock: {
-    bankTransaction: { findFirst: vi.fn(), update: vi.fn(), count: vi.fn() },
+    bankTransaction: { findFirst: vi.fn(), update: vi.fn(), updateMany: vi.fn(), count: vi.fn() },
     bankAccount: { findFirst: vi.fn() },
     lease: { findFirst: vi.fn(), findUniqueOrThrow: vi.fn() },
-    receipt: { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn() },
+    receipt: { findMany: vi.fn(), create: vi.fn(), delete: vi.fn() },
     $transaction: vi.fn(),
   },
   logAuditMock: vi.fn(),
@@ -48,11 +48,11 @@ beforeEach(() => {
   // `clearAllMocks` keeps implementations, so every default a test may change is set here.
   vi.clearAllMocks();
   prismaMock.bankTransaction.update.mockResolvedValue({});
+  prismaMock.bankTransaction.updateMany.mockResolvedValue({ count: 1 });
   prismaMock.bankTransaction.count.mockResolvedValue(0);
   prismaMock.bankAccount.findFirst.mockResolvedValue({ connection: { metadata: null } });
   prismaMock.lease.findFirst.mockResolvedValue({ id: "lease-1" });
   prismaMock.receipt.findMany.mockResolvedValue([]);
-  prismaMock.receipt.findFirst.mockResolvedValue(null);
   prismaMock.$transaction.mockImplementation(async (work: (tx: typeof prismaMock) => unknown) =>
     work(prismaMock),
   );
@@ -227,6 +227,35 @@ describe("confirm and reassign, when the lease has a payment recorded for this m
     expect(logAuditMock).toHaveBeenCalledWith(expect.objectContaining({ action: "CONFIRM_MATCH" }));
   });
 
+  it("does not hold a test connection's movement for a real payment, as before", async () => {
+    prismaMock.receipt.findMany.mockResolvedValue([recordedReceipt]);
+    prismaMock.bankAccount.findFirst.mockResolvedValue({
+      connection: { metadata: JSON.stringify({ isTest: true }) },
+    });
+
+    const result = await applyTransactionAction(USER, "txn-1", "confirm");
+
+    expect(result).toEqual({ status: "matched_confirmed", receiptId: "rcpt-new" });
+  });
+
+  it("gives no second receipt to a movement that was settled while the confirmation ran", async () => {
+    // A link, or another confirmation, took the movement between this request's read and its write.
+    prismaMock.bankTransaction.updateMany.mockResolvedValue({ count: 0 });
+    prismaMock.receipt.delete.mockResolvedValue({});
+
+    await expect(applyTransactionAction(USER, "txn-1", "confirm")).rejects.toEqual(
+      refusal("bank_movement_has_receipt"),
+    );
+
+    expect(prismaMock.bankTransaction.updateMany).toHaveBeenCalledWith({
+      where: { id: "txn-1", receiptId: null },
+      data: { receiptId: "rcpt-new" },
+    });
+    expect(prismaMock.receipt.delete).toHaveBeenCalledWith({ where: { id: "rcpt-new" } });
+    expect(allocateReceiptMock).not.toHaveBeenCalled();
+    expect(prismaMock.bankTransaction.update).not.toHaveBeenCalled();
+  });
+
   it("does not look when the movement already has its receipt", async () => {
     prismaMock.receipt.findMany.mockResolvedValue([recordedReceipt]);
     prismaMock.bankTransaction.findFirst.mockResolvedValue(
@@ -252,25 +281,27 @@ describe("link", () => {
     amount: 850,
     date: new Date("2026-08-30T00:00:00.000Z"),
   };
+  const notFound = expect.objectContaining({ name: "ResourceNotFoundError" });
+  const link = (receiptId = "rcpt-recorded") =>
+    applyTransactionAction(USER, "txn-1", "link", undefined, { receiptId });
 
   beforeEach(() => {
     prismaMock.bankTransaction.findFirst.mockResolvedValue(movement());
-    prismaMock.receipt.findFirst.mockResolvedValue(payment);
+    // What the inbox could have offered this movement: the lease's payments the query found.
+    prismaMock.receipt.findMany.mockResolvedValue([payment]);
   });
 
   it("takes the recorded payment, allocates nothing, and audits it", async () => {
-    const result = await applyTransactionAction(USER, "txn-1", "link", undefined, {
-      receiptId: "rcpt-recorded",
-    });
+    expect(await link()).toEqual({ status: "matched_confirmed", receiptId: "rcpt-recorded" });
 
-    expect(result).toEqual({ status: "matched_confirmed", receiptId: "rcpt-recorded" });
-    expect(prismaMock.bankTransaction.update).toHaveBeenCalledWith({
-      where: { id: "txn-1" },
-      data: {
-        receiptId: "rcpt-recorded",
-        status: "matched_confirmed",
-        suggestedLeaseId: "lease-1",
+    expect(prismaMock.bankTransaction.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: "txn-1",
+        userId: USER,
+        receiptId: null,
+        status: { in: ["needs_review", "imported"] },
       },
+      data: { receiptId: "rcpt-recorded", status: "matched_confirmed" },
     });
     expect(prismaMock.receipt.create).not.toHaveBeenCalled();
     expect(allocateReceiptMock).not.toHaveBeenCalled();
@@ -283,14 +314,14 @@ describe("link", () => {
     });
   });
 
-  it("reads only the caller's own paid rent that counts and has no movement", async () => {
-    await applyTransactionAction(USER, "txn-1", "link", undefined, { receiptId: "rcpt-recorded" });
+  it("looks only where the inbox looked: the caller's own paid rent, on the movement's lease", async () => {
+    await link();
 
-    expect(prismaMock.receipt.findFirst).toHaveBeenCalledWith(
+    expect(prismaMock.receipt.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          id: "rcpt-recorded",
           userId: USER,
+          leaseId: "lease-1",
           type: "rent",
           status: "paid",
           lifecycle: { not: "voided" },
@@ -301,32 +332,51 @@ describe("link", () => {
     );
   });
 
-  it("answers not found for a payment that is not the caller's, or that cannot be linked", async () => {
-    prismaMock.receipt.findFirst.mockResolvedValue(null);
+  it("answers not found for a payment that was not offered, whoever's it is", async () => {
+    // Not the caller's, on another lease, voided: the query does not return it.
+    prismaMock.receipt.findMany.mockResolvedValue([]);
+    await expect(link("rcpt-theirs")).rejects.toEqual(notFound);
 
-    await expect(
-      applyTransactionAction(USER, "txn-1", "link", undefined, { receiptId: "rcpt-theirs" }),
-    ).rejects.toEqual(expect.objectContaining({ name: "ResourceNotFoundError" }));
-    expect(prismaMock.bankTransaction.update).not.toHaveBeenCalled();
+    // One that was offered, but is not the one named.
+    prismaMock.receipt.findMany.mockResolvedValue([payment]);
+    await expect(link("rcpt-other")).rejects.toEqual(notFound);
+
+    expect(prismaMock.bankTransaction.updateMany).not.toHaveBeenCalled();
   });
 
-  it("refuses a payment of another amount", async () => {
-    prismaMock.receipt.findFirst.mockResolvedValue({ ...payment, amount: 900 });
+  it("will not link a payment the inbox would not have offered: another amount, or another time", async () => {
+    prismaMock.receipt.findMany.mockResolvedValue([{ ...payment, amount: 900 }]);
+    await expect(link()).rejects.toEqual(notFound);
 
-    await expect(
-      applyTransactionAction(USER, "txn-1", "link", undefined, { receiptId: "rcpt-recorded" }),
-    ).rejects.toEqual(refusal("bank_payment_amount_differs"));
-    expect(prismaMock.bankTransaction.update).not.toHaveBeenCalled();
+    // 31 days before the booking.
+    prismaMock.receipt.findMany.mockResolvedValue([
+      { ...payment, date: new Date("2026-08-01T00:00:00.000Z") },
+    ]);
+    await expect(link()).rejects.toEqual(notFound);
+
+    expect(prismaMock.bankTransaction.updateMany).not.toHaveBeenCalled();
   });
 
   it("refuses a payment another movement took while the owner was deciding", async () => {
     prismaMock.bankTransaction.count.mockResolvedValue(1);
 
-    await expect(
-      applyTransactionAction(USER, "txn-1", "link", undefined, { receiptId: "rcpt-recorded" }),
-    ).rejects.toEqual(refusal("bank_payment_already_linked"));
-    expect(prismaMock.bankTransaction.update).not.toHaveBeenCalled();
+    await expect(link()).rejects.toEqual(refusal("bank_payment_already_linked"));
+    expect(prismaMock.bankTransaction.updateMany).not.toHaveBeenCalled();
     expect(logAuditMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses when a confirmation overlapped and gave the movement a receipt meanwhile", async () => {
+    prismaMock.bankTransaction.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(link()).rejects.toEqual(refusal("bank_movement_has_receipt"));
+    expect(logAuditMock).not.toHaveBeenCalled();
+  });
+
+  it("needs a lease to look in", async () => {
+    prismaMock.bankTransaction.findFirst.mockResolvedValue(movement({ suggestedLeaseId: null }));
+
+    await expect(link()).rejects.toEqual(refusal("bank_lease_required"));
+    expect(prismaMock.receipt.findMany).not.toHaveBeenCalled();
   });
 
   it("refuses to link without saying which payment, and money going out", async () => {
@@ -335,51 +385,47 @@ describe("link", () => {
     );
 
     prismaMock.bankTransaction.findFirst.mockResolvedValue(movement({ amount: -850 }));
-    await expect(
-      applyTransactionAction(USER, "txn-1", "link", undefined, { receiptId: "rcpt-recorded" }),
-    ).rejects.toEqual(refusal("bank_outflow_not_rent"));
+    await expect(link()).rejects.toEqual(refusal("bank_outflow_not_rent"));
   });
 
   it("refuses a movement that is not waiting for review", async () => {
     prismaMock.bankTransaction.findFirst.mockResolvedValue(movement({ status: "ignored" }));
 
-    await expect(
-      applyTransactionAction(USER, "txn-1", "link", undefined, { receiptId: "rcpt-recorded" }),
-    ).rejects.toEqual(refusal("bank_movement_not_waiting"));
-    expect(prismaMock.bankTransaction.update).not.toHaveBeenCalled();
+    await expect(link()).rejects.toEqual(refusal("bank_movement_not_waiting"));
+    expect(prismaMock.bankTransaction.updateMany).not.toHaveBeenCalled();
   });
 
   it("leaves a movement that has another receipt alone, and treats the same link twice as done", async () => {
     prismaMock.bankTransaction.findFirst.mockResolvedValue(
       movement({ status: "matched_confirmed", receiptId: "rcpt-other" }),
     );
-    await expect(
-      applyTransactionAction(USER, "txn-1", "link", undefined, { receiptId: "rcpt-recorded" }),
-    ).rejects.toEqual(refusal("bank_movement_has_receipt"));
+    await expect(link()).rejects.toEqual(refusal("bank_movement_has_receipt"));
 
     prismaMock.bankTransaction.findFirst.mockResolvedValue(
       movement({ status: "matched_confirmed", receiptId: "rcpt-recorded" }),
     );
-    expect(
-      await applyTransactionAction(USER, "txn-1", "link", undefined, {
-        receiptId: "rcpt-recorded",
-      }),
-    ).toEqual({ status: "matched_confirmed", receiptId: "rcpt-recorded" });
-    expect(prismaMock.bankTransaction.update).not.toHaveBeenCalled();
+    expect(await link()).toEqual({ status: "matched_confirmed", receiptId: "rcpt-recorded" });
+    expect(prismaMock.bankTransaction.updateMany).not.toHaveBeenCalled();
   });
 
-  it("never lets sandbox money stand for a real payment", async () => {
+  it("never lets sandbox money stand for a real payment, and reads no receipt to find out", async () => {
     prismaMock.bankAccount.findFirst.mockResolvedValue({
       connection: { metadata: JSON.stringify({ isTest: true }) },
     });
 
-    await expect(
-      applyTransactionAction(USER, "txn-1", "link", undefined, { receiptId: "rcpt-recorded" }),
-    ).rejects.toEqual(refusal("bank_test_movement"));
-    expect(prismaMock.bankTransaction.update).not.toHaveBeenCalled();
+    await expect(link()).rejects.toEqual(refusal("bank_test_movement"));
+    expect(prismaMock.receipt.findMany).not.toHaveBeenCalled();
+    expect(prismaMock.bankTransaction.updateMany).not.toHaveBeenCalled();
     expect(prismaMock.bankAccount.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: "acct-1", userId: USER } }),
     );
+  });
+
+  it("does not trust an account that is not there", async () => {
+    prismaMock.bankAccount.findFirst.mockResolvedValue(null);
+
+    await expect(link()).rejects.toEqual(notFound);
+    expect(prismaMock.bankTransaction.updateMany).not.toHaveBeenCalled();
   });
 });
 

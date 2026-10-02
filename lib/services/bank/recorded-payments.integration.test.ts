@@ -18,6 +18,8 @@ describe("recorded payments — real Prisma client + real SQLite file", () => {
   let prisma: Awaited<ReturnType<typeof loadClient>>;
   let recordedPaymentsFor: typeof import("./recorded-payments").recordedPaymentsFor;
   let recordedPaymentsForMovements: typeof import("./recorded-payments").recordedPaymentsForMovements;
+  let importBankRows: typeof import("./import").importBankRows;
+  let applyTransactionAction: typeof import("./import").applyTransactionAction;
 
   async function loadClient() {
     const { getPrismaClient, resetPrismaClientForTests } =
@@ -166,6 +168,7 @@ describe("recorded payments — real Prisma client + real SQLite file", () => {
     process.env.PII_ENCRYPTION_KEY = "d".repeat(64);
     prisma = await loadClient();
     ({ recordedPaymentsFor, recordedPaymentsForMovements } = await import("./recorded-payments"));
+    ({ importBankRows, applyTransactionAction } = await import("./import"));
   }, 90_000);
 
   afterAll(async () => {
@@ -289,6 +292,135 @@ describe("recorded payments — real Prisma client + real SQLite file", () => {
     expect(ids(found.get("m-june")!)).toEqual([june.id]);
     expect(ids(found.get("m-august")!)).toEqual([august.id]);
     expect(ids(found.get("m-other-lease")!)).toEqual([other.id]);
+  });
+
+  /**
+   * The inbox's own actions against real rows: a movement imported through the real pipeline, a
+   * payment recorded by hand, and the real waterfall behind a confirmation.
+   */
+  async function waiting(w: World, bookingDate: string, reference: string) {
+    const summary = await importBankRows(w.user.id, [
+      { bookingDate, amount: RENT, counterpartyName: w.tenant.name, reference },
+    ]);
+    expect(summary).toMatchObject({ imported: 1, needsReview: 1 });
+    const movement = await prisma.bankTransaction.findFirstOrThrow({
+      where: { userId: w.user.id, reference },
+    });
+    // The payer's name, the rent and a rent word: enough to suggest the lease, not to allocate it.
+    expect(movement.suggestedLeaseId).toBe(w.lease.id);
+    return movement;
+  }
+
+  const ledgerOf = async (w: World) => ({
+    allocated: (await prisma.rentPeriod.findMany({ where: { leaseId: w.lease.id } })).reduce(
+      (sum, period) => sum + period.allocatedAmount,
+      0,
+    ),
+    receipts: await prisma.receipt.count({ where: { leaseId: w.lease.id } }),
+  });
+
+  it("links a movement to the recorded payment without moving the ledger, and to one movement only", async () => {
+    const w = await world("link");
+    const payment = await record(w, "2026-06-04");
+    const first = await waiting(w, "2026-06-10", "renda um");
+    const second = await waiting(w, "2026-06-11", "renda dois");
+    const before = await ledgerOf(w);
+
+    expect(
+      await applyTransactionAction(w.user.id, first.id, "link", undefined, {
+        receiptId: payment.id,
+      }),
+    ).toEqual({
+      status: "matched_confirmed",
+      receiptId: payment.id,
+    });
+
+    const linked = await prisma.bankTransaction.findUniqueOrThrow({ where: { id: first.id } });
+    expect(linked).toMatchObject({ status: "matched_confirmed", receiptId: payment.id });
+    expect(await ledgerOf(w)).toEqual(before);
+
+    // The payment has its movement now: it is not offered to, nor taken by, a second one.
+    await expect(
+      applyTransactionAction(w.user.id, second.id, "link", undefined, { receiptId: payment.id }),
+    ).rejects.toMatchObject({ name: "ResourceNotFoundError" });
+    expect(
+      (await prisma.bankTransaction.findUniqueOrThrow({ where: { id: second.id } })).receiptId,
+    ).toBeNull();
+  });
+
+  it("holds a confirmation while a payment was recorded, and allocates it once told it is new", async () => {
+    const w = await world("hold");
+    await record(w, "2026-06-04");
+    const movement = await waiting(w, "2026-06-10", "renda hold");
+    const before = await ledgerOf(w);
+
+    const held = await applyTransactionAction(w.user.id, movement.id, "confirm");
+    expect(held).toMatchObject({ status: "needs_review", receiptId: null });
+    expect(held.recordedPayments).toHaveLength(1);
+    expect(await ledgerOf(w)).toEqual(before);
+
+    const added = await applyTransactionAction(w.user.id, movement.id, "confirm", undefined, {
+      newPayment: true,
+    });
+    expect(added.status).toBe("matched_confirmed");
+    expect((await ledgerOf(w)).receipts).toBe(before.receipts + 1);
+    expect((await ledgerOf(w)).allocated).toBeCloseTo(before.allocated + RENT, 2);
+  });
+
+  it("never counts a month twice when a link and a confirmation overlap", async () => {
+    // Two requests for one row, as two tabs would send them. The guarantee is safety, not that one
+    // wins: this client has a single SQLite connection, so a transaction that is rolled back can
+    // take with it a statement another request ran meanwhile, and a confirmation can fail with it.
+    // What must never happen is both succeeding, or a receipt left counting behind a movement that
+    // says it is the recorded payment.
+    for (let round = 0; round < 12; round += 1) {
+      const w = await world(`overlap-${round}`);
+      const payment = await record(w, "2026-06-04");
+      const movement = await waiting(w, "2026-06-10", `renda sobreposta ${round}`);
+      const before = await ledgerOf(w);
+
+      const settled = await Promise.allSettled([
+        applyTransactionAction(w.user.id, movement.id, "link", undefined, {
+          receiptId: payment.id,
+        }),
+        applyTransactionAction(w.user.id, movement.id, "confirm", undefined, { newPayment: true }),
+      ]);
+      const outcomes = settled
+        .map((outcome) =>
+          outcome.status === "fulfilled" ? "fulfilled" : String(outcome.reason?.message),
+        )
+        .join(" / ");
+
+      expect(
+        settled.filter((outcome) => outcome.status === "fulfilled").length,
+        `round ${round}: both requests succeeded (${outcomes})`,
+      ).toBeLessThanOrEqual(1);
+
+      const final = await prisma.bankTransaction.findUniqueOrThrow({ where: { id: movement.id } });
+      const automation = await prisma.receipt.findMany({
+        where: { leaseId: w.lease.id, source: "automation" },
+      });
+      const after = await ledgerOf(w);
+
+      if (final.receiptId === payment.id) {
+        // Linked: nothing was allocated, and no receipt was left behind the link.
+        expect(
+          automation,
+          `round ${round}: a receipt was left behind the link (${outcomes})`,
+        ).toEqual([]);
+        expect(after.allocated).toBeCloseTo(before.allocated, 2);
+      } else if (final.receiptId === null) {
+        // Neither took it: the confirmation left nothing behind either.
+        expect(automation, `round ${round}: a receipt without a movement (${outcomes})`).toEqual(
+          [],
+        );
+        expect(after.allocated).toBeCloseTo(before.allocated, 2);
+      } else {
+        // The owner said "a new payment" and it was counted once, as theirs and not the link's.
+        expect(automation.map((receipt) => receipt.id)).toEqual([final.receiptId]);
+        expect(after.allocated).toBeCloseTo(before.allocated + RENT, 2);
+      }
+    }
   });
 
   it("asks nothing of the database when there is nothing to check", async () => {

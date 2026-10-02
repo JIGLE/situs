@@ -61,7 +61,6 @@ const REASON_KEY = new Map<
   | "bankMovementNotIgnored"
   | "bankMovementNotWaiting"
   | "bankTestMovement"
-  | "bankPaymentAmountDiffers"
   | "bankPaymentAlreadyLinked"
   | "bankConnectionRenewalUnavailable"
   | "bankConnectionHasMovements"
@@ -86,7 +85,6 @@ const REASON_KEY = new Map<
   ["bank_movement_not_ignored", "bankMovementNotIgnored"],
   ["bank_movement_not_waiting", "bankMovementNotWaiting"],
   ["bank_test_movement", "bankTestMovement"],
-  ["bank_payment_amount_differs", "bankPaymentAmountDiffers"],
   ["bank_payment_already_linked", "bankPaymentAlreadyLinked"],
   ["bank_connection_renewal_unavailable", "bankConnectionRenewalUnavailable"],
   ["bank_connection_has_movements", "bankConnectionHasMovements"],
