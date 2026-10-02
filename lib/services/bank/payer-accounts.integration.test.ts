@@ -110,9 +110,13 @@ describe("remembered payer accounts — real Prisma client + real SQLite file", 
     w: World,
     when: string,
     amount: number,
-    options: { iban?: string; target?: { connectionId: string; bankAccountId: string } } = {},
+    options: {
+      iban?: string;
+      reference?: string;
+      target?: { connectionId: string; bankAccountId: string };
+    } = {},
   ) {
-    const ref = `transfer ${reference++}`;
+    const ref = options.reference ?? `transfer ${reference++}`;
     const summary = await importBankRows(
       w.user.id,
       [
@@ -135,6 +139,8 @@ describe("remembered payer accounts — real Prisma client + real SQLite file", 
 
   const reasonsOf = (movement: { matchReasons: string | null }): string[] =>
     JSON.parse(movement.matchReasons ?? "{}").reasons ?? [];
+  const warningsOf = (movement: { matchReasons: string | null }): string[] =>
+    JSON.parse(movement.matchReasons ?? "{}").warnings ?? [];
 
   const ledgerOf = async (leaseIds: string[]) => ({
     allocated: (await prisma.rentPeriod.findMany({ where: { leaseId: { in: leaseIds } } })).reduce(
@@ -288,6 +294,25 @@ describe("remembered payer accounts — real Prisma client + real SQLite file", 
       ),
     ).rejects.toMatchObject({ name: "ResourceNotFoundError" });
     expect(await prisma.payerAccount.count({ where: { tenantId: mine.tenant.id } })).toBe(1);
+  });
+
+  it("still waits when a reference names another month, or the movement looks like one just seen", async () => {
+    const w = await world("holds");
+    await teach(w);
+
+    // The oldest month still open is not December.
+    const wrongMonth = await pay(w, "2026-07-10", RENT, { reference: "renda 12/2026" });
+    expect(wrongMonth.movement.status).toBe("needs_review");
+    expect(warningsOf(wrongMonth.movement)).toEqual([
+      expect.stringMatching(/^reference_conflict:2026-12/),
+    ]);
+
+    const first = await pay(w, "2026-08-10", RENT);
+    expect(first.movement.status).toBe("auto_matched");
+    // The same account, the same amount, a day later: it may be the same money seen twice.
+    const again = await pay(w, "2026-08-11", RENT);
+    expect(again.movement.status).toBe("needs_review");
+    expect(warningsOf(again.movement)).toContain("possible_duplicate");
   });
 
   it("tells a tenant's two contracts apart by their rent, and waits when the rent cannot", async () => {
