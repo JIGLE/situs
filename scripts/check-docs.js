@@ -46,6 +46,17 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // An administrator can open a door in Admin (an invitation, or Google sign-up as a manager), so
+    // "every other email is refused" holds only while both are closed, as they are by default.
+    pattern:
+      /every other email is refused before any row is written|registration\.ts`\)\. `AUTH_ALLOWED_EMAILS` admits a deliberate second|^refused until you add it to `AUTH_ALLOWED_EMAILS`\.$/,
+    retired: "2026-10-03 (sign-up settings and invitations)",
+    because:
+      "a new email is also admitted by an administrator's invitation, or by the Google sign-up " +
+      "switch (both read by lib/services/auth/registration.ts, only for a new account), so " +
+      "registration is closed by default and not unconditionally",
+  },
+  {
     // J5c: the last planned step of the bank history shipped, so the row that promised it is gone.
     pattern: /Each tenant's account is learned from the first payment the owner confirms/,
     retired: "2026-10-02 (remembered accounts)",
