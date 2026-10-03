@@ -578,3 +578,174 @@ describe("jwt and session callbacks — the second factor", () => {
     expect(JSON.stringify(shown)).not.toContain("sid-secret-1");
   });
 });
+
+/**
+ * The role a session carries. `requireAdmin` and `isOwnerSessionRole` read it off the session, so it
+ * has to be the role stored on the account. A Google sign-in's profile has none, and the callback
+ * fell back to "ADMIN" whatever the row said: an account stored as MANAGER or USER signed in as an
+ * administrator. The role is now read in the query that provisions the row, and a role that cannot
+ * be read is no administrator.
+ */
+describe("jwt and session callbacks — the role the session carries", () => {
+  type Callbacks = NonNullable<
+    ReturnType<typeof import("@/lib/services/auth/auth").getAuthOptions>["callbacks"]
+  >;
+  type JwtCallback = (args: Record<string, unknown>) => Promise<Record<string, unknown>>;
+  type SessionCallback = (args: {
+    session: Record<string, unknown>;
+    token: Record<string, unknown>;
+  }) => Promise<Record<string, unknown>>;
+
+  const prismaMock = { user: { upsert: vi.fn(), findUnique: vi.fn() } };
+
+  async function load(options: { mock?: boolean } = {}) {
+    vi.doMock("@/lib/config/data-mode", () => ({
+      isMockMode: Boolean(options.mock),
+      isRealMode: !options.mock,
+      dataMode: options.mock ? "mock" : "real",
+    }));
+    vi.doMock("@/lib/services/database/database", () => ({
+      getPrismaClient: () => prismaMock,
+    }));
+    // The registry is reset for every test, so the logger to spy on is the one the callbacks import.
+    const { logger } = await import("@/lib/utils/logger");
+    const { getAuthOptions } = await import("@/lib/services/auth/auth");
+    const callbacks = getAuthOptions().callbacks as Callbacks;
+    return {
+      jwt: callbacks.jwt as unknown as JwtCallback,
+      session: callbacks.session as unknown as SessionCallback,
+      logger,
+    };
+  }
+
+  const googleSignIn = () => ({
+    token: {},
+    user: { id: "google-sub-999", email: "co-owner@example.com", name: "Co-owner" },
+    account: { provider: "google" },
+  });
+
+  beforeEach(() => {
+    vi.resetModules();
+    prismaMock.user.upsert.mockReset();
+    prismaMock.user.findUnique.mockReset();
+    prismaMock.user.findUnique.mockResolvedValue({ totpEnabled: false });
+    process.env.DATABASE_URL = "file:./dev.db";
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value: "test",
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.doUnmock("@/lib/config/data-mode");
+    vi.doUnmock("@/lib/services/database/database");
+  });
+
+  it.each(["ADMIN", "MANAGER", "USER"])(
+    "carries the %s role stored on the account at a Google sign-in",
+    async (role) => {
+      prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1", role });
+      const { jwt } = await load();
+
+      const token = await jwt(googleSignIn());
+
+      expect(token.role).toBe(role);
+    },
+  );
+
+  it("reads the role in the query that provisions the row, and never writes one to a row that exists", async () => {
+    prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1", role: "MANAGER" });
+    const { jwt } = await load();
+
+    await jwt(googleSignIn());
+
+    expect(prismaMock.user.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { email: "co-owner@example.com" },
+        // A sign-in is not a promotion: the stored role stays whatever it is.
+        update: {},
+        select: { id: true, role: true },
+      }),
+    );
+  });
+
+  it("never lets a role already on the token outrank the stored one", async () => {
+    prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1", role: "MANAGER" });
+    const { jwt } = await load();
+
+    const token = await jwt({ ...googleSignIn(), token: { role: "ADMIN" } });
+
+    expect(token.role).toBe("MANAGER");
+  });
+
+  it("is no administrator when the row's role could not be read", async () => {
+    prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1" });
+    const { jwt } = await load();
+
+    const token = await jwt(googleSignIn());
+
+    expect(token.role).toBe("USER");
+  });
+
+  it("says in the log that it signed a USER in, since the owner routes will refuse it", async () => {
+    prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1", role: "USER" });
+    const { jwt, logger } = await load();
+    const warn = vi.spyOn(logger, "warn").mockImplementation(() => {});
+
+    await jwt(googleSignIn());
+
+    expect(warn).toHaveBeenCalledWith("Signed in as a USER: the owner routes refuse this role", {
+      userId: "db-cuid-1",
+    });
+  });
+
+  it("says nothing of it for an administrator or a manager", async () => {
+    const { jwt, logger } = await load();
+    const warn = vi.spyOn(logger, "warn").mockImplementation(() => {});
+
+    for (const role of ["ADMIN", "MANAGER"]) {
+      prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1", role });
+      await jwt(googleSignIn());
+    }
+
+    expect(warn).not.toHaveBeenCalledWith(
+      "Signed in as a USER: the owner routes refuse this role",
+      expect.anything(),
+    );
+  });
+
+  it("carries the role the credentials provider returned for its row", async () => {
+    const { jwt } = await load();
+
+    const token = await jwt({
+      token: {},
+      user: { id: "db-cuid-2", email: "demo@situs.local", name: "Demo", role: "MANAGER" },
+      account: { provider: "credentials" },
+    });
+
+    expect(token.role).toBe("MANAGER");
+    expect(prismaMock.user.upsert).not.toHaveBeenCalled();
+  });
+
+  it("keeps the demo's ADMIN where there is no database to read", async () => {
+    const { jwt } = await load({ mock: true });
+
+    const token = await jwt(googleSignIn());
+
+    expect(token.role).toBe("ADMIN");
+    expect(prismaMock.user.upsert).not.toHaveBeenCalled();
+  });
+
+  it("puts the token's role on the session, and gives a token with none no administrator session", async () => {
+    const { session } = await load();
+
+    const manager = await session({ session: { user: {} }, token: { sub: "u1", role: "MANAGER" } });
+    const none = await session({ session: { user: {} }, token: { sub: "u1" } });
+
+    expect((manager.user as { role?: string }).role).toBe("MANAGER");
+    expect((none.user as { role?: string }).role).toBe("USER");
+  });
+});
