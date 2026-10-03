@@ -10,7 +10,7 @@ import path from "node:path";
  * `auth.test.ts` proves the callback's logic against a mocked client. This asks the same of a real
  * SQLite file, through the real `upsert`: that the query returns the row's own role when the row
  * exists (not the one a new row would be given), that signing in changes nothing stored, and that
- * the role of a row the sign-in gate admitted for the first time is the administrator's, as before.
+ * a row the registration gate admits through the allowlist is the administrator's, as before.
  *
  * The schema is pushed WITHOUT `--accept-data-loss`: a fresh file needs no such consent, and the flag
  * is the one thing a development environment may refuse to run.
@@ -27,11 +27,16 @@ describe("the role a Google sign-in carries — real Prisma client + real SQLite
     return getPrismaClient();
   }
 
-  const signIn = (email: string) =>
+  const signIn = (email: string, profile?: unknown) =>
     jwt({
       token: {},
       user: { id: "google-sub-999", email, name: "Someone" },
       account: { provider: "google" },
+      profile,
+    });
+  const invite = (email: string, role: "ADMIN" | "MANAGER") =>
+    prisma.accessInvitation.create({
+      data: { email, role, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
     });
 
   beforeAll(async () => {
@@ -72,12 +77,51 @@ describe("the role a Google sign-in carries — real Prisma client + real SQLite
     },
   );
 
-  it("provisions an identity the sign-in gate admitted for the first time as the administrator, as before", async () => {
-    const email = "first-run@example.com";
+  it("provisions an identity the sign-in gate admits by the allowlist as the administrator, as before", async () => {
+    const email = "allowlisted@example.com";
+    process.env.AUTH_ALLOWED_EMAILS = email;
 
-    const token = await signIn(email);
+    try {
+      const token = await signIn(email);
 
-    expect(token.role).toBe("ADMIN");
-    expect((await prisma.user.findUniqueOrThrow({ where: { email } })).role).toBe("ADMIN");
+      expect(token.role).toBe("ADMIN");
+      expect((await prisma.user.findUniqueOrThrow({ where: { email } })).role).toBe("ADMIN");
+    } finally {
+      delete process.env.AUTH_ALLOWED_EMAILS;
+    }
+  });
+
+  it("refuses an identity the gate does not admit, and creates nothing", async () => {
+    const email = "stranger@example.com";
+
+    await expect(signIn(email)).rejects.toThrow("USER_PROVISIONING_FAILED");
+
+    expect(await prisma.user.count({ where: { email } })).toBe(0);
+  });
+
+  it("provisions an invited identity as the role it was invited as, once Google has verified its email", async () => {
+    const email = "invited@example.com";
+    await invite(email, "MANAGER");
+
+    const token = await signIn(email, { email_verified: true });
+
+    expect(token.role).toBe("MANAGER");
+    expect((await prisma.user.findUniqueOrThrow({ where: { email } })).role).toBe("MANAGER");
+    // The invitation is used up by the account it made.
+    expect(await prisma.accessInvitation.count({ where: { email } })).toBe(0);
+  });
+
+  it("refuses an invited identity whose email Google has not verified, and keeps the invitation", async () => {
+    const email = "unverified@example.com";
+    await invite(email, "ADMIN");
+
+    // Google saying no, and a sign-in that carries no word from Google at all.
+    await expect(signIn(email, { email_verified: false })).rejects.toThrow(
+      "USER_PROVISIONING_FAILED",
+    );
+    await expect(signIn(email)).rejects.toThrow("USER_PROVISIONING_FAILED");
+
+    expect(await prisma.user.count({ where: { email } })).toBe(0);
+    expect(await prisma.accessInvitation.count({ where: { email } })).toBe(1);
   });
 });

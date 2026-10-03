@@ -32,10 +32,19 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { isDemoLoginEnabled } from "@/lib/utils/demo-login";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { isMockMode } from "@/lib/config/data-mode";
-import { resolveSignIn } from "@/lib/services/auth/registration";
+import { provisionAccount, resolveSignIn } from "@/lib/services/auth/registration";
 import { createDevSession, isDevAuthEnabled } from "@/lib/services/auth/dev-session";
 import { hasLocale } from "next-intl";
 import { locales, type Locale } from "@/lib/i18n/locales";
+
+/**
+ * Whether the provider says it verified the email. Google puts `email_verified` in the profile it
+ * hands the callbacks (NextAuth drops it from `user`); a profile without the claim is unverified.
+ */
+const emailVerifiedBy = (profile: unknown): boolean => {
+  const claim = (profile as { email_verified?: unknown } | null | undefined)?.email_verified;
+  return claim === true || claim === "true";
+};
 
 function createBaseAuthOptions(): NextAuthOptions {
   const secret = process.env.NEXTAUTH_SECRET;
@@ -160,12 +169,15 @@ function createBaseAuthOptions(): NextAuthOptions {
         token,
         user,
         account,
+        profile,
         trigger,
         session: update,
       }: {
         token: JWT;
         user?: NextAuthUser | null;
         account?: { provider?: string } | null;
+        /** What the OAuth provider returned; only its `email_verified` claim is read. */
+        profile?: unknown;
         /** "update" when the browser called `useSession().update(data)`; `data` is `session`. */
         trigger?: "signIn" | "signUp" | "update";
         session?: unknown;
@@ -225,25 +237,17 @@ function createBaseAuthOptions(): NextAuthOptions {
             account.provider !== "credentials"
           ) {
             try {
-              const prisma = getPrismaClient();
-              const dbUser = await prisma.user.upsert({
-                where: { email: user.email },
-                update: {},
-                create: {
-                  email: user.email,
-                  name: user.name ?? undefined,
-                  image: user.image ?? undefined,
-                  // ADMIN is correct here and only here: the signIn gate above admits a NEW
-                  // email in exactly two cases — first-run bootstrap, which should own the
-                  // instance, and an explicit AUTH_ALLOWED_EMAILS entry, which is a deliberate
-                  // act. Before that gate existed, this line handed admin to any Google account.
-                  role: "ADMIN",
-                  imageConsent: true,
-                },
-                select: { id: true, role: true },
+              // The account that exists, or the one the registration gate lets this identity create,
+              // with the role the policy gives it (`registration.ts`). A sign-in never promotes.
+              const provisioned = await provisionAccount({
+                email: user.email,
+                name: user.name,
+                image: user.image,
+                provider: account.provider,
+                emailVerified: emailVerifiedBy(profile),
               });
-              resolvedId = dbUser.id;
-              storedRole = dbUser.role;
+              resolvedId = provisioned.id;
+              storedRole = provisioned.role;
             } catch (err) {
               // Do NOT fall through to user.id here. That is the OAuth provider's
               // account id, not a DB id, so the session would be issued against a
@@ -459,6 +463,7 @@ function createBaseAuthOptions(): NextAuthOptions {
       async signIn({
         user,
         account,
+        profile,
       }: {
         user?: NextAuthUser | null;
         account?: Account | undefined;
@@ -473,11 +478,18 @@ function createBaseAuthOptions(): NextAuthOptions {
         // OAuth identity as an ADMIN.
         if (!isMockMode && user?.email) {
           try {
-            const decision = await resolveSignIn(user.email);
+            const decision = await resolveSignIn(
+              user.email,
+              account?.provider,
+              emailVerifiedBy(profile),
+            );
             if (!decision.allow) {
-              logger.warn("Refused sign-in: registration is closed on this instance", {
-                provider: account?.provider,
-              });
+              logger.warn(
+                decision.reason === "email_unverified"
+                  ? "Refused sign-in: the provider has not verified this email"
+                  : "Refused sign-in: registration is closed on this instance",
+                { provider: account?.provider },
+              );
               return false;
             }
           } catch (error: unknown) {

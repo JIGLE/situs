@@ -162,12 +162,9 @@ describe("jwt callback — session id provisioning", () => {
   };
   type JwtCallback = (args: JwtArgs) => Promise<Record<string, unknown>>;
 
-  const prismaMock = {
-    user: {
-      upsert: vi.fn(),
-      findUnique: vi.fn(),
-    },
-  };
+  const prismaMock = { user: { findUnique: vi.fn() } };
+  /** The account the registration gate lets the sign-in have (`registration.ts`), or its refusal. */
+  const provisionMock = vi.fn();
 
   async function loadJwtCallback(): Promise<JwtCallback> {
     vi.doMock("@/lib/config/data-mode", () => ({
@@ -178,6 +175,10 @@ describe("jwt callback — session id provisioning", () => {
     vi.doMock("@/lib/services/database/database", () => ({
       getPrismaClient: () => prismaMock,
     }));
+    vi.doMock("@/lib/services/auth/registration", () => ({
+      provisionAccount: provisionMock,
+      resolveSignIn: vi.fn(),
+    }));
     const { getAuthOptions } = await import("@/lib/services/auth/auth");
     const cb = getAuthOptions().callbacks?.jwt;
     return cb as unknown as JwtCallback;
@@ -185,7 +186,7 @@ describe("jwt callback — session id provisioning", () => {
 
   beforeEach(() => {
     vi.resetModules();
-    prismaMock.user.upsert.mockReset();
+    provisionMock.mockReset();
     prismaMock.user.findUnique.mockReset();
     process.env.DATABASE_URL = "file:./dev.db";
     Object.defineProperty(process.env, "NODE_ENV", {
@@ -200,10 +201,11 @@ describe("jwt callback — session id provisioning", () => {
     vi.restoreAllMocks();
     vi.doUnmock("@/lib/config/data-mode");
     vi.doUnmock("@/lib/services/database/database");
+    vi.doUnmock("@/lib/services/auth/registration");
   });
 
   it("puts the DB id — not the provider id — in the token on OAuth sign-in", async () => {
-    prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1" });
+    provisionMock.mockResolvedValue({ id: "db-cuid-1" });
     prismaMock.user.findUnique.mockResolvedValue({ totpEnabled: false });
     const jwt = await loadJwtCallback();
 
@@ -218,7 +220,7 @@ describe("jwt callback — session id provisioning", () => {
   });
 
   it("carries the language the account chose into the token at sign-in", async () => {
-    prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1" });
+    provisionMock.mockResolvedValue({ id: "db-cuid-1" });
     prismaMock.user.findUnique.mockResolvedValue({
       totpEnabled: false,
       settings: { language: "en", languageChosenAt: new Date("2026-09-25T10:00:00Z") },
@@ -237,7 +239,7 @@ describe("jwt callback — session id provisioning", () => {
   it("carries no language when the account only holds the column's default", async () => {
     // Rows from before choices were recorded say "en" with no date. Carrying that would switch
     // every device without a language of its own to English at sign-in.
-    prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1" });
+    provisionMock.mockResolvedValue({ id: "db-cuid-1" });
     prismaMock.user.findUnique.mockResolvedValue({
       totpEnabled: false,
       settings: { language: "en", languageChosenAt: null },
@@ -256,7 +258,7 @@ describe("jwt callback — session id provisioning", () => {
   it("refuses to issue a session when provisioning the User row fails", async () => {
     // The database was unreachable at sign-in. Falling through here would mint a
     // token carrying Google's sub, which FK-violates on every subsequent write.
-    prismaMock.user.upsert.mockRejectedValue(new Error("database is locked"));
+    provisionMock.mockRejectedValue(new Error("database is locked"));
     const jwt = await loadJwtCallback();
 
     await expect(
@@ -338,7 +340,8 @@ describe("jwt and session callbacks — the second factor", () => {
   type JwtCallback = (args: Record<string, unknown>) => Promise<Record<string, unknown>>;
 
   const SECRET = "second-factor-test-secret-0123456789-abcdefghij";
-  const prismaMock = { user: { upsert: vi.fn(), findUnique: vi.fn() } };
+  const prismaMock = { user: { findUnique: vi.fn() } };
+  const provisionMock = vi.fn();
 
   async function loadCallbacks(): Promise<Callbacks> {
     vi.doMock("@/lib/config/data-mode", () => ({
@@ -348,6 +351,10 @@ describe("jwt and session callbacks — the second factor", () => {
     }));
     vi.doMock("@/lib/services/database/database", () => ({
       getPrismaClient: () => prismaMock,
+    }));
+    vi.doMock("@/lib/services/auth/registration", () => ({
+      provisionAccount: provisionMock,
+      resolveSignIn: vi.fn(),
     }));
     const { getAuthOptions } = await import("@/lib/services/auth/auth");
     return getAuthOptions().callbacks as Callbacks;
@@ -375,7 +382,7 @@ describe("jwt and session callbacks — the second factor", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.stubEnv("NEXTAUTH_SECRET", SECRET);
-    prismaMock.user.upsert.mockReset();
+    provisionMock.mockReset();
     prismaMock.user.findUnique.mockReset();
     process.env.DATABASE_URL = "file:./dev.db";
     Object.defineProperty(process.env, "NODE_ENV", {
@@ -391,10 +398,11 @@ describe("jwt and session callbacks — the second factor", () => {
     vi.unstubAllEnvs();
     vi.doUnmock("@/lib/config/data-mode");
     vi.doUnmock("@/lib/services/database/database");
+    vi.doUnmock("@/lib/services/auth/registration");
   });
 
   it("holds a session pending at sign-in when the account has TOTP on, and names it", async () => {
-    prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1" });
+    provisionMock.mockResolvedValue({ id: "db-cuid-1" });
     prismaMock.user.findUnique.mockResolvedValue({ totpEnabled: true });
     const jwt = await loadJwt();
     const signIn = () =>
@@ -414,7 +422,7 @@ describe("jwt and session callbacks — the second factor", () => {
   });
 
   it("holds none pending for an account without TOTP", async () => {
-    prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1" });
+    provisionMock.mockResolvedValue({ id: "db-cuid-1" });
     prismaMock.user.findUnique.mockResolvedValue({ totpEnabled: false });
     const jwt = await loadJwt();
 
@@ -436,7 +444,7 @@ describe("jwt and session callbacks — the second factor", () => {
     async (_label, user, account) => {
       // The read at sign-in is the only thing that sets `mfaPending`. Swallowing its failure would
       // hand a full session to a first factor alone whenever the database happened to be busy.
-      prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1" });
+      provisionMock.mockResolvedValue({ id: "db-cuid-1" });
       prismaMock.user.findUnique.mockRejectedValue(new Error("database is locked"));
       const jwt = await loadJwt();
 
@@ -596,7 +604,8 @@ describe("jwt and session callbacks — the role the session carries", () => {
     token: Record<string, unknown>;
   }) => Promise<Record<string, unknown>>;
 
-  const prismaMock = { user: { upsert: vi.fn(), findUnique: vi.fn() } };
+  const prismaMock = { user: { findUnique: vi.fn() } };
+  const provisionMock = vi.fn();
 
   async function load(options: { mock?: boolean } = {}) {
     vi.doMock("@/lib/config/data-mode", () => ({
@@ -606,6 +615,10 @@ describe("jwt and session callbacks — the role the session carries", () => {
     }));
     vi.doMock("@/lib/services/database/database", () => ({
       getPrismaClient: () => prismaMock,
+    }));
+    vi.doMock("@/lib/services/auth/registration", () => ({
+      provisionAccount: provisionMock,
+      resolveSignIn: vi.fn(),
     }));
     // The registry is reset for every test, so the logger to spy on is the one the callbacks import.
     const { logger } = await import("@/lib/utils/logger");
@@ -626,7 +639,7 @@ describe("jwt and session callbacks — the role the session carries", () => {
 
   beforeEach(() => {
     vi.resetModules();
-    prismaMock.user.upsert.mockReset();
+    provisionMock.mockReset();
     prismaMock.user.findUnique.mockReset();
     prismaMock.user.findUnique.mockResolvedValue({ totpEnabled: false });
     process.env.DATABASE_URL = "file:./dev.db";
@@ -642,12 +655,13 @@ describe("jwt and session callbacks — the role the session carries", () => {
     vi.restoreAllMocks();
     vi.doUnmock("@/lib/config/data-mode");
     vi.doUnmock("@/lib/services/database/database");
+    vi.doUnmock("@/lib/services/auth/registration");
   });
 
   it.each(["ADMIN", "MANAGER", "USER"])(
     "carries the %s role stored on the account at a Google sign-in",
     async (role) => {
-      prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1", role });
+      provisionMock.mockResolvedValue({ id: "db-cuid-1", role });
       const { jwt } = await load();
 
       const token = await jwt(googleSignIn());
@@ -656,24 +670,50 @@ describe("jwt and session callbacks — the role the session carries", () => {
     },
   );
 
-  it("reads the role in the query that provisions the row, and never writes one to a row that exists", async () => {
-    prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1", role: "MANAGER" });
+  it("hands the registration gate who is signing in, with the provider, and takes the role from it", async () => {
+    provisionMock.mockResolvedValue({ id: "db-cuid-1", role: "MANAGER" });
     const { jwt } = await load();
 
-    await jwt(googleSignIn());
+    const token = await jwt(googleSignIn());
 
-    expect(prismaMock.user.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { email: "co-owner@example.com" },
-        // A sign-in is not a promotion: the stored role stays whatever it is.
-        update: {},
-        select: { id: true, role: true },
-      }),
+    expect(provisionMock).toHaveBeenCalledWith({
+      email: "co-owner@example.com",
+      name: "Co-owner",
+      image: undefined,
+      provider: "google",
+      // The sign-in carried no profile, so nothing says Google verified the email.
+      emailVerified: false,
+    });
+    expect(token.role).toBe("MANAGER");
+  });
+
+  it.each([
+    ["a verified email", { email_verified: true }, true],
+    ["a verified email, as Google's token endpoint spells it", { email_verified: "true" }, true],
+    ["an email Google says is not verified", { email_verified: false }, false],
+    ["a profile without the claim", { sub: "google-sub-999" }, false],
+    ["no profile at all", undefined, false],
+    ["a profile that is not an object", "email_verified", false],
+  ])("tells the gate what the provider says of the email: %s", async (_case, profile, expected) => {
+    provisionMock.mockResolvedValue({ id: "db-cuid-1", role: "MANAGER" });
+    const { jwt } = await load();
+
+    await jwt({ ...googleSignIn(), profile });
+
+    expect(provisionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ emailVerified: expected }),
     );
   });
 
+  it("refuses the sign-in when the gate admits nobody for it", async () => {
+    provisionMock.mockRejectedValue(new Error("REGISTRATION_CLOSED"));
+    const { jwt } = await load();
+
+    await expect(jwt(googleSignIn())).rejects.toThrow("USER_PROVISIONING_FAILED");
+  });
+
   it("never lets a role already on the token outrank the stored one", async () => {
-    prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1", role: "MANAGER" });
+    provisionMock.mockResolvedValue({ id: "db-cuid-1", role: "MANAGER" });
     const { jwt } = await load();
 
     const token = await jwt({ ...googleSignIn(), token: { role: "ADMIN" } });
@@ -682,7 +722,7 @@ describe("jwt and session callbacks — the role the session carries", () => {
   });
 
   it("is no administrator when the row's role could not be read", async () => {
-    prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1" });
+    provisionMock.mockResolvedValue({ id: "db-cuid-1" });
     const { jwt } = await load();
 
     const token = await jwt(googleSignIn());
@@ -691,7 +731,7 @@ describe("jwt and session callbacks — the role the session carries", () => {
   });
 
   it("says in the log that it signed a USER in, since the owner routes will refuse it", async () => {
-    prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1", role: "USER" });
+    provisionMock.mockResolvedValue({ id: "db-cuid-1", role: "USER" });
     const { jwt, logger } = await load();
     const warn = vi.spyOn(logger, "warn").mockImplementation(() => {});
 
@@ -707,7 +747,7 @@ describe("jwt and session callbacks — the role the session carries", () => {
     const warn = vi.spyOn(logger, "warn").mockImplementation(() => {});
 
     for (const role of ["ADMIN", "MANAGER"]) {
-      prismaMock.user.upsert.mockResolvedValue({ id: "db-cuid-1", role });
+      provisionMock.mockResolvedValue({ id: "db-cuid-1", role });
       await jwt(googleSignIn());
     }
 
@@ -727,7 +767,7 @@ describe("jwt and session callbacks — the role the session carries", () => {
     });
 
     expect(token.role).toBe("MANAGER");
-    expect(prismaMock.user.upsert).not.toHaveBeenCalled();
+    expect(provisionMock).not.toHaveBeenCalled();
   });
 
   it("keeps the demo's ADMIN where there is no database to read", async () => {
@@ -736,7 +776,7 @@ describe("jwt and session callbacks — the role the session carries", () => {
     const token = await jwt(googleSignIn());
 
     expect(token.role).toBe("ADMIN");
-    expect(prismaMock.user.upsert).not.toHaveBeenCalled();
+    expect(provisionMock).not.toHaveBeenCalled();
   });
 
   it("puts the token's role on the session, and gives a token with none no administrator session", async () => {
@@ -747,5 +787,144 @@ describe("jwt and session callbacks — the role the session carries", () => {
 
     expect((manager.user as { role?: string }).role).toBe("MANAGER");
     expect((none.user as { role?: string }).role).toBe("USER");
+  });
+});
+
+/**
+ * The `signIn` callback is the registration gate at the door: it runs before the jwt callback
+ * provisions a row, so a refused identity leaves nothing behind. The policy it asks is
+ * `registration.test.ts`'s; this is what the callback hands it, what it does with the answer, and
+ * what it says in the log, since an owner whose invited guest cannot get in will read that log.
+ */
+describe("signIn callback — the registration gate", () => {
+  type Callbacks = NonNullable<
+    ReturnType<typeof import("@/lib/services/auth/auth").getAuthOptions>["callbacks"]
+  >;
+  type SignInCallback = (args: Record<string, unknown>) => Promise<boolean>;
+
+  const resolveMock = vi.fn();
+  const prismaMock = { account: { deleteMany: vi.fn() } };
+
+  async function load(options: { mock?: boolean } = {}) {
+    vi.doMock("@/lib/config/data-mode", () => ({
+      isMockMode: Boolean(options.mock),
+      isRealMode: !options.mock,
+      dataMode: options.mock ? "mock" : "real",
+    }));
+    vi.doMock("@/lib/services/database/database", () => ({
+      getPrismaClient: () => prismaMock,
+    }));
+    vi.doMock("@/lib/services/auth/registration", () => ({
+      provisionAccount: vi.fn(),
+      resolveSignIn: resolveMock,
+    }));
+    // The registry is reset for every test, so the logger to spy on is the one the callbacks import.
+    const { logger } = await import("@/lib/utils/logger");
+    const { getAuthOptions } = await import("@/lib/services/auth/auth");
+    const callbacks = getAuthOptions().callbacks as Callbacks;
+    return { signIn: callbacks.signIn as unknown as SignInCallback, logger };
+  }
+
+  const googleSignIn = (profile?: unknown) => ({
+    user: { id: "google-sub-999", email: "co-owner@example.com", name: "Co-owner" },
+    account: { provider: "google", providerAccountId: "google-sub-999" },
+    profile,
+  });
+
+  beforeEach(() => {
+    vi.resetModules();
+    resolveMock.mockReset();
+    prismaMock.account.deleteMany.mockReset();
+    prismaMock.account.deleteMany.mockResolvedValue({ count: 0 });
+    process.env.DATABASE_URL = "file:./dev.db";
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.doUnmock("@/lib/config/data-mode");
+    vi.doUnmock("@/lib/services/database/database");
+    vi.doUnmock("@/lib/services/auth/registration");
+  });
+
+  it("lets through an identity the gate admits", async () => {
+    resolveMock.mockResolvedValue({ allow: true, reason: "existing_user" });
+    const { signIn } = await load();
+
+    await expect(signIn(googleSignIn())).resolves.toBe(true);
+  });
+
+  it.each([
+    ["a verified email", { email_verified: true }, true],
+    ["an email Google says is not verified", { email_verified: false }, false],
+    ["a profile without the claim", {}, false],
+    ["no profile at all", undefined, false],
+  ])(
+    "asks the gate about the email, the provider and the provider's word: %s",
+    async (_case, profile, expected) => {
+      resolveMock.mockResolvedValue({ allow: true, reason: "existing_user" });
+      const { signIn } = await load();
+
+      await signIn(googleSignIn(profile));
+
+      expect(resolveMock).toHaveBeenCalledWith("co-owner@example.com", "google", expected);
+    },
+  );
+
+  it("refuses the sign-in and says registration is closed", async () => {
+    resolveMock.mockResolvedValue({ allow: false, reason: "registration_closed" });
+    const { signIn, logger } = await load();
+    const warn = vi.spyOn(logger, "warn").mockImplementation(() => {});
+
+    await expect(signIn(googleSignIn({ email_verified: true }))).resolves.toBe(false);
+
+    expect(warn).toHaveBeenCalledWith("Refused sign-in: registration is closed on this instance", {
+      provider: "google",
+    });
+  });
+
+  it("refuses the sign-in and says the provider has not verified the email", async () => {
+    resolveMock.mockResolvedValue({ allow: false, reason: "email_unverified" });
+    const { signIn, logger } = await load();
+    const warn = vi.spyOn(logger, "warn").mockImplementation(() => {});
+
+    await expect(signIn(googleSignIn({ email_verified: false }))).resolves.toBe(false);
+
+    expect(warn).toHaveBeenCalledWith("Refused sign-in: the provider has not verified this email", {
+      provider: "google",
+    });
+    // A refusal leaves nothing behind: the stale-link clean-up never ran.
+    expect(prismaMock.account.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("refuses the sign-in when the gate cannot be evaluated", async () => {
+    resolveMock.mockRejectedValue(new Error("database is locked"));
+    const { signIn, logger } = await load();
+    const error = vi.spyOn(logger, "error").mockImplementation(() => {});
+
+    await expect(signIn(googleSignIn({ email_verified: true }))).resolves.toBe(false);
+
+    expect(error).toHaveBeenCalledWith(
+      "Could not evaluate the registration gate — refusing sign-in",
+      expect.any(Error),
+    );
+  });
+
+  it("leaves the credentials provider to authorize(), which already checked the password", async () => {
+    const { signIn } = await load();
+
+    await expect(
+      signIn({
+        user: { id: "u1", email: "demo@situs.local" },
+        account: { provider: "credentials" },
+      }),
+    ).resolves.toBe(true);
+    expect(resolveMock).not.toHaveBeenCalled();
+  });
+
+  it("asks nothing where there is no database to ask (mock mode)", async () => {
+    const { signIn } = await load({ mock: true });
+
+    await expect(signIn(googleSignIn())).resolves.toBe(true);
+    expect(resolveMock).not.toHaveBeenCalled();
   });
 });
