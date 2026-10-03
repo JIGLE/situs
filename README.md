@@ -78,7 +78,7 @@ npm run dev
 ```
 
 Open <http://localhost:3000>. The first account created owns the instance; every other email is
-refused until you add it to `AUTH_ALLOWED_EMAILS`.
+refused until you add it to `AUTH_ALLOWED_EMAILS` or an administrator invites it.
 
 ### Docker
 

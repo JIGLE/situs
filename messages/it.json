@@ -1956,6 +1956,10 @@
     "ocrExtractionReviewed": "Lettura del documento rivista",
     "linkExpenseDocument": "Documento collegato a una spesa",
     "assignPropertyOwner": "Proprietario assegnato",
-    "removePropertyOwner": "Proprietario rimosso"
+    "removePropertyOwner": "Proprietario rimosso",
+    "createAccount": "Account creato",
+    "createInvitation": "Persona invitata",
+    "revokeInvitation": "Invito ritirato",
+    "signUpSettingChange": "Impostazione di registrazione modificata"
   }
 }

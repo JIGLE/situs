@@ -1956,6 +1956,10 @@
     "ocrExtractionReviewed": "Document reading reviewed",
     "linkExpenseDocument": "Document linked to an expense",
     "assignPropertyOwner": "Owner assigned",
-    "removePropertyOwner": "Owner removed"
+    "removePropertyOwner": "Owner removed",
+    "createAccount": "Account created",
+    "createInvitation": "Person invited",
+    "revokeInvitation": "Invitation withdrawn",
+    "signUpSettingChange": "Sign-up setting changed"
   }
 }
