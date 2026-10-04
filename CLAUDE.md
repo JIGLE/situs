@@ -407,6 +407,11 @@ when the stored one cannot be read. An administrator changes an account's role, 
 manager and nothing else, at `/api/admin/access/accounts/[id]`; demoting the only administrator is a
 409 `last_admin`, and a change by someone no longer an administrator is a 403, both decided by the
 one UPDATE that makes the change, which counts and checks who asks (`lib/services/auth/accounts.ts`).
+Admin › Access (`/admin/access`, `components/features/admin/access/`) is the screen for all of it:
+the two switches, the invitations and each account's role; the sign-in methods and the allowlist
+below them only report. A switch shows what the server holds, read again after every change, never
+what was clicked. Opening Google sign-up asks first; an administrator giving up their own role is
+asked and then leaves Admin, since that account's next Admin request is refused.
 
 Optional:
 
