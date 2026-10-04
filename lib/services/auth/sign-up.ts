@@ -96,6 +96,21 @@ export async function findLiveInvitation(
   }
 }
 
+/** How many invitations have not lapsed. A failed read counts none, which reads as closed. */
+export async function countLiveInvitations(): Promise<number> {
+  try {
+    return await getPrismaClient().accessInvitation.count({
+      where: { expiresAt: { gt: new Date() } },
+    });
+  } catch (error) {
+    logger.error(
+      "Could not count the invitations — treating none as pending",
+      error instanceof Error ? error : new Error(String(error)),
+    );
+    return 0;
+  }
+}
+
 /** The switches for the Admin screen: a failed read is an error there, not a quiet default. */
 export async function getSignUpSettings(): Promise<SignUpSettings> {
   const row = await getPrismaClient().instanceSettings.findUnique({
