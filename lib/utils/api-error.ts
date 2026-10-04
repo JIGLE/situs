@@ -67,6 +67,9 @@ const REASON_KEY = new Map<
   | "receiptTransitionNotAllowed"
   | "receiptFilingMissing"
   | "receiptSubmissionRefused"
+  | "lastAdmin"
+  | "accountExists"
+  | "accountChanged"
 >([
   ["tenant_has_history", "tenantHasHistory"],
   ["property_has_history", "propertyHasHistory"],
@@ -91,6 +94,9 @@ const REASON_KEY = new Map<
   ["receipt_transition_not_allowed", "receiptTransitionNotAllowed"],
   ["receipt_filing_missing", "receiptFilingMissing"],
   ["receipt_submission_refused", "receiptSubmissionRefused"],
+  ["last_admin", "lastAdmin"],
+  ["account_exists", "accountExists"],
+  ["account_changed", "accountChanged"],
 ]);
 
 type FormsCatalogue = (typeof en)["forms"];

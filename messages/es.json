@@ -339,20 +339,20 @@
         "overview": "Resumen",
         "status": "Estado",
         "users": "Cuentas",
-        "signIn": "Acceso",
+        "access": "Accesos",
         "metrics": "Métricas"
       }
     },
     "signIn": {
-      "title": "Acceso",
-      "subtitle": "Cómo se puede entrar en esta instancia.",
-      "loading": "Cargando…",
-      "loadFailed": "No se pudo cargar el estado de acceso.",
+      "title": "Accesos",
       "registrationClosed": "Registro cerrado",
       "registrationClosedHelp": "Solo las cuentas existentes, y los correos de la lista permitida, pueden entrar.",
       "registrationOpen": "Registro abierto",
       "registrationOpenHelp": "Aún no existe ninguna cuenta, así que el próximo acceso reclamará esta instancia como administrador.",
-      "accounts": "{total} cuentas, {admins} de ellas administradores.",
+      "registrationInvitations": "El registro es por invitación",
+      "registrationInvitationsHelp": "Un correo que ha sido invitado puede crear una cuenta con Google. {count, plural, one {Hay # invitación pendiente.} other {Hay # invitaciones pendientes.}}",
+      "registrationGoogle": "El registro está abierto a cuentas de Google",
+      "registrationGoogleHelp": "Cualquiera con una cuenta de Google y un correo verificado puede crear una cuenta, como gestor. Desactívelo en Cuentas nuevas para cerrarlo.",
       "providers": "Métodos de acceso",
       "provider": {
         "credentials": "Correo y contraseña",
@@ -364,6 +364,55 @@
       "allowlist": "Correos permitidos",
       "allowlistEmpty": "Ninguno — solo cuentas existentes.",
       "allowlistHelp": "AUTH_ALLOWED_EMAILS. Aditivo: estos pueden entrar aunque el registro esté cerrado."
+    },
+    "access": {
+      "subtitle": "Quién puede crear una cuenta en esta instancia, y quién ya tiene una.",
+      "loading": "Cargando…",
+      "loadFailed": "No se pudieron cargar los ajustes de acceso.",
+      "summary": "{total, plural, one {# cuenta} other {# cuentas}}, de las cuales {admins, plural, one {# es administrador} other {# son administradores}}.",
+      "newAccounts": {
+        "title": "Cuentas nuevas",
+        "help": "Se aplican a quien aún no tiene cuenta. Quien ya tiene una entra siempre, sea cual sea el ajuste.",
+        "invitations": "Invitaciones",
+        "invitationsHelp": "Un correo al que invite puede crear una cuenta con Google, con el rol que le asigne. Desactivado, una invitación no admite a nadie; las ya enviadas se conservan.",
+        "googleSignUp": "Registro con Google",
+        "googleSignUpHelp": "Cualquier cuenta de Google con correo verificado puede crear aquí una cuenta, como gestor, sin invitación. Un gestor puede usar todo lo que usa un propietario sobre sus propios datos, incluida la conexión bancaria. Déjelo desactivado salvo que quiera eso.",
+        "saved": "Guardado.",
+        "openGoogleTitle": "¿Abrir a cualquier cuenta de Google?",
+        "openGoogleDescription": "Cualquier persona con una cuenta de Google y un correo verificado podrá crear una cuenta en esta instancia, como gestor, y usar las funciones de propietario sobre sus propios datos, incluida la conexión bancaria. Puede volver a desactivarlo cuando quiera; las cuentas ya creadas se quedan.",
+        "openGoogleConfirm": "Abrir a cuentas de Google"
+      },
+      "invitations": {
+        "title": "Invitaciones",
+        "help": "Una invitación permite que un correo cree una cuenta con Google hasta que caduque.",
+        "off": "Las invitaciones están desactivadas, así que ninguna de estas admite a nadie. Actívelas en Cuentas nuevas.",
+        "email": "Correo a invitar",
+        "role": "Rol",
+        "invite": "Invitar",
+        "empty": "No hay invitaciones pendientes.",
+        "expires": "Caduca el {date}",
+        "expired": "Caducada",
+        "remove": "Quitar",
+        "removeLabel": "Quitar la invitación de {email}",
+        "invited": "Invitación guardada.",
+        "removed": "Invitación quitada."
+      },
+      "accounts": {
+        "title": "Cuentas",
+        "help": "Cambie lo que puede hacer una cuenta. Aquí no se bloquea ni se borra nada.",
+        "you": "Su cuenta",
+        "since": "Desde el {date}",
+        "roleLabel": "Rol de {email}",
+        "changed": "Rol cambiado.",
+        "demoteSelfTitle": "¿Dejar de ser administrador?",
+        "demoteSelfDescription": "Dejará de poder abrir Administración. Otro administrador puede devolverle ese rol.",
+        "demoteSelfConfirm": "Pasar a gestor"
+      },
+      "roles": {
+        "ADMIN": "Administrador",
+        "MANAGER": "Gestor",
+        "USER": "Sin acceso"
+      }
     },
     "controlCenter": {
       "openDetail": "Detalle",
@@ -687,6 +736,9 @@
       "leaseHasHistory": "Hay pagos registrados en este contrato, así que Situs lo conserva en sus registros. Finalice el contrato en lugar de eliminarlo.",
       "ownerHasHistory": "Este propietario está vinculado a una propiedad o a distribuciones de ingresos, así que Situs lo conserva en sus registros. Quítelo primero de la propiedad.",
       "emailInUse": "Ya tiene un registro con esa dirección de correo. Use otra, o déjela vacía.",
+      "lastAdmin": "La instancia necesita un administrador. Convierta primero en administrador a otra persona.",
+      "accountExists": "Ese correo ya tiene una cuenta. Cambie su rol en Cuentas.",
+      "accountChanged": "Otra persona cambió esta cuenta hace un momento. Recargue e inténtelo de nuevo.",
       "atPasswordRequired": "Introduzca la contraseña del subusuario.",
       "atCredentialsNeedKey": "Situs solo guarda la contraseña de la AT cifrada, y esta instancia no tiene PII_ENCRYPTION_KEY. Defínala y vuelva a guardar.",
       "atFilesNotReady": "Faltan los archivos del certificado o no son válidos. Su estado aparece arriba.",

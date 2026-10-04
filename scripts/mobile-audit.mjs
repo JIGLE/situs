@@ -245,6 +245,9 @@ const SURFACES = [
   // Admin shares the app's shell: the rail on a computer, the bottom bar on a phone, one heading
   // and a tab per section. It had a shell of its own, which this list never measured.
   { id: "admin", path: "/admin" },
+  // Acessos is the one Admin page with controls: two switches, a form, a list of accounts with a
+  // select each, so it is measured where the overview's read-only panels are not.
+  { id: "admin-access", path: "/admin/access" },
 ];
 
 /**

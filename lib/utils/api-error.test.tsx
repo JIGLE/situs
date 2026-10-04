@@ -101,6 +101,10 @@ describe("useApiError", () => {
     expect(kept("email_in_use")).toBe(api.emailInUse);
     expect(kept("bank_connection_renewal_unavailable")).toBe(api.bankConnectionRenewalUnavailable);
     expect(kept("bank_connection_has_movements")).toBe(api.bankConnectionHasMovements);
+    // Admin › Acessos: the three ways a change to who may get in, or what they may do, is refused.
+    expect(kept("last_admin")).toBe(api.lastAdmin);
+    expect(kept("account_exists")).toBe(api.accountExists);
+    expect(kept("account_changed")).toBe(api.accountChanged);
   });
 
   it("falls back to the status for a reason it has no sentence for", () => {

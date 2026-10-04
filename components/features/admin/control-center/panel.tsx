@@ -41,22 +41,31 @@ export function Panel({
   );
 }
 
-/** A label/value line. Used wherever a panel states a fact rather than listing records. */
+/**
+ * A label/value line. Used wherever a panel states a fact rather than listing records.
+ *
+ * A value is one line that ends in an ellipsis, which suits a name or a number. A value that is
+ * words, such as a sentence, is cut off in the longer languages with nothing to reach the rest, so
+ * those pass `wrap` and run onto a second line instead.
+ */
 export function Fact({
   label,
   value,
   tone = "normal",
+  wrap = false,
 }: {
   label: string;
   value: ReactNode;
   tone?: "normal" | "muted";
+  wrap?: boolean;
 }) {
   return (
     <div className="flex items-baseline justify-between gap-3 py-1">
       <span className="shrink-0 text-xs text-[var(--color-muted-foreground)]">{label}</span>
       <span
         className={cn(
-          "min-w-0 truncate text-right text-sm",
+          "min-w-0 text-right text-sm",
+          wrap ? "break-words" : "truncate",
           tone === "muted"
             ? "text-[var(--color-muted-foreground)]"
             : "text-[var(--color-foreground)]",

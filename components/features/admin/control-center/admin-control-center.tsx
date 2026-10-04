@@ -12,6 +12,7 @@ import { SEVERITY_STYLE, SUMMARY_ORDER, checkLabelKey } from "../system-status-v
 import { BankTestPanel } from "./bank-test-panel";
 import { Fact, Panel } from "./panel";
 import type { SignInStatus } from "@/lib/services/admin/sign-in-status";
+import { REGISTRATION_COPY } from "@/lib/utils/access-labels";
 
 /**
  * The instance at a glance.
@@ -55,6 +56,8 @@ export function AdminControlCenter() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const registration = signIn ? REGISTRATION_COPY[signIn.registration] : null;
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
@@ -129,28 +132,28 @@ export function AdminControlCenter() {
         <Panel
           title={t("signIn.title")}
           className="lg:col-span-4"
-          action={<DetailLink href="/admin/sign-in" label={tc("openDetail")} />}
+          action={<DetailLink href="/admin/access" label={tc("openDetail")} />}
           bodyClassName="px-4 py-2.5"
         >
-          {signIn ? (
+          {signIn && registration ? (
             <>
               <Fact
+                wrap
                 label={tc("registration")}
                 value={
                   <span
                     className={
-                      signIn.registration === "closed"
-                        ? "text-[var(--semantic-success-readable)]"
-                        : "text-[var(--semantic-warning-readable)]"
+                      registration.open
+                        ? "text-[var(--semantic-warning-readable)]"
+                        : "text-[var(--semantic-success-readable)]"
                     }
                   >
-                    {signIn.registration === "closed"
-                      ? t("signIn.registrationClosed")
-                      : t("signIn.registrationOpen")}
+                    {t(`signIn.${registration.title}`)}
                   </span>
                 }
               />
               <Fact
+                wrap
                 label={t("signIn.providers")}
                 value={signIn.providers
                   .filter((provider) => provider.configured)
@@ -158,6 +161,7 @@ export function AdminControlCenter() {
                   .join(" · ")}
               />
               <Fact
+                wrap
                 label={t("signIn.allowlist")}
                 value={
                   signIn.allowlist.length === 0
