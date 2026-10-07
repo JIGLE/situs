@@ -1960,6 +1960,7 @@
     "createAccount": "Account created",
     "createInvitation": "Person invited",
     "revokeInvitation": "Invitation withdrawn",
-    "signUpSettingChange": "Sign-up setting changed"
+    "signUpSettingChange": "Sign-up setting changed",
+    "changeAccountRole": "Account role changed"
   }
 }

@@ -84,6 +84,7 @@ export const AUDIT_ACTION_KEY = {
   CREATE_INVITATION: "createInvitation",
   REVOKE_INVITATION: "revokeInvitation",
   SIGN_UP_SETTING_CHANGE: "signUpSettingChange",
+  CHANGE_ACCOUNT_ROLE: "changeAccountRole",
 } as const satisfies Record<AuditAction, string>;
 
 /**

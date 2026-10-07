@@ -3,8 +3,8 @@ import { test, expect, type APIRequestContext } from "@playwright/test";
 test.use({ storageState: "playwright/.auth/user.json" });
 
 /**
- * Who may create an account: the two sign-up switches and the invitations, as the administrator the
- * suite signs in as reaches them.
+ * Who may create an account and who has one: the two sign-up switches, the invitations and the
+ * accounts' roles, as the administrator the suite signs in as reaches them.
  *
  * The unit tests mock the database. This goes through the real routes, the CSRF check and SQLite, and
  * reads back what was stored; it is also where the two tables these routes use are shown to exist in
@@ -25,7 +25,13 @@ type Invitation = {
   expiresAt: string;
   expired: boolean;
 };
-type Access = { settings: Settings; invitations: Invitation[]; allowlist: string[] };
+type Account = { id: string; email: string; role: "ADMIN" | "MANAGER" | "USER"; self: boolean };
+type Access = {
+  settings: Settings;
+  invitations: Invitation[];
+  allowlist: string[];
+  accounts: Account[];
+};
 
 /** State-changing routes are CSRF-guarded with a double-submit cookie. */
 async function csrfHeader(request: APIRequestContext): Promise<Record<string, string>> {
@@ -58,13 +64,19 @@ async function send<T>(
 
 test.describe.configure({ mode: "serial" });
 
-test("serves the switches, the invitations and the allowlist", async ({ request }) => {
+test("serves the switches, the invitations, the allowlist and the accounts", async ({
+  request,
+}) => {
   const access = await getAccess(request);
 
   expect(typeof access.settings.googleSignUp).toBe("boolean");
   expect(typeof access.settings.invitations).toBe("boolean");
   expect(Array.isArray(access.invitations)).toBe(true);
   expect(Array.isArray(access.allowlist)).toBe(true);
+  // The account the suite is signed in as is listed, marked as the reader's own, and is an administrator.
+  const own = access.accounts.filter((account) => account.self);
+  expect(own).toHaveLength(1);
+  expect(own[0].role).toBe("ADMIN");
 });
 
 test("changes a switch, keeps it, and puts it back", async ({ request }) => {
@@ -196,4 +208,34 @@ test("refuses a change that carries no CSRF token", async ({ request }) => {
 
   expect(res.status()).toBe(403);
   expect((await getAccess(request)).settings).toEqual(before);
+});
+
+test("keeps an account's role, and refuses what it cannot take: no role, no account, no CSRF token", async ({
+  request,
+}) => {
+  const headers = await csrfHeader(request);
+  const before = await getAccess(request);
+  const own = before.accounts.find((account) => account.self);
+  expect(own, "the signed-in account is not listed").toBeTruthy();
+  const url = `${BASE}/accounts/${own?.id}`;
+
+  // The role the account already has is no change, so this cannot cost the suite its administrator.
+  const same = await send<Account>(request, "put", url, { role: "ADMIN" }, headers);
+  expect(same).toMatchObject({ id: own?.id, role: "ADMIN", self: true });
+
+  const refused: [string, number, () => Promise<{ status(): number }>][] = [
+    ["a role that is no role", 400, () => request.put(url, { data: { role: "USER" }, headers })],
+    ["a body with no role", 400, () => request.put(url, { data: {}, headers })],
+    [
+      "an account that is not there",
+      404,
+      () => request.put(`${BASE}/accounts/nobody`, { data: { role: "MANAGER" }, headers }),
+    ],
+    ["a change without the CSRF token", 403, () => request.put(url, { data: { role: "MANAGER" } })],
+  ];
+  for (const [what, status, attempt] of refused) {
+    expect((await attempt()).status(), what).toBe(status);
+  }
+
+  expect((await getAccess(request)).accounts).toEqual(before.accounts);
 });

@@ -21,3 +21,9 @@ export const invitationSchema = z
     role: z.enum(["ADMIN", "MANAGER"]),
   })
   .strict();
+
+/**
+ * PUT /api/admin/access/accounts/[id] — the role an account is given, and nothing else about it. The
+ * two roles an invitation carries: a USER is refused by every owner route, so no account is made one.
+ */
+export const accountRoleSchema = z.object({ role: z.enum(["ADMIN", "MANAGER"]) }).strict();

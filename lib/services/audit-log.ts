@@ -107,7 +107,9 @@ export type AuditAction =
   | "CREATE_ACCOUNT"
   | "CREATE_INVITATION"
   | "REVOKE_INVITATION"
-  | "SIGN_UP_SETTING_CHANGE";
+  | "SIGN_UP_SETTING_CHANGE"
+  // An administrator changed an account's role (lib/services/auth/accounts.ts).
+  | "CHANGE_ACCOUNT_ROLE";
 
 export interface AuditLogEntry {
   userId: string;
