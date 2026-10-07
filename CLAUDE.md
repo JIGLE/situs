@@ -399,8 +399,14 @@ in before either is read, and one that cannot be read counts as closed. The gate
 database it cannot read refuses the sign-in. It exists because a public instance otherwise made
 any Google account an administrator — and a live bank connection requires public reachability.
 A session carries the role stored on the account, read at sign-in (`lib/services/auth/auth.ts`);
-one that cannot be read is `USER`, which the owner routes refuse, and a role changed in the
-database applies at the next sign-in, since the token lives a day.
+one that cannot be read is `USER`, which the owner routes refuse, and those routes follow a role
+changed in the database at the next sign-in, since the token lives a day. `requireAdmin` reads the
+role stored now (`lib/services/auth/auth-middleware.ts`), so Admin follows a change at once; only
+`/api/admin/system-status`, which is opened when the database is broken, trusts the session's role
+when the stored one cannot be read. An administrator changes an account's role, administrator or
+manager and nothing else, at `/api/admin/access/accounts/[id]`; demoting the only administrator is a
+409 `last_admin`, and a change by someone no longer an administrator is a 403, both decided by the
+one UPDATE that makes the change, which counts and checks who asks (`lib/services/auth/accounts.ts`).
 
 Optional:
 

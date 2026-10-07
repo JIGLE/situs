@@ -2,12 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Who may create an account: the two sign-up switches and the invitations, as Admin serves them.
+ * Who may create an account and who has one: the two sign-up switches, the invitations and the
+ * accounts' roles, as Admin serves them.
  * Every handler is the administrator's only, answers a malformed body as a 400 and a refusal of the
  * service as itself (a 409 `account_exists`, a 404), and acts as the caller.
  */
 
-const { auth, access, registration } = vi.hoisted(() => ({
+const { auth, access, accounts, registration } = vi.hoisted(() => ({
   auth: { requireAdmin: vi.fn() },
   access: {
     getSignUpSettings: vi.fn(),
@@ -16,6 +17,7 @@ const { auth, access, registration } = vi.hoisted(() => ({
     createInvitation: vi.fn(),
     revokeInvitation: vi.fn(),
   },
+  accounts: { listAccounts: vi.fn(), changeAccountRole: vi.fn() },
   registration: { allowedEmails: vi.fn() },
 }));
 
@@ -24,11 +26,13 @@ vi.mock("@/lib/services/auth/auth-middleware", () => ({
   handleOptions: vi.fn(),
 }));
 vi.mock("@/lib/services/auth/sign-up", () => access);
+vi.mock("@/lib/services/auth/accounts", () => accounts);
 vi.mock("@/lib/services/auth/registration", () => registration);
 
-import { ConflictError, ResourceNotFoundError } from "@/lib/utils/error-handling";
+import { ConflictError, ForbiddenError, ResourceNotFoundError } from "@/lib/utils/error-handling";
 import { GET } from "./route";
 import { PUT } from "./settings/route";
+import { PUT as PUT_ROLE } from "./accounts/[id]/route";
 import { POST } from "./invitations/route";
 import { DELETE } from "./invitations/[id]/route";
 
@@ -49,10 +53,11 @@ beforeEach(() => {
 });
 
 describe("GET /api/admin/access", () => {
-  it("serves the switches, the invitations and the allowlist", async () => {
+  it("serves the switches, the invitations, the allowlist and the accounts", async () => {
     access.getSignUpSettings.mockResolvedValue({ googleSignUp: false, invitations: true });
     access.listInvitations.mockResolvedValue([{ id: "inv-1", email: "g@example.org" }]);
     registration.allowedEmails.mockReturnValue(["partner@example.org"]);
+    accounts.listAccounts.mockResolvedValue([{ id: "admin-1", role: "ADMIN", self: true }]);
 
     const res = await GET(json("GET"));
 
@@ -61,7 +66,10 @@ describe("GET /api/admin/access", () => {
       settings: { googleSignUp: false, invitations: true },
       invitations: [{ id: "inv-1", email: "g@example.org" }],
       allowlist: ["partner@example.org"],
+      accounts: [{ id: "admin-1", role: "ADMIN", self: true }],
     });
+    // The accounts are listed for the caller, so the screen can mark the reader's own.
+    expect(accounts.listAccounts).toHaveBeenCalledWith("admin-1");
   });
 
   it("answers the refusal and reads nothing for a caller who is not an administrator", async () => {
@@ -72,6 +80,7 @@ describe("GET /api/admin/access", () => {
     expect(res.status).toBe(403);
     expect(access.getSignUpSettings).not.toHaveBeenCalled();
     expect(access.listInvitations).not.toHaveBeenCalled();
+    expect(accounts.listAccounts).not.toHaveBeenCalled();
   });
 });
 
@@ -198,5 +207,102 @@ describe("DELETE /api/admin/access/invitations/[id]", () => {
 
     expect(res.status).toBe(403);
     expect(access.revokeInvitation).not.toHaveBeenCalled();
+  });
+});
+
+describe("PUT /api/admin/access/accounts/[id]", () => {
+  it.each(["ADMIN", "MANAGER"] as const)(
+    "gives the account in the address the %s role, as the caller",
+    async (role) => {
+      accounts.changeAccountRole.mockResolvedValue({ id: "acc-1", role });
+
+      const res = await PUT_ROLE(json("PUT", { role }), ctx({ id: "acc-1" }));
+
+      expect(res.status).toBe(200);
+      expect(accounts.changeAccountRole).toHaveBeenCalledWith("admin-1", "acc-1", role);
+      expect((await res.json()).data).toEqual({ id: "acc-1", role });
+    },
+  );
+
+  it.each([
+    ["no role", {}],
+    ["a USER, which no owner route admits", { role: "USER" }],
+    ["a role that does not exist", { role: "OWNER" }],
+    ["a role in lower case", { role: "manager" }],
+    ["a role that is not text", { role: 1 }],
+    ["a field that is not the role", { role: "MANAGER", email: "other@example.org" }],
+  ])("answers 400 for %s, and changes nothing", async (_name, body) => {
+    const res = await PUT_ROLE(json("PUT", body), ctx({ id: "acc-1" }));
+
+    expect(res.status).toBe(400);
+    expect(accounts.changeAccountRole).not.toHaveBeenCalled();
+  });
+
+  it("answers 400, not 500, for a body that is not JSON", async () => {
+    const res = await PUT_ROLE(json("PUT", undefined, "{not json"), ctx({ id: "acc-1" }));
+
+    expect(res.status).toBe(400);
+  });
+
+  it.each([
+    ["null", "null"],
+    ["a string", '"MANAGER"'],
+    ["a list", '["MANAGER"]'],
+    ["a number", "1"],
+  ])(
+    "answers 400, not 500, for a body that is JSON %s, and changes nothing",
+    async (_name, raw) => {
+      const res = await PUT_ROLE(json("PUT", undefined, raw), ctx({ id: "acc-1" }));
+
+      expect(res.status).toBe(400);
+      expect(accounts.changeAccountRole).not.toHaveBeenCalled();
+    },
+  );
+
+  it("answers 400 when the address names no account", async () => {
+    const res = await PUT_ROLE(json("PUT", { role: "MANAGER" }), ctx({}));
+
+    expect(res.status).toBe(400);
+    expect(accounts.changeAccountRole).not.toHaveBeenCalled();
+  });
+
+  it("answers the only administrator's demotion as the 409 last_admin the service refused with", async () => {
+    accounts.changeAccountRole.mockRejectedValue(
+      new ConflictError("The instance needs an administrator", "last_admin"),
+    );
+
+    const res = await PUT_ROLE(json("PUT", { role: "MANAGER" }), ctx({ id: "admin-1" }));
+
+    expect(res.status).toBe(409);
+    expect((await res.json()).reason).toBe("last_admin");
+  });
+
+  it("answers 404 for an account that is not there", async () => {
+    accounts.changeAccountRole.mockRejectedValue(new ResourceNotFoundError("Account"));
+
+    const res = await PUT_ROLE(json("PUT", { role: "MANAGER" }), ctx({ id: "gone" }));
+
+    expect(res.status).toBe(404);
+  });
+
+  it("answers 403 when the service finds the caller no longer an administrator", async () => {
+    // `requireAdmin` let the request in; a demotion landed before the write.
+    accounts.changeAccountRole.mockRejectedValue(
+      new ForbiddenError("Forbidden: Admin access required"),
+    );
+
+    const res = await PUT_ROLE(json("PUT", { role: "ADMIN" }), ctx({ id: "acc-1" }));
+
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toBe("Forbidden: Admin access required");
+  });
+
+  it("answers the refusal and changes nothing for a caller who is not an administrator", async () => {
+    auth.requireAdmin.mockResolvedValue(refusal());
+
+    const res = await PUT_ROLE(json("PUT", { role: "ADMIN" }), ctx({ id: "acc-1" }));
+
+    expect(res.status).toBe(403);
+    expect(accounts.changeAccountRole).not.toHaveBeenCalled();
   });
 });

@@ -1960,6 +1960,7 @@
     "createAccount": "Conta criada",
     "createInvitation": "Pessoa convidada",
     "revokeInvitation": "Convite retirado",
-    "signUpSettingChange": "Definição de registo alterada"
+    "signUpSettingChange": "Definição de registo alterada",
+    "changeAccountRole": "Função da conta alterada"
   }
 }
