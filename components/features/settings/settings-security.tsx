@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { useTranslations } from "next-intl";
 import { useToast } from "@/lib/contexts/toast-context";
 import { useCsrf } from "@/lib/contexts/csrf-context";
+import { apiFetch } from "@/lib/utils/api-client";
+import { useApiError } from "@/lib/utils/api-error";
 import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
@@ -17,6 +19,7 @@ export function SettingsSecurity() {
   const { token: csrfToken } = useCsrf();
   const t = useTranslations("settings.panel");
   const tActions = useTranslations("actions");
+  const apiError = useApiError();
   const confirmDialog = useConfirmDialog();
 
   const exportData = async () => {
@@ -50,14 +53,11 @@ export function SettingsSecurity() {
       },
       async () => {
         try {
-          const res = await fetch("/api/user/delete-data", {
-            method: "POST",
-            headers: { "X-CSRF-Token": csrfToken || "" },
-          });
-          if (!res.ok) throw new Error("Delete failed");
+          await apiFetch("/api/user/delete-data", csrfToken, "POST");
           window.location.href = "/auth/signin";
-        } catch {
-          showError(t("deleteFailed"));
+        } catch (err) {
+          // The only administrator is told why, in words: "the instance needs an administrator".
+          showError(apiError(err));
         }
       },
     );

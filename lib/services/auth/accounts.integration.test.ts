@@ -324,4 +324,90 @@ describe("accounts and their roles — real Prisma client + real SQLite file", (
       expect(await roleOf(other.id)).toBe("ADMIN");
     });
   });
+
+  describe("deleting one's own account", () => {
+    it("deletes a manager's account and everything it owns, and touches no other", async () => {
+      const admin = await make("admin@example.com", "ADMIN");
+      const manager = await make("manager@example.com", "MANAGER");
+      await prisma.owner.create({ data: { userId: manager.id, name: "Landlord" } });
+      await prisma.auditLog.create({ data: { userId: manager.id, action: "SOMETHING" } });
+      await prisma.owner.create({ data: { userId: admin.id, name: "Other landlord" } });
+
+      await accounts.deleteOwnAccount(manager.id);
+
+      expect(await prisma.user.findUnique({ where: { id: manager.id } })).toBeNull();
+      // By cascade, which a raw DELETE gets from the foreign keys as the Prisma delete did.
+      expect(await prisma.owner.count({ where: { userId: manager.id } })).toBe(0);
+      expect(await prisma.auditLog.count({ where: { userId: manager.id } })).toBe(0);
+      expect(await roleOf(admin.id)).toBe("ADMIN");
+      expect(await prisma.owner.count({ where: { userId: admin.id } })).toBe(1);
+    });
+
+    it("lets an administrator go while another one remains", async () => {
+      const first = await make("first@example.com", "ADMIN");
+      const second = await make("second@example.com", "ADMIN");
+
+      await accounts.deleteOwnAccount(first.id);
+
+      expect(await prisma.user.findUnique({ where: { id: first.id } })).toBeNull();
+      expect(await roleOf(second.id)).toBe("ADMIN");
+    });
+
+    it("keeps the only administrator while other accounts remain, and deletes nothing", async () => {
+      const only = await make("only@example.com", "ADMIN");
+      await make("manager@example.com", "MANAGER");
+      await prisma.owner.create({ data: { userId: only.id, name: "Landlord" } });
+
+      await expect(accounts.deleteOwnAccount(only.id)).rejects.toMatchObject({
+        name: "ConflictError",
+        reason: "last_admin",
+      });
+
+      expect(await roleOf(only.id)).toBe("ADMIN");
+      expect(await prisma.owner.count({ where: { userId: only.id } })).toBe(1);
+    });
+
+    it("keeps the only administrator while a legacy USER account remains", async () => {
+      const only = await make("only@example.com", "ADMIN");
+      await make("legacy@example.com", "USER");
+
+      await expect(accounts.deleteOwnAccount(only.id)).rejects.toMatchObject({
+        reason: "last_admin",
+      });
+    });
+
+    it("lets the only account of all go, which returns the instance to its first sign-in", async () => {
+      const only = await make("only@example.com", "ADMIN");
+
+      await accounts.deleteOwnAccount(only.id);
+
+      expect(await prisma.user.count()).toBe(0);
+    });
+
+    it("leaves one administrator when two delete themselves at the same moment, with another account there", async () => {
+      // Each is an administrator, and each sees the other still there: only a count made by the
+      // delete itself, after the first one landed, keeps the instance from being left with none.
+      const a = await make("a@example.com", "ADMIN");
+      const b = await make("b@example.com", "ADMIN");
+      await make("manager@example.com", "MANAGER");
+
+      const results = await Promise.allSettled([
+        accounts.deleteOwnAccount(a.id),
+        accounts.deleteOwnAccount(b.id),
+      ]);
+
+      expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+      const refused = results.find((r) => r.status === "rejected") as PromiseRejectedResult;
+      expect(refused.reason).toMatchObject({ name: "ConflictError", reason: "last_admin" });
+      expect(await prisma.user.count({ where: { role: "ADMIN" } })).toBe(1);
+    });
+
+    it("is a 404 for an account that is gone", async () => {
+      await make("admin@example.com", "ADMIN");
+
+      await expect(accounts.deleteOwnAccount("nobody")).rejects.toMatchObject({
+        name: "ResourceNotFoundError",
+      });
+    });
+  });
 });

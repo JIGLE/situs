@@ -1,6 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { within } from "@testing-library/dom";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithProviders as render } from "@/tests/helpers/render-with-providers";
+import ptMessages from "@/messages/pt.json";
 import { SettingsSecurity } from "./settings-security";
 
 /**
@@ -142,5 +144,84 @@ describe("SettingsSecurity — authenticator app", () => {
     expect(callsTo("/api/auth/totp/disable")).toEqual([
       ["/api/auth/totp/disable", { method: "DELETE", headers: { "X-CSRF-Token": "csrf-abc" } }],
     ]);
+  });
+});
+
+/**
+ * Deleting the account: asked first, sent with the token, and when the instance cannot spare it (the
+ * only administrator, while others remain) the owner is told why, in their own language, and stays.
+ */
+describe("SettingsSecurity — deleting the account", () => {
+  const panel = ptMessages.settings.panel;
+  const api = ptMessages.errors.api;
+  const originalLocation = window.location;
+  let answer: Answer;
+  let fetchMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    answer = { ok: true, body: { message: "Data deleted successfully" } };
+    fetchMock = vi.fn(async (url: string) => {
+      const answered = url === "/api/user/delete-data" ? answer : { ok: false, status: 404 };
+      return { ok: answered.ok, status: answered.status ?? 200, json: async () => answered.body };
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { href: "http://localhost/settings" },
+    });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
+  });
+
+  const deleteCalls = () => fetchMock.mock.calls.filter(([url]) => url === "/api/user/delete-data");
+  const openDialog = async () => {
+    render(<SettingsSecurity />, { initialLocale: "pt" });
+    fireEvent.click(await screen.findByRole("button", { name: panel.deleteTitle }));
+    return await screen.findByRole("alertdialog");
+  };
+  const confirm = (dialog: HTMLElement) =>
+    fireEvent.click(within(dialog).getByRole("button", { name: panel.deleteConfirmLabel }));
+
+  it("asks first, and sends nothing until the owner confirms", async () => {
+    const dialog = await openDialog();
+
+    expect(within(dialog).getByText(panel.deleteConfirmTitle)).toBeDefined();
+    expect(deleteCalls()).toHaveLength(0);
+    expect(window.location.href).toBe("http://localhost/settings");
+  });
+
+  it("deletes with a POST that carries the token, then leaves for the sign-in page", async () => {
+    confirm(await openDialog());
+
+    await waitFor(() => expect(window.location.href).toBe("/auth/signin"));
+    expect(deleteCalls()).toHaveLength(1);
+    expect(deleteCalls()[0][1]).toMatchObject({
+      method: "POST",
+      headers: { "X-CSRF-Token": "csrf-abc" },
+    });
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it("tells the only administrator why, in words, and stays where they are", async () => {
+    answer = {
+      ok: false,
+      status: 409,
+      body: { error: "The instance needs an administrator", reason: "last_admin" },
+    };
+    confirm(await openDialog());
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(api.lastAdmin));
+    expect(window.location.href).toBe("http://localhost/settings");
+  });
+
+  it("says the server failed, in Portuguese, for any other failure", async () => {
+    answer = { ok: false, status: 500, body: { error: "Internal server error" } };
+    confirm(await openDialog());
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(api.serverError));
+    expect(window.location.href).toBe("http://localhost/settings");
   });
 });

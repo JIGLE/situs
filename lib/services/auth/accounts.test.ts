@@ -19,7 +19,7 @@ const { prismaMock, logAuditMock } = vi.hoisted(() => ({
 vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prismaMock }));
 vi.mock("@/lib/services/audit-log", () => ({ logAudit: logAuditMock }));
 
-import { changeAccountRole } from "./accounts";
+import { changeAccountRole, deleteOwnAccount } from "./accounts";
 
 const row = (role: string, id = "target") => ({
   id,
@@ -202,5 +202,60 @@ describe("changeAccountRole", () => {
     await changeAccountRole("admin-1", "target", "ADMIN");
     expect(logAuditMock).not.toHaveBeenCalled();
     expect(prismaMock.$executeRaw).not.toHaveBeenCalled();
+  });
+});
+
+describe("deleteOwnAccount", () => {
+  it("deletes with one statement that binds the account, and reads nothing when it deletes", async () => {
+    prismaMock.$executeRaw.mockResolvedValue(1);
+
+    await deleteOwnAccount("target");
+
+    expect(prismaMock.$executeRaw).toHaveBeenCalledTimes(1);
+    const { sql, bound } = statement();
+    expect(sql).toMatch(/DELETE FROM "User"\s+WHERE "id" = \?/);
+    expect(bound).toEqual(["target"]);
+    expect(prismaMock.user.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("keeps the only administrator while others remain, in the same statement", async () => {
+    prismaMock.$executeRaw.mockResolvedValue(1);
+
+    await deleteOwnAccount("target");
+
+    // Not an administrator, or another one exists, or it is the only account there is: decided as it
+    // deletes, since another account can go between a count and a delete.
+    expect(statement().sql).toMatch(
+      /\("role" <> 'ADMIN'\s+OR \(SELECT COUNT\(\*\) FROM "User" WHERE "role" = 'ADMIN'\) > 1\s+OR \(SELECT COUNT\(\*\) FROM "User"\) = 1\)/,
+    );
+  });
+
+  it("is a 409 last_admin when the statement refused an account that is still an administrator", async () => {
+    prismaMock.$executeRaw.mockResolvedValue(0);
+    prismaMock.user.findUnique.mockResolvedValue({ role: "ADMIN" });
+
+    await expect(deleteOwnAccount("target")).rejects.toMatchObject({
+      name: "ConflictError",
+      reason: "last_admin",
+    });
+  });
+
+  it("is a 409 account_changed when it was the only administrator a moment ago and is not now", async () => {
+    prismaMock.$executeRaw.mockResolvedValue(0);
+    prismaMock.user.findUnique.mockResolvedValue({ role: "MANAGER" });
+
+    await expect(deleteOwnAccount("target")).rejects.toMatchObject({
+      name: "ConflictError",
+      reason: "account_changed",
+    });
+  });
+
+  it("is a 404 for an account that is gone", async () => {
+    prismaMock.$executeRaw.mockResolvedValue(0);
+    prismaMock.user.findUnique.mockResolvedValue(null);
+
+    await expect(deleteOwnAccount("target")).rejects.toMatchObject({
+      name: "ResourceNotFoundError",
+    });
   });
 });

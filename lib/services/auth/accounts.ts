@@ -2,9 +2,9 @@
  * The accounts on this instance, and who may be what.
  *
  * An administrator changes an account's role and nothing else about it: nothing is blocked or deleted
- * here. The roles one can be given are the two an invitation carries, administrator and manager,
- * never USER, which every owner route refuses. The instance must keep an administrator, so the last
- * one cannot be demoted.
+ * here by one. The roles one can be given are the two an invitation carries, administrator and
+ * manager, never USER, which every owner route refuses. The instance must keep an administrator, so
+ * the last one cannot be demoted, nor delete their own account while others remain.
  *
  * Every rule a change rests on is checked by the UPDATE that makes it, not by a read before it, since
  * another change can fall between a read and a write: two administrators demoting each other, or
@@ -137,5 +137,32 @@ export async function changeAccountRole(
     // Someone changed this account between the read and the write: read it again.
   }
 
+  throw new ConflictError("The account was changed by someone else; try again", "account_changed");
+}
+
+/**
+ * Delete the account `id` and everything it owns: the holder's own right to erasure, through
+ * `POST /api/user/delete-data`. The instance must keep an administrator, so the only one cannot go
+ * while other accounts remain, since they would have nobody to administer them; the last account of
+ * all can, which returns the instance to its first sign-in. As with a role change the rule is part of
+ * the statement that makes it, not a count before it: two administrators deleting themselves at the
+ * same moment would each see the other still there and leave none.
+ */
+export async function deleteOwnAccount(id: string): Promise<void> {
+  const prisma = getPrismaClient();
+  const deleted = await prisma.$executeRaw`
+    DELETE FROM "User"
+    WHERE "id" = ${id}
+      AND ("role" <> 'ADMIN'
+        OR (SELECT COUNT(*) FROM "User" WHERE "role" = 'ADMIN') > 1
+        OR (SELECT COUNT(*) FROM "User") = 1)`;
+  if (deleted > 0) return;
+
+  const now = await prisma.user.findUnique({ where: { id }, select: { role: true } });
+  if (!now) throw new ResourceNotFoundError("Account");
+  if (now.role === "ADMIN") {
+    throw new ConflictError("The instance needs an administrator", "last_admin");
+  }
+  // It was the only administrator when the statement ran and is not now: someone changed it meanwhile.
   throw new ConflictError("The account was changed by someone else; try again", "account_changed");
 }

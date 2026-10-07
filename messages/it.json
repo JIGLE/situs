@@ -119,7 +119,6 @@
       "deleteConfirmTitle": "Eliminare il tuo account?",
       "deleteConfirmDescription": "Il tuo account e ogni record collegato saranno eliminati definitivamente. L'azione non può essere annullata.",
       "deleteConfirmLabel": "Elimina il mio account",
-      "deleteFailed": "Impossibile eliminare il tuo account. Riprova.",
       "retention": "Conservazione dei dati: i registri di controllo sono conservati 7 anni (obbligo di legge), quelli e-mail 2 anni e le notifiche lette 1 anno. La pulizia automatica viene eseguita ogni giorno.",
       "activity": "Attività dell'account",
       "activityEmpty": "Accessi, esportazioni e modifiche alle impostazioni appariranno qui.",
