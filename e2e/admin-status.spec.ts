@@ -22,6 +22,18 @@ async function expectSection(page: Page, tab: string) {
 }
 
 /**
+ * Admin's page content, as opposed to the whole document.
+ *
+ * Next streams a page that is still loading as a hidden `<div id="S:1">` at the end of `<body>`
+ * and moves it into place. For a few tens of milliseconds the page's text is in `<main>` and in
+ * that copy at once, and `getByText` over the document is a strict-mode violation if it looks
+ * then: "states plainly that no filing is real" failed one run and passed the next on the same
+ * build, and passed on retry. `<main>` holds the content once, and a locator inside it waits for
+ * the move instead of refusing at it.
+ */
+const content = (page: Page) => page.getByRole("main");
+
+/**
  * The operator area — and specifically *which* page each assertion belongs to.
  *
  * `/admin` and `/admin/status` are two different components. Since the admin area became its own
@@ -71,7 +83,7 @@ test.describe("Admin › System status (/admin/status)", () => {
 
     // Unconditional, not derived from any check. An operator should not have to infer from a
     // row's colour that nothing reaches a tax authority.
-    await expect(page.getByText(/no filing reaches a real tax authority/i)).toBeVisible({
+    await expect(content(page).getByText(/no filing reaches a real tax authority/i)).toBeVisible({
       timeout: 20000,
     });
 
@@ -84,7 +96,7 @@ test.describe("Admin › System status (/admin/status)", () => {
     // two: the disclosure asserted above says "Bank connections are separate … and the check below
     // says which", and `bank` is the check that says which. `bank_provider` reports instance
     // configuration, a different claim. CI connects no bank, so this is the state it shows.
-    await expect(page.getByText(/no bank is connected on this account/i)).toBeVisible();
+    await expect(content(page).getByText(/no bank is connected on this account/i)).toBeVisible();
   });
 
   test("reports every check group", async ({ page }) => {
@@ -98,8 +110,8 @@ test.describe("Admin › System status (/admin/status)", () => {
     // The tax check appears whether or not a connector record exists for this user — "no
     // connector yet" is itself information, and omitting the row would read as "fine". Portugal
     // is the only country; Spain's row went with its connector.
-    await expect(page.getByText(/tax authority — PT/i)).toBeVisible();
-    await expect(page.getByText(/tax authority — ES/i)).toHaveCount(0);
+    await expect(content(page).getByText(/tax authority — PT/i)).toBeVisible();
+    await expect(content(page).getByText(/tax authority — ES/i)).toHaveCount(0);
     await expect(page.getByText(/bank movements/i).first()).toBeVisible();
   });
 });
@@ -116,7 +128,7 @@ test.describe("Admin › Control center (/admin)", () => {
     // The whole point of the landing page: every check is named here, so an operator learns
     // whether anything is wrong without visiting four pages.
     await expect(page.getByText(/database schema/i).first()).toBeVisible();
-    await expect(page.getByText(/tax authority — PT/i)).toBeVisible();
+    await expect(content(page).getByText(/tax authority — PT/i)).toBeVisible();
     await expect(page.getByText(/bank movements/i).first()).toBeVisible();
 
     // Same structural exemption as the detail page — both live in the `(admin)` group.
@@ -145,7 +157,7 @@ test.describe("Admin › Control center (/admin)", () => {
 
     await detail.click();
     await expect(page).toHaveURL(/\/admin\/status$/);
-    await expect(page.getByText(/no filing reaches a real tax authority/i)).toBeVisible({
+    await expect(content(page).getByText(/no filing reaches a real tax authority/i)).toBeVisible({
       timeout: 20000,
     });
   });
