@@ -46,6 +46,15 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // requireAdmin reads the stored role, so a role changed in the database no longer waits for the
+    // next sign-in where Admin is concerned; only the owner routes still follow the session's.
+    pattern: /database applies at the next sign-in, since the token lives a day/,
+    retired: "2026-10-04 (accounts' roles)",
+    because:
+      "requireAdmin reads the role stored now, so Admin follows a promotion or a demotion at once; " +
+      "the owner routes still follow the role the session signed in with, which lives a day",
+  },
+  {
     // An administrator can open a door in Admin (an invitation, or Google sign-up as a manager), so
     // "every other email is refused" holds only while both are closed, as they are by default.
     pattern:
