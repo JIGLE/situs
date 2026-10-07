@@ -108,6 +108,7 @@ Recorded here deliberately rather than left implicit:
 | `PayerAccount`         | `ibanHash`         | A hash of the IBAN of an account the owner confirmed pays this tenant: all matching reads of it            |
 | `PayerAccount`         | `ibanLast4`        | Four digits, so the owner can tell two remembered accounts apart on the tenant                             |
 | `PayerAccount`         | `holderName`       | The name the bank showed on the movement that was confirmed. Removed with the tenant, or when forgotten    |
+| `AccessInvitation`     | `email`            | An invited person's email, until they create the account. Lapses in 30 days; masked in the audit trail     |
 | `BankConnection`       | `label`            | Shown instead of the bank's name. **Free text: may contain anything the owner typed**                      |
 | `UserSettings`         | `residenceCountry` | The owner's country of tax residence, as a two-letter code, shown under their name in the side bar         |
 | `Property`, `Building` | address fields     | Personal data where a tenant lives there; core to the product                                              |
@@ -159,7 +160,8 @@ That holds only for the default. The transport is plain SMTP, so an operator who
 ## 5. Retention
 
 Derived from `RETENTION_DAYS` in `lib/services/data-retention.ts` rather than restated, so the
-schedule cannot drift from the code that applies it.
+schedule cannot drift from the code that applies it. An invitation lapses after `INVITATION_DAYS`
+(`lib/services/auth/sign-up.ts`), and the run deletes the lapsed ones.
 
 | Data                        | Period   | Note                                               |
 | --------------------------- | -------- | -------------------------------------------------- |
@@ -169,6 +171,7 @@ schedule cannot drift from the code that applies it.
 | Unreconciled bank movements | 2 years  | Matches the 730 days of history a consent requests |
 | Bank sync jobs              | 2 years  | Operational log of an import run                   |
 | Abandoned consent attempts  | 24 hours | Each holds a live consent reference until reaped   |
+| Unused invitations          | 30 days  | Held for someone who may never sign in             |
 
 Three rules that are not simply "delete old things":
 
@@ -179,6 +182,8 @@ Three rules that are not simply "delete old things":
   cascades to `BankAccount` and `BankTransaction`, so the guard is on both status and emptiness.
 - **Remembered payer accounts are not on this schedule.** A `PayerAccount` belongs to a tenant: it
   goes when the tenant does, or when the owner forgets it on the tenant's Payments tab.
+- **An invitation goes with the account it makes.** It is deleted in the transaction that creates
+  the account, or by the owner withdrawing it; one that lapsed unused is removed by the daily run.
 
 **Nothing runs on a schedule until `CRON_SECRET` is set** and something calls
 `/api/cron/data-retention`; the endpoint returns 503 until then. An instance that has never set
@@ -225,7 +230,7 @@ instance and would need revisiting if Situs were offered as a service.
 | Per-request CSP nonce, HSTS, frame/content-type/referrer/permissions policies | `proxy.ts`, on every response                                                                                                     |
 | `userId` scoping on API routes                                                | `requireAuth` / `requireOwnerAccess`                                                                                              |
 | Rate limiting                                                                 | `lib/utils/rate-limit.ts` (`withRateLimit`) and `lib/middleware/rate-limit.ts` (TOTP verify) — `docs/SECURITY.md`                 |
-| Registration closed by default                                                | `lib/services/auth/registration.ts` — the first account owns the instance; every other email is refused before any row is written |
+| Registration closed by default                                                | `lib/services/auth/registration.ts` — the first account owns the instance; another email is refused unless allowlisted or invited |
 | Audit trail on workflow mutations                                             | `lib/services/audit-log.ts`, `AuditLog`                                                                                           |
 | Debug endpoints restricted in production                                      | `/api/debug/db` and `/api/debug/db/seed` return 403; `/api/debug/db/init` needs a session and `INIT_SECRET` (`docs/SECURITY.md`)  |
 | Bank consent references                                                       | 256-bit random, user-scoped, constant-time compared, single-use, dropped once spent, lapsing after 24 hours                       |

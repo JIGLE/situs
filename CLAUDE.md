@@ -389,12 +389,18 @@ Copy `.env.example` to `.env`.
 
 **Registration is closed by default.** The first account ever created owns the instance and is
 provisioned `ADMIN`; every other email is refused at the `signIn` callback before any row is
-written (`lib/services/auth/registration.ts`). `AUTH_ALLOWED_EMAILS` admits a deliberate second
-user. The gate fails closed: a database it cannot read refuses the sign-in. It exists because a
-public instance otherwise made any Google account an administrator — and a live bank connection
-requires public reachability. A session carries the role stored on the account, read at sign-in
-(`lib/services/auth/auth.ts`); one that cannot be read is `USER`, which the owner routes refuse, and
-a role changed in the database applies at the next sign-in, since the token lives a day.
+written (`lib/services/auth/registration.ts`), unless an administrator has opened a door in Admin
+(`lib/services/auth/sign-up.ts`, `/api/admin/access`): an **invitation** admits its email as the
+role it carries (administrator or manager) for thirty days, and the **Google sign-up** switch
+admits any Google account as a manager; both need Google to say it verified the email
+(`email_verified`). `AUTH_ALLOWED_EMAILS` still admits a deliberate second user, as an
+administrator, with no such claim. The switches govern new accounts only: an existing account signs
+in before either is read, and one that cannot be read counts as closed. The gate fails closed: a
+database it cannot read refuses the sign-in. It exists because a public instance otherwise made
+any Google account an administrator — and a live bank connection requires public reachability.
+A session carries the role stored on the account, read at sign-in (`lib/services/auth/auth.ts`);
+one that cannot be read is `USER`, which the owner routes refuse, and a role changed in the
+database applies at the next sign-in, since the token lives a day.
 
 Optional:
 

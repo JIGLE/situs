@@ -80,6 +80,10 @@ export const AUDIT_ACTION_KEY = {
   LINK_EXPENSE_DOCUMENT: "linkExpenseDocument",
   ASSIGN_PROPERTY_OWNER: "assignPropertyOwner",
   REMOVE_PROPERTY_OWNER: "removePropertyOwner",
+  CREATE_ACCOUNT: "createAccount",
+  CREATE_INVITATION: "createInvitation",
+  REVOKE_INVITATION: "revokeInvitation",
+  SIGN_UP_SETTING_CHANGE: "signUpSettingChange",
 } as const satisfies Record<AuditAction, string>;
 
 /**

@@ -560,6 +560,37 @@ model PayerAccount {
   @@map("payer_accounts")
 }
 
+// The instance's own settings, one row (`id` is always "instance"). Sign-up only, for now: who may
+// create an account they do not have yet. They govern NEW accounts and nothing else: an existing
+// account signs in before either is read (lib/services/auth/registration.ts), and a row that cannot
+// be read counts as both closed. `updatedById` names the account that last changed it, with no
+// foreign key, so removing an account never removes the setting.
+model InstanceSettings {
+  id           String   @id @default("instance")
+  googleSignUp Boolean  @default(false) // any Google account may create an account, as a manager
+  invitations  Boolean  @default(true) // an invited email may create an account
+  updatedById  String?
+  updatedAt    DateTime @updatedAt
+
+  @@map("instance_settings")
+}
+
+// An email the owner invited to create an account, and as what. It admits nobody by itself: the
+// person still signs in with Google, and the gate finds this row. It lapses (`expiresAt`), goes
+// when the account it made exists, and is the only place the invitee's email is held until then
+// (docs/DATA_PROTECTION.md). No foreign key to the inviting account, for the same reason as above.
+model AccessInvitation {
+  id          String   @id @default(cuid())
+  email       String   @unique // lower-case
+  role        UserRole // ADMIN or MANAGER, never USER
+  invitedById String?
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("access_invitations")
+}
+
 model Expense {
   id              String    @id @default(cuid())
   userId          String

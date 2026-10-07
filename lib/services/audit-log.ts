@@ -101,7 +101,13 @@ export type AuditAction =
   | "LINK_EXPENSE_DOCUMENT"
   // Property ownership assignment
   | "ASSIGN_PROPERTY_OWNER"
-  | "REMOVE_PROPERTY_OWNER";
+  | "REMOVE_PROPERTY_OWNER"
+  // Who may create an account (lib/services/auth/sign-up.ts, registration.ts): an account made, how
+  // it was let in, an invitation sent or withdrawn, and a sign-up switch changed.
+  | "CREATE_ACCOUNT"
+  | "CREATE_INVITATION"
+  | "REVOKE_INVITATION"
+  | "SIGN_UP_SETTING_CHANGE";
 
 export interface AuditLogEntry {
   userId: string;

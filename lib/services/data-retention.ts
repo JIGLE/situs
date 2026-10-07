@@ -8,6 +8,8 @@
  *   - Bank movements:  2 years  — UNRECONCILED ONLY, see below
  *   - Bank sync jobs:  2 years  (operational log of an import run)
  *   - Abandoned consents: 24 hours, see below
+ *   - Invitations to create an account: the day they lapse (thirty days after they were made), so
+ *     the email of someone who never signed in is not kept
  *
  * Bank data was retained forever until this existed, which is the shape of storage-limitation
  * problem that only appears once a live PSD2 feed is connected: an unmatched movement is a
@@ -45,6 +47,8 @@ export interface RetentionResult {
   bankSyncJobsDeleted: number;
   /** Consent flows started and never completed, whose reference was still live. */
   abandonedConsentsDeleted: number;
+  /** Invitations to create an account that lapsed unused: they admit nobody, and held an email. */
+  expiredInvitationsDeleted: number;
   ranAt: string;
 }
 
@@ -119,6 +123,12 @@ export async function runDataRetention(): Promise<RetentionResult> {
     },
   });
 
+  // An invitation holds the email of someone who may never sign in. One that lapsed admits nobody
+  // (the gate ignores it), so all that is left to do with it is to stop keeping the email.
+  const invitationResult = await prisma.accessInvitation.deleteMany({
+    where: { expiresAt: { lt: new Date() } },
+  });
+
   return {
     auditLogsDeleted: auditResult.count,
     emailLogsDeleted: emailResult.count,
@@ -126,6 +136,7 @@ export async function runDataRetention(): Promise<RetentionResult> {
     bankTransactionsDeleted: bankTxnResult.count,
     bankSyncJobsDeleted: syncJobResult.count,
     abandonedConsentsDeleted: abandonedConsentResult.count,
+    expiredInvitationsDeleted: invitationResult.count,
     ranAt: new Date().toISOString(),
   };
 }

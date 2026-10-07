@@ -8,6 +8,13 @@
  * let you in. So this reports, and configuration stays in the environment where a restart can fix
  * a mistake.
  *
+ * That rule is about PROVIDERS, and it stands. The two sign-up switches and the invitations
+ * (`sign-up.ts`) are stored in the database, because neither problem applies to them: they govern
+ * NEW accounts only, the gate reads them after an existing account, the first account and the
+ * allowlist have been let in, and one that cannot be read counts as closed. None of them stands
+ * between a person who has an account and the instance, and `AUTH_ALLOWED_EMAILS` still needs no
+ * database at all.
+ *
  * Everything here is DERIVED — from environment presence and row counts — never asserted. Same
  * rule as `bankCheck` in `system-status.ts`, and for the same reason: a page that states a fact
  * about what exists becomes a lie the moment that stops being true.

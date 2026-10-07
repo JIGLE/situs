@@ -8,6 +8,7 @@ const { prismaMock } = vi.hoisted(() => ({
     bankTransaction: { deleteMany: vi.fn() },
     bankSyncJob: { deleteMany: vi.fn() },
     bankConnection: { deleteMany: vi.fn() },
+    accessInvitation: { deleteMany: vi.fn() },
   },
 }));
 
@@ -30,6 +31,7 @@ beforeEach(() => {
     prismaMock.bankTransaction,
     prismaMock.bankSyncJob,
     prismaMock.bankConnection,
+    prismaMock.accessInvitation,
   ]) {
     model.deleteMany.mockResolvedValue({ count: 0 });
   }
@@ -93,6 +95,22 @@ describe("abandoned consent reaping", () => {
   });
 });
 
+describe("invitation retention", () => {
+  /**
+   * An invitation holds the email of someone who may never sign in. Only one that has lapsed goes:
+   * a live one still admits its email, and deleting it would withdraw an invitation unasked.
+   */
+  it("deletes only the invitations that have lapsed", async () => {
+    const before = Date.now();
+    await runDataRetention();
+    const where = whereFor(prismaMock.accessInvitation) as { expiresAt: { lt: Date } };
+
+    expect(Object.keys(where)).toEqual(["expiresAt"]);
+    expect(where.expiresAt.lt.getTime()).toBeGreaterThanOrEqual(before);
+    expect(where.expiresAt.lt.getTime()).toBeLessThanOrEqual(Date.now());
+  });
+});
+
 describe("result reporting", () => {
   it("reports every category it deleted", async () => {
     prismaMock.auditLog.deleteMany.mockResolvedValue({ count: 1 });
@@ -101,6 +119,7 @@ describe("result reporting", () => {
     prismaMock.bankTransaction.deleteMany.mockResolvedValue({ count: 4 });
     prismaMock.bankSyncJob.deleteMany.mockResolvedValue({ count: 5 });
     prismaMock.bankConnection.deleteMany.mockResolvedValue({ count: 6 });
+    prismaMock.accessInvitation.deleteMany.mockResolvedValue({ count: 7 });
 
     await expect(runDataRetention()).resolves.toMatchObject({
       auditLogsDeleted: 1,
@@ -109,6 +128,7 @@ describe("result reporting", () => {
       bankTransactionsDeleted: 4,
       bankSyncJobsDeleted: 5,
       abandonedConsentsDeleted: 6,
+      expiredInvitationsDeleted: 7,
     });
   });
 
