@@ -237,13 +237,53 @@ export function handleOptions(): NextResponse {
   });
 }
 
-export async function requireAdmin(request: NextRequest) {
+/**
+ * The role an account holds now. A session carries the role it signed in with, up to a day old: right
+ * for the owner routes, which an administrator and a manager both pass, but not for Admin, where a
+ * demotion has to take effect when it is made and a promotion should not wait for a new sign-in.
+ * Without a database to ask (a development sign-in, mock mode) the session's own role stands. A role
+ * that cannot be read is no administrator, except for a route that has to answer when the database
+ * is what is broken (`sessionRoleIfDatabaseDown`): there the session's role stands, as it did
+ * before this read existed. An account that is gone is refused either way.
+ */
+async function storedRole(
+  session: Session,
+  userId: string,
+  sessionRoleIfDatabaseDown: boolean,
+): Promise<string | undefined> {
+  if (isDevAuthEnabled() || isMockMode) return session.user.role;
+  try {
+    const { getPrismaClient } = await import("@/lib/services/database/database");
+    const row = await getPrismaClient().user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+    return row?.role;
+  } catch (error: unknown) {
+    console.error(
+      "requireAdmin: could not read the account's role:",
+      error instanceof Error ? error.message : String(error),
+    );
+    return sessionRoleIfDatabaseDown ? session.user.role : undefined;
+  }
+}
+
+export async function requireAdmin(
+  request: NextRequest,
+  options: {
+    /**
+     * For a diagnostics route, which is opened precisely when the database is broken: when the role
+     * cannot be read, trust the session's. Never for a route that changes anything.
+     */
+    sessionRoleIfDatabaseDown?: boolean;
+  } = {},
+) {
   const authResult = await requireAuth(request);
   if (authResult instanceof NextResponse) {
     return authResult;
   }
-  const { session } = authResult;
-  if (session.user.role !== "ADMIN") {
+  const { session, userId } = authResult;
+  if ((await storedRole(session, userId, options.sessionRoleIfDatabaseDown === true)) !== "ADMIN") {
     return new NextResponse(JSON.stringify({ error: "Forbidden: Admin access required" }), {
       status: 403,
       headers: { "Content-Type": "application/json" },

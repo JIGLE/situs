@@ -15,10 +15,13 @@ export const runtime = "nodejs";
  * landlord information.
  *
  * `getSystemStatus` captures its own failures per check, so this handler stays thin: a
- * diagnostics endpoint that answers 500 is worthless at the one moment it is needed.
+ * diagnostics endpoint that answers 500 is worthless at the one moment it is needed. For the same
+ * reason it is the one Admin route that trusts the session's role when the database cannot be read:
+ * `requireAdmin` reads the stored role, and refusing an administrator because the database is down
+ * would hide the page that says so.
  */
 async function handleGet(request: NextRequest): Promise<Response> {
-  const authResult = await requireAdmin(request);
+  const authResult = await requireAdmin(request, { sessionRoleIfDatabaseDown: true });
   if (authResult instanceof Response) return authResult;
 
   const status = await getSystemStatus(authResult.userId);
