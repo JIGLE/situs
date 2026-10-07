@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { within } from "@testing-library/dom";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithProviders as render } from "@/tests/helpers/render-with-providers";
@@ -13,8 +13,15 @@ import { SettingsSecurity } from "./settings-security";
  * nothing here asked how the panel called it. Portuguese, so copy that is hardcoded English shows.
  */
 
-const { toast } = vi.hoisted(() => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+const { toast, signOut } = vi.hoisted(() => ({
+  toast: { success: vi.fn(), error: vi.fn() },
+  signOut: vi.fn(),
+}));
 vi.mock("@/lib/contexts/toast-context", () => ({ useToast: () => toast }));
+vi.mock("next-auth/react", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next-auth/react")>()),
+  signOut,
+}));
 vi.mock("@/lib/contexts/csrf-context", () => ({
   useCsrf: () => ({ token: "csrf-abc", isLoading: false, error: null, refreshToken: vi.fn() }),
 }));
@@ -154,7 +161,6 @@ describe("SettingsSecurity — authenticator app", () => {
 describe("SettingsSecurity — deleting the account", () => {
   const panel = ptMessages.settings.panel;
   const api = ptMessages.errors.api;
-  const originalLocation = window.location;
   let answer: Answer;
   let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -166,14 +172,6 @@ describe("SettingsSecurity — deleting the account", () => {
       return { ok: answered.ok, status: answered.status ?? 200, json: async () => answered.body };
     });
     global.fetch = fetchMock as unknown as typeof fetch;
-    Object.defineProperty(window, "location", {
-      configurable: true,
-      value: { href: "http://localhost/settings" },
-    });
-  });
-
-  afterEach(() => {
-    Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
   });
 
   const deleteCalls = () => fetchMock.mock.calls.filter(([url]) => url === "/api/user/delete-data");
@@ -190,13 +188,14 @@ describe("SettingsSecurity — deleting the account", () => {
 
     expect(within(dialog).getByText(panel.deleteConfirmTitle)).toBeDefined();
     expect(deleteCalls()).toHaveLength(0);
-    expect(window.location.href).toBe("http://localhost/settings");
+    expect(signOut).not.toHaveBeenCalled();
   });
 
-  it("deletes with a POST that carries the token, then leaves for the sign-in page", async () => {
+  it("deletes with a POST that carries the token, then ends the session and leaves for the sign-in page", async () => {
     confirm(await openDialog());
 
-    await waitFor(() => expect(window.location.href).toBe("/auth/signin"));
+    // Its token would outlive the account for a day, and the sign-in page would send it on to the dashboard.
+    await waitFor(() => expect(signOut).toHaveBeenCalledWith({ callbackUrl: "/auth/signin" }));
     expect(deleteCalls()).toHaveLength(1);
     expect(deleteCalls()[0][1]).toMatchObject({
       method: "POST",
@@ -214,7 +213,7 @@ describe("SettingsSecurity — deleting the account", () => {
     confirm(await openDialog());
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith(api.lastAdmin));
-    expect(window.location.href).toBe("http://localhost/settings");
+    expect(signOut).not.toHaveBeenCalled();
   });
 
   it("says the server failed, in Portuguese, for any other failure", async () => {
@@ -222,6 +221,6 @@ describe("SettingsSecurity — deleting the account", () => {
     confirm(await openDialog());
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith(api.serverError));
-    expect(window.location.href).toBe("http://localhost/settings");
+    expect(signOut).not.toHaveBeenCalled();
   });
 });

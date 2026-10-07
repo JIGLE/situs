@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslations } from "next-intl";
+import { signOut } from "next-auth/react";
 import { useToast } from "@/lib/contexts/toast-context";
 import { useCsrf } from "@/lib/contexts/csrf-context";
 import { apiFetch } from "@/lib/utils/api-client";
@@ -54,7 +55,9 @@ export function SettingsSecurity() {
       async () => {
         try {
           await apiFetch("/api/user/delete-data", csrfToken, "POST");
-          window.location.href = "/auth/signin";
+          // The session's token outlives the account for up to a day, and the sign-in page sends a
+          // visitor who still has one on to the dashboard: end the session before leaving.
+          await signOut({ callbackUrl: "/auth/signin" });
         } catch (err) {
           // The only administrator is told why, in words: "the instance needs an administrator".
           showError(apiError(err));
