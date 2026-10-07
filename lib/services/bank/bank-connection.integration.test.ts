@@ -74,7 +74,10 @@ describe("live bank connection — real Prisma client + real SQLite file", () =>
     tempDir = mkdtempSync(path.join(tmpdir(), "situs-bank-test-"));
     dbUrl = `file:${path.join(tempDir, "test.db")}`;
 
-    execSync(`npx prisma db push --accept-data-loss --url="${dbUrl}"`, {
+    // No `--accept-data-loss`: a fresh file has nothing to lose, so the push needs no such consent.
+    // Prisma refuses the flag outright when an AI agent runs it, which kept this file from running
+    // there.
+    execSync(`npx prisma db push --url="${dbUrl}"`, {
       cwd: process.cwd(),
       env: { ...process.env, DATABASE_URL: dbUrl },
       stdio: "pipe",
