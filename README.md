@@ -78,7 +78,9 @@ npm run dev
 ```
 
 Open <http://localhost:3000>. The first account created owns the instance; every other email is
-refused until you add it to `AUTH_ALLOWED_EMAILS` or an administrator invites it.
+refused until you add it to `AUTH_ALLOWED_EMAILS` or an administrator invites it. Admin › Access
+holds the invitations, each account's role, and a switch that opens sign-up to any Google account
+with a verified email.
 
 ### Docker
 

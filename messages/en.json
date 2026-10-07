@@ -339,20 +339,20 @@
         "overview": "Overview",
         "status": "Status",
         "users": "Accounts",
-        "signIn": "Sign-in",
+        "access": "Access",
         "metrics": "Metrics"
       }
     },
     "signIn": {
-      "title": "Sign-in",
-      "subtitle": "How anyone can get into this instance.",
-      "loading": "Loading…",
-      "loadFailed": "Could not load sign-in status.",
+      "title": "Access",
       "registrationClosed": "Registration is closed",
       "registrationClosedHelp": "Only existing accounts, and any email on the allowlist, can sign in.",
       "registrationOpen": "Registration is open",
       "registrationOpenHelp": "No account exists yet, so the next sign-in will claim this instance as administrator.",
-      "accounts": "{total} accounts, {admins} of them administrators.",
+      "registrationInvitations": "Registration is by invitation",
+      "registrationInvitationsHelp": "An email that has been invited can create an account with Google. {count, plural, one {# invitation is waiting.} other {# invitations are waiting.}}",
+      "registrationGoogle": "Registration is open to Google accounts",
+      "registrationGoogleHelp": "Anyone with a Google account and a verified email can create an account, as a manager. Switch it off under New accounts to close it.",
       "providers": "Sign-in methods",
       "provider": {
         "credentials": "Email and password",
@@ -364,6 +364,55 @@
       "allowlist": "Allowlisted emails",
       "allowlistEmpty": "None — existing accounts only.",
       "allowlistHelp": "AUTH_ALLOWED_EMAILS. Additive: these may sign in even though registration is closed."
+    },
+    "access": {
+      "subtitle": "Who can create an account on this instance, and who already has one.",
+      "loading": "Loading…",
+      "loadFailed": "Could not load the access settings.",
+      "summary": "{total, plural, one {# account} other {# accounts}}, {admins, plural, one {# of them an administrator} other {# of them administrators}}.",
+      "newAccounts": {
+        "title": "New accounts",
+        "help": "These apply to people who do not have an account yet. Everyone who has one signs in whatever is set here.",
+        "invitations": "Invitations",
+        "invitationsHelp": "An email you invite can create an account with Google, as the role you give it. Switched off, an invitation admits nobody; the ones already sent are kept.",
+        "googleSignUp": "Google sign-up",
+        "googleSignUpHelp": "Any Google account with a verified email can create an account here, as a manager, without an invitation. A manager can use everything an owner can on their own data, the bank connection included. Leave it off unless you want that.",
+        "saved": "Saved.",
+        "openGoogleTitle": "Open to any Google account?",
+        "openGoogleDescription": "Anyone with a Google account and a verified email will be able to create an account on this instance, as a manager, and use the owner features on their own data, the bank connection included. You can switch it off again at any time; accounts already made stay.",
+        "openGoogleConfirm": "Open to Google accounts"
+      },
+      "invitations": {
+        "title": "Invitations",
+        "help": "An invitation lets one email create an account with Google until it expires.",
+        "off": "Invitations are switched off, so none of these admits anyone. Switch them on under New accounts.",
+        "email": "Email to invite",
+        "role": "Role",
+        "invite": "Invite",
+        "empty": "No invitations are waiting.",
+        "expires": "Expires {date}",
+        "expired": "Expired",
+        "remove": "Remove",
+        "removeLabel": "Remove the invitation for {email}",
+        "invited": "Invitation saved.",
+        "removed": "Invitation removed."
+      },
+      "accounts": {
+        "title": "Accounts",
+        "help": "Change what an account may do. Nothing is blocked or deleted here.",
+        "you": "Your account",
+        "since": "Since {date}",
+        "roleLabel": "Role of {email}",
+        "changed": "Role changed.",
+        "demoteSelfTitle": "Give up your administrator role?",
+        "demoteSelfDescription": "You will no longer be able to open Admin. Another administrator can give it back.",
+        "demoteSelfConfirm": "Make me a manager"
+      },
+      "roles": {
+        "ADMIN": "Administrator",
+        "MANAGER": "Manager",
+        "USER": "No access"
+      }
     },
     "controlCenter": {
       "openDetail": "Detail",
@@ -687,6 +736,9 @@
       "leaseHasHistory": "Payments are recorded against this lease, so Situs keeps it for your records. End the lease instead.",
       "ownerHasHistory": "This owner is linked to a property or to income distributions, so Situs keeps them for your records. Remove them from the property first.",
       "emailInUse": "You already have a record with that email address. Use a different one, or leave it empty.",
+      "lastAdmin": "The instance needs an administrator. Make someone else an administrator first.",
+      "accountExists": "That email already has an account. Change its role under Accounts instead.",
+      "accountChanged": "Someone else changed this account a moment ago. Reload and try again.",
       "atPasswordRequired": "Enter the sub-user's password.",
       "atCredentialsNeedKey": "Situs stores the AT password only encrypted, and this instance has no PII_ENCRYPTION_KEY. Set it, then save again.",
       "atFilesNotReady": "The certificate files are missing or invalid. Their state is shown above.",

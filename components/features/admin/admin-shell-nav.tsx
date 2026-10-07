@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils/utils";
 const SECTIONS = [
   { key: "overview", href: "/admin" },
   { key: "status", href: "/admin/status" },
-  { key: "signIn", href: "/admin/sign-in" },
+  { key: "access", href: "/admin/access" },
 ] as const;
 
 export function AdminShellNav() {

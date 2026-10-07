@@ -22,6 +22,7 @@
 
 import { getPrismaClient } from "@/lib/services/database/database";
 import { allowedEmails } from "@/lib/services/auth/registration";
+import { countLiveInvitations, readSignUpSettings } from "@/lib/services/auth/sign-up";
 
 export interface SignInStatus {
   /**
@@ -30,10 +31,16 @@ export interface SignInStatus {
    */
   providers: { key: "credentials" | "google"; configured: boolean }[];
   /**
-   * Registration state, derived from the account count rather than from a setting.
-   * `open_bootstrap` means no account exists yet, so the next sign-in claims the instance.
+   * How a new account can come to be, derived from the account count, the two sign-up switches and
+   * the invitations still live, never from a label:
+   *   - `open_bootstrap`: no account exists yet, so the next sign-in claims the instance;
+   *   - `google`: any Google account with a verified email may create one (the Google switch);
+   *   - `invitations`: an email that has been invited may, while its invitation is live;
+   *   - `closed`: nobody new may, the allowlist aside. Also what a setting that cannot be read means.
    */
-  registration: "open_bootstrap" | "closed";
+  registration: "open_bootstrap" | "google" | "invitations" | "closed";
+  /** Invitations that have not lapsed, whether or not the invitations switch is on. */
+  pendingInvitations: number;
   totalAccounts: number;
   adminAccounts: number;
   /** Emails admitted in addition to existing users. Shown so a stale entry is visible. */
@@ -44,10 +51,21 @@ const envSet = (name: string) => Boolean(process.env[name]?.trim());
 
 export async function getSignInStatus(): Promise<SignInStatus> {
   const prisma = getPrismaClient();
-  const [totalAccounts, adminAccounts] = await Promise.all([
+  const [totalAccounts, adminAccounts, settings, pendingInvitations] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { role: "ADMIN" } }),
+    readSignUpSettings(),
+    countLiveInvitations(),
   ]);
+
+  const registration: SignInStatus["registration"] =
+    totalAccounts === 0
+      ? "open_bootstrap"
+      : settings?.googleSignUp
+        ? "google"
+        : settings?.invitations && pendingInvitations > 0
+          ? "invitations"
+          : "closed";
 
   return {
     providers: [
@@ -61,7 +79,8 @@ export async function getSignInStatus(): Promise<SignInStatus> {
         configured: envSet("GOOGLE_CLIENT_ID") && envSet("GOOGLE_CLIENT_SECRET"),
       },
     ],
-    registration: totalAccounts === 0 ? "open_bootstrap" : "closed",
+    registration,
+    pendingInvitations,
     totalAccounts,
     adminAccounts,
     allowlist: allowedEmails(),

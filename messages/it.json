@@ -339,20 +339,20 @@
         "overview": "Panoramica",
         "status": "Stato",
         "users": "Account",
-        "signIn": "Accesso",
+        "access": "Accessi",
         "metrics": "Metriche"
       }
     },
     "signIn": {
-      "title": "Accesso",
-      "subtitle": "Come si può entrare in questa istanza.",
-      "loading": "Caricamento…",
-      "loadFailed": "Impossibile caricare lo stato di accesso.",
+      "title": "Accessi",
       "registrationClosed": "Registrazione chiusa",
       "registrationClosedHelp": "Solo gli account esistenti, e le email nell'elenco consentito, possono accedere.",
       "registrationOpen": "Registrazione aperta",
       "registrationOpenHelp": "Non esiste ancora alcun account, quindi il prossimo accesso rivendicherà questa istanza come amministratore.",
-      "accounts": "{total} account, {admins} dei quali amministratori.",
+      "registrationInvitations": "La registrazione è su invito",
+      "registrationInvitationsHelp": "Un'email che è stata invitata può creare un account con Google. {count, plural, one {C'è # invito in attesa.} other {Ci sono # inviti in attesa.}}",
+      "registrationGoogle": "La registrazione è aperta agli account Google",
+      "registrationGoogleHelp": "Chiunque abbia un account Google e un'email verificata può creare un account, come gestore. Disattivalo in Nuovi account per chiudere.",
       "providers": "Metodi di accesso",
       "provider": {
         "credentials": "Email e password",
@@ -364,6 +364,55 @@
       "allowlist": "Email consentite",
       "allowlistEmpty": "Nessuna — solo account esistenti.",
       "allowlistHelp": "AUTH_ALLOWED_EMAILS. Additivo: queste possono accedere anche a registrazione chiusa."
+    },
+    "access": {
+      "subtitle": "Chi può creare un account su questa istanza e chi ne ha già uno.",
+      "loading": "Caricamento…",
+      "loadFailed": "Impossibile caricare le impostazioni di accesso.",
+      "summary": "{total, plural, one {# account} other {# account}}, di cui {admins, plural, one {# amministratore} other {# amministratori}}.",
+      "newAccounts": {
+        "title": "Nuovi account",
+        "help": "Valgono per chi non ha ancora un account. Chi ne ha uno accede sempre, qualunque sia l'impostazione.",
+        "invitations": "Inviti",
+        "invitationsHelp": "Un'email che inviti può creare un account con Google, con il ruolo che le assegni. Disattivato, un invito non ammette nessuno; quelli già inviati restano.",
+        "googleSignUp": "Registrazione con Google",
+        "googleSignUpHelp": "Qualsiasi account Google con email verificata può creare qui un account, come gestore, senza invito. Un gestore può usare tutto ciò che usa un proprietario sui propri dati, collegamento bancario compreso. Lascialo disattivato a meno che tu non lo voglia.",
+        "saved": "Salvato.",
+        "openGoogleTitle": "Aprire a qualsiasi account Google?",
+        "openGoogleDescription": "Chiunque abbia un account Google e un'email verificata potrà creare un account su questa istanza, come gestore, e usare le funzioni da proprietario sui propri dati, collegamento bancario compreso. Puoi disattivarlo di nuovo quando vuoi; gli account già creati restano.",
+        "openGoogleConfirm": "Apri agli account Google"
+      },
+      "invitations": {
+        "title": "Inviti",
+        "help": "Un invito permette a un'email di creare un account con Google fino alla scadenza.",
+        "off": "Gli inviti sono disattivati, quindi nessuno di questi ammette qualcuno. Attivali in Nuovi account.",
+        "email": "Email da invitare",
+        "role": "Ruolo",
+        "invite": "Invita",
+        "empty": "Nessun invito in attesa.",
+        "expires": "Scade il {date}",
+        "expired": "Scaduto",
+        "remove": "Rimuovi",
+        "removeLabel": "Rimuovi l'invito per {email}",
+        "invited": "Invito salvato.",
+        "removed": "Invito rimosso."
+      },
+      "accounts": {
+        "title": "Account",
+        "help": "Cambia ciò che un account può fare. Qui non si blocca né si elimina nulla.",
+        "you": "Il tuo account",
+        "since": "Dal {date}",
+        "roleLabel": "Ruolo di {email}",
+        "changed": "Ruolo modificato.",
+        "demoteSelfTitle": "Smettere di essere amministratore?",
+        "demoteSelfDescription": "Non potrai più aprire Amministrazione. Un altro amministratore può restituirti il ruolo.",
+        "demoteSelfConfirm": "Passa a gestore"
+      },
+      "roles": {
+        "ADMIN": "Amministratore",
+        "MANAGER": "Gestore",
+        "USER": "Nessun accesso"
+      }
     },
     "controlCenter": {
       "openDetail": "Dettaglio",
@@ -687,6 +736,9 @@
       "leaseHasHistory": "Ci sono pagamenti registrati su questo contratto, quindi Situs lo conserva nei tuoi registri. Termina il contratto invece di eliminarlo.",
       "ownerHasHistory": "Questo proprietario è collegato a un immobile o a distribuzioni di reddito, quindi Situs lo conserva nei tuoi registri. Rimuovilo prima dall'immobile.",
       "emailInUse": "Hai già un registro con questo indirizzo email. Usane un altro, o lascialo vuoto.",
+      "lastAdmin": "L'istanza ha bisogno di un amministratore. Prima rendi amministratore qualcun altro.",
+      "accountExists": "Quell'email ha già un account. Modifica invece il suo ruolo in Account.",
+      "accountChanged": "Qualcun altro ha appena modificato questo account. Ricarica e riprova.",
       "atPasswordRequired": "Inserisci la password del sottoutente.",
       "atCredentialsNeedKey": "Situs salva la password AT solo cifrata, e questa istanza non ha PII_ENCRYPTION_KEY. Impostala e salva di nuovo.",
       "atFilesNotReady": "I file del certificato mancano o non sono validi. Il loro stato è mostrato sopra.",

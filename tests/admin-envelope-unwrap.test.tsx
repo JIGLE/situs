@@ -13,8 +13,11 @@ import {
  * access page rendered its "could not load" state — permanently, on a 200 with correct data.
  *
  * Nothing caught it: the generic was written as `{ data?: ... }`, so the double read type-checked,
- * and neither view had a test. These render the views against the shape `apiFetch` actually
- * hands back and assert the content reaches the screen. Restoring either `.data` fails them.
+ * and neither view had a test. These render the view against the shape `apiFetch` actually hands
+ * back and assert the content reaches the screen. Restoring a `.data` read fails them.
+ *
+ * The one view left reads two routes (`/api/admin/access` and `/api/admin/sign-in-status`), so each
+ * is answered with its own payload and a section of the screen proves each one arrived.
  */
 
 const apiFetch = vi.fn();
@@ -38,29 +41,62 @@ describe("admin views unwrap the API envelope exactly once", () => {
     apiFetch.mockReset();
   });
 
-  it("renders the sign-in status apiFetch returns", async () => {
-    const { AdminSignInView } = await import("@/components/features/admin/admin-sign-in-view");
+  it("renders what both routes of Acessos hand back", async () => {
+    const { AdminAccessView } =
+      await import("@/components/features/admin/access/admin-access-view");
 
-    apiFetch.mockResolvedValue({
-      providers: [
-        { key: "credentials", configured: true },
-        { key: "google", configured: false },
-      ],
-      registration: "closed",
-      totalAccounts: 1,
-      adminAccounts: 1,
-      allowlist: [],
-    });
+    apiFetch.mockImplementation(async (url: string) =>
+      url === "/api/admin/access"
+        ? {
+            settings: { googleSignUp: false, invitations: true },
+            invitations: [
+              {
+                id: "inv-1",
+                email: "guest@example.test",
+                role: "MANAGER",
+                createdAt: "2026-10-01T00:00:00.000Z",
+                expiresAt: "2099-10-31T00:00:00.000Z",
+                expired: false,
+              },
+            ],
+            allowlist: ["operator@example.test"],
+            accounts: [
+              {
+                id: "acc-1",
+                email: "owner@example.test",
+                name: "Owner",
+                role: "ADMIN",
+                createdAt: "2026-09-01T00:00:00.000Z",
+                self: true,
+              },
+            ],
+          }
+        : {
+            providers: [
+              { key: "credentials", configured: true },
+              { key: "google", configured: false },
+            ],
+            registration: "closed",
+            pendingInvitations: 1,
+            totalAccounts: 1,
+            adminAccounts: 1,
+            allowlist: ["operator@example.test"],
+          },
+    );
 
-    render(<AdminSignInView />);
+    render(<AdminAccessView />);
 
     await waitFor(() => {
       // `loadFailed` was what this page showed on every visit, whatever the server answered.
-      expect(screen.queryByText("loadFailed")).not.toBeInTheDocument();
+      expect(screen.queryByText("Could not load the access settings.")).not.toBeInTheDocument();
     });
-    // `registrationClosed` and the per-provider row both come from `status`, so either one
-    // reaching the DOM proves the payload survived the unwrap.
+    // The status route: the registration sentence, the counts and the provider row.
     expect(screen.getByText("Registration is closed")).toBeInTheDocument();
+    expect(screen.getByText("1 account, 1 of them an administrator.")).toBeInTheDocument();
     expect(screen.getByText("Email and password")).toBeInTheDocument();
+    // The access route: an invitation, an account and the allowlist.
+    expect(screen.getByText("guest@example.test")).toBeInTheDocument();
+    expect(screen.getByText("Owner")).toBeInTheDocument();
+    expect(screen.getAllByText("operator@example.test")).not.toHaveLength(0);
   });
 });

@@ -46,6 +46,14 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // The roadmap's Later row promised these; Admin › Access is all of them.
+    pattern: /Admin with tabs, sign-up toggles, users and roles/,
+    retired: "2026-10-04 (Admin › Access)",
+    because:
+      "the sign-up switches, the invitations and the accounts' roles shipped as Admin › Access " +
+      "(/admin/access), so they are no longer planned",
+  },
+  {
     // requireAdmin reads the stored role, so a role changed in the database no longer waits for the
     // next sign-in where Admin is concerned; only the owner routes still follow the session's.
     pattern: /database applies at the next sign-in, since the token lives a day/,

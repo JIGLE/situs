@@ -339,20 +339,20 @@
         "overview": "Visão geral",
         "status": "Estado",
         "users": "Contas",
-        "signIn": "Acesso",
+        "access": "Acessos",
         "metrics": "Métricas"
       }
     },
     "signIn": {
-      "title": "Acesso",
-      "subtitle": "Como se pode entrar nesta instância.",
-      "loading": "A carregar…",
-      "loadFailed": "Não foi possível carregar o estado de acesso.",
+      "title": "Acessos",
       "registrationClosed": "Registo fechado",
       "registrationClosedHelp": "Só as contas existentes, e os emails na lista de permissões, podem entrar.",
       "registrationOpen": "Registo aberto",
       "registrationOpenHelp": "Ainda não existe nenhuma conta, por isso o próximo acesso reclama esta instância como administrador.",
-      "accounts": "{total} contas, {admins} delas administradores.",
+      "registrationInvitations": "O registo é por convite",
+      "registrationInvitationsHelp": "Um email que tenha sido convidado pode criar uma conta com o Google. {count, plural, one {Há # convite pendente.} other {Há # convites pendentes.}}",
+      "registrationGoogle": "O registo está aberto a contas Google",
+      "registrationGoogleHelp": "Quem tiver uma conta Google com email verificado pode criar uma conta, como gestor. Desligue em Contas novas para fechar.",
       "providers": "Métodos de acesso",
       "provider": {
         "credentials": "Email e palavra-passe",
@@ -364,6 +364,55 @@
       "allowlist": "Emails permitidos",
       "allowlistEmpty": "Nenhum — apenas contas existentes.",
       "allowlistHelp": "AUTH_ALLOWED_EMAILS. Aditivo: estes podem entrar mesmo com o registo fechado."
+    },
+    "access": {
+      "subtitle": "Quem pode criar uma conta nesta instância, e quem já tem uma.",
+      "loading": "A carregar…",
+      "loadFailed": "Não foi possível carregar as definições de acesso.",
+      "summary": "{total, plural, one {# conta} other {# contas}}, das quais {admins, plural, one {# é administrador} other {# são administradores}}.",
+      "newAccounts": {
+        "title": "Contas novas",
+        "help": "Aplicam-se a quem ainda não tem conta. Quem já tem uma entra sempre, seja qual for a definição.",
+        "invitations": "Convites",
+        "invitationsHelp": "Um email convidado por si pode criar uma conta com o Google, com a função que lhe atribuiu. Desligado, um convite não admite ninguém; os já enviados ficam guardados.",
+        "googleSignUp": "Registo com Google",
+        "googleSignUpHelp": "Qualquer conta Google com email verificado pode criar aqui uma conta, como gestor, sem convite. Um gestor pode usar tudo o que um proprietário usa, sobre os seus próprios dados, incluindo a ligação bancária. Deixe desligado, a menos que queira isso.",
+        "saved": "Guardado.",
+        "openGoogleTitle": "Abrir a qualquer conta Google?",
+        "openGoogleDescription": "Qualquer pessoa com uma conta Google e um email verificado poderá criar uma conta nesta instância, como gestor, e usar as funções de proprietário sobre os seus próprios dados, incluindo a ligação bancária. Pode voltar a desligar quando quiser; as contas já criadas ficam.",
+        "openGoogleConfirm": "Abrir a contas Google"
+      },
+      "invitations": {
+        "title": "Convites",
+        "help": "Um convite permite que um email crie uma conta com o Google até expirar.",
+        "off": "Os convites estão desligados, por isso nenhum destes admite ninguém. Ligue-os em Contas novas.",
+        "email": "Email a convidar",
+        "role": "Função",
+        "invite": "Convidar",
+        "empty": "Não há convites pendentes.",
+        "expires": "Expira a {date}",
+        "expired": "Expirado",
+        "remove": "Remover",
+        "removeLabel": "Remover o convite de {email}",
+        "invited": "Convite guardado.",
+        "removed": "Convite removido."
+      },
+      "accounts": {
+        "title": "Contas",
+        "help": "Altere o que uma conta pode fazer. Aqui nada é bloqueado nem apagado.",
+        "you": "A sua conta",
+        "since": "Desde {date}",
+        "roleLabel": "Função de {email}",
+        "changed": "Função alterada.",
+        "demoteSelfTitle": "Deixar de ser administrador?",
+        "demoteSelfDescription": "Deixará de poder abrir a Administração. Outro administrador pode voltar a dar-lhe essa função.",
+        "demoteSelfConfirm": "Passar a gestor"
+      },
+      "roles": {
+        "ADMIN": "Administrador",
+        "MANAGER": "Gestor",
+        "USER": "Sem acesso"
+      }
     },
     "controlCenter": {
       "openDetail": "Detalhe",
@@ -687,6 +736,9 @@
       "leaseHasHistory": "Há pagamentos registados neste contrato, por isso o Situs mantém-no nos seus registos. Termine o contrato em vez de o eliminar.",
       "ownerHasHistory": "Este proprietário está associado a um imóvel ou a distribuições de rendimento, por isso o Situs mantém-no nos seus registos. Retire-o primeiro do imóvel.",
       "emailInUse": "Já tem um registo com esse endereço de email. Use outro, ou deixe-o vazio.",
+      "lastAdmin": "A instância precisa de um administrador. Torne primeiro outra pessoa administradora.",
+      "accountExists": "Esse email já tem uma conta. Altere antes a função dela em Contas.",
+      "accountChanged": "Outra pessoa alterou esta conta há instantes. Recarregue e tente de novo.",
       "atPasswordRequired": "Introduza a senha do subutilizador.",
       "atCredentialsNeedKey": "O Situs só guarda a senha da AT cifrada, e esta instância não tem PII_ENCRYPTION_KEY. Defina-a e guarde de novo.",
       "atFilesNotReady": "Os ficheiros do certificado estão em falta ou são inválidos. O estado de cada um aparece acima.",

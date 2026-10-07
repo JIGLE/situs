@@ -63,6 +63,16 @@ test.describe("Situs surfaces — accessibility (WCAG2A/AA)", () => {
     expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
   });
 
+  test("Admin › Access (switches, invitations, accounts) has no critical/serious violations", async ({
+    page,
+  }) => {
+    await page.goto("/admin/access");
+    await expect(page.getByText(en.admin.access.subtitle)).toBeVisible({ timeout: 20000 });
+    await settle(page);
+    const { blocking } = await scanForSeriousViolations(page);
+    expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
+  });
+
   test("Settings › Integrations, both tabs, has no critical/serious violations", async ({
     page,
   }) => {
