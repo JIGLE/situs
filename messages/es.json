@@ -119,7 +119,6 @@
       "deleteConfirmTitle": "¿Eliminar tu cuenta?",
       "deleteConfirmDescription": "Tu cuenta y todos los registros asociados se eliminarán de forma permanente. Esta acción no se puede deshacer.",
       "deleteConfirmLabel": "Eliminar mi cuenta",
-      "deleteFailed": "No se ha podido eliminar tu cuenta. Inténtalo de nuevo.",
       "retention": "Conservación de datos: los registros de auditoría se guardan 7 años (obligación legal), los de correo 2 años y las notificaciones leídas 1 año. La purga automática se ejecuta a diario.",
       "activity": "Actividad de la cuenta",
       "activityEmpty": "Los inicios de sesión, exportaciones y cambios de ajustes aparecerán aquí.",

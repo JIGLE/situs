@@ -119,7 +119,6 @@
       "deleteConfirmTitle": "Eliminar a sua conta?",
       "deleteConfirmDescription": "A sua conta e todos os registos associados serão eliminados definitivamente. Esta ação não pode ser anulada.",
       "deleteConfirmLabel": "Eliminar a minha conta",
-      "deleteFailed": "Não foi possível eliminar a sua conta. Tente novamente.",
       "retention": "Retenção de dados: os registos de auditoria são mantidos 7 anos (obrigação legal), os registos de e-mail 2 anos e as notificações lidas 1 ano. A limpeza automática corre diariamente.",
       "activity": "Atividade da conta",
       "activityEmpty": "Os inícios de sessão, exportações e alterações às definições aparecerão aqui.",

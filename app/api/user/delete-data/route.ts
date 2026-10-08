@@ -1,40 +1,28 @@
 import { NextRequest } from "next/server";
-import { getPrismaClient } from "@/lib/services/database/database";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
-import { logAudit } from "@/lib/services/audit-log";
+import { deleteOwnAccount } from "@/lib/services/auth/accounts";
+import { withErrorHandler } from "@/lib/utils/error-handling";
 
-export async function POST(request: NextRequest) {
-  try {
-    const authResult = await requireAuth(request);
-    if (authResult instanceof Response) return authResult;
-    const { session } = authResult;
-    const prisma = getPrismaClient();
+/**
+ * POST /api/user/delete-data — the signed-in account deletes itself and everything it owns (GDPR
+ * erasure). The only administrator cannot while other accounts remain: a 409 `last_admin`, since the
+ * instance would be left with accounts and nobody to administer them.
+ *
+ * No audit entry is written first. It would belong to the account and go with it in the same cascade,
+ * so it would record nothing, and a refusal would leave one that says a deletion happened.
+ */
+async function handlePost(request: NextRequest): Promise<Response> {
+  const authResult = await requireAuth(request);
+  if (authResult instanceof Response) return authResult;
+  const { session, userId } = authResult;
 
-    const userId = session.user.id;
-    const userEmail = session.user.email;
+  await deleteOwnAccount(userId);
 
-    // Log deletion BEFORE deleting (so we have the userId reference)
-    await logAudit({
-      userId,
-      action: "DELETE_PERSONAL_DATA",
-      details: {
-        requestedAt: new Date().toISOString(),
-        email: userEmail,
-      },
-    });
+  // Note: the audit log of this user is deleted with it, by cascade. For compliance you may want to
+  // keep anonymized deletion records separately.
+  console.info(`[GDPR] User data deleted: ${session.user.email} at ${new Date().toISOString()}`);
 
-    // GDPR: Delete user's data (cascade will delete audit logs too)
-    await prisma.user.delete({
-      where: { id: userId },
-    });
-
-    // Note: Audit log for this user is deleted due to cascade
-    // For compliance, you may want to keep anonymized deletion records separately
-    console.info(`[GDPR] User data deleted: ${userEmail} at ${new Date().toISOString()}`);
-
-    return Response.json({ message: "Data deleted successfully" });
-  } catch (error) {
-    console.error("Data delete error:", error);
-    return Response.json({ error: "Deletion failed" }, { status: 500 });
-  }
+  return Response.json({ message: "Data deleted successfully" });
 }
+
+export const POST = withErrorHandler(handlePost);

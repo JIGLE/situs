@@ -201,6 +201,11 @@ Account deletion is immediate and complete. There is no grace period and no soft
 | Rectification (Art. 16)               | Edit in the app                              | —                            |
 | Restriction / objection (Art. 18, 21) | By arrangement with the operator             | —                            |
 
+Erasure is refused for one account: the only administrator, while other accounts remain (409
+`last_admin`). Deleting it would leave accounts with nobody to administer them, so someone else is made
+an administrator first (Admin › Access). The last account of all can always be deleted, which returns
+the instance to its first sign-in.
+
 The export is **derived from the Prisma schema** (`lib/services/gdpr/export-scope.ts`), not from
 a hand-written list, so a relation added to `User` is exported the day it exists. It previously
 listed eleven relations against a model with thirty-five.
