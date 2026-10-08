@@ -143,6 +143,8 @@
       "toastDisabled": "Two-factor authentication turned off",
       "toastEnableFailed": "Couldn't turn on two-factor authentication.",
       "toastDisableFailed": "Couldn't turn off two-factor authentication.",
+      "toastDisableWrongCode": "That code is not right. Two-factor authentication is still on.",
+      "disable2faHint": "Enter a code from your authenticator app, or one of your backup codes.",
       "toastVerifyFailed": "That code didn't match. Try again.",
       "toastChangedElsewhere": "Two-factor authentication was changed in another window. Reload the page and try again.",
       "setUp2fa": "Set up 2FA",

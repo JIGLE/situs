@@ -143,6 +143,8 @@
       "toastDisabled": "Autenticación en dos pasos desactivada",
       "toastEnableFailed": "No se ha podido activar la autenticación en dos pasos.",
       "toastDisableFailed": "No se ha podido desactivar la autenticación en dos pasos.",
+      "toastDisableWrongCode": "Ese código no es correcto. La autenticación en dos pasos sigue activada.",
+      "disable2faHint": "Introduce un código de tu app de autenticación, o uno de tus códigos de recuperación.",
       "toastVerifyFailed": "El código no coincide. Inténtalo de nuevo.",
       "toastChangedElsewhere": "La autenticación en dos pasos se ha cambiado en otra ventana. Recarga la página e inténtalo de nuevo.",
       "setUp2fa": "Configurar 2FA",

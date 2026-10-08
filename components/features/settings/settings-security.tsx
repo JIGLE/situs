@@ -11,7 +11,7 @@ import { signOut } from "next-auth/react";
 import { useToast } from "@/lib/contexts/toast-context";
 import { useCsrf } from "@/lib/contexts/csrf-context";
 import { apiFetch } from "@/lib/utils/api-client";
-import { useApiError } from "@/lib/utils/api-error";
+import { httpError, useApiError } from "@/lib/utils/api-error";
 import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
@@ -74,6 +74,7 @@ export function SettingsSecurity() {
   const [totpCode, setTotpCode] = useState("");
   const [totpBackupCodes, setTotpBackupCodes] = useState<string[]>([]);
   const [totpWorking, setTotpWorking] = useState(false);
+  const [disableCode, setDisableCode] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -148,16 +149,28 @@ export function SettingsSecurity() {
     }
   };
 
+  /** Turning it off takes a code from it: an authenticator code or a backup code. */
   const disableTotp = async () => {
     setTotpWorking(true);
     try {
       const res = await fetch("/api/auth/totp/disable", {
         method: "DELETE",
-        headers: { "X-CSRF-Token": csrfToken || "" },
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken || "" },
+        body: JSON.stringify({ code: (disableCode ?? "").replace(/\s/g, "") }),
       });
-      if (!res.ok) throw new Error("Disable failed");
+      if (res.status === 400) {
+        showError(t("toastDisableWrongCode"));
+        return;
+      }
+      if (res.status === 409) {
+        setDisableCode(null);
+        showError(t("toastChangedElsewhere"));
+        return;
+      }
+      if (!res.ok) throw httpError(res.status);
       setTotpEnabled(false);
       setTotpSetupStep("idle");
+      setDisableCode(null);
       success(t("toastDisabled"));
     } catch {
       showError(t("toastDisableFailed"));
@@ -185,9 +198,45 @@ export function SettingsSecurity() {
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
                 <span>{t("twoFactorOn")}</span>
               </div>
-              <Button variant="destructive" size="sm" onClick={disableTotp} disabled={totpWorking}>
-                {t("disable2fa")}
-              </Button>
+              {disableCode === null ? (
+                <Button variant="destructive" size="sm" onClick={() => setDisableCode("")}>
+                  {t("disable2fa")}
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="totp-disable-code">{t("verificationCode")}</Label>
+                  <p className="text-xs text-muted-foreground">{t("disable2faHint")}</p>
+                  <Input
+                    id="totp-disable-code"
+                    type="text"
+                    inputMode="text"
+                    autoComplete="one-time-code"
+                    autoCapitalize="characters"
+                    maxLength={8}
+                    value={disableCode}
+                    onChange={(e) => setDisableCode(e.target.value.replace(/\s/g, ""))}
+                    className="w-40 text-center tracking-widest text-lg"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={disableTotp}
+                      disabled={totpWorking || disableCode.length < 6}
+                    >
+                      {t("disable2fa")}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setDisableCode(null)}
+                      disabled={totpWorking}
+                    >
+                      {tActions("cancel")}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : totpSetupStep === "idle" ? (
             <div className="space-y-3">
