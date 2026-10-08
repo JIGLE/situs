@@ -388,6 +388,14 @@ const RETIRED_CLAIMS = [
       "docs/REPOSITORY_PROCEDURES.md §1",
   },
   {
+    pattern: /Immediate and complete, by cascade/,
+    retired: "2026-10-08",
+    because:
+      "erasure removes more than cascades: the email log rows, bank consents and stored files are " +
+      "removed with the account, and the page now says what it still cannot reach " +
+      "(docs/DATA_PROTECTION.md)",
+  },
+  {
     pattern: /`npm audit` at moderate and above/,
     retired: "2026-10-08",
     because:

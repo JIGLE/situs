@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
 import { execSync } from "node:child_process";
-import { mkdtempSync, rmSync, existsSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, existsSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -45,6 +45,8 @@ describe("accounts and their roles — real Prisma client + real SQLite file", (
 
     process.env.DATABASE_URL = dbUrl;
     process.env.PII_ENCRYPTION_KEY = "e".repeat(64);
+    // Read once, when the document service loads, which `./accounts` pulls in.
+    process.env.DOCUMENT_STORAGE_PATH = path.join(tempDir, "documents");
     prisma = await loadClient();
     accounts = await import("./accounts");
   }, 90_000);
@@ -407,6 +409,149 @@ describe("accounts and their roles — real Prisma client + real SQLite file", (
 
       await expect(accounts.deleteOwnAccount("nobody")).rejects.toMatchObject({
         name: "ResourceNotFoundError",
+      });
+    });
+
+    describe("what its rows do not take with them", () => {
+      const mail = (userId: string | null, to: string) =>
+        prisma.emailLog.create({
+          data: { userId, to, from: "situs@example.com", subject: "Rent receipt", status: "sent" },
+        });
+
+      describe("the email log, which keeps its rows and the addresses in them", () => {
+        it("deletes the account's rows, and keeps everyone else's and those that name no account", async () => {
+          const admin = await make("admin@example.com", "ADMIN");
+          const manager = await make("manager@example.com", "MANAGER");
+          await mail(manager.id, "tenant@example.com");
+          await mail(manager.id, "another@example.com");
+          await mail(admin.id, "tenant-of-admin@example.com");
+          await mail(null, "orphan@example.com");
+
+          await accounts.deleteOwnAccount(manager.id);
+
+          const left = (await prisma.emailLog.findMany()).map((row) => row.to).sort();
+          expect(left).toEqual(["orphan@example.com", "tenant-of-admin@example.com"]);
+        });
+
+        it("puts the rows back when the deletion is refused", async () => {
+          const only = await make("only@example.com", "ADMIN");
+          await make("manager@example.com", "MANAGER");
+          await mail(only.id, "tenant@example.com");
+
+          await expect(accounts.deleteOwnAccount(only.id)).rejects.toMatchObject({
+            reason: "last_admin",
+          });
+
+          // One transaction: the rows were deleted first, and the refusal rolled that back.
+          expect(await prisma.emailLog.count({ where: { userId: only.id } })).toBe(1);
+          expect(await prisma.user.findUnique({ where: { id: only.id } })).not.toBeNull();
+        });
+      });
+
+      describe("a bank consent, which stays live at the bank", () => {
+        let unregister: () => void;
+        let fake: ReturnType<
+          typeof import("@/lib/services/bank/providers/fake-provider").createFakeProvider
+        >;
+
+        const withFake = async (revokeResult?: Error) => {
+          const [{ createFakeProvider }, { __registerProviderForTest }] = await Promise.all([
+            import("@/lib/services/bank/providers/fake-provider"),
+            import("@/lib/services/bank/providers/registry"),
+          ]);
+          fake = createFakeProvider({ key: "fake", revokeResult });
+          unregister = __registerProviderForTest(fake);
+        };
+        const connect = (userId: string, consentId: string | null, provider = "psd2_fake") =>
+          prisma.bankConnection.create({
+            data: { userId, provider, institutionName: "Fake Bank", consentId, status: "active" },
+          });
+
+        afterEach(() => unregister?.());
+
+        it("revokes every consent the account held once it is deleted, and says none was left", async () => {
+          await withFake();
+          await make("admin@example.com", "ADMIN");
+          const manager = await make("manager@example.com", "MANAGER");
+          await connect(manager.id, "session-1");
+          await connect(manager.id, "session-2");
+          await connect(manager.id, null, "manual");
+
+          const result = await accounts.deleteOwnAccount(manager.id);
+
+          expect(fake.revocations.sort()).toEqual(["session-1", "session-2"]);
+          expect(result).toEqual({ bankConsentsNotRevoked: 0 });
+          expect(await prisma.bankConnection.count({ where: { userId: manager.id } })).toBe(0);
+        });
+
+        it("counts a consent the bank would not end, so the holder can end it themselves", async () => {
+          await withFake(new Error("bank is down"));
+          await make("admin@example.com", "ADMIN");
+          const manager = await make("manager@example.com", "MANAGER");
+          await connect(manager.id, "session-1");
+
+          expect(await accounts.deleteOwnAccount(manager.id)).toEqual({
+            bankConsentsNotRevoked: 1,
+          });
+          // The account is gone all the same: a bank that is down does not hold an erasure back.
+          expect(await prisma.user.findUnique({ where: { id: manager.id } })).toBeNull();
+        });
+
+        it("revokes nothing when the deletion is refused", async () => {
+          await withFake();
+          const only = await make("only@example.com", "ADMIN");
+          await make("manager@example.com", "MANAGER");
+          await connect(only.id, "session-1");
+
+          await expect(accounts.deleteOwnAccount(only.id)).rejects.toMatchObject({
+            reason: "last_admin",
+          });
+
+          expect(fake.revocations).toEqual([]);
+          expect(await prisma.bankConnection.count({ where: { userId: only.id } })).toBe(1);
+        });
+      });
+
+      describe("the stored files, which are on disk and not in a table", () => {
+        const storage = () => process.env.DOCUMENT_STORAGE_PATH as string;
+        const store = (userId: string) => {
+          const folder = path.join(storage(), userId, "receipt", "2026-10");
+          mkdirSync(folder, { recursive: true });
+          writeFileSync(path.join(folder, "archive.pdf"), "%PDF-1.4 tenant name, address, amount");
+          return path.join(storage(), userId);
+        };
+
+        it("removes the account's folder, and no other account's", async () => {
+          await make("admin@example.com", "ADMIN");
+          const manager = await make("manager@example.com", "MANAGER");
+          const other = await make("other@example.com", "MANAGER");
+          const mine = store(manager.id);
+          const theirs = store(other.id);
+
+          await accounts.deleteOwnAccount(manager.id);
+
+          expect(existsSync(mine)).toBe(false);
+          expect(existsSync(theirs)).toBe(true);
+        });
+
+        it("keeps the files when the deletion is refused", async () => {
+          const only = await make("only@example.com", "ADMIN");
+          await make("manager@example.com", "MANAGER");
+          const mine = store(only.id);
+
+          await expect(accounts.deleteOwnAccount(only.id)).rejects.toMatchObject({
+            reason: "last_admin",
+          });
+
+          expect(existsSync(mine)).toBe(true);
+        });
+
+        it("is not held back by an account that never stored a file", async () => {
+          await make("admin@example.com", "ADMIN");
+          const manager = await make("manager@example.com", "MANAGER");
+
+          await expect(accounts.deleteOwnAccount(manager.id)).resolves.toBeDefined();
+        });
       });
     });
   });

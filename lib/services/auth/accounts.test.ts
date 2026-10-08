@@ -8,16 +8,40 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
  * counts, and what is said when it writes nothing.
  */
 
-const { prismaMock, logAuditMock } = vi.hoisted(() => ({
-  prismaMock: {
-    user: { findUnique: vi.fn(), findMany: vi.fn() },
-    $executeRaw: vi.fn(),
+const { prismaMock, txMock, logAuditMock, revokeAtBankMock, removeUserDocumentsMock } = vi.hoisted(
+  () => {
+    // What runs inside the deletion's transaction: the email log's rows and the one DELETE.
+    const txMock = {
+      emailLog: { deleteMany: vi.fn() },
+      bankConnection: { findMany: vi.fn() },
+      $executeRaw: vi.fn(),
+    };
+    return {
+      txMock,
+      prismaMock: {
+        user: { findUnique: vi.fn(), findMany: vi.fn() },
+        $executeRaw: vi.fn(),
+        $transaction: vi.fn(),
+      },
+      logAuditMock: vi.fn(),
+      revokeAtBankMock: vi.fn(),
+      removeUserDocumentsMock: vi.fn(),
+    };
   },
-  logAuditMock: vi.fn(),
-}));
+);
 
 vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prismaMock }));
 vi.mock("@/lib/services/audit-log", () => ({ logAudit: logAuditMock }));
+vi.mock("@/lib/services/document-service", () => ({
+  removeUserDocuments: removeUserDocumentsMock,
+}));
+vi.mock("@/lib/services/bank/connections", async () => ({
+  // The real outcome check, so what counts as "ended" is not re-stated here.
+  ...(await vi.importActual<typeof import("@/lib/services/bank/connections")>(
+    "@/lib/services/bank/connections",
+  )),
+  revokeAtBank: revokeAtBankMock,
+}));
 
 import { changeAccountRole, deleteOwnAccount } from "./accounts";
 
@@ -37,6 +61,12 @@ const statement = (n = 0) => {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  prismaMock.$transaction.mockImplementation(async (work: (tx: typeof txMock) => unknown) =>
+    work(txMock),
+  );
+  txMock.bankConnection.findMany.mockResolvedValue([]);
+  txMock.emailLog.deleteMany.mockResolvedValue({ count: 0 });
+  removeUserDocumentsMock.mockResolvedValue(true);
 });
 
 describe("changeAccountRole", () => {
@@ -205,57 +235,188 @@ describe("changeAccountRole", () => {
   });
 });
 
+/** The DELETE of the account, which runs inside the transaction. */
+const deleteStatement = () => {
+  const [strings, ...bound] = txMock.$executeRaw.mock.calls[0];
+  return { sql: (strings as string[]).join("?"), bound };
+};
+
 describe("deleteOwnAccount", () => {
   it("deletes with one statement that binds the account, and reads nothing when it deletes", async () => {
-    prismaMock.$executeRaw.mockResolvedValue(1);
+    txMock.$executeRaw.mockResolvedValue(1);
 
     await deleteOwnAccount("target");
 
-    expect(prismaMock.$executeRaw).toHaveBeenCalledTimes(1);
-    const { sql, bound } = statement();
+    expect(txMock.$executeRaw).toHaveBeenCalledTimes(1);
+    const { sql, bound } = deleteStatement();
     expect(sql).toMatch(/DELETE FROM "User"\s+WHERE "id" = \?/);
     expect(bound).toEqual(["target"]);
     expect(prismaMock.user.findUnique).not.toHaveBeenCalled();
   });
 
   it("keeps the only administrator while others remain, in the same statement", async () => {
-    prismaMock.$executeRaw.mockResolvedValue(1);
+    txMock.$executeRaw.mockResolvedValue(1);
 
     await deleteOwnAccount("target");
 
     // Not an administrator, or another one exists, or it is the only account there is: decided as it
     // deletes, since another account can go between a count and a delete.
-    expect(statement().sql).toMatch(
+    expect(deleteStatement().sql).toMatch(
       /\("role" <> 'ADMIN'\s+OR \(SELECT COUNT\(\*\) FROM "User" WHERE "role" = 'ADMIN'\) > 1\s+OR \(SELECT COUNT\(\*\) FROM "User"\) = 1\)/,
     );
   });
 
-  it("is a 409 last_admin when the statement refused an account that is still an administrator", async () => {
-    prismaMock.$executeRaw.mockResolvedValue(0);
-    prismaMock.user.findUnique.mockResolvedValue({ role: "ADMIN" });
+  it("deletes the account's email log rows in the same transaction, since they outlive it otherwise", async () => {
+    txMock.$executeRaw.mockResolvedValue(1);
 
-    await expect(deleteOwnAccount("target")).rejects.toMatchObject({
-      name: "ConflictError",
-      reason: "last_admin",
+    await deleteOwnAccount("target");
+
+    expect(txMock.emailLog.deleteMany).toHaveBeenCalledWith({ where: { userId: "target" } });
+    // Before the account, while the rows still name it.
+    expect(txMock.emailLog.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(
+      txMock.$executeRaw.mock.invocationCallOrder[0],
+    );
+  });
+
+  describe("when the statement refuses", () => {
+    it("is a 409 last_admin for an account that is still an administrator", async () => {
+      txMock.$executeRaw.mockResolvedValue(0);
+      prismaMock.user.findUnique.mockResolvedValue({ role: "ADMIN" });
+
+      await expect(deleteOwnAccount("target")).rejects.toMatchObject({
+        name: "ConflictError",
+        reason: "last_admin",
+      });
+    });
+
+    it("is a 409 account_changed when it was the only administrator a moment ago and is not now", async () => {
+      txMock.$executeRaw.mockResolvedValue(0);
+      prismaMock.user.findUnique.mockResolvedValue({ role: "MANAGER" });
+
+      await expect(deleteOwnAccount("target")).rejects.toMatchObject({
+        name: "ConflictError",
+        reason: "account_changed",
+      });
+    });
+
+    it("is a 404 for an account that is gone", async () => {
+      txMock.$executeRaw.mockResolvedValue(0);
+      prismaMock.user.findUnique.mockResolvedValue(null);
+
+      await expect(deleteOwnAccount("target")).rejects.toMatchObject({
+        name: "ResourceNotFoundError",
+      });
+    });
+
+    it("rolls the transaction back, and revokes no consent and removes no file", async () => {
+      txMock.bankConnection.findMany.mockResolvedValue([
+        { provider: "psd2_enablebanking", consentId: "session-1" },
+      ]);
+      txMock.$executeRaw.mockResolvedValue(0);
+      prismaMock.user.findUnique.mockResolvedValue({ role: "ADMIN" });
+
+      await expect(deleteOwnAccount("target")).rejects.toMatchObject({ reason: "last_admin" });
+
+      // The error leaves the transaction callback, which is what rolls the email log deletion back
+      // (accounts.integration.test.ts shows it on a real file).
+      expect(revokeAtBankMock).not.toHaveBeenCalled();
+      expect(removeUserDocumentsMock).not.toHaveBeenCalled();
     });
   });
 
-  it("is a 409 account_changed when it was the only administrator a moment ago and is not now", async () => {
-    prismaMock.$executeRaw.mockResolvedValue(0);
-    prismaMock.user.findUnique.mockResolvedValue({ role: "MANAGER" });
+  describe("after the account is gone", () => {
+    const connection = (provider: string, consentId: string | null) => ({ provider, consentId });
 
-    await expect(deleteOwnAccount("target")).rejects.toMatchObject({
-      name: "ConflictError",
-      reason: "account_changed",
+    it("revokes each bank consent the account held, once it is deleted", async () => {
+      txMock.bankConnection.findMany.mockResolvedValue([
+        connection("psd2_enablebanking", "session-1"),
+        connection("psd2_enablebanking", "session-2"),
+      ]);
+      txMock.$executeRaw.mockResolvedValue(1);
+      revokeAtBankMock.mockResolvedValue("revoked");
+
+      const result = await deleteOwnAccount("target");
+
+      expect(revokeAtBankMock).toHaveBeenCalledWith("psd2_enablebanking", "session-1");
+      expect(revokeAtBankMock).toHaveBeenCalledWith("psd2_enablebanking", "session-2");
+      expect(revokeAtBankMock.mock.invocationCallOrder[0]).toBeGreaterThan(
+        txMock.$executeRaw.mock.invocationCallOrder[0],
+      );
+      expect(result).toEqual({ bankConsentsNotRevoked: 0 });
     });
-  });
 
-  it("is a 404 for an account that is gone", async () => {
-    prismaMock.$executeRaw.mockResolvedValue(0);
-    prismaMock.user.findUnique.mockResolvedValue(null);
+    it("reads the consents inside the transaction, after the email log write and before the DELETE", async () => {
+      txMock.$executeRaw.mockResolvedValue(1);
 
-    await expect(deleteOwnAccount("target")).rejects.toMatchObject({
-      name: "ResourceNotFoundError",
+      await deleteOwnAccount("target");
+
+      expect(txMock.bankConnection.findMany).toHaveBeenCalledWith({
+        where: { userId: "target", status: { not: "pending_consent" } },
+        select: { provider: true, consentId: true },
+      });
+      const [read] = txMock.bankConnection.findMany.mock.invocationCallOrder;
+      expect(read).toBeGreaterThan(txMock.emailLog.deleteMany.mock.invocationCallOrder[0]);
+      expect(read).toBeLessThan(txMock.$executeRaw.mock.invocationCallOrder[0]);
+    });
+
+    it("gives the transaction room for a large cascade", async () => {
+      txMock.$executeRaw.mockResolvedValue(1);
+
+      await deleteOwnAccount("target");
+
+      expect(prismaMock.$transaction).toHaveBeenCalledWith(expect.any(Function), {
+        timeout: 60_000,
+        maxWait: 10_000,
+      });
+    });
+
+    it("asks only for connections that hold a bank consent", async () => {
+      txMock.bankConnection.findMany.mockResolvedValue([
+        connection("manual", null),
+        connection("csv", "stale"),
+        connection("psd2_enablebanking", null),
+        connection("psd2_enablebanking", "session-1"),
+      ]);
+      txMock.$executeRaw.mockResolvedValue(1);
+      revokeAtBankMock.mockResolvedValue("revoked");
+
+      await deleteOwnAccount("target");
+
+      expect(revokeAtBankMock).toHaveBeenCalledTimes(1);
+      expect(revokeAtBankMock).toHaveBeenCalledWith("psd2_enablebanking", "session-1");
+    });
+
+    it("counts a consent the bank would not end, and one it had already ended as ended", async () => {
+      txMock.bankConnection.findMany.mockResolvedValue([
+        connection("psd2_enablebanking", "a"),
+        connection("psd2_enablebanking", "b"),
+        connection("psd2_enablebanking", "c"),
+      ]);
+      txMock.$executeRaw.mockResolvedValue(1);
+      revokeAtBankMock
+        .mockResolvedValueOnce("already_gone")
+        .mockResolvedValueOnce("failed")
+        .mockResolvedValueOnce("provider_unavailable");
+
+      expect(await deleteOwnAccount("target")).toEqual({ bankConsentsNotRevoked: 2 });
+    });
+
+    it("removes the account's stored files, after the account", async () => {
+      txMock.$executeRaw.mockResolvedValue(1);
+
+      await deleteOwnAccount("target");
+
+      expect(removeUserDocumentsMock).toHaveBeenCalledWith("target");
+      expect(removeUserDocumentsMock.mock.invocationCallOrder[0]).toBeGreaterThan(
+        txMock.$executeRaw.mock.invocationCallOrder[0],
+      );
+    });
+
+    it("still answers that it is deleted when the files could not be removed", async () => {
+      txMock.$executeRaw.mockResolvedValue(1);
+      removeUserDocumentsMock.mockResolvedValue(false);
+
+      await expect(deleteOwnAccount("target")).resolves.toEqual({ bankConsentsNotRevoked: 0 });
     });
   });
 });
