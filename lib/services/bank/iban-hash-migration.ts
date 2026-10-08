@@ -29,6 +29,16 @@ import { computeFingerprint } from "@/lib/services/bank/import";
  * value it expects to find, and it stops at nothing half-done that the next run cannot finish. It runs
  * at every start (`instrumentation.ts`), which is also what converts a backup restored from before.
  * With no key there is nothing to convert to, and it does nothing.
+ *
+ * One row at a time, so one row that cannot be converted does not stop the rest. It cannot be when
+ * the keyed value is already stored beside it (a backup restored into a running server, then the
+ * same account connected again): a remembered payer account is then a duplicate and is removed, and
+ * a bank account or a movement is left as it is, counted in `conflicts` and named in the log.
+ *
+ * SQLite keeps what an UPDATE replaced in free pages and in the write-ahead log, where the plain
+ * hashes would stay readable to anyone with a copy of the file, so after a conversion the log is
+ * checkpointed and the file vacuumed. A backup taken before the upgrade still holds them: it is a
+ * copy, and keeping it is the operator's choice (docs/SECURITY.md).
  */
 
 const BATCH = 200;
@@ -41,7 +51,13 @@ export interface IbanHashMigration {
   /** Movements whose fingerprint could not be reproduced from their own fields, and so was kept. */
   fingerprintsKept: number;
   payerAccounts: number;
+  /** Remembered payer accounts removed because the same account was already stored keyed. */
+  duplicatesRemoved: number;
   rules: number;
+  /** Rows left as they were because the keyed value is already taken by another row. */
+  conflicts: number;
+  /** Whether the old values were then cleared from the file (checkpoint and vacuum). */
+  scrubbed?: boolean;
 }
 
 const none = (): IbanHashMigration => ({
@@ -49,8 +65,13 @@ const none = (): IbanHashMigration => ({
   movements: 0,
   fingerprintsKept: 0,
   payerAccounts: 0,
+  duplicatesRemoved: 0,
   rules: 0,
+  conflicts: 0,
 });
+
+const isUniqueViolation = (error: unknown): boolean =>
+  (error as { code?: unknown } | null)?.code === "P2002";
 
 /** Rows holding a hash that is not keyed: not null, and without the prefix. */
 const plain = { not: null } as const;
@@ -62,33 +83,40 @@ export async function migrateIbanHashes(): Promise<IbanHashMigration> {
   const prisma = getPrismaClient();
   const result = none();
 
+  // --- Bank accounts.
+  const skippedAccounts: string[] = [];
   for (;;) {
     const rows = await prisma.bankAccount.findMany({
-      where: { ibanHash: plain, NOT: notKeyed },
+      where: { ibanHash: plain, NOT: notKeyed, id: { notIn: skippedAccounts } },
       select: { id: true, ibanHash: true },
       take: BATCH,
     });
     // Only what converting would change: a batch with nothing to change would be read again forever.
     const pending = rows.filter((row) => keyedIbanHash(row.ibanHash as string) !== row.ibanHash);
     if (pending.length === 0) break;
-    const done = await prisma.$transaction(
-      pending.map((row) =>
-        prisma.bankAccount.updateMany({
+    for (const row of pending) {
+      try {
+        const done = await prisma.bankAccount.updateMany({
           where: { id: row.id, ibanHash: row.ibanHash },
           data: { ibanHash: keyedIbanHash(row.ibanHash as string) },
-        }),
-      ),
-    );
-    const changed = done.reduce((sum, r) => sum + r.count, 0);
-    result.accounts += changed;
-    if (changed === 0) break;
+        });
+        result.accounts += done.count;
+      } catch (error) {
+        if (!isUniqueViolation(error)) throw error;
+        skippedAccounts.push(row.id);
+        result.conflicts += 1;
+      }
+    }
   }
 
+  // --- Movements, and their fingerprints.
+  const skippedMovements: string[] = [];
   for (;;) {
     const rows = await prisma.bankTransaction.findMany({
       where: {
         counterpartyIbanHash: plain,
         NOT: { counterpartyIbanHash: { startsWith: KEYED_IBAN_HASH_PREFIX } },
+        id: { notIn: skippedMovements },
       },
       select: {
         id: true,
@@ -106,8 +134,7 @@ export async function migrateIbanHashes(): Promise<IbanHashMigration> {
       (row) => keyedIbanHash(row.counterpartyIbanHash as string) !== row.counterpartyIbanHash,
     );
     if (pending.length === 0) break;
-
-    const updates = pending.map((row) => {
+    for (const row of pending) {
       const oldHash = row.counterpartyIbanHash as string;
       const newHash = keyedIbanHash(oldHash);
       const fields = {
@@ -119,43 +146,56 @@ export async function migrateIbanHashes(): Promise<IbanHashMigration> {
       };
       const reproducible =
         computeFingerprint({ ...fields, counterpartyIbanHash: oldHash }) === row.fingerprint;
-      if (!reproducible) result.fingerprintsKept += 1;
-      return prisma.bankTransaction.updateMany({
-        where: { id: row.id, counterpartyIbanHash: oldHash },
-        data: {
-          counterpartyIbanHash: newHash,
-          ...(reproducible
-            ? { fingerprint: computeFingerprint({ ...fields, counterpartyIbanHash: newHash }) }
-            : {}),
-        },
-      });
-    });
-    const changed = (await prisma.$transaction(updates)).reduce((sum, r) => sum + r.count, 0);
-    result.movements += changed;
-    if (changed === 0) break;
+      try {
+        const done = await prisma.bankTransaction.updateMany({
+          where: { id: row.id, counterpartyIbanHash: oldHash },
+          data: {
+            counterpartyIbanHash: newHash,
+            ...(reproducible
+              ? { fingerprint: computeFingerprint({ ...fields, counterpartyIbanHash: newHash }) }
+              : {}),
+          },
+        });
+        result.movements += done.count;
+        if (!reproducible && done.count > 0) result.fingerprintsKept += 1;
+      } catch (error) {
+        if (!isUniqueViolation(error)) throw error;
+        skippedMovements.push(row.id);
+        result.conflicts += 1;
+      }
+    }
   }
 
+  // --- Remembered payer accounts.
+  const skippedPayers: string[] = [];
   for (;;) {
     const rows = await prisma.payerAccount.findMany({
-      where: { NOT: notKeyed },
+      where: { NOT: notKeyed, id: { notIn: skippedPayers } },
       select: { id: true, ibanHash: true },
       take: BATCH,
     });
     const pending = rows.filter((row) => keyedIbanHash(row.ibanHash) !== row.ibanHash);
     if (pending.length === 0) break;
-    const done = await prisma.$transaction(
-      pending.map((row) =>
-        prisma.payerAccount.updateMany({
+    for (const row of pending) {
+      try {
+        const done = await prisma.payerAccount.updateMany({
           where: { id: row.id, ibanHash: row.ibanHash },
           data: { ibanHash: keyedIbanHash(row.ibanHash) },
-        }),
-      ),
-    );
-    const changed = done.reduce((sum, r) => sum + r.count, 0);
-    result.payerAccounts += changed;
-    if (changed === 0) break;
+        });
+        result.payerAccounts += done.count;
+      } catch (error) {
+        if (!isUniqueViolation(error)) throw error;
+        // The tenant already has this account remembered under the keyed value: the same fact twice.
+        const removed = await prisma.payerAccount.deleteMany({
+          where: { id: row.id, ibanHash: row.ibanHash },
+        });
+        result.duplicatesRemoved += removed.count;
+        skippedPayers.push(row.id);
+      }
+    }
   }
 
+  // --- Reconciliation rules.
   const rules = await prisma.reconciliationRule.findMany({
     where: { condition: { contains: '"iban_hash"' } },
     select: { id: true, condition: true },
@@ -176,7 +216,43 @@ export async function migrateIbanHashes(): Promise<IbanHashMigration> {
     result.rules += updated.count;
   }
 
+  const changed =
+    result.accounts +
+    result.movements +
+    result.payerAccounts +
+    result.duplicatesRemoved +
+    result.rules;
+  if (changed > 0) result.scrubbed = await scrubOldValues();
+
+  if (result.conflicts > 0) {
+    logger.error(
+      "IBAN hashes of some rows could not be converted: the keyed value is already stored",
+      {
+        accounts: skippedAccounts,
+        movements: skippedMovements,
+      },
+    );
+  }
   return result;
+}
+
+/**
+ * Clears what the conversion replaced from the file: the write-ahead log is folded in and truncated,
+ * and the file is rebuilt without its free pages. Best effort, and said so when it fails.
+ */
+async function scrubOldValues(): Promise<boolean> {
+  try {
+    const prisma = getPrismaClient();
+    await prisma.$queryRawUnsafe("PRAGMA wal_checkpoint(TRUNCATE)");
+    await prisma.$executeRawUnsafe("VACUUM");
+    await prisma.$queryRawUnsafe("PRAGMA wal_checkpoint(TRUNCATE)");
+    return true;
+  } catch (error) {
+    logger.warn("Old IBAN hashes could not be cleared from the database file", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
 }
 
 /**

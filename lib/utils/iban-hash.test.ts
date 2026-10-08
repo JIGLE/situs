@@ -68,6 +68,14 @@ describe("hashIban with a key", () => {
 
     expect(hashIban(IBAN)).not.toBe(`v2:${direct}`);
   });
+
+  it("reads the key as PII encryption does: a trailing newline from an env file does not unkey it", () => {
+    const clean = hashIban(IBAN);
+    vi.stubEnv("PII_ENCRYPTION_KEY", `${KEY_A}\n`);
+
+    expect(ibanHashKeyConfigured()).toBe(true);
+    expect(hashIban(IBAN)).toBe(clean);
+  });
 });
 
 describe("keyedIbanHash, which converts what is already stored", () => {
@@ -91,7 +99,7 @@ describe("without a key", () => {
     expect(isKeyedIbanHash(hashIban(IBAN))).toBe(false);
   });
 
-  it("does not take a value that is not hex, which Buffer.from would quietly cut short", () => {
+  it("does not take a value that decodes to no key, which would otherwise derive one from nothing", () => {
     vi.stubEnv("PII_ENCRYPTION_KEY", "z".repeat(64));
 
     expect(ibanHashKeyConfigured()).toBe(false);

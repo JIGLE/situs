@@ -109,7 +109,12 @@ HMAC-SHA256 under a key HKDF-derived from `PII_ENCRYPTION_KEY` (`lib/utils/iban-
 copy of the database alone no longer yields the numbers; the database together with the key does, but
 the key also decrypts `iban` itself, so that case loses nothing more. Stored plain hashes convert at
 every start without the IBAN (`iban-hash-migration.ts`; a fingerprint is rebuilt only after the old one
-is reproduced from the row and found equal, otherwise it is kept). Without a key a hash stays plain,
+is reproduced from the row and found equal, otherwise it is kept). A row whose keyed value is already
+stored beside it (a backup restored into a running server, then the account connected again) is left as
+it is and named in the log, and a duplicate remembered payer account is removed, so one row cannot stop
+the rest. After a conversion the write-ahead log is checkpointed and the file vacuumed, so the values
+replaced do not stay readable in free pages; **a backup taken before the upgrade still holds the plain
+hashes**, and so does any copy of the file, which is the operator's to keep or delete. Without a key a hash stays plain,
 beside IBANs stored unencrypted. Changing the key changes every hash and nothing recognises a known
 account until the old one is back; Admin › Status (`iban_hash`) reports plain hashes left under a key
 and keyed hashes without one.

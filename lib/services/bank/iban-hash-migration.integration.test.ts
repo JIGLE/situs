@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execSync } from "node:child_process";
-import { mkdtempSync, rmSync, existsSync } from "node:fs";
+import { mkdtempSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -219,7 +219,9 @@ describe("IBAN hash migration — real Prisma client + real SQLite file", () => 
       movements: 0,
       fingerprintsKept: 0,
       payerAccounts: 0,
+      duplicatesRemoved: 0,
       rules: 0,
+      conflicts: 0,
     });
     expect(
       await prisma.bankAccount.count({
@@ -340,6 +342,101 @@ describe("IBAN hash migration — real Prisma client + real SQLite file", () => 
     expect((await prisma.bankAccount.findUniqueOrThrow({ where: { id: late.id } })).ibanHash).toBe(
       hashing.hashIban("PT50000201231234567999999"),
     );
+  }, 60_000);
+
+  it("converts the rest when one row cannot be: the keyed value is already stored beside it", async () => {
+    withKey();
+    const w = await world("conflict");
+    const connection = await prisma.bankConnection.create({
+      data: { userId: w.user.id, institutionName: "Restored Bank" },
+    });
+    const clash = "PT50000201231234567111111";
+    // The same account twice on one connection: keyed (connected again after a restore) and plain.
+    await prisma.bankAccount.create({
+      data: {
+        connectionId: connection.id,
+        userId: w.user.id,
+        label: "Nova",
+        ibanHash: hashing.hashIban(clash),
+      },
+    });
+    withoutKey();
+    const stuck = await prisma.bankAccount.create({
+      data: {
+        connectionId: connection.id,
+        userId: w.user.id,
+        label: "Antiga",
+        ibanHash: hashing.plainIbanHash(clash),
+      },
+    });
+    const fine = await plainAccount(w, "PT50000201231234567222222");
+    withKey();
+
+    const result = await mig.migrateIbanHashes();
+
+    expect(result.conflicts).toBe(1);
+    expect((await prisma.bankAccount.findUniqueOrThrow({ where: { id: stuck.id } })).ibanHash).toBe(
+      hashing.plainIbanHash(clash),
+    );
+    expect((await prisma.bankAccount.findUniqueOrThrow({ where: { id: fine.id } })).ibanHash).toBe(
+      hashing.hashIban("PT50000201231234567222222"),
+    );
+  });
+
+  it("removes a remembered payer account that is already remembered keyed, and keeps converting", async () => {
+    withKey();
+    const w = await world("payerdup");
+    const dup = "PT50000201231234567333333";
+    await prisma.payerAccount.create({
+      data: { userId: w.user.id, tenantId: w.tenant.id, ibanHash: hashing.hashIban(dup) },
+    });
+    withoutKey();
+    await prisma.payerAccount.create({
+      data: { userId: w.user.id, tenantId: w.tenant.id, ibanHash: hashing.plainIbanHash(dup) },
+    });
+    const other = await prisma.payerAccount.create({
+      data: {
+        userId: w.user.id,
+        tenantId: w.tenant.id,
+        ibanHash: hashing.plainIbanHash("PT50000201231234567444444"),
+      },
+    });
+    withKey();
+
+    const result = await mig.migrateIbanHashes();
+
+    expect(result.duplicatesRemoved).toBe(1);
+    const rows = await prisma.payerAccount.findMany({ where: { tenantId: w.tenant.id } });
+    expect(rows.map((r) => r.ibanHash).sort()).toEqual(
+      [hashing.hashIban(dup), hashing.hashIban("PT50000201231234567444444")].sort(),
+    );
+    expect(rows.find((r) => r.id === other.id)?.ibanHash).toBe(
+      hashing.hashIban("PT50000201231234567444444"),
+    );
+  });
+
+  it("leaves no plain hash in the database file or its log once converted", async () => {
+    withoutKey();
+    const w = await world("scrub");
+    const iban = "PT50000201231234567888888";
+    const plainHex = hashing.plainIbanHash(iban);
+    await plainAccount(w, iban);
+    await pay(w, "2026-06-16", RENT, iban);
+    const dbFile = path.join(tempDir, "test.db");
+    const bytes = () =>
+      [dbFile, `${dbFile}-wal`, `${dbFile}-journal`]
+        .filter((f) => existsSync(f))
+        .map((f) => readFileSync(f).toString("latin1"))
+        .join("\n");
+    // Not read from the file before the conversion would prove nothing.
+    expect(bytes()).toContain(plainHex);
+    withKey();
+
+    const result = await mig.migrateIbanHashes();
+
+    expect(result.scrubbed).toBe(true);
+    expect(bytes()).not.toContain(plainHex);
+    expect(bytes()).toContain(hashing.hashIban(iban));
   }, 60_000);
 
   it("does nothing, and says why, with no key", async () => {

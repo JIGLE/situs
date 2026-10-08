@@ -33,13 +33,19 @@ const KEY_LABEL = "situs/iban-hash/v2";
 
 let derived: { source: string; key: Buffer } | null = null;
 
+/**
+ * The key, read the way PII encryption reads its own (`getEncryptionKey` in pii-encryption.ts):
+ * at least 64 characters, decoded as hex. The same rule on purpose, so a value that still encrypts
+ * (one with a trailing newline from an env file, say) is not quietly treated here as no key, which
+ * would store plain hashes beside encrypted IBANs. What does not decode to 32 bytes is no key.
+ */
 function hashKey(): Buffer | null {
   const hex = process.env.PII_ENCRYPTION_KEY;
-  // Hex, at least 32 bytes: anything else is not a key, and `Buffer.from` would quietly cut it short.
-  if (!hex || !/^[0-9a-fA-F]{64,}$/.test(hex)) return null;
+  if (!hex || hex.length < 64) return null;
   if (derived?.source !== hex) {
-    const key = Buffer.from(crypto.hkdfSync("sha256", Buffer.from(hex, "hex"), "", KEY_LABEL, 32));
-    derived = { source: hex, key };
+    const ikm = Buffer.from(hex, "hex");
+    if (ikm.length < 32) return null;
+    derived = { source: hex, key: Buffer.from(crypto.hkdfSync("sha256", ikm, "", KEY_LABEL, 32)) };
   }
   return derived.key;
 }

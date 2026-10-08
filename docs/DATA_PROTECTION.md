@@ -99,7 +99,8 @@ derived with HKDF from `PII_ENCRYPTION_KEY` (`lib/utils/iban-hash.ts`): the key 
 environment, not in the file, and the same IBAN still gives the same value, which is all matching reads.
 It is still personal data, as pseudonymised data is. Values stored before are converted at every start
 without reading any IBAN (`lib/services/bank/iban-hash-migration.ts`), so a backup restored from before
-is converted at the next start. **Changing `PII_ENCRYPTION_KEY` changes every hash**: nothing recognises
+is converted at the next start, and the replaced values are cleared from the file. **A backup taken before
+the upgrade still holds the plain hashes**: treat it as holding IBANs. **Changing `PII_ENCRYPTION_KEY` changes every hash**: nothing recognises
 a known account, and a movement fetched again can be imported twice, until the old key is back (the
 encryption has no rotation either). Admin › Status says when plain hashes remain under a key, and when
 keyed ones are stored and the key is gone. An instance with no key keeps plain hashes, as it keeps
