@@ -331,7 +331,8 @@
       "bank": "Movimentos bancários",
       "bank_provider": "Fornecedor bancário",
       "tax": "Autoridade fiscal — {country}",
-      "at_connector": "Certificado da AT"
+      "at_connector": "Certificado da AT",
+      "demo_login": "Início de sessão de demonstração"
     },
     "shell": {
       "title": "Administração da instância",

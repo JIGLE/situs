@@ -36,6 +36,7 @@ import {
   getProviderForConnection,
   PSD2_PREFIX,
 } from "@/lib/services/bank/providers/registry";
+import { DEMO_LOGIN_EMAIL, isDemoLoginEnabled } from "@/lib/utils/demo-login";
 import { authorityName, modeKind } from "@/lib/tax/connectors/presentation";
 import { AT_FILE_ENV, RENEWAL_WARNING_DAYS, readAtConfig } from "@/lib/tax/at/config";
 
@@ -58,7 +59,8 @@ export type StatusCheckKind =
   | "bank"
   | "bank_provider"
   | "tax"
-  | "at_connector";
+  | "at_connector"
+  | "demo_login";
 
 export interface StatusCheck {
   /** The kind; a per-country tax check is `tax:<country>`. */
@@ -578,6 +580,64 @@ async function sessionUserCheck(userId: string): Promise<StatusCheck> {
   }
 }
 
+/**
+ * The demo sign-in, which the README publishes the password of.
+ *
+ * `ENABLE_DEMO_LOGIN=true` puts a credentials provider back in front of a real instance, and its
+ * authorize step creates `demo@situs.local` as an ADMINISTRATOR when no such account exists, then
+ * signs in whatever role the account holds. So on a production instance with the flag on, anyone
+ * who reads the README is an administrator of it: the exposure Admin › Access exists to close, by
+ * another door. Outside production the provider is a convenience and says so.
+ */
+async function demoLoginCheck(): Promise<StatusCheck> {
+  if (!isDemoLoginEnabled()) {
+    return { id: "demo_login", group: "platform", severity: "ok", state: "off" };
+  }
+  if (process.env.NODE_ENV !== "production") {
+    return { id: "demo_login", group: "platform", severity: "ok", state: "development" };
+  }
+
+  const remedy =
+    `Unset ENABLE_DEMO_LOGIN and restart. While it is on, anyone can sign in as ${DEMO_LOGIN_EMAIL} ` +
+    "with the password in the README.";
+  try {
+    const account = await getPrismaClient().user.findUnique({
+      where: { email: DEMO_LOGIN_EMAIL },
+      select: { role: true },
+    });
+    if (!account || account.role === "ADMIN") {
+      return {
+        id: "demo_login",
+        group: "platform",
+        severity: "error",
+        state: "admin",
+        detail: account
+          ? `The demo account is an administrator, and its password is published.`
+          : `The demo account does not exist yet, and the first demo sign-in creates it as an administrator.`,
+        remedy,
+      };
+    }
+    return {
+      id: "demo_login",
+      group: "platform",
+      severity: "warning",
+      state: "enabled",
+      detail: `The demo account is a ${account.role.toLowerCase()}, and its password is published.`,
+      remedy,
+    };
+  } catch {
+    // Not knowing is not "fine": the flag is on in production and the account cannot be read.
+    return {
+      id: "demo_login",
+      group: "platform",
+      severity: "warning",
+      state: "unknown",
+      detail: "ENABLE_DEMO_LOGIN is on, and the demo account could not be read.",
+      remedy,
+    };
+  }
+}
+
 export async function getSystemStatus(userId: string): Promise<SystemStatus> {
   // Independent probes, gathered together. allSettled rather than all: one failing check must
   // not remove the other nine from the page.
@@ -588,6 +648,7 @@ export async function getSystemStatus(userId: string): Promise<SystemStatus> {
     taxChecks(userId),
     bankCheck(userId),
     bankProviderCheck(),
+    demoLoginCheck(),
   ]);
 
   const checks: StatusCheck[] = [encryptionCheck(), emailCheck(), atConnectorCheck()];
