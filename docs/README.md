@@ -33,6 +33,8 @@ archived; `git log --diff-filter=D --name-only` finds them.
 ## Integrations
 
 - [Email retry logic](EMAIL_RETRY_LOGIC.md)
+- [Going live](GOING_LIVE.md) — what Enable Banking and Finanças require before the real bank feed and
+  real receipts, set against what Situs already has, and the compliance pages that go with them
 
 Bank movements, which arrive through a live PSD2 feed from Enable Banking, are documented in [truenas.md](truenas.md#bank-movements) and `CLAUDE.md`,
 because setup is deployment-shaped rather than integration-shaped.
