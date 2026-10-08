@@ -182,7 +182,11 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     # Dependency review is free on public repositories — no GitHub Advanced Security
-    # required. Gates on critical-severity introductions (fail-on-severity below).
+    # required. It reads what a pull request ADDS to the dependency graph, so it complements the
+    # audit gate (scripts/audit-gate.js), which judges the tree as it stands: a pull request that
+    # brings in a package with a known high or critical advisory fails here before it merges.
+    # The action's default scope is `runtime`, the same line the audit gate draws: what the app
+    # ships is held to high, and a development-only addition is not judged here.
 
     steps:
       - uses: actions/checkout@v7
@@ -190,7 +194,7 @@ jobs:
       - name: Dependency Review
         uses: actions/dependency-review-action@v5
         with:
-          fail-on-severity: critical
+          fail-on-severity: high
           deny-licenses: GPL-2.0, GPL-3.0
 
   secret-scanning:

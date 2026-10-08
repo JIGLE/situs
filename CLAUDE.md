@@ -284,7 +284,8 @@ dispatch `deploy-ghcr.yml` against the tag ref. Full chain: `docs/REPOSITORY_PRO
 - Dependency audit (`scripts/audit-gate.js`, used by the Dependency Security Scan job, Custom Security Scan and
   `npm run security:audit`): a critical or high advisory in a package the app ships fails, a critical one in the
   tooling fails, and a high one in the tooling only warns. Production is what `npm audit --omit=dev` lists, never a
-  list of package names: there is no allowlist.
+  list of package names: there is no allowlist. Dependency Review (pull requests only) fails a pull request that adds a
+  runtime package with a high or critical advisory.
 - ESLint: `--max-warnings=0`.
 - Vitest coverage is a **ratchet** in `vitest.config.ts` — statements 52 / branches 39 /
   functions 38 / lines 54. A PR may not lower it; raise it when real tests land. Keep the threshold
