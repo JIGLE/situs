@@ -20,6 +20,7 @@ describe("who may create an account — real Prisma client + real SQLite file", 
   let tempDir: string;
   let prisma: Awaited<ReturnType<typeof loadClient>>;
   let provisionAccount: typeof import("./registration").provisionAccount;
+  let createAccount: typeof import("./registration").createAccount;
 
   async function loadClient() {
     const { getPrismaClient, resetPrismaClientForTests } =
@@ -68,7 +69,7 @@ describe("who may create an account — real Prisma client + real SQLite file", 
     process.env.DATABASE_URL = dbUrl;
     process.env.PII_ENCRYPTION_KEY = "e".repeat(64);
     prisma = await loadClient();
-    ({ provisionAccount } = await import("./registration"));
+    ({ provisionAccount, createAccount } = await import("./registration"));
   }, 90_000);
 
   afterAll(async () => {
@@ -246,6 +247,53 @@ describe("who may create an account — real Prisma client + real SQLite file", 
     expect(a.id).toBe(b.id);
     expect(await accountsNamed("twin@example.com")).toBe(1);
     expect(await prisma.accessInvitation.count()).toBe(0);
+  });
+
+  describe("an account written from a decision made a moment earlier", () => {
+    // The decision was made while an administrator existed. The only administrator can erase their own
+    // account in the gap, so what is written must still find one there, or leave no trace.
+    const manager = { allow: true, reason: "open_google", role: "MANAGER" } as const;
+
+    it("keeps a manager while an administrator exists", async () => {
+      await owner();
+      const created = await createAccount({ email: "late@example.com" }, manager);
+      expect(created.role).toBe("MANAGER");
+      expect(await accountsNamed("late@example.com")).toBe(1);
+    });
+
+    it("makes no manager when the administrator is gone, and leaves no row", async () => {
+      const claimed = await owner();
+      await prisma.user.delete({ where: { id: claimed.id } });
+
+      await expect(createAccount({ email: "late@example.com" }, manager)).rejects.toThrow(
+        "REGISTRATION_CLOSED",
+      );
+      expect(await accountsNamed("late@example.com")).toBe(0);
+      expect(await prisma.user.count()).toBe(0);
+    });
+
+    it("keeps the invitation when the account it would use up is not made", async () => {
+      const claimed = await owner();
+      const invitation = await invite("guest@example.com", "MANAGER");
+      await prisma.user.delete({ where: { id: claimed.id } });
+
+      await expect(
+        createAccount(
+          { email: "guest@example.com" },
+          { allow: true, reason: "invited", role: "MANAGER", invitationId: invitation.id },
+        ),
+      ).rejects.toThrow("REGISTRATION_CLOSED");
+      expect(await accountsNamed("guest@example.com")).toBe(0);
+      expect(await prisma.accessInvitation.count()).toBe(1);
+    });
+
+    it("still makes an administrator on an instance with none, which is how it starts", async () => {
+      const created = await createAccount(
+        { email: "first@example.com" },
+        { allow: true, reason: "bootstrap", role: "ADMIN" },
+      );
+      expect(created.role).toBe("ADMIN");
+    });
   });
 
   it("closes the new-account doors, and only those, when the settings table cannot be read", async () => {

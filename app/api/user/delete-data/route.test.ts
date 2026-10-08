@@ -39,17 +39,39 @@ beforeEach(() => {
 
 describe("POST /api/user/delete-data", () => {
   it("deletes the signed-in account and says so", async () => {
-    accounts.deleteOwnAccount.mockResolvedValue(undefined);
+    accounts.deleteOwnAccount.mockResolvedValue({ bankConsentsNotRevoked: 0 });
 
     const res = await POST(post());
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ message: "Data deleted successfully" });
+    expect(await res.json()).toEqual({
+      message: "Data deleted successfully",
+      bankConsentsNotRevoked: 0,
+    });
     expect(accounts.deleteOwnAccount).toHaveBeenCalledWith("user-1");
   });
 
+  it("says how many bank consents the bank would not end, for the holder to end at their bank", async () => {
+    accounts.deleteOwnAccount.mockResolvedValue({ bankConsentsNotRevoked: 2 });
+
+    const res = await POST(post());
+
+    expect(res.status).toBe(200);
+    expect((await res.json()).bankConsentsNotRevoked).toBe(2);
+  });
+
+  it("logs the id of the account it erased, never its email address", async () => {
+    accounts.deleteOwnAccount.mockResolvedValue({ bankConsentsNotRevoked: 0 });
+
+    await POST(post());
+
+    const logged = vi.mocked(console.info).mock.calls.flat().join(" ");
+    expect(logged).toContain("user-1");
+    expect(logged).not.toContain("owner@example.org");
+  });
+
   it("deletes the account the session names, whatever the request asks for", async () => {
-    accounts.deleteOwnAccount.mockResolvedValue(undefined);
+    accounts.deleteOwnAccount.mockResolvedValue({ bankConsentsNotRevoked: 0 });
 
     await POST(
       post("http://localhost:3000/api/user/delete-data?id=victim&userId=victim", {
@@ -65,7 +87,7 @@ describe("POST /api/user/delete-data", () => {
   it("writes no audit entry, whether it deletes or refuses", async () => {
     // One written first would go with the account in the same cascade and record nothing, and after
     // a refusal it would stay and say a deletion happened.
-    accounts.deleteOwnAccount.mockResolvedValueOnce(undefined);
+    accounts.deleteOwnAccount.mockResolvedValueOnce({ bankConsentsNotRevoked: 0 });
     await POST(post());
     accounts.deleteOwnAccount.mockRejectedValueOnce(
       new ConflictError("The instance needs an administrator", "last_admin"),

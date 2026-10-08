@@ -10,19 +10,22 @@ import { withErrorHandler } from "@/lib/utils/error-handling";
  *
  * No audit entry is written first. It would belong to the account and go with it in the same cascade,
  * so it would record nothing, and a refusal would leave one that says a deletion happened.
+ *
+ * The answer says how many bank consents the bank would not end (`bankConsentsNotRevoked`), for the
+ * holder to end at their bank; the account's stored files and email log rows are removed with it.
  */
 async function handlePost(request: NextRequest): Promise<Response> {
   const authResult = await requireAuth(request);
   if (authResult instanceof Response) return authResult;
-  const { session, userId } = authResult;
+  const { userId } = authResult;
 
-  await deleteOwnAccount(userId);
+  const { bankConsentsNotRevoked } = await deleteOwnAccount(userId);
 
-  // Note: the audit log of this user is deleted with it, by cascade. For compliance you may want to
-  // keep anonymized deletion records separately.
-  console.info(`[GDPR] User data deleted: ${session.user.email} at ${new Date().toISOString()}`);
+  // The account's own audit entries went with it, by cascade; for compliance you may want to keep
+  // anonymised deletion records separately. The log names the id, not the address that was erased.
+  console.info(`[GDPR] User data deleted: ${userId} at ${new Date().toISOString()}`);
 
-  return Response.json({ message: "Data deleted successfully" });
+  return Response.json({ message: "Data deleted successfully", bankConsentsNotRevoked });
 }
 
 export const POST = withErrorHandler(handlePost);
