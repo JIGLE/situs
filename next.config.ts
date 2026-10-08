@@ -15,9 +15,10 @@ const nextConfig: NextConfig = {
     // accepts (app/api/leases/[id]/contract).
     proxyClientMaxBodySize: "25mb",
   },
-  images: {
-    remotePatterns: [{ protocol: "https", hostname: "**" }],
-  },
+  // No `images` block, on purpose. next/image is used nowhere, and an `images.remotePatterns`
+  // entry is what lets /_next/image (outside the proxy matcher, so open to anyone) fetch from a
+  // host: a wildcard there made the optimizer an SSRF to private addresses (GHSA-cjq9-62q9-8jv4).
+  // tests/next-config-images.test.ts refuses a wildcard host.
   // Configure turbopack with explicit root to avoid lockfile detection issues
   turbopack: {
     root: process.cwd(),
