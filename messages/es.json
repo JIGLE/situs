@@ -751,7 +751,7 @@
       "bankMovementHasReceipt": "Este movimiento ya generó un recibo. Borra primero ese recibo para cambiarlo.",
       "bankMovementNotIgnored": "Solo un movimiento ignorado puede restaurarse.",
       "bankMovementNotWaiting": "Solo un movimiento pendiente de revisión puede vincularse a un pago.",
-      "bankTestMovement": "Un movimiento de una conexión de prueba no corresponde a ningún pago real, así que no puede vincularse.",
+      "bankTestMovement": "Un movimiento de una conexión de prueba no corresponde a ningún pago real, así que no puede vincularse, confirmarse ni reasignarse.",
       "bankPaymentAlreadyLinked": "Ese pago ya está vinculado a otro movimiento.",
       "bankConnectionRenewalUnavailable": "Ya no es posible encontrar el banco de esta conexión para renovarla. Conecte el banco de nuevo.",
       "bankConnectionHasMovements": "Esta conexión tiene movimientos, así que no se puede eliminar: los movimientos que trajo se conservan.",
