@@ -166,7 +166,7 @@ schedule cannot drift from the code that applies it. An invitation lapses after 
 | Data                        | Period   | Note                                               |
 | --------------------------- | -------- | -------------------------------------------------- |
 | Audit log                   | 7 years  | Fiscal and legal record-keeping                    |
-| Email delivery log          | 2 years  | Operational                                        |
+| Email delivery log          | 2 years  | Operational; deleted at once with the account      |
 | Read in-app notifications   | 1 year   | Unread ones are kept                               |
 | Unreconciled bank movements | 2 years  | Matches the 730 days of history a consent requests |
 | Bank sync jobs              | 2 years  | Operational log of an import run                   |
@@ -197,7 +197,7 @@ Account deletion is immediate and complete. There is no grace period and no soft
 | ------------------------------------- | -------------------------------------------- | ---------------------------- |
 | Access (Art. 15)                      | JSON export of every relation on the account | `POST /api/user/export-data` |
 | Portability (Art. 20)                 | Same export, machine-readable                | as above                     |
-| Erasure (Art. 17)                     | Immediate and complete, by cascade           | `POST /api/user/delete-data` |
+| Erasure (Art. 17)                     | Immediate, on this instance                  | `POST /api/user/delete-data` |
 | Rectification (Art. 16)               | Edit in the app                              | —                            |
 | Restriction / objection (Art. 18, 21) | By arrangement with the operator             | —                            |
 
@@ -205,6 +205,21 @@ Erasure is refused for one account: the only administrator, while other accounts
 `last_admin`). Deleting it would leave accounts with nobody to administer them, so someone else is made
 an administrator first (Admin › Access). The last account of all can always be deleted, which returns
 the instance to its first sign-in.
+
+What erasure removes: the account and every row that cascades from it, **and three things that do not
+cascade**, which are removed with it. The email log keeps its rows when an account goes (each holds a
+recipient address), so they are deleted in the same transaction as the account. A bank consent stays
+live at the bank until it lapses, so each is revoked once the account is gone, and the answer says how
+many the bank would not end, for the holder to end at their bank. The files stored for the account
+(receipt archives: a tenant's name, address and amount) are removed from disk. A refused deletion
+changes none of it.
+
+What it cannot reach, and the holder should know: records held by others on the strength of what was
+sent them (a receipt already filed with the Tax Authority; the bank's own record of a consent;
+the delivery log of the mail provider), email log rows that were never linked to an account (a
+delivery report that arrived for an address the instance could not tie to one, which the retention
+job removes after two years), and any backup you took yourself (there are no scheduled
+ones).
 
 The export is **derived from the Prisma schema** (`lib/services/gdpr/export-scope.ts`), not from
 a hand-written list, so a relation added to `User` is exported the day it exists. It previously

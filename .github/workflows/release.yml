@@ -65,12 +65,12 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "22"
           cache: "npm"
@@ -262,7 +262,7 @@ jobs:
       ENABLE_RELEASE_NOTIFY: "false"
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           # The tag this job pushes is meant to trigger deploy-ghcr.yml (`push: tags: ["v*"]`).
@@ -339,7 +339,7 @@ jobs:
       # release_notes.md is gone; GitHub's generated notes are the single source.
       - name: Create GitHub Release
         if: steps.gate.outputs.should_release == 'true'
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
           tag_name: v${{ steps.gate.outputs.new_version }}
           name: Release v${{ steps.gate.outputs.new_version }}

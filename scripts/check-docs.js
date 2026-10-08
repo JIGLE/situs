@@ -53,6 +53,13 @@ const RETIRED_CLAIMS = [
       "turning the second factor off takes an authenticator or backup code (docs/SECURITY.md › Second factor)",
   },
   {
+    // The workflow conventions exempted first-party actions from pinning; every action is pinned now.
+    pattern: /actions under `actions\/` and `github\/` are\s+left on tags/,
+    retired: "2026-10-08 (every action pinned by SHA)",
+    because:
+      "`actions/` and `github/` actions are pinned to commit SHAs like the rest (`npm run actions:pinned`)",
+  },
+  {
     // The roadmap's Later row promised these; Admin › Access is all of them.
     pattern: /Admin with tabs, sign-up toggles, users and roles/,
     retired: "2026-10-04 (Admin › Access)",
@@ -386,6 +393,14 @@ const RETIRED_CLAIMS = [
       'that branch has never existed — it was a "correction" of the proman-named one, which ' +
       "is itself no longer a destination for anything. Branching is per-change now: " +
       "docs/REPOSITORY_PROCEDURES.md §1",
+  },
+  {
+    pattern: /Immediate and complete, by cascade/,
+    retired: "2026-10-08",
+    because:
+      "erasure removes more than cascades: the email log rows, bank consents and stored files are " +
+      "removed with the account, and the page now says what it still cannot reach " +
+      "(docs/DATA_PROTECTION.md)",
   },
   {
     pattern: /`npm audit` at moderate and above/,

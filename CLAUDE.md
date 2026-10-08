@@ -287,6 +287,9 @@ dispatch `deploy-ghcr.yml` against the tag ref. Full chain: `docs/REPOSITORY_PRO
   tooling fails, and a high one in the tooling only warns. Production is what `npm audit --omit=dev` lists, never a
   list of package names: there is no allowlist. Dependency Review (pull requests only) fails a pull request that adds a
   runtime package with a high or critical advisory.
+- Actions: every `uses:` in `.github/` is a full commit SHA with its tag as a trailing comment
+  (`npm run actions:pinned`, in hygiene; `node scripts/pin-actions.mjs` rewrites them). Dependabot's
+  `github-actions` ecosystem keeps both parts current.
 - ESLint: `--max-warnings=0`.
 - Vitest coverage is a **ratchet** in `vitest.config.ts` — statements 52 / branches 39 /
   functions 38 / lines 54. A PR may not lower it; raise it when real tests land. Keep the threshold
@@ -415,7 +418,9 @@ manager and nothing else, at `/api/admin/access/accounts/[id]`; demoting the onl
 one UPDATE that makes the change, which counts and checks who asks (`lib/services/auth/accounts.ts`).
 The same count governs an account's own deletion, `POST /api/user/delete-data`: the only administrator
 cannot delete theirs while other accounts remain (409 `last_admin`), and the last account of all can,
-which returns the instance to its first sign-in.
+which returns the instance to its first sign-in. The account's email log rows, its bank consents (revoked at the
+bank) and its stored files do not cascade, so the same deletion removes them: the log in its transaction, the others
+once the account is gone, and a refused deletion touches none.
 Admin › Access (`/admin/access`, `components/features/admin/access/`) is the screen for all of it:
 the two switches, the invitations and each account's role; the sign-in methods and the allowlist
 below them only report. A switch shows what the server holds, read again after every change, never
