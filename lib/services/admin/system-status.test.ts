@@ -536,6 +536,97 @@ describe("the tax connector check in the test mode", () => {
 });
 
 /**
+ * The demo sign-in, whose password the README publishes. On a production instance with
+ * `ENABLE_DEMO_LOGIN=true` it makes anyone who reads the README an administrator, so the page says
+ * so as broken, not as a note.
+ */
+describe("the demo sign-in check", () => {
+  const demo = async () => find((await getSystemStatus("user-1")).checks, "demo_login")!;
+  const production = () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("ENABLE_DEMO_LOGIN", "true");
+  };
+
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("is fine while the provider is off in production, and reads no account", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("ENABLE_DEMO_LOGIN", "");
+
+    expect(await demo()).toMatchObject({ severity: "ok", state: "off" });
+    expect(prismaMock.user.findUnique).not.toHaveBeenCalledWith(
+      expect.objectContaining({ where: { email: "demo@situs.local" } }),
+    );
+  });
+
+  it("is a convenience, not a fault, outside production", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("ENABLE_DEMO_LOGIN", "");
+
+    expect(await demo()).toMatchObject({ severity: "ok", state: "development" });
+  });
+
+  it("is broken when the flag is on in production and the demo account is an administrator", async () => {
+    production();
+    prismaMock.user.findUnique.mockImplementation(async (args: { where: { email?: string } }) =>
+      args.where.email ? { role: "ADMIN" } : { id: "user-1" },
+    );
+
+    const check = await demo();
+
+    expect(check).toMatchObject({ group: "platform", severity: "error", state: "admin" });
+    expect(check.detail).toMatch(/administrator/);
+    expect(check.remedy).toMatch(/Unset ENABLE_DEMO_LOGIN/);
+  });
+
+  it("is broken when the account does not exist yet: the first sign-in creates it as an administrator", async () => {
+    production();
+    prismaMock.user.findUnique.mockImplementation(async (args: { where: { email?: string } }) =>
+      args.where.email ? null : { id: "user-1" },
+    );
+
+    const check = await demo();
+
+    expect(check).toMatchObject({ severity: "error", state: "admin" });
+    expect(check.detail).toMatch(/creates it as an administrator/);
+  });
+
+  it("needs attention, but is not broken, when the demo account is not an administrator", async () => {
+    production();
+    prismaMock.user.findUnique.mockImplementation(async (args: { where: { email?: string } }) =>
+      args.where.email ? { role: "MANAGER" } : { id: "user-1" },
+    );
+
+    expect(await demo()).toMatchObject({ severity: "warning", state: "enabled" });
+  });
+
+  it("does not call it fine when the account cannot be read", async () => {
+    production();
+    prismaMock.user.findUnique.mockImplementation(async (args: { where: { email?: string } }) => {
+      if (args.where.email) throw new Error("database is locked");
+      return { id: "user-1" };
+    });
+
+    const check = await demo();
+
+    expect(check).toMatchObject({ severity: "warning", state: "unknown" });
+    expect(JSON.stringify(check)).not.toMatch(/database is locked/);
+  });
+
+  it("sorts above the checks that are merely true", async () => {
+    production();
+    prismaMock.user.findUnique.mockImplementation(async (args: { where: { email?: string } }) =>
+      args.where.email ? { role: "ADMIN" } : { id: "user-1" },
+    );
+
+    const { checks, counts } = await getSystemStatus("user-1");
+
+    expect(checks[0].id).toBe("demo_login");
+    expect(counts.error).toBeGreaterThanOrEqual(1);
+  });
+});
+
+/**
  * The IBAN hashes are keyed with the PII key, or still the plain SHA-256 anyone with the database
  * file can reverse. The page derives which from what is stored, and says so as broken when the
  * stored hashes and the key disagree, since an account the owner confirmed is then not recognised.

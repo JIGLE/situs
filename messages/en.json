@@ -332,7 +332,8 @@
       "bank_provider": "Bank provider",
       "tax": "Tax authority — {country}",
       "at_connector": "AT certificate",
-      "iban_hash": "IBAN hashes"
+      "iban_hash": "IBAN hashes",
+      "demo_login": "Demo sign-in"
     },
     "shell": {
       "title": "Instance administration",

@@ -332,7 +332,8 @@
       "bank_provider": "Fornecedor bancário",
       "tax": "Autoridade fiscal — {country}",
       "at_connector": "Certificado da AT",
-      "iban_hash": "Hashes de IBAN"
+      "iban_hash": "Hashes de IBAN",
+      "demo_login": "Início de sessão de demonstração"
     },
     "shell": {
       "title": "Administração da instância",
