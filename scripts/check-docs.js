@@ -46,6 +46,13 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // The workflow conventions exempted first-party actions from pinning; every action is pinned now.
+    pattern: /actions under `actions\/` and `github\/` are\s+left on tags/,
+    retired: "2026-10-08 (every action pinned by SHA)",
+    because:
+      "`actions/` and `github/` actions are pinned to commit SHAs like the rest (`npm run actions:pinned`)",
+  },
+  {
     // The roadmap's Later row promised these; Admin › Access is all of them.
     pattern: /Admin with tabs, sign-up toggles, users and roles/,
     retired: "2026-10-04 (Admin › Access)",
