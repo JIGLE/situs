@@ -1524,10 +1524,7 @@
       "subtitle": "Mese di riferimento di {property}",
       "status": "Stato",
       "due": "Dovuto",
-      "allocated": "Allocato",
-      "comingSoon": "Prossimamente",
-      "linkBankMovement": "Collega un movimento bancario",
-      "issueTaxReceipt": "Emetti ricevuta di affitto all'AT"
+      "allocated": "Allocato"
     },
     "tenantName": "Nome inquilino",
     "email": "Email",

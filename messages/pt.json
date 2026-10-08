@@ -1524,10 +1524,7 @@
       "subtitle": "Mês de referência de {property}",
       "status": "Estado",
       "due": "Devido",
-      "allocated": "Imputado",
-      "comingSoon": "Brevemente",
-      "linkBankMovement": "Associar um movimento bancário",
-      "issueTaxReceipt": "Emitir recibo de renda para a AT"
+      "allocated": "Imputado"
     },
     "tenantName": "Nome do inquilino",
     "email": "Email",
