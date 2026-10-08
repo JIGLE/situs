@@ -775,22 +775,6 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                   <Receipt className="mr-1.5 h-4 w-4" />
                   {t("actions.recordPayment")}
                 </Button>
-
-                {/* Named but disabled: both need backend work that does not exist yet
-                    (bank-movement linking for a specific period, and issuing the AT rent
-                    receipt from here). Shown so the intended shape of this modal is legible,
-                    not to imply they work. */}
-                <div className="space-y-2 border-t border-[var(--color-border)] pt-3">
-                  <p className="mono-label text-[var(--color-muted-foreground)]">
-                    {t("month.comingSoon")}
-                  </p>
-                  <Button variant="outline" className="w-full justify-start" disabled>
-                    {t("month.linkBankMovement")}
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start" disabled>
-                    {t("month.issueTaxReceipt")}
-                  </Button>
-                </div>
               </div>
             </>
           )}
