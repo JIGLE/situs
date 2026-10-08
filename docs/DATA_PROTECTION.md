@@ -82,12 +82,29 @@ that list would make the debug endpoint start returning it in plaintext. The con
 rather than text, and too large to decrypt on every lease read. The AT login must never be
 returned by any read at all.
 
-| Model                   | Field              | Handling                                                                                                             |
-| ----------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| `BankAccount`           | `iban`             | Encrypted in `lib/services/bank/consent.ts`, **never decrypted**. Matching uses `ibanHash`; display uses `ibanLast4` |
-| `BankTransaction`       | `counterpartyIban` | Encrypted in `lib/services/bank/import.ts`. Matching uses `counterpartyIbanHash`                                     |
-| `Lease`                 | `contractFile`     | The signed contract PDF. Encrypted and decrypted only in `app/api/leases/[id]/contract/route.ts` (`encryptFile`)     |
-| `TaxAuthorityConnector` | `credentialsRef`   | The AT Portal sub-user and password. Only `lib/services/tax/at-connection.ts` reads it; never returned               |
+| Model                   | Field              | Handling                                                                                                                            |
+| ----------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `BankAccount`           | `iban`             | Encrypted in `lib/services/bank/consent.ts`, **never decrypted**. Matching uses `ibanHash` (keyed, below); display uses `ibanLast4` |
+| `BankTransaction`       | `counterpartyIban` | Encrypted in `lib/services/bank/import.ts`. Matching uses `counterpartyIbanHash` (keyed, below)                                     |
+| `Lease`                 | `contractFile`     | The signed contract PDF. Encrypted and decrypted only in `app/api/leases/[id]/contract/route.ts` (`encryptFile`)                    |
+| `TaxAuthorityConnector` | `credentialsRef`   | The AT Portal sub-user and password. Only `lib/services/tax/at-connection.ts` reads it; never returned                              |
+
+**The IBAN hashes are keyed.** `ibanHash`, `counterpartyIbanHash`, `PayerAccount.ibanHash`, the value
+of an `iban_hash` reconciliation rule and the movement `fingerprint` that contains one used to be a plain
+SHA-256 of the IBAN. A Portuguese IBAN has about a billion candidates per bank and branch, so anyone
+holding a copy of the database could hash them all and read the numbers back, which undid the
+encryption of `iban` beside them. A hash is pseudonymisation (art. 4(5), recital 26) only while what
+reverses it is kept apart from it. The stored value is now `v2:` + HMAC-SHA256 of that hash under a key
+derived with HKDF from `PII_ENCRYPTION_KEY` (`lib/utils/iban-hash.ts`): the key lives in the
+environment, not in the file, and the same IBAN still gives the same value, which is all matching reads.
+It is still personal data, as pseudonymised data is. Values stored before are converted at every start
+without reading any IBAN (`lib/services/bank/iban-hash-migration.ts`), so a backup restored from before
+is converted at the next start, and the replaced values are cleared from the file. **A backup taken before
+the upgrade still holds the plain hashes**: treat it as holding IBANs. **Changing `PII_ENCRYPTION_KEY` changes every hash**: nothing recognises
+a known account, and a movement fetched again can be imported twice, until the old key is back (the
+encryption has no rotation either). Admin › Status says when plain hashes remain under a key, and when
+keyed ones are stored and the key is gone. An instance with no key keeps plain hashes, as it keeps
+plaintext IBANs.
 
 The contract names every party with their NIF, which is why it is encrypted like the columns
 that hold those NIFs. Its route is the only reader: the Prisma client leaves the column out of
@@ -105,7 +122,7 @@ Recorded here deliberately rather than left implicit:
 | `BankTransaction`      | `counterpartyName` | The matching engine reads it to score a movement against a lease                                           |
 | `BankTransaction`      | `reference`        | The remittance line. Read for reference-month parsing. **Free text: may contain anything the payer typed** |
 | `BankAccount`          | `ibanLast4`        | Four digits, displayed so a human can tell two accounts apart                                              |
-| `PayerAccount`         | `ibanHash`         | A hash of the IBAN of an account the owner confirmed pays this tenant: all matching reads of it            |
+| `PayerAccount`         | `ibanHash`         | A keyed hash of the IBAN of an account the owner confirmed pays this tenant: all matching reads of it      |
 | `PayerAccount`         | `ibanLast4`        | Four digits, so the owner can tell two remembered accounts apart on the tenant                             |
 | `PayerAccount`         | `holderName`       | The name the bank showed on the movement that was confirmed. Removed with the tenant, or when forgotten    |
 | `AccessInvitation`     | `email`            | An invited person's email, until they create the account. Lapses in 30 days; masked in the audit trail     |
@@ -243,19 +260,20 @@ instance and would need revisiting if Situs were offered as a service.
 
 ## 7. Security measures
 
-| Measure                                                                       | Where                                                                                                                             |
-| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| AES-256-GCM at rest for the fields in §3                                      | `lib/utils/pii-encryption.ts`                                                                                                     |
-| Refuses to start in production without `PII_ENCRYPTION_KEY`                   | `instrumentation.ts` runs `lib/utils/env.ts` at startup; `encryptPII` returns plaintext without a key                             |
-| Per-request CSP nonce, HSTS, frame/content-type/referrer/permissions policies | `proxy.ts`, on every response                                                                                                     |
-| `userId` scoping on API routes                                                | `requireAuth` / `requireOwnerAccess`                                                                                              |
-| Rate limiting                                                                 | `lib/utils/rate-limit.ts` (`withRateLimit`) and `lib/middleware/rate-limit.ts` (TOTP verify) — `docs/SECURITY.md`                 |
-| Registration closed by default                                                | `lib/services/auth/registration.ts` — the first account owns the instance; another email is refused unless allowlisted or invited |
-| Audit trail on workflow mutations                                             | `lib/services/audit-log.ts`, `AuditLog`                                                                                           |
-| Debug endpoints restricted in production                                      | `/api/debug/db` and `/api/debug/db/seed` return 403; `/api/debug/db/init` needs a session and `INIT_SECRET` (`docs/SECURITY.md`)  |
-| Bank consent references                                                       | 256-bit random, user-scoped, constant-time compared, single-use, dropped once spent, lapsing after 24 hours                       |
-| Private key handling                                                          | Enable Banking RSA key mounted as a file (`ENABLE_BANKING_PRIVATE_KEY_FILE`), keeping it out of `/proc/<pid>/environ`             |
-| AT connection                                                                 | Mutual TLS with the certificate AT signed and its mounted key; the Portal password is sent AES-encrypted per request              |
+| Measure                                                                         | Where                                                                                                                             |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| AES-256-GCM at rest for the fields in §3                                        | `lib/utils/pii-encryption.ts`                                                                                                     |
+| Keyed hashes of IBANs, so the matching columns cannot be reversed from the file | `lib/utils/iban-hash.ts` (HMAC under a key derived from `PII_ENCRYPTION_KEY`); converted at start by `iban-hash-migration.ts`     |
+| Refuses to start in production without `PII_ENCRYPTION_KEY`                     | `instrumentation.ts` runs `lib/utils/env.ts` at startup; `encryptPII` returns plaintext without a key                             |
+| Per-request CSP nonce, HSTS, frame/content-type/referrer/permissions policies   | `proxy.ts`, on every response                                                                                                     |
+| `userId` scoping on API routes                                                  | `requireAuth` / `requireOwnerAccess`                                                                                              |
+| Rate limiting                                                                   | `lib/utils/rate-limit.ts` (`withRateLimit`) and `lib/middleware/rate-limit.ts` (TOTP verify) — `docs/SECURITY.md`                 |
+| Registration closed by default                                                  | `lib/services/auth/registration.ts` — the first account owns the instance; another email is refused unless allowlisted or invited |
+| Audit trail on workflow mutations                                               | `lib/services/audit-log.ts`, `AuditLog`                                                                                           |
+| Debug endpoints restricted in production                                        | `/api/debug/db` and `/api/debug/db/seed` return 403; `/api/debug/db/init` needs a session and `INIT_SECRET` (`docs/SECURITY.md`)  |
+| Bank consent references                                                         | 256-bit random, user-scoped, constant-time compared, single-use, dropped once spent, lapsing after 24 hours                       |
+| Private key handling                                                            | Enable Banking RSA key mounted as a file (`ENABLE_BANKING_PRIVATE_KEY_FILE`), keeping it out of `/proc/<pid>/environ`             |
+| AT connection                                                                   | Mutual TLS with the certificate AT signed and its mounted key; the Portal password is sent AES-encrypted per request              |
 
 **Backups are the operator's responsibility.** `docs/DATABASE_STRATEGY.md` describes them; nothing
 in the application schedules one. Availability and restorability (Art. 32(1)(c)) are not provided by the application.

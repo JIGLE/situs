@@ -332,6 +332,7 @@
       "bank_provider": "Fornitore bancario",
       "tax": "Autorità fiscale — {country}",
       "at_connector": "Certificato AT",
+      "iban_hash": "Hash degli IBAN",
       "demo_login": "Accesso demo"
     },
     "shell": {
