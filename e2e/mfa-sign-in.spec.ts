@@ -59,11 +59,12 @@ test("an account with an authenticator app is held at the code page until it ent
   test.setTimeout(90_000);
 
   let enabled = false;
+  let secret = "";
   try {
     const headers = await csrfHeaders(request);
     const setup = await request.post("/api/auth/totp/setup", { headers });
     expect(setup.ok(), `POST /api/auth/totp/setup → ${setup.status()}`).toBe(true);
-    const { secret } = (await setup.json()) as { secret: string };
+    secret = ((await setup.json()) as { secret: string }).secret;
 
     const enable = await request.post("/api/auth/totp/enable", {
       headers,
@@ -82,6 +83,15 @@ test("an account with an authenticator app is held at the code page until it ent
       const again = await request.post("/api/auth/totp/setup", { headers });
       expect(again.status()).toBe(409);
       expect(await again.json()).toMatchObject({ reason: "totp_already_enabled" });
+
+      // A signed-in session that passed the factor still cannot remove it without a code from it.
+      expect((await request.delete("/api/auth/totp/disable", { headers })).status()).toBe(400);
+      const wrong = totpGenerate(secret) === "000000" ? "111111" : "000000";
+      expect(
+        (
+          await request.delete("/api/auth/totp/disable", { headers, data: { code: wrong } })
+        ).status(),
+      ).toBe(400);
 
       const status = await request.get("/api/auth/totp/status");
       expect(await status.json()).toMatchObject({ totpEnabled: true });
@@ -169,6 +179,7 @@ test("an account with an authenticator app is held at the code page until it ent
       try {
         const disable = await cleanup.delete("/api/auth/totp/disable", {
           headers: await csrfHeaders(cleanup),
+          data: { code: totpGenerate(secret) },
           timeout: 15_000,
         });
         expect(disable.ok(), `DELETE /api/auth/totp/disable → ${disable.status()}`).toBe(true);

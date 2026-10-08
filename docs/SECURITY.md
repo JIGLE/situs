@@ -83,10 +83,19 @@ An account with an authenticator app (Settings › Security) has to enter a code
   `totp_already_enabled` otherwise, so it cannot switch an enabled one off or replace its secret.
   `enable` turns it on only for the secret its code was checked against, and answers 409
   `totp_setup_changed` when a `disable` or a new `setup` got in between.
-- Turning it off (`DELETE /api/auth/totp/disable`) asks for no code. Any session `requireAuth`
-  accepts can do it, including one that was already open when the second factor was turned on:
-  `mfaPending` is set only at sign-in, and turning the factor on does not end the sessions open
-  before it. Asking for a current code there, and ending the older sessions, are not built.
+- Turning it off (`DELETE /api/auth/totp/disable`) takes a code from the factor, an authenticator
+  code or a backup code, because the session that asks may be a stolen one: `mfaPending` is set
+  only at sign-in, so a cookie that was open before the factor was turned on, or one that passed it,
+  is all `requireAuth` can tell. A wrong or missing code, or a secret that cannot be read, is a 400 and changes nothing. Guesses
+  are counted per account, not per URL: `verify` and `disable` name one rate-limit scope
+  (`totpGuessLimit`, `lib/services/auth/totp-guess-limit.ts`), so five wrong codes in fifteen minutes
+  at either use both up, and a test runs the real limiter to prove it. The cost is that someone with
+  only the password, who can already burn the sign-in budget, can also hold off `disable` for those
+  fifteen minutes. The clear is conditional on the secret and on `totpEnabled` as they were read, so
+  an owner confirming a setup at that moment turns a code-less clear into a 409. A setup that was
+  never confirmed has no factor to prove and is cleared without a code. Ending the older sessions
+  when the factor is turned on is not built: it needs a per-account session marker the JWT callback
+  checks.
 - An accepted TOTP code is not single-use within its 30 seconds, and a backup code is spent by a
   read and a write that two concurrent posts can both pass. Both need a code in hand.
 

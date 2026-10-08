@@ -46,6 +46,13 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // Turning the second factor off now takes a code from it.
+    pattern: /Turning it off \(`DELETE \/api\/auth\/totp\/disable`\) asks for no code/,
+    retired: "2026-10-08 (disable takes a code)",
+    because:
+      "turning the second factor off takes an authenticator or backup code (docs/SECURITY.md › Second factor)",
+  },
+  {
     // The workflow conventions exempted first-party actions from pinning; every action is pinned now.
     pattern: /actions under `actions\/` and `github\/` are\s+left on tags/,
     retired: "2026-10-08 (every action pinned by SHA)",
