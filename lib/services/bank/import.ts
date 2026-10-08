@@ -636,7 +636,7 @@ async function isTestMovement(userId: string, bankAccountId: string): Promise<bo
 
 /**
  * The owner has said which tenant this movement's payer is, so the account it came from is remembered
- * for that tenant. A test connection's movement stands for no real payment and teaches nothing.
+ * for that tenant. A test connection's movement cannot be confirmed at all, so it teaches nothing.
  * Learning never undoes a confirmation that is already made: a failure is logged, and the account is
  * learned the next time one is confirmed.
  */
@@ -647,7 +647,6 @@ async function learnFromConfirmation(
 ): Promise<boolean> {
   if (!tenantId || !txn.counterpartyIbanHash) return false;
   try {
-    if (await isTestMovement(userId, txn.bankAccountId)) return false;
     return await rememberPayerAccount(userId, tenantId, txn);
   } catch (error) {
     logger.warn("A confirmed movement's account could not be remembered", {
@@ -843,6 +842,16 @@ export async function applyTransactionAction(
     return { status: txn.status, receiptId: txn.receiptId };
   }
 
+  // Sandbox money never stands for a real payment: an import quarantines a test connection's
+  // movements from allocation, and a Confirm or a Reassign would cross that line by hand, writing a
+  // Receipt and allocations against a real lease that deleting the connection leaves behind.
+  if (await isTestMovement(userId, txn.bankAccountId)) {
+    throw new ConflictError(
+      "A test connection's movement cannot be confirmed or reassigned",
+      "bank_test_movement",
+    );
+  }
+
   const targetLeaseId = action === "reassign" ? leaseId : (leaseId ?? txn.suggestedLeaseId);
   if (!targetLeaseId) {
     throw new ConflictError("A lease is required to confirm this movement", "bank_lease_required");
@@ -863,8 +872,7 @@ export async function applyTransactionAction(
       amount: txn.amount,
       bookingDate: txn.bookingDate,
     });
-    // A test connection's movement stands for no real payment, so it is never held for one.
-    if (recorded.length > 0 && !(await isTestMovement(userId, txn.bankAccountId))) {
+    if (recorded.length > 0) {
       await prisma.bankTransaction.update({
         where: { id: txn.id },
         data: { status: "needs_review", suggestedLeaseId: targetLeaseId },

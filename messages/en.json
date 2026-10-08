@@ -749,7 +749,7 @@
       "bankMovementHasReceipt": "This movement already paid a receipt. Delete that receipt first to change it.",
       "bankMovementNotIgnored": "Only an ignored movement can be restored.",
       "bankMovementNotWaiting": "Only a movement waiting for review can be linked to a payment.",
-      "bankTestMovement": "A movement from a test connection stands for no real payment, so it cannot be linked.",
+      "bankTestMovement": "A movement from a test connection stands for no real payment, so it cannot be linked, confirmed or reassigned.",
       "bankPaymentAlreadyLinked": "That payment is already linked to another movement.",
       "bankConnectionRenewalUnavailable": "This connection's bank can no longer be found to renew it. Connect the bank again.",
       "bankConnectionHasMovements": "This connection has movements, so it cannot be removed: the movements it brought are kept.",
