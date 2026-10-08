@@ -512,11 +512,17 @@ describe("remembered payer accounts — real Prisma client + real SQLite file", 
     const { movement } = await pay(w, "2026-06-10", RENT, {
       target: { connectionId: connection.id, bankAccountId: account.id },
     });
-    const result = await applyTransactionAction(w.user.id, movement.id, "confirm", w.lease.id);
+    // Sandbox money is neither confirmed nor reassigned, so it neither writes a receipt against
+    // the real lease nor teaches the tenant an account.
+    await expect(
+      applyTransactionAction(w.user.id, movement.id, "confirm", w.lease.id),
+    ).rejects.toMatchObject({ reason: "bank_test_movement" });
 
-    expect(result.status).toBe("matched_confirmed");
-    expect(result.remembered).toBeUndefined();
     expect(await prisma.payerAccount.count({ where: { tenantId: w.tenant.id } })).toBe(0);
+    expect(await prisma.receipt.count({ where: { leaseId: w.lease.id } })).toBe(0);
+    expect(
+      await prisma.bankTransaction.findUniqueOrThrow({ where: { id: movement.id } }),
+    ).toMatchObject({ receiptId: null, status: expect.not.stringMatching(/matched_confirmed/) });
   });
 
   it("goes back to asking when the owner forgets the account, and says so in the audit trail", async () => {

@@ -239,15 +239,56 @@ describe("confirm and reassign, when the lease has a payment recorded for this m
     expect(logAuditMock).toHaveBeenCalledWith(expect.objectContaining({ action: "CONFIRM_MATCH" }));
   });
 
-  it("does not hold a test connection's movement for a real payment, as before", async () => {
-    prismaMock.receipt.findMany.mockResolvedValue([recordedReceipt]);
-    prismaMock.bankAccount.findFirst.mockResolvedValue({
-      connection: { metadata: JSON.stringify({ isTest: true }) },
+  describe("a test connection's movement", () => {
+    beforeEach(() => {
+      prismaMock.bankAccount.findFirst.mockResolvedValue({
+        connection: { metadata: JSON.stringify({ isTest: true }) },
+      });
     });
 
-    const result = await applyTransactionAction(USER, "txn-1", "confirm");
+    it.each([
+      ["confirm", undefined],
+      ["confirm", "lease-2"],
+      ["reassign", "lease-2"],
+    ] as const)("is refused by %s (lease %s), and writes nothing", async (action, leaseId) => {
+      await expect(applyTransactionAction(USER, "txn-1", action, leaseId)).rejects.toEqual(
+        refusal("bank_test_movement"),
+      );
 
-    expect(result).toEqual({ status: "matched_confirmed", receiptId: "rcpt-new" });
+      expect(prismaMock.lease.findFirst).not.toHaveBeenCalled();
+      expect(prismaMock.receipt.findMany).not.toHaveBeenCalled();
+      expect(prismaMock.receipt.create).not.toHaveBeenCalled();
+      expect(allocateReceiptMock).not.toHaveBeenCalled();
+      expect(prismaMock.bankTransaction.update).not.toHaveBeenCalled();
+      expect(prismaMock.bankTransaction.updateMany).not.toHaveBeenCalled();
+      expect(rememberMock).not.toHaveBeenCalled();
+      expect(logAuditMock).not.toHaveBeenCalled();
+    });
+
+    it("is refused even when the owner says it is a new payment", async () => {
+      await expect(
+        applyTransactionAction(USER, "txn-1", "confirm", undefined, { newPayment: true }),
+      ).rejects.toEqual(refusal("bank_test_movement"));
+      expect(allocateReceiptMock).not.toHaveBeenCalled();
+    });
+
+    it("can still be ignored and restored: those allocate nothing", async () => {
+      prismaMock.bankTransaction.update.mockResolvedValue({});
+
+      expect(await applyTransactionAction(USER, "txn-1", "ignore")).toEqual({
+        status: "ignored",
+        receiptId: null,
+      });
+    });
+
+    it("does not trust an account that is not there", async () => {
+      prismaMock.bankAccount.findFirst.mockResolvedValue(null);
+
+      await expect(applyTransactionAction(USER, "txn-1", "confirm")).rejects.toEqual(
+        expect.objectContaining({ name: "ResourceNotFoundError" }),
+      );
+      expect(allocateReceiptMock).not.toHaveBeenCalled();
+    });
   });
 
   it("gives no second receipt to a movement that was settled while the confirmation ran", async () => {
@@ -577,9 +618,10 @@ describe("the account a confirmation came from", () => {
       connection: { metadata: JSON.stringify({ isTest: true }) },
     });
 
-    const result = await applyTransactionAction(USER, "txn-1", "confirm");
+    await expect(applyTransactionAction(USER, "txn-1", "confirm")).rejects.toEqual(
+      expect.objectContaining({ reason: "bank_test_movement" }),
+    );
 
-    expect(result).toEqual({ status: "matched_confirmed", receiptId: "rcpt-new" });
     expect(rememberMock).not.toHaveBeenCalled();
   });
 
