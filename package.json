@@ -32,7 +32,7 @@
     "test:e2e:ui": "playwright test --ui",
     "security:scan": "node scripts/security-scan.js",
     "validate-env": "node scripts/validate-env.js",
-    "security:audit": "npm audit --audit-level=moderate",
+    "security:audit": "node scripts/audit-gate.js",
     "security:audit:fix": "npm audit fix",
     "security:zap": "node scripts/zap-scan.js",
     "security:all": "npm run security:scan && npm run security:audit",

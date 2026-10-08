@@ -42,68 +42,43 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # `npm audit` exits non-zero whenever it finds anything, so `|| true` is correct here —
-      # the severity decision belongs to the next step. No `continue-on-error`: that applied to
-      # the step whose only job was writing a file, and it hid the case where the file was
-      # never written.
-      - name: Run npm audit
-        id: npm-audit
-        run: npm audit --json > audit-report.json || true
-
-      - name: Check audit results
+      # `npm audit` exits non-zero whenever it finds anything, so `|| true` is correct here: the
+      # decision belongs to scripts/audit-gate.js, which reads both reports. No `continue-on-error`:
+      # that hid the case where a report was never written.
+      #
+      # Two audits, because the question differs. A package the app ships (`--omit=dev`) fails the
+      # job on any critical or high advisory. A package only the tooling uses is not loaded by the running app:
+      # a high advisory there is a warning on every run, a critical one still fails. The gate used
+      # to count both the same, which kept it red for days on a development-only chain and let six
+      # advisories on `next` itself arrive behind that red, unnoticed.
+      - name: Run npm audit (production and full)
         run: |
-          set -euo pipefail
+          npm audit --omit=dev --json > audit-report-production.json || true
+          npm audit --json > audit-report.json || true
 
-          # A missing report is a broken gate, not a clean bill of health. This used to
-          # `exit 0` here, so an audit that crashed before writing anything read exactly like
-          # an audit that found nothing.
-          if [ ! -f audit-report.json ]; then
-            echo "::error::npm audit produced no report — the scan did not run"
-            exit 1
-          fi
-
-          # `-e` so a malformed report fails loudly instead of `// 0` turning a missing key
-          # into a zero.
-          jq -e '.metadata.vulnerabilities' audit-report.json > /dev/null
-
-          VULNERABILITIES=$(jq -r '.metadata.vulnerabilities.total // 0' audit-report.json)
-          CRITICAL=$(jq -r '.metadata.vulnerabilities.critical // 0' audit-report.json)
-
-          # There is deliberately no package allowlist here. There was one — find-my-way,
-          # @prisma/dev, prisma, for GHSA-c96f-x56v-gq3h — and it outlived the advisory it was
-          # written for: an `overrides` entry fixed find-my-way, after which the list matched
-          # nothing and nobody noticed. It then did active harm. When the deepmerge-ts advisory
-          # landed in prisma's config loader it produced three findings, and `prisma` being on
-          # this list swallowed one of them silently; the job failed only because the other two
-          # package names happened not to be listed.
-          #
-          # An advisory that is genuinely not exploitable here gets fixed in `overrides` in
-          # package.json, where the fix is visible in the dependency tree and expires on its own.
-          # This step just counts. It also keeps this job in agreement with Custom Security Scan,
-          # which runs scripts/security-scan.js — that has no allowlist, so any list here makes
-          # two jobs apply different rules to the same audit data.
-          HIGH=$(jq '[.vulnerabilities[] | select(.severity == "high")] | length' audit-report.json)
-
-          echo "Total vulnerabilities: $VULNERABILITIES"
-          echo "Critical: $CRITICAL"
-          echo "High: $HIGH"
-
-          # Fail on critical or high vulnerabilities
-          if [ "$CRITICAL" -gt 0 ]; then
-            echo "::error::Found $CRITICAL critical severity vulnerabilities"
-            exit 1
-          fi
-          if [ "$HIGH" -gt 0 ]; then
-            echo "::error::Found $HIGH high severity vulnerabilities — run 'npm audit' locally to review"
-            exit 1
-          fi
+      # There is deliberately no package allowlist, here or in the script. There was one —
+      # find-my-way, @prisma/dev, prisma, for GHSA-c96f-x56v-gq3h — and it outlived the advisory it
+      # was written for: an `overrides` entry fixed find-my-way, after which the list matched
+      # nothing and nobody noticed. It then did active harm: when the deepmerge-ts advisory landed
+      # in prisma's config loader it produced three findings, and `prisma` being on the list
+      # swallowed one of them silently. The scope above is a fact about the dependency tree, not a
+      # list that can go stale. An advisory that is genuinely not exploitable here gets fixed in
+      # `overrides` in package.json, where the fix is visible and expires on its own.
+      #
+      # The same script is the rule for Custom Security Scan (scripts/security-scan.js) and for
+      # `npm run security:audit`, so the three cannot disagree about the same audit data. A missing
+      # or malformed report fails the step: a broken gate is not a clean bill of health.
+      - name: Check audit results
+        run: node scripts/audit-gate.js --prod audit-report-production.json --all audit-report.json
 
       - name: Upload audit report
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: npm-audit-report
-          path: audit-report.json
+          path: |
+            audit-report.json
+            audit-report-production.json
           retention-days: 14
           if-no-files-found: ignore
 
@@ -305,5 +280,10 @@ jobs:
             CRITICAL=$(cat npm-audit-report/audit-report.json | jq -r '.metadata.vulnerabilities.critical // 0')
             HIGH=$(cat npm-audit-report/audit-report.json | jq -r '.metadata.vulnerabilities.high // 0')
             
-            echo "- Total: $TOTAL | Critical: $CRITICAL | High: $HIGH" >> $GITHUB_STEP_SUMMARY
+            echo "- All dependencies: Total: $TOTAL | Critical: $CRITICAL | High: $HIGH" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f npm-audit-report/audit-report-production.json ]; then
+            PROD_CRITICAL=$(jq -r '.metadata.vulnerabilities.critical // 0' npm-audit-report/audit-report-production.json)
+            PROD_HIGH=$(jq -r '.metadata.vulnerabilities.high // 0' npm-audit-report/audit-report-production.json)
+            echo "- Production only (what blocks): Critical: $PROD_CRITICAL | High: $PROD_HIGH" >> $GITHUB_STEP_SUMMARY
           fi

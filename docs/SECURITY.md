@@ -136,7 +136,9 @@ Motion require.
 
 - **CI** — `security-scan.yml` runs on pull requests, on pushes to `main` and daily: `npm audit`,
   `scripts/security-scan.js`, CodeQL, dependency review and TruffleHog.
-- **`npm run security:audit`** — `npm audit` at moderate and above; part of `npm run verify:ci`.
+- **`npm run security:audit`** — `scripts/audit-gate.js`, the same rule CI applies: a critical or high advisory in a
+  package the app ships fails, a critical one in the tooling fails, and a high one in the tooling only warns; part of
+  `npm run verify:ci`.
 - **`npm run security:zap`** — an OWASP ZAP scan (`scripts/zap-scan.js`) against a running
   instance. It needs ZAP running locally (`ZAP_URL`, `ZAP_API_KEY`) and is not run in CI.
 

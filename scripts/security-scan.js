@@ -4,7 +4,7 @@
  * Security Scanning Script
  *
  * Runs comprehensive security checks:
- * - npm audit for dependency vulnerabilities
+ * - npm audit for dependency vulnerabilities (production blocks; development-only high warns)
  * - Custom security checks for common issues
  * - Reports findings with severity levels
  */
@@ -12,6 +12,7 @@
 const { execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
+const { classify, loadAudits } = require("./audit-gate");
 
 // ANSI color codes
 const colors = {
@@ -70,94 +71,41 @@ function addFinding(severity, category, message, details = null) {
 }
 
 /**
- * Run npm audit
+ * Run npm audit, judged by scripts/audit-gate.js so this scan and the Dependency Security Scan job
+ * apply one rule: a production advisory (high or critical) or a development critical blocks, and a
+ * development-only high is a warning. An audit that cannot run is a critical finding, never silence.
  */
 function runNpmAudit() {
   printSection("NPM AUDIT - Dependency Vulnerabilities");
 
   try {
-    // Run npm audit and get JSON output
-    const auditOutput = execSync("npm audit --json", {
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    });
+    const { prod, all } = loadAudits([]);
+    const { blocking, warnings, notes } = classify(prod, all);
 
-    const audit = JSON.parse(auditOutput);
+    print(`Blocking: ${blocking.length}  Development-only warnings: ${warnings.length}`, "blue");
+    const line = (entry) =>
+      `  ${entry.pkg} (${entry.severity}, ${entry.scope}) ${entry.title}`.trimEnd();
+    blocking.forEach((entry) => print(line(entry), "red"));
+    warnings.forEach((entry) => print(line(entry), "yellow"));
 
-    // Parse vulnerabilities
-    const vulnerabilities = audit.vulnerabilities || {};
-    const metadata = audit.metadata || {};
-
-    const counts = {
-      critical: metadata.vulnerabilities?.critical || 0,
-      high: metadata.vulnerabilities?.high || 0,
-      moderate: metadata.vulnerabilities?.moderate || 0,
-      low: metadata.vulnerabilities?.low || 0,
-      info: metadata.vulnerabilities?.info || 0,
-    };
-
-    // Display summary
-    print(`Total vulnerabilities: ${metadata.vulnerabilities?.total || 0}`, "blue");
-    if (counts.critical > 0) print(`  Critical: ${counts.critical}`, "red");
-    if (counts.high > 0) print(`  High: ${counts.high}`, "red");
-    if (counts.moderate > 0) print(`  Moderate: ${counts.moderate}`, "yellow");
-    if (counts.low > 0) print(`  Low: ${counts.low}`, "yellow");
-    if (counts.info > 0) print(`  Info: ${counts.info}`, "blue");
-
-    // Add to findings
-    Object.entries(vulnerabilities).forEach(([pkg, vuln]) => {
-      const severity = vuln.severity || "low";
+    const add = (entry, severity, prefix = "") =>
       addFinding(
         severity,
         "Dependency Vulnerability",
-        `${pkg}: ${vuln.via?.[0]?.title || "Vulnerability detected"}`,
-        {
-          package: pkg,
-          severity: vuln.severity,
-          range: vuln.range,
-          via: vuln.via,
-        },
+        `${prefix}${entry.pkg}: ${entry.title || "Vulnerability detected"}`,
+        { package: entry.pkg, severity: entry.severity, scope: entry.scope, url: entry.url },
       );
-    });
+    blocking.forEach((entry) => add(entry, entry.severity));
+    // Reported at moderate so it shows as a warning and does not fail the scan.
+    warnings.forEach((entry) => add(entry, SEVERITY.MODERATE, "[development-only, non-blocking] "));
+    notes.forEach((entry) => add(entry, entry.severity));
 
-    if (metadata.vulnerabilities?.total === 0) {
+    if (blocking.length + warnings.length + notes.length === 0) {
       print("✓ No vulnerabilities found", "green");
     }
   } catch (error) {
-    // npm audit exits with code 1 if vulnerabilities are found
-    if (error.stdout) {
-      try {
-        const audit = JSON.parse(error.stdout);
-        const metadata = audit.metadata || {};
-
-        print(`Found ${metadata.vulnerabilities?.total || 0} vulnerabilities:`, "yellow");
-        if (metadata.vulnerabilities?.critical)
-          print(`  Critical: ${metadata.vulnerabilities.critical}`, "red");
-        if (metadata.vulnerabilities?.high)
-          print(`  High: ${metadata.vulnerabilities.high}`, "red");
-        if (metadata.vulnerabilities?.moderate)
-          print(`  Moderate: ${metadata.vulnerabilities.moderate}`, "yellow");
-        if (metadata.vulnerabilities?.low)
-          print(`  Low: ${metadata.vulnerabilities.low}`, "yellow");
-
-        // Add to findings
-        const vulnerabilities = audit.vulnerabilities || {};
-        Object.entries(vulnerabilities).forEach(([pkg, vuln]) => {
-          const severity = vuln.severity || "low";
-          addFinding(
-            severity,
-            "Dependency Vulnerability",
-            `${pkg}: ${vuln.via?.[0]?.title || "Vulnerability detected"}`,
-            { package: pkg, severity: vuln.severity },
-          );
-        });
-      } catch {
-        print("Error parsing npm audit output", "red");
-      }
-    } else {
-      print("Error running npm audit", "red");
-      print(error.message, "red");
-    }
+    print(`npm audit could not be judged: ${error.message}`, "red");
+    addFinding(SEVERITY.CRITICAL, "Audit Failed", error.message);
   }
 }
 
