@@ -1525,10 +1525,7 @@
       "subtitle": "Reference month for {property}",
       "status": "Status",
       "due": "Due",
-      "allocated": "Allocated",
-      "comingSoon": "Coming soon",
-      "linkBankMovement": "Link a bank movement",
-      "issueTaxReceipt": "Issue rent receipt to the tax authority"
+      "allocated": "Allocated"
     },
     "tenantName": "Tenant name",
     "email": "Email",
