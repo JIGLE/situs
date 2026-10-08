@@ -381,6 +381,13 @@ const RETIRED_CLAIMS = [
       "docs/REPOSITORY_PROCEDURES.md §1",
   },
   {
+    pattern: /`npm audit` at moderate and above/,
+    retired: "2026-10-08",
+    because:
+      "security:audit runs scripts/audit-gate.js now: production critical/high and tooling critical " +
+      "fail, tooling high warns, and moderate or low never block (docs/SECURITY.md)",
+  },
+  {
     pattern: /GHSA-c96f-x56v-gq3h/,
     retired: "2026-08-18",
     because:
