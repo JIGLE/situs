@@ -156,6 +156,46 @@ export async function resolveSignIn(
 const isUniqueViolation = (error: unknown): boolean =>
   (error as { code?: unknown } | null)?.code === "P2002";
 
+/** A decision that admits a new account, as `resolveSignIn` returns it. */
+export type AdmittingDecision = Extract<
+  SignInDecision,
+  { reason: "bootstrap" | "allowlisted" | "invited" | "open_google" }
+>;
+
+/**
+ * Write the account a decision admitted, in one transaction with using up the invitation it came
+ * from. The decision was made a moment earlier, while an administrator existed; the only
+ * administrator can delete their own account in that moment, which would leave a manager as the only
+ * account and nobody to administer it. So a non-administrator is kept only if an administrator is
+ * still there once the row is written: the insert holds the database's write lock, so the count
+ * cannot change under it, and a deletion that came first is seen, and the transaction rolls back.
+ */
+export async function createAccount(
+  input: { email: string; name?: string | null; image?: string | null },
+  decision: AdmittingDecision,
+): Promise<{ id: string; role: string }> {
+  const prisma = getPrismaClient();
+  return prisma.$transaction(async (tx) => {
+    const row = await tx.user.create({
+      data: {
+        email: input.email,
+        name: input.name ?? undefined,
+        image: input.image ?? undefined,
+        role: decision.role,
+        imageConsent: true,
+      },
+      select: { id: true, role: true },
+    });
+    if (decision.role !== "ADMIN" && (await tx.user.count({ where: { role: "ADMIN" } })) === 0) {
+      throw new Error("REGISTRATION_CLOSED");
+    }
+    if (decision.reason === "invited") {
+      await tx.accessInvitation.deleteMany({ where: { id: decision.invitationId } });
+    }
+    return row;
+  });
+}
+
 /**
  * The account a sign-in is for: the one that exists, or the one the gate lets it create, with the
  * role the decision gave it. Runs where the session is minted, after the `signIn` callback let the
@@ -196,22 +236,7 @@ export async function provisionAccount(input: {
   }
 
   try {
-    const created = await prisma.$transaction(async (tx) => {
-      const row = await tx.user.create({
-        data: {
-          email: input.email,
-          name: input.name ?? undefined,
-          image: input.image ?? undefined,
-          role: decision.role,
-          imageConsent: true,
-        },
-        select: { id: true, role: true },
-      });
-      if (decision.reason === "invited") {
-        await tx.accessInvitation.deleteMany({ where: { id: decision.invitationId } });
-      }
-      return row;
-    });
+    const created = await createAccount(input, decision);
 
     await logAudit({
       userId: created.id,

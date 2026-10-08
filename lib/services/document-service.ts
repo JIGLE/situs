@@ -4,8 +4,8 @@
  */
 
 import { getPrismaClient } from "./database/database";
-import { writeFile, readFile, mkdir, stat as _stat } from "fs/promises";
-import { join, extname, dirname } from "path";
+import { writeFile, readFile, mkdir, rm, stat as _stat } from "fs/promises";
+import { join, extname, dirname, resolve, sep } from "path";
 import { existsSync } from "fs";
 import { randomBytes } from "crypto";
 import { assertOwnsRelations } from "./database/assert-owned";
@@ -81,6 +81,28 @@ const ALLOWED_MIME_TYPES = [
 async function ensureDirectory(dirPath: string): Promise<void> {
   if (!existsSync(dirPath)) {
     await mkdir(dirPath, { recursive: true });
+  }
+}
+
+/**
+ * Delete every file stored for `userId`: the directory their documents live in, receipt archives
+ * included. The rows go with the account (they cascade); a file does not, so erasing an account
+ * would otherwise leave its tenants' names, addresses and amounts on disk. Returns whether the
+ * directory is gone, and never throws: the account is already deleted by the time this runs.
+ *
+ * `userId` becomes a path, so only the shape an id has is accepted, and the resolved directory must
+ * sit inside the storage root. Anything else removes nothing and says so.
+ */
+export async function removeUserDocuments(userId: string): Promise<boolean> {
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(userId)) return false;
+  const root = resolve(STORAGE_BASE_PATH);
+  const directory = resolve(root, userId);
+  if (!directory.startsWith(root + sep)) return false;
+  try {
+    await rm(directory, { recursive: true, force: true });
+    return true;
+  } catch {
+    return false;
   }
 }
 

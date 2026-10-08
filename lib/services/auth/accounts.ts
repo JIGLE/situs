@@ -18,7 +18,11 @@
 import { getPrismaClient } from "@/lib/services/database/database";
 import { logAudit } from "@/lib/services/audit-log";
 import type { InvitedRole } from "@/lib/services/auth/sign-up";
+import { removeUserDocuments } from "@/lib/services/document-service";
+import { accessEnded, revokeAtBank } from "@/lib/services/bank/connections";
+import { PSD2_PREFIX } from "@/lib/services/bank/providers/registry";
 import { ConflictError, ForbiddenError, ResourceNotFoundError } from "@/lib/utils/error-handling";
+import { logger } from "@/lib/utils/logger";
 
 export interface AccountSummary {
   id: string;
@@ -140,6 +144,9 @@ export async function changeAccountRole(
   throw new ConflictError("The account was changed by someone else; try again", "account_changed");
 }
 
+/** Thrown inside the deletion's transaction to roll it back when the statement deleted nothing. */
+class NothingDeleted extends Error {}
+
 /**
  * Delete the account `id` and everything it owns: the holder's own right to erasure, through
  * `POST /api/user/delete-data`. The instance must keep an administrator, so the only one cannot go
@@ -147,22 +154,74 @@ export async function changeAccountRole(
  * all can, which returns the instance to its first sign-in. As with a role change the rule is part of
  * the statement that makes it, not a count before it: two administrators deleting themselves at the
  * same moment would each see the other still there and leave none.
+ *
+ * The account's rows cascade, and three things of theirs do not, so they are dealt with around it:
+ *
+ *   - the **email log** keeps its rows when the account goes (their link is set to null), and each
+ *     holds a recipient address for up to two years. They are deleted in the same transaction as the
+ *     account, so a refusal puts them back;
+ *   - a **bank consent** stays live at the bank until it lapses. Each is revoked once the account is
+ *     gone, from the list read inside the transaction, so a refused deletion revokes nothing. One the bank would not
+ *     end is counted and returned, for the holder to end at their bank;
+ *   - the **stored files** (receipt archives) are removed from disk last.
  */
-export async function deleteOwnAccount(id: string): Promise<void> {
+export async function deleteOwnAccount(id: string): Promise<{ bankConsentsNotRevoked: number }> {
   const prisma = getPrismaClient();
-  const deleted = await prisma.$executeRaw`
-    DELETE FROM "User"
-    WHERE "id" = ${id}
-      AND ("role" <> 'ADMIN'
-        OR (SELECT COUNT(*) FROM "User" WHERE "role" = 'ADMIN') > 1
-        OR (SELECT COUNT(*) FROM "User") = 1)`;
-  if (deleted > 0) return;
+  let consents: { provider: string; consentId: string | null }[] = [];
 
-  const now = await prisma.user.findUnique({ where: { id }, select: { role: true } });
-  if (!now) throw new ResourceNotFoundError("Account");
-  if (now.role === "ADMIN") {
-    throw new ConflictError("The instance needs an administrator", "last_admin");
+  try {
+    await prisma.$transaction(
+      async (tx) => {
+        // The first write takes SQLite's lock, so the list read after it is the list the DELETE removes.
+        await tx.emailLog.deleteMany({ where: { userId: id } });
+        // A connection still waiting for consent holds the link's reference, not a session to end.
+        consents = (
+          await tx.bankConnection.findMany({
+            where: { userId: id, status: { not: "pending_consent" } },
+            select: { provider: true, consentId: true },
+          })
+        ).filter(
+          (connection) => connection.provider.startsWith(PSD2_PREFIX) && connection.consentId,
+        );
+        const deleted = await tx.$executeRaw`
+        DELETE FROM "User"
+        WHERE "id" = ${id}
+          AND ("role" <> 'ADMIN'
+            OR (SELECT COUNT(*) FROM "User" WHERE "role" = 'ADMIN') > 1
+            OR (SELECT COUNT(*) FROM "User") = 1)`;
+        if (deleted === 0) throw new NothingDeleted();
+      },
+      // The DELETE cascades through every table the account owns; Prisma's default is five seconds.
+      { timeout: 60_000, maxWait: 10_000 },
+    );
+  } catch (error) {
+    if (!(error instanceof NothingDeleted)) throw error;
+
+    const now = await prisma.user.findUnique({ where: { id }, select: { role: true } });
+    if (!now) throw new ResourceNotFoundError("Account");
+    if (now.role === "ADMIN") {
+      throw new ConflictError("The instance needs an administrator", "last_admin");
+    }
+    // It was the only administrator when the statement ran and is not now: someone changed it meanwhile.
+    throw new ConflictError(
+      "The account was changed by someone else; try again",
+      "account_changed",
+    );
   }
-  // It was the only administrator when the statement ran and is not now: someone changed it meanwhile.
-  throw new ConflictError("The account was changed by someone else; try again", "account_changed");
+
+  let bankConsentsNotRevoked = 0;
+  for (const { provider, consentId } of consents) {
+    if (!accessEnded(await revokeAtBank(provider, consentId))) bankConsentsNotRevoked += 1;
+  }
+  if (bankConsentsNotRevoked > 0) {
+    logger.warn("An erased account's bank consent could not be revoked; it lapses on its own", {
+      count: bankConsentsNotRevoked,
+    });
+  }
+
+  if (!(await removeUserDocuments(id))) {
+    logger.warn("An erased account's stored files could not be removed", { userId: id });
+  }
+
+  return { bankConsentsNotRevoked };
 }
