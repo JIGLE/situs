@@ -32,7 +32,9 @@ const { prismaMock, providerMock, configuredMock, revokeMock } = vi.hoisted(() =
 vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prismaMock }));
 vi.mock("@/lib/services/audit-log", () => ({ logAudit: vi.fn() }));
 vi.mock("@/lib/utils/pii-encryption", () => ({ encryptPII: (v: string) => `enc:${v}` }));
-vi.mock("./import", () => ({ hashIban: (v: string) => `hash:${v.replace(/\s/g, "")}` }));
+vi.mock("@/lib/utils/iban-hash", () => ({
+  hashIban: (v: string) => `hash:${v.replace(/\s/g, "")}`,
+}));
 vi.mock("./connections", () => ({ revokeAtBank: revokeMock }));
 vi.mock("./providers/registry", () => ({
   PSD2_PREFIX: "psd2_",

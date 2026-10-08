@@ -179,7 +179,8 @@ describe("live bank connection — real Prisma client + real SQLite file", () =>
     expect(account.iban).not.toContain(IBAN);
 
     // …and the two fields that ARE meant to be usable.
-    expect(account.ibanHash).toMatch(/^[0-9a-f]{64}$/);
+    // Keyed: the file alone cannot be hashed back to the IBAN (lib/utils/iban-hash.ts).
+    expect(account.ibanHash).toMatch(/^v2:[0-9a-f]{64}$/);
     expect(account.ibanLast4).toBe("0154");
 
     // The hash is the matcher's key, so it must be the hash OF the real IBAN, not of the

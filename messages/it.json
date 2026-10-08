@@ -331,7 +331,8 @@
       "bank": "Movimenti bancari",
       "bank_provider": "Fornitore bancario",
       "tax": "Autorità fiscale — {country}",
-      "at_connector": "Certificato AT"
+      "at_connector": "Certificato AT",
+      "iban_hash": "Hash degli IBAN"
     },
     "shell": {
       "title": "Amministrazione dell'istanza",

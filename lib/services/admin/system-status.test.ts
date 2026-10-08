@@ -19,6 +19,9 @@ const { prismaMock, driftMock } = vi.hoisted(() => ({
     taxAuthorityConnector: { findMany: vi.fn() },
     bankConnection: { findMany: vi.fn() },
     user: { findUnique: vi.fn() },
+    bankAccount: { count: vi.fn() },
+    bankTransaction: { count: vi.fn() },
+    payerAccount: { count: vi.fn() },
   },
   driftMock: vi.fn(),
 }));
@@ -38,6 +41,9 @@ beforeEach(() => {
   prismaMock.taxAuthorityConnector.findMany.mockResolvedValue([]);
   prismaMock.bankConnection.findMany.mockResolvedValue([]);
   prismaMock.user.findUnique.mockResolvedValue({ id: "user-1" });
+  prismaMock.bankAccount.count.mockResolvedValue(0);
+  prismaMock.bankTransaction.count.mockResolvedValue(0);
+  prismaMock.payerAccount.count.mockResolvedValue(0);
   driftMock.mockResolvedValue({
     inSync: true,
     missingTables: [],
@@ -526,5 +532,81 @@ describe("the tax connector check in the test mode", () => {
 
     expect(pt).toMatchObject({ severity: "simulated", state: "test" });
     expect(pt.detail).toMatch(/test service, where nothing counts; it files nothing/);
+  });
+});
+
+/**
+ * The IBAN hashes are keyed with the PII key, or still the plain SHA-256 anyone with the database
+ * file can reverse. The page derives which from what is stored, and says so as broken when the
+ * stored hashes and the key disagree, since an account the owner confirmed is then not recognised.
+ */
+describe("the IBAN hash check", () => {
+  const KEY = "c".repeat(64);
+  const check = async () => find((await getSystemStatus("user-1")).checks, "iban_hash")!;
+  /** Counts by what a query asks: the plain ones (NOT keyed) and the keyed ones. */
+  function stored(plain: number, keyed: number) {
+    const count = async (args?: { where?: Record<string, unknown> }) =>
+      args?.where && "NOT" in args.where ? plain : keyed;
+    prismaMock.bankAccount.count.mockImplementation(count);
+    prismaMock.bankTransaction.count.mockImplementation(count);
+    prismaMock.payerAccount.count.mockImplementation(count);
+  }
+
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("is fine when the key is set and every stored hash is keyed", async () => {
+    vi.stubEnv("PII_ENCRYPTION_KEY", KEY);
+    stored(0, 2);
+
+    expect(await check()).toMatchObject({ severity: "ok", state: "keyed" });
+  });
+
+  it("is fine on an instance with no hashes at all", async () => {
+    vi.stubEnv("PII_ENCRYPTION_KEY", KEY);
+    stored(0, 0);
+
+    expect(await check()).toMatchObject({ severity: "ok" });
+  });
+
+  it("is broken while plain hashes remain under a key: known accounts are not recognised", async () => {
+    vi.stubEnv("PII_ENCRYPTION_KEY", KEY);
+    stored(3, 0);
+
+    const result = await check();
+
+    expect(result).toMatchObject({
+      group: "platform",
+      severity: "error",
+      state: "conversion_pending",
+    });
+    expect(result.detail).toMatch(/9 stored IBAN hash/);
+    expect(result.remedy).toMatch(/Restart/);
+  });
+
+  it("is broken when keyed hashes are stored and the key is gone", async () => {
+    vi.stubEnv("PII_ENCRYPTION_KEY", "");
+    stored(0, 1);
+
+    const result = await check();
+
+    expect(result).toMatchObject({ severity: "error", state: "key_missing" });
+    expect(result.remedy).toMatch(/Restore the PII_ENCRYPTION_KEY/);
+  });
+
+  it("needs attention, not alarm, with plain hashes and no key at all", async () => {
+    vi.stubEnv("PII_ENCRYPTION_KEY", "");
+    stored(1, 0);
+
+    expect(await check()).toMatchObject({ severity: "warning", state: "unkeyed" });
+  });
+
+  it("does not call it fine when the hashes cannot be read, and shows no raw error", async () => {
+    vi.stubEnv("PII_ENCRYPTION_KEY", KEY);
+    prismaMock.bankAccount.count.mockRejectedValue(new Error("database is locked"));
+
+    const result = await check();
+
+    expect(result).toMatchObject({ severity: "warning", state: "unknown" });
+    expect(JSON.stringify(result)).not.toMatch(/database is locked/);
   });
 });

@@ -93,7 +93,10 @@ e2e/                    # Playwright E2E tests
   `PII_ENCRYPTION_KEY`. `PII_FIELDS` lists the fields the Prisma extension (applied in
   `lib/services/database/database.ts`) encrypts on write and decrypts on read — **not** every
   encrypted field. `BankAccount.iban` is encrypted at the call site (`lib/services/bank/consent.ts`)
-  and never decrypted: matching uses `ibanHash`, display uses `ibanLast4`. Do not add it to
+  and never decrypted: matching uses `ibanHash`, display uses `ibanLast4`. The hash is keyed
+  (`lib/utils/iban-hash.ts`: `v2:` + HMAC under a key derived from `PII_ENCRYPTION_KEY`, so the file alone
+  cannot be hashed back to IBANs); compare and store it only through `hashIban`, never a raw SHA-256.
+  `lib/services/bank/iban-hash-migration.ts` converts older values at every start, without the IBAN. Do not add it to
   `PII_FIELDS` — the extension would then decrypt it on every read. `Lease.contractFile` (bytes)
   is encrypted by its own route, `app/api/leases/[id]/contract` (`encryptFile`), and the client's
   global `omit` leaves it out of every other lease read. `TaxAuthorityConnector.credentialsRef`

@@ -36,6 +36,7 @@ import {
   getProviderForConnection,
   PSD2_PREFIX,
 } from "@/lib/services/bank/providers/registry";
+import { KEYED_IBAN_HASH_PREFIX, ibanHashKeyConfigured } from "@/lib/utils/iban-hash";
 import { authorityName, modeKind } from "@/lib/tax/connectors/presentation";
 import { AT_FILE_ENV, RENEWAL_WARNING_DAYS, readAtConfig } from "@/lib/tax/at/config";
 
@@ -58,7 +59,8 @@ export type StatusCheckKind =
   | "bank"
   | "bank_provider"
   | "tax"
-  | "at_connector";
+  | "at_connector"
+  | "iban_hash";
 
 export interface StatusCheck {
   /** The kind; a per-country tax check is `tax:<country>`. */
@@ -578,6 +580,81 @@ async function sessionUserCheck(userId: string): Promise<StatusCheck> {
   }
 }
 
+/**
+ * The IBAN hashes: keyed with the PII key, or still the plain SHA-256 that anyone holding the
+ * database file can reverse (`lib/utils/iban-hash.ts`). Read from what is stored, not asserted.
+ *
+ * - key set, plain hashes left: the conversion at start has not finished, and until it has, an
+ *   account the owner already confirmed is not recognised and a movement already imported can be
+ *   imported again;
+ * - key gone, keyed hashes stored: nothing recognises a known account until the key is back;
+ * - no key, plain hashes only: as before, and as exposed as the unencrypted IBANs beside them.
+ */
+async function ibanHashCheck(): Promise<StatusCheck> {
+  try {
+    const prisma = getPrismaClient();
+    const keyed = { startsWith: KEYED_IBAN_HASH_PREFIX };
+    const [accounts, movements, payers, keyedAccounts, keyedMovements, keyedPayers] =
+      await Promise.all([
+        prisma.bankAccount.count({ where: { ibanHash: { not: null }, NOT: { ibanHash: keyed } } }),
+        prisma.bankTransaction.count({
+          where: { counterpartyIbanHash: { not: null }, NOT: { counterpartyIbanHash: keyed } },
+        }),
+        prisma.payerAccount.count({ where: { NOT: { ibanHash: keyed } } }),
+        prisma.bankAccount.count({ where: { ibanHash: keyed } }),
+        prisma.bankTransaction.count({ where: { counterpartyIbanHash: keyed } }),
+        prisma.payerAccount.count({ where: { ibanHash: keyed } }),
+      ]);
+    const plain = accounts + movements + payers;
+    const stored = keyedAccounts + keyedMovements + keyedPayers;
+    const hasKey = ibanHashKeyConfigured();
+
+    if (hasKey && plain > 0) {
+      return {
+        id: "iban_hash",
+        group: "platform",
+        severity: "error",
+        state: "conversion_pending",
+        detail: `${plain} stored IBAN hash(es) are not keyed yet, so a known account is not recognised and a movement can be imported twice.`,
+        remedy:
+          "Restart the server: the conversion runs at start. If this stays, the server log says why.",
+      };
+    }
+    if (!hasKey && stored > 0) {
+      return {
+        id: "iban_hash",
+        group: "platform",
+        severity: "error",
+        state: "key_missing",
+        detail: "IBAN hashes were made with PII_ENCRYPTION_KEY, which is not set.",
+        remedy:
+          "Restore the PII_ENCRYPTION_KEY this instance used. Nothing recognises a known account without it.",
+      };
+    }
+    if (!hasKey && plain > 0) {
+      return {
+        id: "iban_hash",
+        group: "platform",
+        severity: "warning",
+        state: "unkeyed",
+        detail: "IBAN hashes are plain SHA-256 until PII_ENCRYPTION_KEY is set.",
+        remedy:
+          "Set PII_ENCRYPTION_KEY to a 64-character hex value; the hashes convert at the next start.",
+      };
+    }
+    return { id: "iban_hash", group: "platform", severity: "ok", state: hasKey ? "keyed" : "none" };
+  } catch {
+    return {
+      id: "iban_hash",
+      group: "platform",
+      severity: "warning",
+      state: "unknown",
+      detail: "The stored IBAN hashes could not be read.",
+      remedy: "See the database check above.",
+    };
+  }
+}
+
 export async function getSystemStatus(userId: string): Promise<SystemStatus> {
   // Independent probes, gathered together. allSettled rather than all: one failing check must
   // not remove the other nine from the page.
@@ -588,6 +665,7 @@ export async function getSystemStatus(userId: string): Promise<SystemStatus> {
     taxChecks(userId),
     bankCheck(userId),
     bankProviderCheck(),
+    ibanHashCheck(),
   ]);
 
   const checks: StatusCheck[] = [encryptionCheck(), emailCheck(), atConnectorCheck()];

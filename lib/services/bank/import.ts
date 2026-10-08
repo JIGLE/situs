@@ -7,8 +7,9 @@
  *   → confidence scoring → auto-match (create automation Receipt → existing
  *   allocation waterfall) or needs_review.
  *
- * IBANs are stored AES-256-GCM encrypted (repo PII pattern) with a SHA-256
- * hash column so matching and dedupe never require decryption. A month token
+ * IBANs are stored AES-256-GCM encrypted (repo PII pattern) with a keyed-hash
+ * column (`lib/utils/iban-hash.ts`) so matching and dedupe never require
+ * decryption. A month token
  * in the remittance text never silently overrides the waterfall: when it
  * disagrees with the oldest-unpaid target the row goes to review showing both.
  */
@@ -19,6 +20,7 @@ import { getPrismaClient } from "@/lib/services/database/database";
 import { logAudit } from "@/lib/services/audit-log";
 import { ConflictError, ResourceNotFoundError } from "@/lib/utils/error-handling";
 import { logger } from "@/lib/utils/logger";
+import { hashIban } from "@/lib/utils/iban-hash";
 import { encryptPII } from "@/lib/utils/pii-encryption";
 import { allocateReceipt } from "@/lib/services/allocation/service";
 import { isTestConnection } from "@/lib/services/bank/metadata";
@@ -65,10 +67,7 @@ export interface RuleAction {
   leaseId?: string;
 }
 
-export function hashIban(iban: string): string {
-  const normalized = iban.replace(/\s+/g, "").toUpperCase();
-  return crypto.createHash("sha256").update(normalized).digest("hex");
-}
+export { hashIban };
 
 /**
  * Deterministic identity of an imported movement — an exact re-import of the

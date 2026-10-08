@@ -405,7 +405,7 @@ model PaymentAllocation {
 // Manual/CSV import is the first-class source; PSD2 later is just a new
 // `provider` value on BankConnection, not a schema change. Consent fields
 // live on the connection (1:1 in practice). IBANs follow the repo PII
-// pattern: AES-256-GCM ciphertext + SHA-256 hash column so matching and
+// pattern: AES-256-GCM ciphertext + keyed-hash column so matching and
 // dedupe never require decryption.
 
 model BankConnection {
@@ -437,7 +437,7 @@ model BankAccount {
   userId       String
   label        String
   iban         String? // AES-256-GCM encrypted (lib/utils/pii-encryption)
-  ibanHash     String? // SHA-256 of normalized IBAN — matching without decryption
+  ibanHash     String? // keyed hash of the normalised IBAN (lib/utils/iban-hash.ts) — matching without decryption
   ibanLast4    String?
   currency     String   @default("EUR")
   isActive     Boolean  @default(true)

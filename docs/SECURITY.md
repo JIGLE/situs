@@ -99,6 +99,21 @@ An account with an authenticator app (Settings › Security) has to enter a code
 - An accepted TOTP code is not single-use within its 30 seconds, and a backup code is spent by a
   read and a write that two concurrent posts can both pass. Both need a code in hand.
 
+## IBAN hashes
+
+Matching never reads an IBAN: it compares stored hashes (`BankAccount.ibanHash`,
+`BankTransaction.counterpartyIbanHash`, `PayerAccount.ibanHash`, an `iban_hash` rule's value, and the
+movement fingerprint, which embeds one). A plain SHA-256 of an IBAN can be reversed by hashing the
+candidates, about a billion per bank and branch in Portugal, so these are keyed: `v2:` +
+HMAC-SHA256 under a key HKDF-derived from `PII_ENCRYPTION_KEY` (`lib/utils/iban-hash.ts`). A stolen
+copy of the database alone no longer yields the numbers; the database together with the key does, but
+the key also decrypts `iban` itself, so that case loses nothing more. Stored plain hashes convert at
+every start without the IBAN (`iban-hash-migration.ts`; a fingerprint is rebuilt only after the old one
+is reproduced from the row and found equal, otherwise it is kept). Without a key a hash stays plain,
+beside IBANs stored unencrypted. Changing the key changes every hash and nothing recognises a known
+account until the old one is back; Admin › Status (`iban_hash`) reports plain hashes left under a key
+and keyed hashes without one.
+
 ## Rate limiting
 
 Rate limits are declared in code; no environment variable sets one. Two change how they behave:

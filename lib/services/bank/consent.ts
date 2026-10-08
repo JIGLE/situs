@@ -15,7 +15,7 @@ import { logAudit } from "@/lib/services/audit-log";
 import { ConflictError, ResourceNotFoundError } from "@/lib/utils/error-handling";
 import { encryptPII } from "@/lib/utils/pii-encryption";
 import { revokeAtBank, type RevocationOutcome } from "./connections";
-import { hashIban } from "./import";
+import { hashIban } from "@/lib/utils/iban-hash";
 import {
   PSD2_PREFIX,
   configuredProviders,
