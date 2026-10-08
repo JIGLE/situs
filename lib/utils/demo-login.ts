@@ -11,6 +11,9 @@
  * wrong for a self-hosted image where the operator sets configuration at run time. The sign-in
  * pages are server components; they call this and pass the result down as a prop.
  */
+/** The account the published demo credentials sign in as. */
+export const DEMO_LOGIN_EMAIL = "demo@situs.local";
+
 export function isDemoLoginEnabled(): boolean {
   if (process.env.ENABLE_DEMO_LOGIN === "true") return true;
   // Outside production the credentials path is a convenience, not a risk.
