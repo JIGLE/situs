@@ -44,9 +44,11 @@ Guidelines:
 - Install with a bare `npm ci`. It used to be `npm ci || (npm install --package-lock-only …)`,
   which silently regenerated the lockfile on a mismatch and then tested a dependency tree
   nobody had reviewed — a green run that proved nothing about what ships.
-- Pin third-party actions to full commit SHAs. `node scripts/pin-actions.mjs` rewrites them and
-  `--check` reports what is still on a mutable tag; actions under `actions/` and `github/` are
-  left on tags deliberately.
+- Pin every action to a full commit SHA, with the tag as a trailing comment (`uses:
+actions/checkout@<sha> # v7`), which Dependabot reads and keeps current. `node
+scripts/pin-actions.mjs` rewrites them and resolves tags with `git ls-remote`; `--check` fails on
+  one still on a mutable tag, and runs in `npm run hygiene` (`actions:pinned`). Actions under
+  `actions/` and `github/` are pinned too: a tag is a pointer its owner can move.
 - Set `cancel-in-progress` to `${{ github.event_name == 'pull_request' }}`, not `true`.
   Cancelling superseded PR runs is the point; cancelling a `main` run leaves a shippable commit
   unverified, which has already happened here (runs #540/#541).

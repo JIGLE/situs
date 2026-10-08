@@ -286,6 +286,9 @@ dispatch `deploy-ghcr.yml` against the tag ref. Full chain: `docs/REPOSITORY_PRO
   tooling fails, and a high one in the tooling only warns. Production is what `npm audit --omit=dev` lists, never a
   list of package names: there is no allowlist. Dependency Review (pull requests only) fails a pull request that adds a
   runtime package with a high or critical advisory.
+- Actions: every `uses:` in `.github/` is a full commit SHA with its tag as a trailing comment
+  (`npm run actions:pinned`, in hygiene; `node scripts/pin-actions.mjs` rewrites them). Dependabot's
+  `github-actions` ecosystem keeps both parts current.
 - ESLint: `--max-warnings=0`.
 - Vitest coverage is a **ratchet** in `vitest.config.ts` — statements 52 / branches 39 /
   functions 38 / lines 54. A PR may not lower it; raise it when real tests land. Keep the threshold
