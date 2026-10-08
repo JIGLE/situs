@@ -30,6 +30,13 @@ export interface RateLimitConfig {
   identifier?: (request: Request) => string;
 
   /**
+   * Name of the bucket, in place of the request path. Routes that answer the same question share a
+   * bucket by naming the same scope: one account's guesses at a second-factor code count together
+   * whichever route they reach, rather than once per URL. Absent, the bucket is the path's own.
+   */
+  scope?: string;
+
+  /**
    * Skip rate limiting based on condition
    */
   skip?: (request: Request) => boolean;
@@ -103,7 +110,7 @@ export async function rateLimit(
 
   // Create a unique key for this client + endpoint combination
   const url = new URL(request.url);
-  const key = `${identifier}:${url.pathname}`;
+  const key = `${identifier}:${config.scope ?? url.pathname}`;
 
   const now = Date.now();
   const windowMs = config.windowSeconds * 1000;

@@ -24,10 +24,12 @@ const { limited } = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/middleware/rate-limit", () => ({
   RateLimits: { AUTH: {} },
-  rateLimit: vi.fn(async (_request: unknown, config: { identifier?: () => string }) => {
-    limited.keys.push(config.identifier?.() ?? "");
-    return limited.current;
-  }),
+  rateLimit: vi.fn(
+    async (_request: unknown, config: { identifier?: () => string; scope?: string }) => {
+      limited.keys.push(`${config.identifier?.() ?? ""}|${config.scope ?? ""}`);
+      return limited.current;
+    },
+  ),
 }));
 
 vi.mock("next-auth/next", () => ({ getServerSession: vi.fn(async () => session.current) }));
@@ -298,9 +300,24 @@ describe("DELETE /api/auth/totp/disable", () => {
 
     expect(res.status).toBe(200);
     expect(prisma.user.updateMany).toHaveBeenCalledWith({
-      where: { id: "user-1", totpSecret: "enc:PENDING" },
+      where: { id: "user-1", totpSecret: "enc:PENDING", totpEnabled: false },
       data: { totpEnabled: false, totpSecret: null, totpBackupCodes: null },
     });
+  });
+
+  it("does not clear a setup that was confirmed between its read and its write", async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      totpEnabled: false,
+      totpSecret: "enc:PENDING",
+      totpBackupCodes: null,
+    });
+    // The owner's POST /enable landed in between: the row is enabled now, so the write matches none.
+    prisma.user.updateMany.mockResolvedValue({ count: 0 });
+
+    const res = await turnOff();
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ reason: "totp_setup_changed" });
   });
 
   describe("with the second factor on", () => {
@@ -364,7 +381,7 @@ describe("DELETE /api/auth/totp/disable", () => {
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({ ok: true });
       expect(prisma.user.updateMany).toHaveBeenCalledWith({
-        where: { id: "user-1", totpSecret: `enc:${secret}` },
+        where: { id: "user-1", totpSecret: `enc:${secret}`, totpEnabled: true },
         data: { totpEnabled: false, totpSecret: null, totpBackupCodes: null },
       });
     });
@@ -385,10 +402,27 @@ describe("DELETE /api/auth/totp/disable", () => {
       expect(await res.json()).toMatchObject({ reason: "totp_setup_changed" });
     });
 
+    it("refuses a secret it cannot read, as a wrong code and not a server error", async () => {
+      prisma.user.findUnique.mockResolvedValue({ ...on(), totpSecret: "never-encrypted" });
+
+      const res = await turnOff({ code: "123456" });
+
+      expect(res.status).toBe(400);
+      nothingWritten();
+    });
+
+    it("still takes a backup code when the secret cannot be read", async () => {
+      prisma.user.findUnique.mockResolvedValue({ ...on(), totpSecret: "never-encrypted" });
+
+      const res = await turnOff({ code: backup });
+
+      expect(res.status).toBe(200);
+    });
+
     it("counts a guess against the verify route's budget for the same user", async () => {
       await turnOff({ code: "000000" });
 
-      expect(limited.keys).toEqual(["totp-verify:user-1"]);
+      expect(limited.keys).toEqual(["totp-verify:user-1|totp-code"]);
     });
 
     it("answers a spent budget with the limiter's own response and checks no code", async () => {

@@ -8,7 +8,8 @@ import { decryptPII, encryptPII } from "@/lib/utils/pii-encryption";
 import { totpVerify } from "@/lib/utils/totp";
 import { signMfaProof } from "@/lib/services/auth/mfa-proof";
 import crypto from "crypto";
-import { RateLimits, rateLimit } from "@/lib/middleware/rate-limit";
+import { rateLimit } from "@/lib/middleware/rate-limit";
+import { totpGuessLimit } from "@/lib/services/auth/totp-guess-limit";
 
 // next-auth/jwt's typings reference next's GetServerSidePropsContext, which does not resolve under
 // moduleResolution:bundler: it is loaded by value and typed by hand, as proxy.ts does.
@@ -46,10 +47,7 @@ export async function POST(request: NextRequest) {
   // precisely for the case where the first factor is compromised, so unlimited guessing would
   // make it decorative. Keyed per user rather than per IP: the attacker holds this session, and
   // a shared NAT should not let one victim's attempts lock out everyone behind it.
-  const limited = await rateLimit(request, {
-    ...RateLimits.AUTH,
-    identifier: () => `totp-verify:${userId}`,
-  });
+  const limited = await rateLimit(request, totpGuessLimit(userId));
   if (limited) return limited;
 
   try {

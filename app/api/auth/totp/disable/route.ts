@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import crypto from "crypto";
 import { csrfProtection } from "@/lib/middleware/csrf";
-import { RateLimits, rateLimit } from "@/lib/middleware/rate-limit";
+import { rateLimit } from "@/lib/middleware/rate-limit";
+import { totpGuessLimit } from "@/lib/services/auth/totp-guess-limit";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { createErrorResponse, readJson, ValidationError } from "@/lib/utils/error-handling";
@@ -22,7 +23,8 @@ const hashCode = (code: string): string => crypto.createHash("sha256").update(co
 // passed it is all `requireAuth` can tell, and a stolen cookie would otherwise remove the very
 // thing that is there for when the first factor is stolen. An account whose factor is not on yet
 // (a setup that was never confirmed) has nothing to prove and is cleared without one. Guesses share
-// the verify route's budget, per user, so this is not a second place to try six digits.
+// the verify route's budget (`totpGuessLimit`), per user, so this is not a second place to try six
+// digits.
 export async function DELETE(request: NextRequest) {
   const authResult = await requireAuth(request);
   if (authResult instanceof Response) return authResult;
@@ -40,10 +42,7 @@ export async function DELETE(request: NextRequest) {
     });
 
     if (user?.totpEnabled && user.totpSecret) {
-      const limited = await rateLimit(request, {
-        ...RateLimits.AUTH,
-        identifier: () => `totp-verify:${userId}`,
-      });
+      const limited = await rateLimit(request, totpGuessLimit(userId));
       if (limited) return limited;
 
       const body = await readJson(request);
@@ -53,7 +52,15 @@ export async function DELETE(request: NextRequest) {
       }
 
       const code = parsed.data.code.replace(/\s/g, "");
-      let proved = code.length === 6 && totpVerify(code, decryptPII(user.totpSecret));
+      let proved = false;
+      if (code.length === 6) {
+        try {
+          proved = totpVerify(code, decryptPII(user.totpSecret));
+        } catch {
+          // A secret that cannot be read proves nothing; the backup codes may still.
+          proved = false;
+        }
+      }
       if (!proved && user.totpBackupCodes) {
         try {
           const codes = JSON.parse(decryptPII(user.totpBackupCodes)) as string[];
@@ -65,10 +72,15 @@ export async function DELETE(request: NextRequest) {
       if (!proved) return NextResponse.json({ error: "Invalid code" }, { status: 400 });
     }
 
-    // Only the factor the code was checked against: a new setup that landed since the read has
-    // changed the secret, and clearing it then would remove a factor nobody proved they hold.
+    // Only the factor the code was checked against, in the state it was read in: a new setup has
+    // changed the secret, and a confirmation has turned an unconfirmed one on, since the read, and
+    // clearing either then would remove a factor nobody proved they hold.
     const cleared = await prisma.user.updateMany({
-      where: { id: userId, totpSecret: user?.totpSecret ?? null },
+      where: {
+        id: userId,
+        totpSecret: user?.totpSecret ?? null,
+        totpEnabled: user?.totpEnabled ?? false,
+      },
       data: { totpEnabled: false, totpSecret: null, totpBackupCodes: null },
     });
     if (cleared.count === 0) {
