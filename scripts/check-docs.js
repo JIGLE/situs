@@ -46,6 +46,13 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // Turning the second factor off now takes a code from it.
+    pattern: /Turning it off \(`DELETE \/api\/auth\/totp\/disable`\) asks for no code/,
+    retired: "2026-10-08 (disable takes a code)",
+    because:
+      "turning the second factor off takes an authenticator or backup code (docs/SECURITY.md › Second factor)",
+  },
+  {
     // The roadmap's Later row promised these; Admin › Access is all of them.
     pattern: /Admin with tabs, sign-up toggles, users and roles/,
     retired: "2026-10-04 (Admin › Access)",

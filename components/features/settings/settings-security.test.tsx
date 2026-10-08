@@ -139,18 +139,109 @@ describe("SettingsSecurity — authenticator app", () => {
     expect(screen.queryByText("AAAA1111")).toBeNull();
   });
 
-  it("turns it off with a DELETE that carries the token", async () => {
-    answers["/api/auth/totp/status"] = { ok: true, body: { totpEnabled: true } };
-    renderPanel();
+  describe("turning it off", () => {
+    const turnOffButton = () => screen.findByRole("button", { name: "Desativar 2FA" });
+    const typeCode = async (code: string) =>
+      fireEvent.change(await screen.findByLabelText("Código de verificação"), {
+        target: { value: code },
+      });
+    const confirmButton = () =>
+      within(screen.getByLabelText("Código de verificação").closest("div")!).getByRole("button", {
+        name: "Desativar 2FA",
+      });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Desativar 2FA" }));
+    beforeEach(() => {
+      answers["/api/auth/totp/status"] = { ok: true, body: { totpEnabled: true } };
+    });
 
-    await waitFor(() =>
-      expect(toast.success).toHaveBeenCalledWith("Autenticação de dois fatores desativada"),
-    );
-    expect(callsTo("/api/auth/totp/disable")).toEqual([
-      ["/api/auth/totp/disable", { method: "DELETE", headers: { "X-CSRF-Token": "csrf-abc" } }],
-    ]);
+    it("asks for a code first and sends nothing until one is typed", async () => {
+      renderPanel();
+
+      fireEvent.click(await turnOffButton());
+
+      expect(await screen.findByLabelText("Código de verificação")).toBeDefined();
+      expect(callsTo("/api/auth/totp/disable")).toEqual([]);
+      expect((confirmButton() as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it("sends the code in a DELETE that carries the token, then shows it is off", async () => {
+      renderPanel();
+      fireEvent.click(await turnOffButton());
+
+      await typeCode("123456");
+      fireEvent.click(confirmButton());
+
+      await waitFor(() =>
+        expect(toast.success).toHaveBeenCalledWith("Autenticação de dois fatores desativada"),
+      );
+      expect(callsTo("/api/auth/totp/disable")).toEqual([
+        [
+          "/api/auth/totp/disable",
+          {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json", "X-CSRF-Token": "csrf-abc" },
+            body: JSON.stringify({ code: "123456" }),
+          },
+        ],
+      ]);
+      expect(await screen.findByRole("button", { name: "Configurar 2FA" })).toBeDefined();
+    });
+
+    it("takes a backup code too", async () => {
+      renderPanel();
+      fireEvent.click(await turnOffButton());
+
+      await typeCode("a1b2c3d4");
+      fireEvent.click(confirmButton());
+
+      await waitFor(() => expect(callsTo("/api/auth/totp/disable")).toHaveLength(1));
+      expect(JSON.parse(callsTo("/api/auth/totp/disable")[0][1].body)).toEqual({
+        code: "a1b2c3d4",
+      });
+    });
+
+    it("says the code was wrong, in Portuguese, and leaves it on", async () => {
+      answers["/api/auth/totp/disable"] = {
+        ok: false,
+        status: 400,
+        body: { error: "Invalid code" },
+      };
+      renderPanel();
+      fireEvent.click(await turnOffButton());
+
+      await typeCode("000000");
+      fireEvent.click(confirmButton());
+
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith(ptMessages.settings.panel.toastDisableWrongCode),
+      );
+      expect(toast.success).not.toHaveBeenCalled();
+      expect(screen.getByText("A autenticação de dois fatores está ativa")).toBeDefined();
+    });
+
+    it("says it could not, for any other failure", async () => {
+      answers["/api/auth/totp/disable"] = { ok: false, status: 500, body: {} };
+      renderPanel();
+      fireEvent.click(await turnOffButton());
+
+      await typeCode("123456");
+      fireEvent.click(confirmButton());
+
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith(ptMessages.settings.panel.toastDisableFailed),
+      );
+    });
+
+    it("can be cancelled, and sends nothing", async () => {
+      renderPanel();
+      fireEvent.click(await turnOffButton());
+      await typeCode("123456");
+
+      fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+      expect(screen.queryByLabelText("Código de verificação")).toBeNull();
+      expect(callsTo("/api/auth/totp/disable")).toEqual([]);
+    });
   });
 });
 

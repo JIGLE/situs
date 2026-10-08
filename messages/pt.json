@@ -143,6 +143,8 @@
       "toastDisabled": "Autenticação de dois fatores desativada",
       "toastEnableFailed": "Não foi possível ativar a autenticação de dois fatores.",
       "toastDisableFailed": "Não foi possível desativar a autenticação de dois fatores.",
+      "toastDisableWrongCode": "Esse código não está certo. A autenticação de dois fatores continua ativa.",
+      "disable2faHint": "Introduza um código da sua aplicação autenticadora, ou um dos seus códigos de recuperação.",
       "toastVerifyFailed": "O código não corresponde. Tente novamente.",
       "toastChangedElsewhere": "A autenticação de dois fatores foi alterada noutra janela. Recarregue a página e tente novamente.",
       "setUp2fa": "Configurar 2FA",

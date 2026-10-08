@@ -19,6 +19,17 @@ const { prisma, session } = vi.hoisted(() => ({
   session: { current: null as Record<string, unknown> | null },
 }));
 
+const { limited } = vi.hoisted(() => ({
+  limited: { current: null as Response | null, keys: [] as string[] },
+}));
+vi.mock("@/lib/middleware/rate-limit", () => ({
+  RateLimits: { AUTH: {} },
+  rateLimit: vi.fn(async (_request: unknown, config: { identifier?: () => string }) => {
+    limited.keys.push(config.identifier?.() ?? "");
+    return limited.current;
+  }),
+}));
+
 vi.mock("next-auth/next", () => ({ getServerSession: vi.fn(async () => session.current) }));
 vi.mock("@/lib/services/auth/auth", () => ({ getAuthOptions: () => ({}) }));
 vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prisma }));
@@ -55,7 +66,13 @@ function request(method: string, path: string, init: { token?: boolean; body?: u
 const setup = (init?: { token?: boolean }) => setupRoute.POST(request("POST", "setup", init));
 const confirm = (code: string, init?: { token?: boolean }) =>
   enable(request("POST", "enable", { ...init, body: { code } }));
-const turnOff = (init?: { token?: boolean }) => disable(request("DELETE", "disable", init));
+const turnOff = (init?: { token?: boolean; code?: string }) =>
+  disable(
+    request("DELETE", "disable", {
+      token: init?.token,
+      body: init?.code === undefined ? undefined : { code: init.code },
+    }),
+  );
 
 const nothingWritten = () => {
   expect(prisma.user.update).not.toHaveBeenCalled();
@@ -65,6 +82,8 @@ const nothingWritten = () => {
 beforeEach(() => {
   vi.clearAllMocks();
   session.current = SIGNED_IN;
+  limited.current = null;
+  limited.keys = [];
   prisma.user.findUnique.mockResolvedValue({
     id: "user-1",
     email: "owner@example.test",
@@ -268,14 +287,117 @@ describe("DELETE /api/auth/totp/disable", () => {
     nothingWritten();
   });
 
-  it("turns the second factor off for a signed-in request that carries the token", async () => {
+  it("clears a setup that was never confirmed without a code: there is no factor to prove", async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      totpEnabled: false,
+      totpSecret: "enc:PENDING",
+      totpBackupCodes: null,
+    });
+
     const res = await turnOff();
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true });
-    expect(prisma.user.update).toHaveBeenCalledWith({
-      where: { id: "user-1" },
+    expect(prisma.user.updateMany).toHaveBeenCalledWith({
+      where: { id: "user-1", totpSecret: "enc:PENDING" },
       data: { totpEnabled: false, totpSecret: null, totpBackupCodes: null },
+    });
+  });
+
+  describe("with the second factor on", () => {
+    const secret = totpGenerateSecret();
+    const backup = "A1B2C3D4";
+    const hash = (code: string) => createHash("sha256").update(code).digest("hex");
+    const on = (codes: string[] = [hash(backup)]) => ({
+      totpEnabled: true,
+      totpSecret: `enc:${secret}`,
+      totpBackupCodes: `enc:${JSON.stringify(codes)}`,
+    });
+
+    beforeEach(() => prisma.user.findUnique.mockResolvedValue(on()));
+
+    it("refuses a request that carries no code, and changes nothing", async () => {
+      const res = await turnOff();
+
+      expect(res.status).toBe(400);
+      nothingWritten();
+    });
+
+    it("refuses a code that is the wrong shape, before comparing it with anything", async () => {
+      for (const code of ["12345", "123456789"]) {
+        const res = await turnOff({ code });
+        expect(res.status).toBe(400);
+      }
+      nothingWritten();
+    });
+
+    it("refuses a six-digit code that is not the current one", async () => {
+      const current = totpGenerate(secret);
+      const wrong = current === "000000" ? "111111" : "000000";
+
+      const res = await turnOff({ code: wrong });
+
+      expect(res.status).toBe(400);
+      expect(await res.json()).toMatchObject({ error: "Invalid code" });
+      nothingWritten();
+    });
+
+    it("refuses a code made for another secret", async () => {
+      const res = await turnOff({ code: totpGenerate(totpGenerateSecret()) });
+
+      expect(res.status).toBe(400);
+      nothingWritten();
+    });
+
+    it("refuses a backup code that is not on the list, and one already spent", async () => {
+      prisma.user.findUnique.mockResolvedValue(on([]));
+
+      for (const code of ["FFFFFFFF", backup]) {
+        const res = await turnOff({ code });
+        expect(res.status).toBe(400);
+      }
+      nothingWritten();
+    });
+
+    it("turns it off for the current authenticator code, only for the secret that was checked", async () => {
+      const res = await turnOff({ code: totpGenerate(secret) });
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ ok: true });
+      expect(prisma.user.updateMany).toHaveBeenCalledWith({
+        where: { id: "user-1", totpSecret: `enc:${secret}` },
+        data: { totpEnabled: false, totpSecret: null, totpBackupCodes: null },
+      });
+    });
+
+    it("turns it off for a backup code, whatever its case", async () => {
+      const res = await turnOff({ code: "a1b2c3d4" });
+
+      expect(res.status).toBe(200);
+      expect(prisma.user.updateMany).toHaveBeenCalledTimes(1);
+    });
+
+    it("answers a setup that changed since the code was checked with a 409, not a success", async () => {
+      prisma.user.updateMany.mockResolvedValue({ count: 0 });
+
+      const res = await turnOff({ code: totpGenerate(secret) });
+
+      expect(res.status).toBe(409);
+      expect(await res.json()).toMatchObject({ reason: "totp_setup_changed" });
+    });
+
+    it("counts a guess against the verify route's budget for the same user", async () => {
+      await turnOff({ code: "000000" });
+
+      expect(limited.keys).toEqual(["totp-verify:user-1"]);
+    });
+
+    it("answers a spent budget with the limiter's own response and checks no code", async () => {
+      limited.current = new Response(null, { status: 429 });
+
+      const res = await turnOff({ code: totpGenerate(secret) });
+
+      expect(res.status).toBe(429);
+      nothingWritten();
     });
   });
 });
