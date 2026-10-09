@@ -113,30 +113,13 @@ export async function rateLimit(
   const key = `${identifier}:${config.scope ?? url.pathname}`;
 
   const now = Date.now();
-  const windowMs = config.windowSeconds * 1000;
 
-  // Get or create rate limit entry
-  let entry = await store.get(key);
-
-  if (!entry || entry.resetTime < now) {
-    // Create new entry or reset expired entry
-    entry = {
-      count: 1,
-      resetTime: now + windowMs,
-    };
-    await store.set(key, entry);
-
-    // Add rate limit headers
-    return addRateLimitHeaders(null, config, entry);
-  }
-
-  // Increment request count
-  entry.count++;
-  await store.set(key, entry);
+  // One atomic step: count this request and read where the window stands.
+  const entry = await store.hit(key, config.windowSeconds * 1000);
 
   // Check if rate limit exceeded
   if (entry.count > config.maxRequests) {
-    const retryAfter = Math.ceil((entry.resetTime - now) / 1000);
+    const retryAfter = Math.max(1, Math.ceil((entry.resetTime - now) / 1000));
 
     return new Response(
       JSON.stringify({
@@ -205,7 +188,7 @@ export async function getRateLimitStatus(
   const identifier = config.identifier ? config.identifier(request) : getClientIdentifier(request);
 
   const url = new URL(request.url);
-  const key = `${identifier}:${url.pathname}`;
+  const key = `${identifier}:${config.scope ?? url.pathname}`;
 
   const entry = await store.get(key);
 
