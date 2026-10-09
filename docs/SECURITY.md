@@ -156,6 +156,16 @@ implementations are live, which is worth knowing before you add a fourth:
 second keeps its counters. Without it every limiter holds state in process: correct for a single
 self-hosted instance, but the counters reset on restart and are not shared across replicas.
 
+The middleware limiter counts a request in one atomic step (`store.hit`): in process, a read and a
+write with nothing between them; in Redis, one Lua script that runs `INCR`, sets the expiry whenever
+the key has none, and returns the count with the time left. It used to read the entry, add one in its
+own memory and write it back, which loses updates once the count lives in Redis: a burst of parallel
+requests all read the same number and all passed. If Redis is down, or a command fails, the request is
+counted in this process instead (weaker than shared counting, not nothing), and the first request waits
+at most 1.5 seconds for a connection before that happens. Redis is used only when `REDIS_URL` is set
+**and** `NODE_ENV` is `production`; the real-Redis tests start their own `redis-server` and are skipped
+where the binary is absent.
+
 All three resolve the client IP through `resolveClientIp` (`lib/utils/security.ts`), which
 counts `X-Forwarded-For` from the right, trusting as many hops as `TRUSTED_PROXY_COUNT` says
 (default 1). Reading it from the left would let a caller choose their own bucket per request and
