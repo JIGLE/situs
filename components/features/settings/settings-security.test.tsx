@@ -13,14 +13,16 @@ import { SettingsSecurity } from "./settings-security";
  * nothing here asked how the panel called it. Portuguese, so copy that is hardcoded English shows.
  */
 
-const { toast, signOut } = vi.hoisted(() => ({
+const { toast, signOut, updateSession } = vi.hoisted(() => ({
   toast: { success: vi.fn(), error: vi.fn() },
   signOut: vi.fn(),
+  updateSession: vi.fn(),
 }));
 vi.mock("@/lib/contexts/toast-context", () => ({ useToast: () => toast }));
 vi.mock("next-auth/react", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next-auth/react")>()),
   signOut,
+  useSession: () => ({ update: updateSession, status: "authenticated", data: null }),
 }));
 vi.mock("@/lib/contexts/csrf-context", () => ({
   useCsrf: () => ({ token: "csrf-abc", isLoading: false, error: null, refreshToken: vi.fn() }),
@@ -43,7 +45,10 @@ describe("SettingsSecurity — authenticator app", () => {
         ok: true,
         body: { secret: "JBSWY3DPEHPK3PXP", qrDataUrl: "data:image/png;base64,AAAA", otpauth: "x" },
       },
-      "/api/auth/totp/enable": { ok: true, body: { backupCodes: ["AAAA1111", "BBBB2222"] } },
+      "/api/auth/totp/enable": {
+        ok: true,
+        body: { backupCodes: ["AAAA1111", "BBBB2222"], keepProof: "v1.1.proof" },
+      },
       "/api/auth/totp/disable": { ok: true, body: { ok: true } },
     };
     fetchMock = vi.fn(async (url: string) => {
@@ -118,6 +123,42 @@ describe("SettingsSecurity — authenticator app", () => {
       },
     ]);
     expect(await screen.findByText("AAAA1111")).toBeDefined();
+  });
+
+  it("hands the proof to its own session and says the others were signed out", async () => {
+    // Turning the factor on ended every other session (`session-epoch.ts`). This one is the
+    // owner's, and only the proof the server just gave renews it: without it the next request here
+    // would be refused with the rest.
+    renderPanel();
+    fireEvent.click(await screen.findByRole("button", { name: "Configurar 2FA" }));
+    fireEvent.change(await screen.findByLabelText("Código de verificação"), {
+      target: { value: "123456" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Ativar 2FA" }));
+
+    expect(await screen.findByText("AAAA1111")).toBeDefined();
+    expect(updateSession).toHaveBeenCalledTimes(1);
+    expect(updateSession).toHaveBeenCalledWith({ keepProof: "v1.1.proof" });
+    expect(
+      screen.getByText(
+        "Todos os outros dispositivos e navegadores com sessão iniciada nesta conta foram desligados.",
+      ),
+    ).toBeDefined();
+  });
+
+  it("does not touch the session when the setup changed in another window", async () => {
+    answers["/api/auth/totp/enable"] = { ok: false, status: 409, body: {} };
+    renderPanel();
+    fireEvent.click(await screen.findByRole("button", { name: "Configurar 2FA" }));
+    fireEvent.change(await screen.findByLabelText("Código de verificação"), {
+      target: { value: "123456" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Ativar 2FA" }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(CHANGED_ELSEWHERE));
+    expect(updateSession).not.toHaveBeenCalled();
   });
 
   it("goes back to the start when the setup changed in another window while confirming", async () => {

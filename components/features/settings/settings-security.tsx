@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslations } from "next-intl";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useToast } from "@/lib/contexts/toast-context";
 import { useCsrf } from "@/lib/contexts/csrf-context";
 import { apiFetch } from "@/lib/utils/api-client";
@@ -21,6 +21,7 @@ export function SettingsSecurity() {
   const t = useTranslations("settings.panel");
   const tActions = useTranslations("actions");
   const apiError = useApiError();
+  const { update: updateSession } = useSession();
   const confirmDialog = useConfirmDialog();
 
   const exportData = async () => {
@@ -138,9 +139,13 @@ export function SettingsSecurity() {
         return;
       }
       const d = await res.json();
+      // The codes are shown before anything else is awaited: they appear once, and the factor is on.
       setTotpBackupCodes(d.backupCodes);
       setTotpEnabled(true);
       setTotpSetupStep("backup");
+      // Turning the factor on ended every other session. This one is the owner's own: the proof
+      // renews it, and without it the next request here would be refused too.
+      if (typeof d.keepProof === "string") await updateSession({ keepProof: d.keepProof });
       success(t("toastEnabled"));
     } catch {
       showError(t("toastVerifyFailed"));
@@ -296,6 +301,7 @@ export function SettingsSecurity() {
                 <CheckCircle2 className="h-4 w-4" />
                 <span>{t("twoFactorEnabled")}</span>
               </div>
+              <p className="text-sm text-muted-foreground">{t("othersSignedOut")}</p>
               <div className="space-y-2">
                 <p className="text-sm font-medium">{t("backupCodes")}</p>
                 <p className="text-sm text-muted-foreground">{t("backupCodesHelp")}</p>

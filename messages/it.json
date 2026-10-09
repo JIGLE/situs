@@ -134,6 +134,7 @@
       "verificationCode": "Codice di verifica",
       "verify": "Verifica",
       "twoFactorEnabled": "L'autenticazione a due fattori è attiva.",
+      "othersSignedOut": "Tutti gli altri dispositivi e browser con una sessione aperta su questo account sono stati disconnessi.",
       "backupCodes": "Codici di recupero",
       "backupCodesHelp": "Conservali in un posto sicuro. Ognuno vale una volta sola, se perdi l'accesso all'app di autenticazione.",
       "copyCodes": "Copia i codici",

@@ -22,6 +22,12 @@ test.use({ storageState: STORAGE_STATE });
  * account, and any session that refreshed in the next five minutes was released by it: the second
  * run of this file, a minute after the first, found its sign-in already let through. So after the
  * code is entered, a third sign-in with only the password is made at once and must still be held.
+ *
+ * Turning the factor on also ends every session signed in before it (`session-epoch.ts`), and the
+ * session that turned it on carries on by handing back a proof (`update({ keepProof })`). A device
+ * signed in before is therefore made first, and must be refused afterwards. The shared
+ * `storageState` file holds the old copy of the session that turned it on, which the rest of the
+ * suite would read as ended, so it is rewritten with the renewed one.
  */
 
 const EMAIL = process.env.E2E_USER_EMAIL || "demo@situs.local";
@@ -50,6 +56,24 @@ async function csrfHeaders(request: APIRequestContext): Promise<Record<string, s
   return { "x-csrf-token": token as string };
 }
 
+/**
+ * Turning the factor on ended every session signed in before it. The one that turned it on carries
+ * on by giving its own session the proof the route returned, as the Settings page does with
+ * `update({ keepProof })`: a POST to NextAuth's session route with its CSRF token. The shared
+ * `storageState` file still holds the old copy of this session, which the rest of the suite (and
+ * the cleanup below) would read as ended, so it is rewritten with the renewed one.
+ */
+async function keepThisSession(request: APIRequestContext, keepProof: string) {
+  const { csrfToken } = (await (await request.get("/api/auth/csrf")).json()) as {
+    csrfToken: string;
+  };
+  const renewed = await request.post("/api/auth/session", {
+    data: { csrfToken, data: { keepProof } },
+  });
+  expect(renewed.ok(), `POST /api/auth/session → ${renewed.status()}`).toBe(true);
+  await request.storageState({ path: STORAGE_STATE });
+}
+
 test("an account with an authenticator app is held at the code page until it enters one", async ({
   browser,
   request,
@@ -60,7 +84,17 @@ test("an account with an authenticator app is held at the code page until it ent
 
   let enabled = false;
   let secret = "";
+  // Another device of the same account, signed in before the factor is turned on.
+  const device = await browser.newContext({
+    baseURL: baseURL ?? undefined,
+    storageState: { cookies: [], origins: [] },
+  });
   try {
+    const devicePage = await device.newPage();
+    await signInWithPassword(devicePage);
+    await devicePage.waitForURL((url) => !url.pathname.startsWith("/auth/"), { timeout: 20_000 });
+    expect((await device.request.get("/api/properties")).status()).toBe(200);
+
     const headers = await csrfHeaders(request);
     const setup = await request.post("/api/auth/totp/setup", { headers });
     expect(setup.ok(), `POST /api/auth/totp/setup → ${setup.status()}`).toBe(true);
@@ -72,6 +106,20 @@ test("an account with an authenticator app is held at the code page until it ent
     });
     expect(enable.ok(), `POST /api/auth/totp/enable → ${enable.status()}`).toBe(true);
     enabled = true;
+    const { keepProof } = (await enable.json()) as { keepProof?: string };
+    expect(keepProof, "the enable route returned no proof for this session").toBeTruthy();
+
+    await test.step("turning it on ends the other device, and this session carries on", async () => {
+      await keepThisSession(request, keepProof as string);
+
+      // The device was signed in before: its session is over, however it asks.
+      const ended = await device.request.get("/api/properties");
+      expect(ended.status()).toBe(401);
+      expect(await (await device.request.get("/api/auth/session")).json()).toEqual({});
+
+      // The session that turned it on is still the owner's.
+      expect((await request.get("/api/properties")).status()).toBe(200);
+    });
 
     await test.step("a link cannot switch it off, and setup cannot replace what is on", async () => {
       // A GET is not a method of the route any more, so following a link does nothing.
@@ -169,6 +217,7 @@ test("an account with an authenticator app is held at the code page until it ent
       await context.close();
     }
   } finally {
+    await device.close();
     if (enabled) {
       // A request context of its own: the test's is closed when the test times out, and the
       // account would be left asking for a code.

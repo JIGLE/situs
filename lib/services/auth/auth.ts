@@ -3,6 +3,8 @@ import type { Session, User as NextAuthUser } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import { logger } from "@/lib/utils/logger";
 import { verifyMfaProof } from "@/lib/services/auth/mfa-proof";
+import { verifyKeepProof } from "@/lib/services/auth/session-keep-proof";
+import { readSessionsValidFrom, sessionEnded } from "@/lib/services/auth/session-epoch";
 
 // Minimal local typing for NextAuth options we use to avoid fragile cross-package type imports
 type NextAuthOptions = {
@@ -219,8 +221,11 @@ function createBaseAuthOptions(): NextAuthOptions {
             role?: string;
             mfaPending?: boolean;
             sid?: string;
+            signedAt?: number;
             locale?: Locale;
           };
+          // When this session began, fixed for its life (`session-epoch.ts`).
+          t.signedAt = Date.now();
           // Resolve the id that owned records (properties, tenants, settings…)
           // foreign-key against. The credentials provider already returns a real
           // DB User.id. OAuth (Google) has no PrismaAdapter under the JWT
@@ -333,6 +338,7 @@ function createBaseAuthOptions(): NextAuthOptions {
             sid?: string;
             isDevAuth?: boolean;
             uidVerified?: boolean;
+            signedAt?: number;
           };
 
           // Tokens minted before the sign-in branch started failing closed can
@@ -386,6 +392,35 @@ function createBaseAuthOptions(): NextAuthOptions {
             }
           }
 
+          // A session signed in before the account's `sessionsValidFrom` is over: turning the second
+          // factor on ends every session that was already there (`session-epoch.ts`). Throwing is how
+          // a callback says there is no session: NextAuth answers `{}` and clears the cookie, and
+          // `getServerSession` returns null, so `requireAuth` answers 401.
+          const epochUid = t.sub || t.id;
+          if (!isMockMode && !t.isDevAuth && epochUid && epochUid !== "demo-user") {
+            const signedAt = typeof t.signedAt === "number" ? t.signedAt : 0;
+            const keepProof = (update as { keepProof?: unknown } | null | undefined)?.keepProof;
+            if (
+              trigger === "update" &&
+              verifyKeepProof(secret, keepProof, { userId: epochUid, signedAt })
+            ) {
+              // The session that turned the factor on: still the owner's, so it is renewed rather
+              // than ended with the others.
+              t.signedAt = Date.now();
+            } else {
+              let validFrom: number | null = null;
+              try {
+                validFrom = await readSessionsValidFrom(epochUid);
+              } catch {
+                // Unreadable: the token is left as it is and checked again at the next refresh,
+                // as with the id above. A database that is down serves nothing else either.
+              }
+              if (sessionEnded(t.signedAt, validFrom)) {
+                throw new Error("SESSION_ENDED");
+              }
+            }
+          }
+
           if (t.mfaPending) {
             // A session held pending before sessions had names (signed in before this was
             // deployed) is given one now, so a proof can be made for it.
@@ -433,6 +468,7 @@ function createBaseAuthOptions(): NextAuthOptions {
               role?: string;
               isDevAuth?: boolean;
               mfaPending?: boolean;
+              signedAt?: number;
               locale?: Locale;
             };
             sessionUser.id = t.sub || t.id;
@@ -442,6 +478,10 @@ function createBaseAuthOptions(): NextAuthOptions {
             // Every token the sign-in mints has a role, so one without is not an administrator.
             session.user.role = t.role || session.user.role || "USER";
             (session as unknown as Record<string, unknown>).mfaPending = t.mfaPending ?? false;
+            // The session's own sign-in time, which the enable route names in a keep proof.
+            if (typeof t.signedAt === "number") {
+              (session as unknown as Record<string, unknown>).signedAt = t.signedAt;
+            }
             if (t.locale) session.locale = t.locale;
 
             // If dev auth, update session expiry to 24 hours from now

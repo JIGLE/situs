@@ -134,6 +134,7 @@
       "verificationCode": "Verification code",
       "verify": "Verify",
       "twoFactorEnabled": "Two-factor authentication is on.",
+      "othersSignedOut": "Every other device and browser that was signed in to this account has been signed out.",
       "backupCodes": "Backup codes",
       "backupCodesHelp": "Save these somewhere safe. Each one works once, if you lose access to your authenticator app.",
       "copyCodes": "Copy codes",

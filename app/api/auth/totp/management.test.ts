@@ -219,13 +219,67 @@ describe("POST /api/auth/totp/enable", () => {
       data: { totpEnabled: boolean; totpBackupCodes: string };
     };
     // For the secret the code was checked against, and the backup codes stored encrypted and hashed.
-    expect(written.where).toEqual({ id: "user-1", totpSecret: pending });
+    expect(written.where).toEqual({ id: "user-1", totpEnabled: false, totpSecret: pending });
     expect(written.data.totpEnabled).toBe(true);
     expect(written.data.totpBackupCodes.startsWith("enc:")).toBe(true);
     expect(JSON.parse(written.data.totpBackupCodes.slice(4))).toEqual(
       backupCodes.map((code) => createHash("sha256").update(code).digest("hex")),
     );
     expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it("ends every older session in the same write that turns the factor on", async () => {
+    // A password or a cookie that was already out must stop working the moment the second factor
+    // is added: the stamp is in the update that enables it, not a second write after it.
+    const before = Date.now();
+
+    await confirm(totpGenerate(secret));
+
+    const written = prisma.user.updateMany.mock.calls[0][0] as {
+      data: { sessionsValidFrom: Date };
+    };
+    expect(written.data.sessionsValidFrom).toBeInstanceOf(Date);
+    expect(written.data.sessionsValidFrom.getTime()).toBeGreaterThanOrEqual(before);
+    expect(written.data.sessionsValidFrom.getTime()).toBeLessThanOrEqual(Date.now());
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it("hands this session a proof for its own sign-in time, and no other", async () => {
+    vi.stubEnv("NEXTAUTH_SECRET", "enable-route-test-secret-0123456789-abcdefghij");
+    session.current = { ...SIGNED_IN, signedAt: 1_700_000_000_000 };
+
+    const res = await confirm(totpGenerate(secret));
+    const { keepProof } = (await res.json()) as { keepProof: string };
+
+    const { verifyKeepProof } = await import("@/lib/services/auth/session-keep-proof");
+    const secretOfServer = "enable-route-test-secret-0123456789-abcdefghij";
+    expect(
+      verifyKeepProof(secretOfServer, keepProof, { userId: "user-1", signedAt: 1_700_000_000_000 }),
+    ).toBe(true);
+    // Not for another session of the same account, nor for another account.
+    expect(
+      verifyKeepProof(secretOfServer, keepProof, { userId: "user-1", signedAt: 1_700_000_000_001 }),
+    ).toBe(false);
+    expect(
+      verifyKeepProof(secretOfServer, keepProof, { userId: "user-2", signedAt: 1_700_000_000_000 }),
+    ).toBe(false);
+    vi.unstubAllEnvs();
+  });
+
+  it("gives a session from before sessions had a sign-in time a proof for 0", async () => {
+    vi.stubEnv("NEXTAUTH_SECRET", "enable-route-test-secret-0123456789-abcdefghij");
+
+    const res = await confirm(totpGenerate(secret));
+    const { keepProof } = (await res.json()) as { keepProof: string };
+
+    const { verifyKeepProof } = await import("@/lib/services/auth/session-keep-proof");
+    expect(
+      verifyKeepProof("enable-route-test-secret-0123456789-abcdefghij", keepProof, {
+        userId: "user-1",
+        signedAt: 0,
+      }),
+    ).toBe(true);
+    vi.unstubAllEnvs();
   });
 
   it("does not turn it on when a disable or a new setup changed the secret since it read it", async () => {
@@ -245,6 +299,44 @@ describe("POST /api/auth/totp/enable", () => {
 
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ error: "Invalid code" });
+    nothingWritten();
+  });
+
+  it("refuses to confirm a factor that is already on, whatever the code, and writes nothing", async () => {
+    // A hit would hand back backup codes and end every other session: a stolen session must not be
+    // able to guess its way to either on an account that already has a second factor.
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      totpEnabled: true,
+      totpSecret: pending,
+    });
+
+    const res = await confirm(totpGenerate(secret));
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ reason: "totp_already_enabled" });
+    nothingWritten();
+  });
+
+  it("only turns on a factor that is still off, in the write itself", async () => {
+    await confirm(totpGenerate(secret));
+
+    const written = prisma.user.updateMany.mock.calls[0][0] as { where: Record<string, unknown> };
+    expect(written.where).toMatchObject({ totpEnabled: false });
+  });
+
+  it("counts a guess against the account's code budget, the one verify and disable share", async () => {
+    await confirm("000000");
+
+    expect(limited.keys).toEqual(["totp-verify:user-1|totp-code"]);
+  });
+
+  it("answers 429 over the budget before it looks at the code", async () => {
+    limited.current = new Response(null, { status: 429 });
+
+    const res = await confirm(totpGenerate(secret));
+
+    expect(res.status).toBe(429);
     nothingWritten();
   });
 

@@ -75,6 +75,26 @@ An account with an authenticator app (Settings › Security) has to enter a code
   refused (`MFA_STATE_UNREADABLE`), not let in as a full session. The code page leaves only when
   `update` answers a session that is no longer pending, since next-auth answers `null` rather than
   throwing when that call fails.
+- Turning the factor on ends every session that was already signed in. `POST /api/auth/totp/enable`
+  stamps `User.sessionsValidFrom` in the same update that enables it, and the `jwt` callback refuses
+  a token whose `signedAt` (set once at sign-in; NextAuth's `iat` is rewritten at every refresh, so
+  it cannot stand in) is before the stamp: NextAuth answers no session and `requireAuth` a 401. The
+  session that enabled it is renewed by a proof the route returns
+  (`lib/services/auth/session-keep-proof.ts`: a MAC over the user and that session's `signedAt`, good
+  for a minute), which the browser gives to its own session, `update({ keepProof })`. A cookie that
+  was already out cannot ask to be kept without a proof, and a proof is made only for a valid code.
+  A token minted before `signedAt` existed ends at the first stamp. The stamp is read at each refresh
+  and cached for five seconds in the process (`lib/services/auth/session-epoch.ts`); an unreadable
+  database leaves the session alone and the check is made again at the next refresh. Turning the
+  factor off does not end sessions.
+- `enable` takes the same per-account code budget as `verify` and `disable`, and refuses (409
+  `totp_already_enabled`) an account whose factor is already on: a hit on it hands back backup
+  codes and ends every other session, so it is not a place to guess a code. What is **not**
+  covered: the check runs in the `jwt` callback, so `proxy.ts` (which reads the cookie with
+  `getToken`) still lets an ended cookie through its own gate and the refusal comes from the handler's
+  `requireAuth`; enrolling a factor asks for no password, so a session already stolen can enrol its
+  own authenticator before the owner does; and a password-only sign-in that falls in the few
+  milliseconds between the stamp and the commit of the enabling write is not ended.
 - The code limiter is per account, not per session, which is what stops guessing across sessions. It
   also means a sign-in with only the password that keeps posting wrong codes keeps the owner's code
   page at 429.

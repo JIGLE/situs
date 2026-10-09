@@ -46,6 +46,13 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // Turning the second factor on now ends the sessions that were already signed in.
+    pattern: /\*\*Not built:\*\* ending the other sessions when the factor is turned on/,
+    retired: "2026-10-09 (enabling the second factor ends other sessions)",
+    because:
+      "turning the second factor on ends every session signed in before it (docs/SECURITY.md › Second factor)",
+  },
+  {
     // The audit log was said to be kept for fiscal and legal record-keeping; the schema deletes it with the account.
     pattern: /Audit log\s+\|\s+7 years\s+\|\s+Fiscal and legal record-keeping/,
     retired: "2026-10-09 (audit entries are erased with the account)",
