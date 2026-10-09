@@ -22,10 +22,11 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // MFA / TOTP fields
-  totpSecret      String? // AES-256-GCM encrypted TOTP secret
-  totpEnabled     Boolean   @default(false)
-  totpBackupCodes String? // JSON array of hashed one-time backup codes
-  totpVerifiedAt  DateTime? // When a code was last verified. A record only: a session is released by its own proof (lib/services/auth/mfa-proof.ts), never by this
+  totpSecret        String? // AES-256-GCM encrypted TOTP secret
+  totpEnabled       Boolean   @default(false)
+  totpBackupCodes   String? // JSON array of hashed one-time backup codes
+  totpVerifiedAt    DateTime? // When a code was last verified. A record only: a session is released by its own proof (lib/services/auth/mfa-proof.ts), never by this
+  sessionsValidFrom DateTime? // Sessions signed in before this are over. Set when the second factor is turned on (lib/services/auth/session-epoch.ts)
 
   accounts  Account[]
   sessions  Session[]

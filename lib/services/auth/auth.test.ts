@@ -301,14 +301,20 @@ describe("jwt callback — session id provisioning", () => {
     prismaMock.user.findUnique.mockResolvedValue({ id: "db-cuid-3" });
     const jwt = await loadJwtCallback();
 
+    // The id check selects `id`; the session cutoff has its own read (`session-epoch.ts`).
+    const idChecks = () =>
+      prismaMock.user.findUnique.mock.calls.filter(
+        ([args]) => (args as { select?: { id?: boolean } }).select?.id === true,
+      ).length;
+
     const first = await jwt({
       token: { sub: "db-cuid-3", id: "db-cuid-3", email: "owner@example.com" },
     });
     expect(first.uidVerified).toBe(true);
-    expect(prismaMock.user.findUnique).toHaveBeenCalledTimes(1);
+    expect(idChecks()).toBe(1);
 
     await jwt({ token: first });
-    expect(prismaMock.user.findUnique).toHaveBeenCalledTimes(1);
+    expect(idChecks()).toBe(1);
   });
 
   it("leaves the token alone when the database is unavailable", async () => {
@@ -465,8 +471,12 @@ describe("jwt and session callbacks — the second factor", () => {
 
     expect(refreshed.mfaPending).toBe(true);
     expect(read.mfaPending).toBe(true);
-    // Nothing on the account is consulted: it cannot say which session entered a code.
-    expect(prismaMock.user.findUnique).not.toHaveBeenCalled();
+    // The verification on the account is not consulted: it cannot say which session entered a code.
+    // (The session cutoff is read, and is a different column.)
+    const consulted = prismaMock.user.findUnique.mock.calls.filter(
+      ([args]) => !("sessionsValidFrom" in ((args as { select?: object }).select ?? {})),
+    );
+    expect(consulted).toEqual([]);
   });
 
   it("clears it for this session's own proof, and drops the name it no longer needs", async () => {
@@ -926,5 +936,203 @@ describe("signIn callback — the registration gate", () => {
 
     await expect(signIn(googleSignIn())).resolves.toBe(true);
     expect(resolveMock).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * Turning the second factor on ends every session signed in before it (`session-epoch.ts`). A
+ * callback that only looked at NextAuth's `iat` would end nothing: it is rewritten whenever the
+ * token is re-encoded, so a session refreshed after the stamp would look new. Each case here is a
+ * way the check could pass while ending nothing, or end the owner's own session with the rest.
+ */
+describe("jwt callback — sessions the second factor ended", () => {
+  type JwtCallback = (args: Record<string, unknown>) => Promise<Record<string, unknown>>;
+
+  const SECRET = "second-factor-test-secret-0123456789-abcdefghij";
+  // Some moments ago: a renewed session is stamped with the real clock, which must not be behind it.
+  const STAMP = Date.now() - 60_000;
+  const prismaMock = { user: { findUnique: vi.fn() } };
+  const provisionMock = vi.fn();
+
+  async function loadJwt(): Promise<JwtCallback> {
+    vi.doMock("@/lib/config/data-mode", () => ({
+      isMockMode: false,
+      isRealMode: true,
+      dataMode: "real",
+    }));
+    vi.doMock("@/lib/services/database/database", () => ({
+      getPrismaClient: () => prismaMock,
+    }));
+    vi.doMock("@/lib/services/auth/registration", () => ({
+      provisionAccount: provisionMock,
+      resolveSignIn: vi.fn(),
+    }));
+    const { getAuthOptions } = await import("@/lib/services/auth/auth");
+    return getAuthOptions().callbacks?.jwt as unknown as JwtCallback;
+  }
+
+  /** A signed-in session whose id was verified, so a refresh reads only the stamp. */
+  const token = (signedAt: number | undefined, extra: Record<string, unknown> = {}) => ({
+    sub: "db-cuid-1",
+    id: "db-cuid-1",
+    email: "owner@example.com",
+    uidVerified: true,
+    ...(signedAt === undefined ? {} : { signedAt }),
+    ...extra,
+  });
+
+  const stamped = (at: number | null) =>
+    prismaMock.user.findUnique.mockResolvedValue({
+      sessionsValidFrom: at === null ? null : new Date(at),
+    });
+
+  beforeEach(() => {
+    vi.resetModules();
+    vi.stubEnv("NEXTAUTH_SECRET", SECRET);
+    provisionMock.mockReset();
+    prismaMock.user.findUnique.mockReset();
+    process.env.DATABASE_URL = "file:./dev.db";
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value: "test",
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+    vi.doUnmock("@/lib/config/data-mode");
+    vi.doUnmock("@/lib/services/database/database");
+    vi.doUnmock("@/lib/services/auth/registration");
+  });
+
+  it("names a session at sign-in, once, and a refresh does not move it", async () => {
+    provisionMock.mockResolvedValue({ id: "db-cuid-1" });
+    prismaMock.user.findUnique.mockResolvedValue({ totpEnabled: false, settings: null });
+    const jwt = await loadJwt();
+    const before = Date.now();
+
+    const first = await jwt({
+      token: {},
+      user: { id: "google-sub-999", email: "owner@example.com", name: "Owner" },
+      account: { provider: "google" },
+    });
+    const signedAt = first.signedAt as number;
+    expect(signedAt).toBeGreaterThanOrEqual(before);
+    expect(signedAt).toBeLessThanOrEqual(Date.now());
+
+    stamped(null);
+    const refreshed = await jwt({ token: { ...first, uidVerified: true } });
+    expect(refreshed.signedAt).toBe(signedAt);
+  });
+
+  it("lets a session through while the account has no stamp", async () => {
+    stamped(null);
+    const jwt = await loadJwt();
+
+    await expect(jwt({ token: token(STAMP - 1) })).resolves.toMatchObject({ sub: "db-cuid-1" });
+    await expect(jwt({ token: token(undefined) })).resolves.toMatchObject({ sub: "db-cuid-1" });
+  });
+
+  it("ends a session signed in before the stamp, however recently it was refreshed", async () => {
+    stamped(STAMP);
+    const jwt = await loadJwt();
+
+    // `iat` would say this token is new; the sign-in time is what counts.
+    await expect(jwt({ token: token(STAMP - 1, { iat: STAMP + 60_000 }) })).rejects.toThrow(
+      "SESSION_ENDED",
+    );
+  });
+
+  it("ends a session that carries no sign-in time: it is older than any stamp", async () => {
+    stamped(STAMP);
+    const jwt = await loadJwt();
+
+    await expect(jwt({ token: token(undefined) })).rejects.toThrow("SESSION_ENDED");
+  });
+
+  it("keeps a session signed in at the stamp or after it", async () => {
+    stamped(STAMP);
+    const jwt = await loadJwt();
+
+    await expect(jwt({ token: token(STAMP) })).resolves.toMatchObject({ signedAt: STAMP });
+    await expect(jwt({ token: token(STAMP + 1) })).resolves.toMatchObject({ signedAt: STAMP + 1 });
+  });
+
+  it("renews the session that turned the factor on, for its own proof and nothing else", async () => {
+    const { signKeepProof } = await import("@/lib/services/auth/session-keep-proof");
+    stamped(STAMP);
+    const jwt = await loadJwt();
+    const old = token(STAMP - 5_000);
+    const proof = signKeepProof(SECRET, { userId: "db-cuid-1", signedAt: STAMP - 5_000 });
+
+    const kept = await jwt({ token: old, trigger: "update", session: { keepProof: proof } });
+
+    expect(kept.signedAt).toBeGreaterThanOrEqual(STAMP);
+    // Renewed, so the next refresh passes the check without a proof.
+    await expect(jwt({ token: kept })).resolves.toMatchObject({ sub: "db-cuid-1" });
+  });
+
+  it("does not renew an older session that asks, or one holding someone else's proof", async () => {
+    const { signKeepProof } = await import("@/lib/services/auth/session-keep-proof");
+    stamped(STAMP);
+    const jwt = await loadJwt();
+    const owners = signKeepProof(SECRET, { userId: "db-cuid-1", signedAt: STAMP - 5_000 });
+    const otherAccount = signKeepProof(SECRET, { userId: "db-cuid-2", signedAt: STAMP - 9_000 });
+
+    // A stolen cookie asking to be kept, with nothing, with a made-up proof, with the owner's
+    // proof (made for another session), and with another account's.
+    for (const keepProof of [undefined, "v1.0.x", owners, otherAccount]) {
+      await expect(
+        jwt({ token: token(STAMP - 9_000), trigger: "update", session: { keepProof } }),
+      ).rejects.toThrow("SESSION_ENDED");
+    }
+  });
+
+  it("takes a proof only from an update, not from a plain refresh", async () => {
+    const { signKeepProof } = await import("@/lib/services/auth/session-keep-proof");
+    stamped(STAMP);
+    const jwt = await loadJwt();
+    const proof = signKeepProof(SECRET, { userId: "db-cuid-1", signedAt: STAMP - 5_000 });
+
+    await expect(
+      jwt({ token: token(STAMP - 5_000), session: { keepProof: proof } }),
+    ).rejects.toThrow("SESSION_ENDED");
+  });
+
+  it("leaves the session alone when the stamp cannot be read", async () => {
+    // A database that is down serves nothing else either, and the check is made again at the next
+    // refresh; ending every session over a busy database would be an outage, not a protection.
+    prismaMock.user.findUnique.mockRejectedValue(new Error("database is locked"));
+    const jwt = await loadJwt();
+
+    await expect(jwt({ token: token(undefined) })).resolves.toMatchObject({ sub: "db-cuid-1" });
+  });
+
+  it("does not look for a stamp on the demo user", async () => {
+    stamped(STAMP);
+    const jwt = await loadJwt();
+
+    await expect(
+      jwt({ token: { sub: "demo-user", id: "demo-user", uidVerified: true } }),
+    ).resolves.toMatchObject({ sub: "demo-user" });
+    expect(prismaMock.user.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("hands the session its sign-in time, for the enable route to name in a proof", async () => {
+    await loadJwt();
+    const { getAuthOptions } = await import("@/lib/services/auth/auth");
+    const sessionCallback = getAuthOptions().callbacks?.session as unknown as (
+      args: Record<string, unknown>,
+    ) => Promise<Record<string, unknown>>;
+
+    const session = await sessionCallback({
+      session: { user: { name: "Owner", email: "owner@example.com" }, expires: "x" },
+      token: token(STAMP),
+    });
+
+    expect(session.signedAt).toBe(STAMP);
   });
 });

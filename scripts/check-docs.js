@@ -46,6 +46,13 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // Turning the second factor on now ends the sessions that were already signed in.
+    pattern: /\*\*Not built:\*\* ending the other sessions when the factor is turned on/,
+    retired: "2026-10-09 (enabling the second factor ends other sessions)",
+    because:
+      "turning the second factor on ends every session signed in before it (docs/SECURITY.md › Second factor)",
+  },
+  {
     // Turning the second factor off now takes a code from it.
     pattern: /Turning it off \(`DELETE \/api\/auth\/totp\/disable`\) asks for no code/,
     retired: "2026-10-08 (disable takes a code)",
