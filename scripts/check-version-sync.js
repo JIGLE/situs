@@ -54,11 +54,15 @@ if (current === desired) {
   process.exit(0);
 }
 
+// `current` is null when the file could not be read; parsing that would throw and call a missing
+// file "unparseable".
 let found = "missing";
-try {
-  found = JSON.parse(current).version ?? "absent";
-} catch {
-  found = "unparseable";
+if (current !== null) {
+  try {
+    found = JSON.parse(current).version ?? "absent";
+  } catch {
+    found = "unparseable";
+  }
 }
 
 console.error(
