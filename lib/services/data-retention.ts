@@ -2,7 +2,8 @@
  * GDPR data retention service.
  *
  * Retention policy (Article 5(1)(e) GDPR — storage limitation):
- *   - Audit logs:      7 years  (tax / legal obligation, Art. 17(3)(b))
+ *   - Audit logs:      7 years, while the account exists (the schema deletes an account's entries with it;
+ *                      they are a record of what changed, not a fiscal record: receipts and filings are)
  *   - Email logs:      2 years  (operational need)
  *   - Notifications:   1 year   (no ongoing value after archival)
  *   - Bank movements:  2 years  — UNRECONCILED ONLY, see below

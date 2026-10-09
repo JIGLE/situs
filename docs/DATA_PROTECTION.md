@@ -182,7 +182,7 @@ schedule cannot drift from the code that applies it. An invitation lapses after 
 
 | Data                        | Period   | Note                                               |
 | --------------------------- | -------- | -------------------------------------------------- |
-| Audit log                   | 7 years  | Fiscal and legal record-keeping                    |
+| Audit log                   | 7 years  | While the account exists; erased with it           |
 | Email delivery log          | 2 years  | Operational; deleted at once with the account      |
 | Read in-app notifications   | 1 year   | Unread ones are kept                               |
 | Unreconciled bank movements | 2 years  | Matches the 730 days of history a consent requests |
@@ -223,7 +223,8 @@ Erasure is refused for one account: the only administrator, while other accounts
 an administrator first (Admin › Access). The last account of all can always be deleted, which returns
 the instance to its first sign-in.
 
-What erasure removes: the account and every row that cascades from it, **and three things that do not
+What erasure removes: the account and every row that cascades from it (the audit entries it made among
+them: the audit log is not kept after the account, whatever its 7-year ceiling), **and three things that do not
 cascade**, which are removed with it. The email log keeps its rows when an account goes (each holds a
 recipient address), so they are deleted in the same transaction as the account. A bank consent stays
 live at the bank until it lapses, so each is revoked once the account is gone, and the answer says how

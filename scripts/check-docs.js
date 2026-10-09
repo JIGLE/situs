@@ -53,6 +53,13 @@ const RETIRED_CLAIMS = [
       "turning the second factor on ends every session signed in before it (docs/SECURITY.md › Second factor)",
   },
   {
+    // The audit log was said to be kept for fiscal and legal record-keeping; the schema deletes it with the account.
+    pattern: /Audit log\s+\|\s+7 years\s+\|\s+Fiscal and legal record-keeping/,
+    retired: "2026-10-09 (audit entries are erased with the account)",
+    because:
+      "audit entries are kept up to 7 years while the account exists and are erased with it (docs/DATA_PROTECTION.md §5)",
+  },
+  {
     // Turning the second factor off now takes a code from it.
     pattern: /Turning it off \(`DELETE \/api\/auth\/totp\/disable`\) asks for no code/,
     retired: "2026-10-08 (disable takes a code)",
