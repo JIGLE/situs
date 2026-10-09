@@ -1,0 +1,51 @@
+{
+  "name": "main protection",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "exclude": [],
+      "include": ["~DEFAULT_BRANCH"]
+    }
+  },
+  "bypass_actors": [
+    {
+      "actor_id": 5,
+      "actor_type": "RepositoryRole",
+      "bypass_mode": "pull_request"
+    }
+  ],
+  "rules": [
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": false,
+        "do_not_enforce_on_create": false,
+        "required_status_checks": [
+          {
+            "context": "verify / Lint & Type Check",
+            "integration_id": 15368
+          },
+          {
+            "context": "verify / Unit Tests",
+            "integration_id": 15368
+          },
+          {
+            "context": "Build validation",
+            "integration_id": 15368
+          },
+          {
+            "context": "Dependency Security Scan",
+            "integration_id": 15368
+          }
+        ]
+      }
+    }
+  ]
+}
