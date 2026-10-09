@@ -1,27 +1,31 @@
 # Branch Protection Rules
 
-This file covers **protection mechanics** — the required-check contexts, how to apply the
-configuration, and the release workflow's dependency on `enforce_admins: false`.
+This file covers **protection mechanics**: the ruleset that guards `main`, the required-check
+contexts, how to apply it, and why release PRs need the admin bypass.
 
 The branching model and naming convention live in
 [`docs/REPOSITORY_PROCEDURES.md`](../docs/REPOSITORY_PROCEDURES.md), which is authoritative.
-They used to be described here, in `CONTRIBUTING.md` and in `CLAUDE.md` simultaneously, in three
-mutually inconsistent versions. `scripts/check-branch-name.js` enforces the convention.
+`scripts/check-branch-name.js` enforces the convention.
+
+`main` is protected by a **repository ruleset** (Settings → Rules → Rulesets → "main protection"),
+not by the classic branch-protection API. `.github/main-ruleset.json` is that ruleset as the
+API returns it; the live one is the source of truth.
 
 ---
 
-## Apply Branch Protection (run once after repo setup)
+## What the ruleset does
 
-The `branch-protection-config.json` file in this directory contains the ready-to-apply configuration.
+| Rule                     | Effect                                                                                        |
+| ------------------------ | --------------------------------------------------------------------------------------------- |
+| Restrict deletions       | `main` cannot be deleted.                                                                     |
+| Block force pushes       | History on `main` is never rewritten.                                                         |
+| Require status checks    | The four checks below must pass before a pull request can merge.                              |
+| Bypass: Repository admin | An admin can merge a pull request whose checks are missing or red ("for pull requests only"). |
 
-```bash
-# Requires: gh auth login with admin scope on the repo
-gh api repos/JIGLE/situs/branches/main/protection \
-  --method PUT \
-  --input .github/branch-protection-config.json
-```
+There is no required-review rule: this is one owner's instance, and the owner merges. "Require
+branches to be up to date" is off, so a green pull request is not re-run each time `main` moves.
 
-### Required status checks configured
+### Required status checks
 
 | Check name                   | Workflow                             |
 | ---------------------------- | ------------------------------------ |
@@ -31,45 +35,53 @@ gh api repos/JIGLE/situs/branches/main/protection \
 | `Dependency Security Scan`   | `security-scan.yml`                  |
 
 `ci.yml`'s `verify:` job calls `reusable-verify.yml` via `uses:`, and GitHub Actions
-automatically prefixes reusable-workflow job names with the calling job's name — the actual
-posted check names are `verify / Lint & Type Check` and `verify / Unit Tests`, **not** the bare
-`Lint & Type Check` / `Unit Tests` this file previously listed. That mismatch meant the two most
-important gates never matched their required-check names and sat "Expected — waiting..."
-forever, silently relying on an admin merge (`enforce_admins: false`) to get anything through
-(discovered on PR #301). If `reusable-verify.yml`'s job `name:` fields or `ci.yml`'s calling job
-id (`verify`) ever change, update the contexts below to match — do not rename either without
-updating this table and `branch-protection-config.json` together.
-
-### Notes on the release workflow
-
-`release.yml` creates a `release/vX.Y.Z` branch and opens a PR to `main`. It then calls
-`gh pr merge --squash` to merge it. Since the workflow token has `contents: write` and
-`pull-requests: write`, this works when `enforce_admins: false` (the current config).
-
-If you later enable `enforce_admins: true`, the release workflow will need either:
-
-- A **fine-grained PAT** (stored as `RELEASE_TOKEN` secret) with bypass rights, or
-- A **GitHub App** with branch protection bypass configured.
-
-`RELEASE_TOKEN` matters even with the current config: GitHub starts no workflow from a tag pushed
-with the default `GITHUB_TOKEN`, so without it the release tag does not start `deploy-ghcr.yml`
-and the deploy has to be dispatched against the tag ref
-([`docs/REPOSITORY_PROCEDURES.md`](../docs/REPOSITORY_PROCEDURES.md) §5).
-
-To verify current protection status:
-
-```bash
-gh api repos/JIGLE/situs/branches/main/protection | jq '{
-  required_reviews: .required_pull_request_reviews.required_approving_review_count,
-  required_checks: [.required_status_checks.contexts[]],
-  enforce_admins: .enforce_admins.enabled,
-  force_push_allowed: .allow_force_pushes.enabled
-}'
-```
+automatically prefixes reusable-workflow job names with the calling job's name, so the posted
+check names are `verify / Lint & Type Check` and `verify / Unit Tests`, **not** the bare
+`Lint & Type Check` / `Unit Tests`. A required check matches by exact string: a bare name sits
+"Expected — waiting..." forever (found on PR #301, when only an admin merge got anything
+through). If `reusable-verify.yml`'s job `name:` fields or `ci.yml`'s calling job id (`verify`)
+ever change, change the contexts in `.github/main-ruleset.json` and in the ruleset itself in the
+same commit.
 
 ---
 
-## Verify protection is active
+## The release workflow and the bypass
 
-Use the `gh api` query above. `git push --dry-run` does not send the ref update, so it never
-reaches the server-side protection check and cannot show whether protection is on.
+`release.yml` pushes `release/vX.Y.Z` and opens a version-bump pull request with the default
+`GITHUB_TOKEN`. GitHub starts no workflow from an event that token creates, so **that pull
+request's checks never report**, and a required check that never reports blocks the merge. The
+workflow's `gh pr merge --auto` therefore waits for ever, and the owner merges the pull request
+by hand with the admin bypass (the owner is a Repository admin, and the bypass is limited to pull
+requests, so direct pushes to `main` stay refused).
+
+Setting the `RELEASE_TOKEN` secret (a fine-grained PAT with Contents and Pull requests write)
+changes this: the pull request is then opened as a user, its checks run, and it merges without
+the bypass. It also matters for the deploy: GitHub starts no workflow from a tag pushed with
+`GITHUB_TOKEN`, so without it the release tag does not start `deploy-ghcr.yml` and the deploy is
+dispatched against the tag ref
+([`docs/REPOSITORY_PROCEDURES.md`](../docs/REPOSITORY_PROCEDURES.md) §5).
+
+---
+
+## Apply or change the ruleset
+
+Use the settings page (Settings → Rules → Rulesets → "main protection"). With a token that has
+repository-admin rights, the file in this directory applies through the API:
+
+```bash
+gh api -X PUT repos/JIGLE/situs/rulesets/15974461 --input .github/main-ruleset.json
+```
+
+## Verify it is active
+
+```bash
+gh api repos/JIGLE/situs/rulesets/15974461 | jq '{
+  enforcement,
+  bypass: .bypass_actors,
+  rules: [.rules[] | {type, checks: [.parameters.required_status_checks[]?.context]}]
+}'
+```
+
+`git push --dry-run` does not send the ref update, so it never reaches the server-side check and
+cannot show whether protection is on. The classic endpoint,
+`repos/JIGLE/situs/branches/main/protection`, answers 404 here because no classic rule exists.

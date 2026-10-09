@@ -63,7 +63,7 @@ in §6 answers it for all of them.
    required check is matched by exact string, so the bare names `Lint & Type Check` and
    `Unit Tests` match nothing and sit "Expected — waiting…" forever. That happened, and only an
    admin merge got anything through (found on PR #301). If `reusable-verify.yml`'s job names or
-   `ci.yml`'s calling job id change, update `.github/branch-protection-config.json` in the same
+   `ci.yml`'s calling job id change, update `.github/main-ruleset.json` and the ruleset in the same
    commit.
 
 4. Merge, then confirm the head branch is gone (§2).
@@ -112,9 +112,9 @@ from a tag pushed with the default `GITHUB_TOKEN`. Without it, dispatch `deploy-
 against the tag ref. Dispatched against a branch instead, it never writes `:latest` or a release
 version: it publishes `sha-<short>`, or a pre-release version you pass it explicitly.
 
-The release workflow squash-merges its own PR and depends on `enforce_admins: false`; turning that
-on first requires giving the workflow a fine-grained PAT or a GitHub App with bypass rights. See
-`.github/BRANCH_PROTECTION.md`.
+The release PR is opened with `GITHUB_TOKEN`, which starts no CI, so its required checks never
+report and the owner merges it with the ruleset's admin bypass (pull requests only); with a
+`RELEASE_TOKEN` its checks run and it merges normally. See `.github/BRANCH_PROTECTION.md`.
 
 Release PRs are squash-merged, so a release branch never becomes an ancestor of `main` and
 `git branch --merged` never lists one. The sweep in §6 compares patches instead, which finds them.

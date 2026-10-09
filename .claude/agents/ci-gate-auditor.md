@@ -72,11 +72,11 @@ suite passes against a bare fixture, it is testing its own error paths.
 Health checks that assert a status code but not the payload field pass on a degraded
 response. Prefer asserting the field.
 
-**Required status checks.** Names in `.github/branch-protection-config.json` match by
-_string_. Reusable-workflow jobs post as `<calling-job-id> / <job name>`, so `ci.yml`'s
+**Required status checks.** Names in `.github/main-ruleset.json` (the live ruleset "main protection")
+match by _string_. Reusable-workflow jobs post as `<calling-job-id> / <job name>`, so `ci.yml`'s
 `verify:` job calling `reusable-verify.yml` posts `verify / Lint & Type Check`. A mismatch
 leaves the gate permanently "Expected — waiting…", which looks pending rather than broken
-and merges anyway under `enforce_admins: false`. This has happened (PR #301).
+and merges anyway through the admin bypass. This has happened (PR #301).
 
 **Triggers and concurrency.** `cancel-in-progress: true` on `main` means a superseded run
 leaves a shippable commit unverified. Two commits reached `main` this way (runs #540/#541).

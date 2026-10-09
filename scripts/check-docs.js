@@ -46,6 +46,13 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // main is guarded by a repository ruleset with an admin bypass, not classic protection.
+    pattern: /depends on `enforce_admins: false`|branch-protection-config\.json/,
+    retired: "2026-10-09 (ruleset 'main protection')",
+    because:
+      "main is protected by a ruleset (`.github/main-ruleset.json`) whose admin bypass lets the owner merge the release PR; there is no `enforce_admins` setting (.github/BRANCH_PROTECTION.md)",
+  },
+  {
     // Turning the second factor on now ends the sessions that were already signed in.
     pattern: /\*\*Not built:\*\* ending the other sessions when the factor is turned on/,
     retired: "2026-10-09 (enabling the second factor ends other sessions)",
