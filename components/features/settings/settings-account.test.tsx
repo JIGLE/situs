@@ -25,6 +25,19 @@ describe("SettingsAccount", () => {
       { initialLocale: "pt" },
     );
 
+  it("links to the privacy notice and the terms, even before the version is known", () => {
+    render(<SettingsAccount appVersion="" settings={defaultSettings} updateSetting={vi.fn()} />, {
+      initialLocale: "pt",
+    });
+
+    expect(screen.getByRole("link", { name: "Política de Privacidade" }).getAttribute("href")).toBe(
+      "/privacy",
+    );
+    expect(screen.getByRole("link", { name: "Termos de Serviço" }).getAttribute("href")).toBe(
+      "/terms",
+    );
+  });
+
   it("has no Sessions or API tokens card: neither feature exists", () => {
     renderAccount();
 

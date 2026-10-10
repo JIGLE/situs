@@ -1846,6 +1846,7 @@
     "reviewNote": "This describes what this instance actually does. It is not legal advice; an operator running Situs for anyone other than themselves should have it reviewed.",
     "backToHome": "Back to Situs",
     "privacyTitle": "Privacy Policy",
+    "linksLabel": "Legal",
     "termsTitle": "Terms of Service",
     "privacy": {
       "introTitle": "Introduction",
