@@ -7,7 +7,7 @@ import { dataProtectionEmail } from "@/lib/legal/contact";
 export async function generateMetadata() {
   const t = await getTranslations("legal");
   return {
-    title: `${t("privacyTitle")} — Situs`,
+    title: t("privacyTitle"),
     description: "How Situs collects, uses, and protects your personal data.",
   };
 }

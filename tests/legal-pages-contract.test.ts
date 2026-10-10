@@ -32,6 +32,12 @@ describe("legal pages", () => {
     expect(text).not.toMatch(/pending full legal review/i);
   });
 
+  it.each(PAGES)("%s does not repeat the product name in its title", (page) => {
+    // The root layout's `%s · Situs` template adds it; a title that already ends "— Situs" was
+    // shown as "Privacy Policy — Situs · Situs".
+    expect(source(page)).not.toMatch(/title:\s*`[^`]*—\s*Situs`/);
+  });
+
   it.each(PAGES)("%s is indexable", (page) => {
     // Not fatal for reachability — the pages always loaded — but a reviewer checking whether a
     // legal URL is public, or any crawler honouring the meta, reads noindex as "not public".
