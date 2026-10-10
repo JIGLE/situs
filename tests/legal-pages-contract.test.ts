@@ -38,6 +38,16 @@ describe("legal pages", () => {
     expect(source(page)).not.toMatch(/title:\s*`[^`]*—\s*Situs`/);
   });
 
+  it.each([
+    ["the sign-in page", "components/features/auth/auth-view.tsx"],
+    ["Settings", "components/features/settings/settings-account.tsx"],
+  ])("%s links to both pages", (_where, file) => {
+    // Neither page was linked from anywhere: they existed and could be reached only by typing the
+    // address. The privacy notice has to be reachable where an account is created, and the bank
+    // registration asks for both URLs.
+    expect(source(file)).toMatch(/<LegalLinks\b/);
+  });
+
   it.each(PAGES)("%s is indexable", (page) => {
     // Not fatal for reachability — the pages always loaded — but a reviewer checking whether a
     // legal URL is public, or any crawler honouring the meta, reads noindex as "not public".
