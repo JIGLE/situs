@@ -18,6 +18,7 @@ import { AuditTrail } from "@/components/shared/audit-trail";
 import { countryOptions } from "@/lib/utils/countries";
 import { cn } from "@/lib/utils/utils";
 import type { UserSettings } from "./settings-types";
+import { LegalLinks } from "@/components/shared/legal-links";
 
 interface SettingsAccountProps {
   appVersion: string;
@@ -93,14 +94,15 @@ export function SettingsAccount({ appVersion, settings, updateSetting }: Setting
               {t("residenceCountryHelp")}
             </p>
           </div>
-          {appVersion && (
-            <div className="pt-4 border-t border-border">
+          <div className="pt-4 border-t border-border space-y-2">
+            {appVersion && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Info className="h-3.5 w-3.5" />
                 <span>{t("version", { version: appVersion })}</span>
               </div>
-            </div>
-          )}
+            )}
+            <LegalLinks className="justify-start" />
+          </div>
         </CardContent>
       </Card>
 

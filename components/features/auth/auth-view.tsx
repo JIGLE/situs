@@ -8,6 +8,7 @@ import { ShieldCheck } from "lucide-react";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/shared/language-selector";
+import { LegalLinks } from "@/components/shared/legal-links";
 import { SitusPortalMark } from "@/components/shared/situs-portal-logo";
 
 /** Only allow same-site relative paths, to rule out an open redirect via `callbackUrl`. */
@@ -265,6 +266,8 @@ function AuthContent({ mode, demoLoginEnabled }: { mode: AuthMode; demoLoginEnab
               {t("demoModeHint")}
             </p>
           )}
+
+          <LegalLinks className="mt-8" />
         </div>
       </div>
     </div>

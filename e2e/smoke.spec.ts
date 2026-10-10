@@ -36,6 +36,31 @@ test.describe("Authentication", () => {
     expect(currentUrl).toContain("localhost");
   });
 
+  test("signin page links to the privacy notice and the terms, and both open", async ({
+    page,
+    request,
+  }) => {
+    await page.goto("/auth/signin");
+    await settle(page);
+
+    // Nothing linked to either page before: they could be reached only by typing the address.
+    // The privacy notice has to be reachable where an account is created.
+    const privacy = page.locator('a[href="/privacy"]');
+    const terms = page.locator('a[href="/terms"]');
+    await expect(privacy).toBeVisible();
+    await expect(terms).toBeVisible();
+
+    // A signed-out visitor can open both (the proxy leaves them public).
+    for (const href of ["/privacy", "/terms"]) {
+      const res = await request.get(href);
+      expect(res.status(), `${href} should answer for a signed-out visitor`).toBe(200);
+    }
+
+    await privacy.click();
+    await page.waitForURL((url) => url.pathname === "/privacy", { timeout: 20_000 });
+    await expect(page.locator("h1").first()).toBeVisible();
+  });
+
   test("unauthenticated API requests should not return success data", async ({ request }) => {
     // Try to access protected endpoint without auth
     const response = await request.get("/api/properties", {
