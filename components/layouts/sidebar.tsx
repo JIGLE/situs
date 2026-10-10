@@ -70,7 +70,7 @@ function SidebarFooter({
         >
           <Avatar className="w-8 h-8 ring-2 ring-[var(--color-inner-border)]">
             <AvatarImage src={user?.image || ""} alt={user?.name || "User"} />
-            <AvatarFallback className="bg-[var(--color-primary)] text-white text-xs font-semibold">
+            <AvatarFallback className="bg-[var(--color-primary)] text-[var(--color-primary-foreground)] text-xs font-semibold">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -112,7 +112,7 @@ function SidebarFooter({
       >
         <Avatar className="w-8 h-8 ring-2 ring-[var(--color-inner-border)]">
           <AvatarImage src={user?.image || ""} alt={user?.name || "User"} />
-          <AvatarFallback className="bg-[var(--color-primary)] text-white text-xs font-semibold">
+          <AvatarFallback className="bg-[var(--color-primary)] text-[var(--color-primary-foreground)] text-xs font-semibold">
             {initials}
           </AvatarFallback>
         </Avatar>

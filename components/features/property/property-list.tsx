@@ -306,7 +306,7 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
                         className={cn(
                           "inline-flex h-8 shrink-0 items-center justify-center gap-1.5 border px-2.5 font-mono text-[12px] md:text-[10px] uppercase tracking-[0.06em] transition-colors max-md:min-h-11 max-md:min-w-11",
                           attentionOnly
-                            ? "border-[var(--semantic-danger)] bg-[var(--semantic-danger-soft)] text-[var(--semantic-danger)]"
+                            ? "border-[var(--semantic-danger)] bg-[var(--semantic-danger-soft)] text-[var(--semantic-danger-readable)]"
                             : "border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]",
                         )}
                       >

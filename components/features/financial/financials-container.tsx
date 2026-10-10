@@ -185,7 +185,7 @@ export function FinancialsContainer() {
             className={cn(
               "mt-2 text-xl font-light tabular-nums sm:text-2xl",
               metrics.overdueAmount > 0
-                ? "text-[var(--semantic-danger)]"
+                ? "text-[var(--semantic-danger-readable)]"
                 : "text-[var(--color-foreground)]",
             )}
           >
@@ -220,7 +220,7 @@ export function FinancialsContainer() {
           className="panel p-4 text-left transition-colors hover:border-[var(--color-border-hover)]"
         >
           <p className="mono-label">{t("collectedMonth")}</p>
-          <p className="mt-2 text-xl font-light tabular-nums text-[var(--semantic-success)] sm:text-2xl">
+          <p className="mt-2 text-xl font-light tabular-nums text-[var(--semantic-success-readable)] sm:text-2xl">
             {formatCurrency(metrics.monthlyCollected)}
           </p>
           <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">

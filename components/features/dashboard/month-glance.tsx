@@ -129,7 +129,7 @@ export function MonthFigures({ figures }: { figures: DashboardMonth["figures"] }
         <p
           className={cn(
             "mt-2 text-lg font-light tabular-nums sm:text-2xl",
-            owed && "text-[var(--semantic-danger)]",
+            owed && "text-[var(--semantic-danger-readable)]",
           )}
         >
           {formatCurrency(figures.outstanding)}

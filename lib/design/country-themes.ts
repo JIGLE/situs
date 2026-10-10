@@ -200,7 +200,12 @@ export const SEMANTIC_TOKENS = {
 export function resolveThemeVars(country: CountryCode, mode: ThemeMode): Record<string, string> {
   const entry = COUNTRY_THEMES[country] ?? COUNTRY_THEMES[DEFAULT_COUNTRY];
   const theme = mode === "dark" ? entry.dark : entry.normal;
-  const highlight = readableHighlight(entry.roles.primary, theme.canvas);
+  // The highlight is text and borders on the sidebar's active row, a green wash over the canvas.
+  const highlightBackdrop = isDark(theme.canvas)
+    ? mixWith(theme.canvas, "#FFFFFF", 0.1)
+    : theme.canvas;
+  const highlight = readableHighlight(entry.roles.primary, highlightBackdrop);
+  const textBackdrop = isDark(theme.canvas) ? mixWith(theme.canvas, "#FFFFFF", 0.05) : theme.canvas;
   const logoKeyline = isDark(theme.surfaceSolid) ? "rgba(255,255,255,0.68)" : "rgba(0,0,0,0.48)";
 
   return {
@@ -243,19 +248,22 @@ export function resolveThemeVars(country: CountryCode, mode: ThemeMode): Record<
     // Text-safe semantic variants: raw semantic hues are kept for borders and
     // soft washes, but as body/badge TEXT they miss 4.5:1 on dark canvases, so
     // the same contrast algorithm that fixes the country highlight fixes these.
+    // They are measured on the card, not the bare canvas: a card is a 3.5% white wash
+    // (`--color-card`), which is what most of this text sits on, and a hue that clears the canvas
+    // by a hair (4.47:1) fails there.
     "--semantic-success-readable": readableHighlight(
       SEMANTIC_TOKENS["--semantic-success"],
-      theme.canvas,
+      textBackdrop,
     ),
     "--semantic-warning-readable": readableHighlight(
       SEMANTIC_TOKENS["--semantic-warning"],
-      theme.canvas,
+      textBackdrop,
     ),
     "--semantic-danger-readable": readableHighlight(
       SEMANTIC_TOKENS["--semantic-danger"],
-      theme.canvas,
+      textBackdrop,
     ),
-    "--semantic-info-readable": readableHighlight(SEMANTIC_TOKENS["--semantic-info"], theme.canvas),
+    "--semantic-info-readable": readableHighlight(SEMANTIC_TOKENS["--semantic-info"], textBackdrop),
   };
 }
 

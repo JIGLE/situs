@@ -294,7 +294,7 @@
   --shadow-glow: none;
 
   --ui-accent: #ffff00;
-  --country-highlight-readable: #479147;
+  --country-highlight-readable: #5c9d5c;
   --country-highlight-soft: rgba(71, 145, 71, 0.08);
   /* Already clears contrast against the dark canvas, so it passes through untinted. */
   --logo-accent-readable: #ffff00;
@@ -302,8 +302,8 @@
   --logo-keyline: rgba(255, 255, 255, 0.68);
 
   --semantic-success-readable: #57906d;
-  --semantic-warning-readable: #bd6827;
-  --semantic-danger-readable: #cd5c5c;
+  --semantic-warning-readable: #c3753a;
+  --semantic-danger-readable: #d26e6e;
   --semantic-info-readable: #5c80e3;
 }
 
