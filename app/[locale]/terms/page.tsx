@@ -7,7 +7,7 @@ import { legalContactEmail } from "@/lib/legal/contact";
 export async function generateMetadata() {
   const t = await getTranslations("legal");
   return {
-    title: `${t("termsTitle")} — Situs`,
+    title: t("termsTitle"),
     description: "The terms under which this Situs instance is provided.",
   };
 }

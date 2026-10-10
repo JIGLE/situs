@@ -2,8 +2,13 @@ import { Suspense } from "react";
 
 import { SystemStatusView } from "@/components/features/admin/system-status-view";
 import { GenericPageSkeleton } from "@/components/ui/page-skeletons";
+import { adminTitle } from "@/lib/i18n/page-title";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  return adminTitle("status", params);
+}
 
 /**
  * Admin › System status, in full.

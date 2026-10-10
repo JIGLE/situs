@@ -2,6 +2,8 @@ import { ImageResponse } from "next/og";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+// Read out by link previews and screen readers; the card itself is only the mark and the name.
+export const alt = "Situs — Sovereign Capital System";
 
 /**
  * Situs OG card — PT-palette Portal mark on the brand canvas, rectilinear,

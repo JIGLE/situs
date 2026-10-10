@@ -2,8 +2,13 @@ import { Suspense } from "react";
 
 import { AdminControlCenter } from "@/components/features/admin/control-center/admin-control-center";
 import { GenericPageSkeleton } from "@/components/ui/page-skeletons";
+import { navigationTitle } from "@/lib/i18n/page-title";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  return navigationTitle("admin", params);
+}
 
 /**
  * Admin › Control center.
