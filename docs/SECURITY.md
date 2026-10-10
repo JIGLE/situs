@@ -95,6 +95,13 @@ An account with an authenticator app (Settings › Security) has to enter a code
   `requireAuth`; enrolling a factor asks for no password, so a session already stolen can enrol its
   own authenticator before the owner does; and a password-only sign-in that falls in the few
   milliseconds between the stamp and the commit of the enabling write is not ended.
+- A code is accepted from the 30-second step before and after the current one as well
+  (`CLOCK_TOLERANCE_SECONDS` in `lib/utils/totp.ts`, RFC 6238 §5.2). otplib's default is no
+  tolerance at all, so a phone or server clock a few seconds out, or a code typed as the step
+  rolled over, refused the right code. `verify`, `enable` and `disable` share the check. The guess
+  budget (five tries per fifteen minutes per account) is unchanged, so the window adds two valid
+  values, not guesses. A code accepted once is not remembered: it can be used again within its
+  window.
 - The code limiter is per account, not per session, which is what stops guessing across sessions. It
   also means a sign-in with only the password that keeps posting wrong codes keeps the owner's code
   page at 429.
