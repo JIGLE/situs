@@ -409,7 +409,7 @@ describe("jwt and session callbacks — the second factor", () => {
 
   it("holds a session pending at sign-in when the account has TOTP on, and names it", async () => {
     provisionMock.mockResolvedValue({ id: "db-cuid-1" });
-    prismaMock.user.findUnique.mockResolvedValue({ totpEnabled: true });
+    prismaMock.user.findUnique.mockResolvedValue({ totpEnabled: true, passkeys: [] });
     const jwt = await loadJwt();
     const signIn = () =>
       jwt({
@@ -425,6 +425,23 @@ describe("jwt and session callbacks — the second factor", () => {
     expect(typeof first.sid).toBe("string");
     // Two sign-ins of one account are two sessions: a proof for one must not fit the other.
     expect(second.sid).not.toBe(first.sid);
+  });
+
+  it("tells a pending session that a passkey can answer it only when the account has one", async () => {
+    provisionMock.mockResolvedValue({ id: "db-cuid-1" });
+    const jwt = await loadJwt();
+    const signIn = () =>
+      jwt({
+        token: {},
+        user: { id: "google-sub-999", email: "owner@example.com", name: "Owner" },
+        account: { provider: "google" },
+      });
+
+    prismaMock.user.findUnique.mockResolvedValue({ totpEnabled: true, passkeys: [{ id: "p1" }] });
+    expect((await signIn()).mfaPasskey).toBe(true);
+
+    prismaMock.user.findUnique.mockResolvedValue({ totpEnabled: true, passkeys: [] });
+    expect((await signIn()).mfaPasskey).toBeUndefined();
   });
 
   it("holds none pending for an account without TOTP", async () => {

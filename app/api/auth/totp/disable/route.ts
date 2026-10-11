@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import crypto from "crypto";
 import { csrfProtection } from "@/lib/middleware/csrf";
 import { rateLimit } from "@/lib/middleware/rate-limit";
+import { provesSecondFactor } from "@/lib/services/auth/second-factor-code";
 import { totpGuessLimit } from "@/lib/services/auth/totp-guess-limit";
 import { requireAuth } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { createErrorResponse, readJson, ValidationError } from "@/lib/utils/error-handling";
-import { decryptPII } from "@/lib/utils/pii-encryption";
-import { totpVerify } from "@/lib/utils/totp";
 
 const schema = z.object({ code: z.string().min(6).max(8) });
-
-const hashCode = (code: string): string => crypto.createHash("sha256").update(code).digest("hex");
 
 // DELETE /api/auth/totp/disable — remove TOTP from the account
 //
@@ -51,24 +47,7 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: "Invalid request" }, { status: 400 });
       }
 
-      const code = parsed.data.code.replace(/\s/g, "");
-      let proved = false;
-      if (code.length === 6) {
-        try {
-          proved = totpVerify(code, decryptPII(user.totpSecret));
-        } catch {
-          // A secret that cannot be read proves nothing; the backup codes may still.
-          proved = false;
-        }
-      }
-      if (!proved && user.totpBackupCodes) {
-        try {
-          const codes = JSON.parse(decryptPII(user.totpBackupCodes)) as string[];
-          proved = codes.includes(hashCode(code.toUpperCase()));
-        } catch {
-          proved = false;
-        }
-      }
+      const proved = provesSecondFactor(user, parsed.data.code);
       if (!proved) return NextResponse.json({ error: "Invalid code" }, { status: 400 });
     }
 
@@ -89,6 +68,11 @@ export async function DELETE(request: NextRequest) {
         { status: 409 },
       );
     }
+
+    // The passkeys went with it: they are a way past this factor, and the app is what a lost one
+    // falls back to. They are inert without it (`passkey/authenticate/verify` checks), and an account
+    // that turns the app on again starts with none.
+    await prisma.passkey.deleteMany({ where: { userId } });
 
     return NextResponse.json({ ok: true });
   } catch (err) {

@@ -232,7 +232,34 @@
       "integrationTabs": {
         "banks": "Banche",
         "at": "Finanças"
-      }
+      },
+      "passkeysTitle": "Passkey",
+      "passkeysDescription": "Accedi con l'impronta, il volto o il blocco schermo del telefono invece di digitare un codice. L'app di autenticazione resta come alternativa.",
+      "passkeysNone": "Nessuna passkey per ora.",
+      "passkeysNeedApp": "Attiva prima l'autenticazione a due fattori: l'app di autenticazione è la tua alternativa quando non hai la passkey a portata di mano.",
+      "passkeysGoWithApp": "Disattivare l'autenticazione a due fattori rimuove anche le tue passkey.",
+      "passkeyNameLabel": "Nome",
+      "passkeyNamePlaceholder": "es. Il mio telefono",
+      "passkeyAdd": "Aggiungi una passkey",
+      "passkeyAddHint": "Inserisci un codice dalla tua app di autenticazione, o un codice di backup, poi conferma con l'impronta, il volto o il blocco schermo.",
+      "passkeySave": "Salva passkey",
+      "passkeySaving": "In attesa del tuo dispositivo…",
+      "passkeySynced": "Sincronizzata",
+      "passkeyAdded": "Aggiunta il {date}",
+      "passkeyUsed": "Ultimo utilizzo il {date}",
+      "passkeyNeverUsed": "Mai utilizzata",
+      "passkeyRemove": "Rimuovi",
+      "passkeyRemoveHint": "Inserisci un codice dalla tua app di autenticazione, o un codice di backup, per rimuovere «{name}».",
+      "passkeyToastAdded": "Passkey salvata",
+      "passkeyToastRemoved": "Passkey rimossa",
+      "passkeyErrCancelled": "Annullato. Nessuna passkey è stata salvata.",
+      "passkeyErrUnsupported": "Questo browser o indirizzo non può salvare passkey. Una passkey richiede un indirizzo sicuro (https).",
+      "passkeyErrInvalid": "Quel codice non è corretto.",
+      "passkeyErrDuplicate": "La passkey di questo dispositivo è già salvata.",
+      "passkeyErrLimit": "Hai raggiunto il limite di 10 passkey. Rimuovine una prima.",
+      "passkeyErrTooMany": "Troppi tentativi. Attendi un momento e riprova.",
+      "passkeyErrGeneric": "Impossibile salvare la passkey. Riprova.",
+      "passkeyRemoveFailed": "Impossibile rimuovere la passkey."
     },
     "at": {
       "description": "Situs accede all'AT come sottoutente del Portal, con il certificato che l'AT ha firmato per questa istanza.",
@@ -1660,8 +1687,13 @@
       "errors": {
         "invalid": "Questo codice non è corretto.",
         "tooMany": "Troppi tentativi. Attendi un momento e riprova.",
-        "generic": "Qualcosa è andato storto. Riprova."
-      }
+        "generic": "Qualcosa è andato storto. Riprova.",
+        "passkeyCancelled": "Annullato. Riprova oppure inserisci un codice.",
+        "passkeyUnsupported": "Questo browser non può usare una passkey qui. Inserisci un codice."
+      },
+      "passkeyButton": "Usa la tua passkey",
+      "passkeyWorking": "In attesa del tuo dispositivo…",
+      "orCode": "oppure inserisci un codice"
     },
     "brand": {
       "system": "Sovereign Capital System",

@@ -118,6 +118,11 @@ e2e/                    # Playwright E2E tests
   proof bound to that session's `sid` (`lib/services/auth/mfa-proof.ts`), which the code page gives
   its session through `update({ mfaProof })`. A verification recorded on the account releases nobody.
   Turning the factor off takes a code from it (`DELETE /api/auth/totp/disable`): a session that passed it is not proof of the holder.
+  **Passkeys** (`app/api/auth/passkey/`, `lib/services/auth/passkey.ts`) are a quicker way past this same factor, never a
+  factor of their own: they exist only while the authenticator app is on, and turning it off deletes them. The code page
+  offers one when `session.mfaPasskey` is set; `authenticate/verify` answers with the same `mfa-proof` `totp/verify` gives.
+  Adding or removing one takes a code from the app. The challenge is a signed token, not a stored row; only the public key
+  is kept. The relying party is `NEXTAUTH_URL`'s host, so a changed address orphans them.
   `/api/auth/**` is public to the proxy, so `setup`, `enable` and `disable` check the CSRF token
   themselves (`app/api/auth/csrf-check.test.ts` names a state-changing handler there that does not).
 - **Reference-month rent ledger**: `RentPeriod` is one row per lease per reference month; its

@@ -49,7 +49,8 @@ among them — skip the check and authenticate by signature or shared secret ins
 routes that change state (`setup`, `enable`, `disable`) call `csrfProtection`
 (`lib/middleware/csrf.ts`) themselves, and `app/api/auth/csrf-check.test.ts` names any handler there
 that does not. `verify` is the one exception: a session waiting for its code need not hold a CSRF
-cookie, since the proxy seeds it for portal pages, which that session is kept out of.
+cookie, since the proxy seeds it for portal pages, which that session is kept out of. The passkey
+sign-in routes (`passkey/authenticate/*`) are the other two, for the same session and the same reason.
 
 ## Second factor
 
@@ -125,6 +126,37 @@ An account with an authenticator app (Settings › Security) has to enter a code
   checks.
 - An accepted TOTP code is not single-use within its 30 seconds, and a backup code is spent by a
   read and a write that two concurrent posts can both pass. Both need a code in hand.
+
+### Passkeys
+
+A passkey (WebAuthn, `@simplewebauthn/server`) is a quicker way past this same factor: one tap with
+the phone's fingerprint, face or screen lock, nothing to copy. It does not replace the code.
+
+- It is **a way past the authenticator app, not a factor of its own.** An account can add one only
+  with the app on, and turning the app off deletes its passkeys. `mfaPending` is still set by
+  `totpEnabled` alone, so a passkey changes nothing about who is held at `/auth/mfa`.
+- Sign-in: the code page asks `POST /api/auth/passkey/authenticate/options` for a challenge, the
+  device signs it, and `.../authenticate/verify` checks the signature against the stored public key
+  (user verification required) and answers with the same proof `totp/verify` gives
+  (`mfa-proof.ts`), made for the session that asked. Both routes read the pending session the way
+  `totp/verify` does (`lib/services/auth/pending-session.ts`) and are rate limited per account
+  (`passkeySignInLimit`). A passkey cannot be guessed, so the budget only stops hammering.
+- The challenge is not stored: it is signed (`lib/services/auth/passkey.ts`, a MAC under
+  `NEXTAUTH_SECRET` over the kind of ceremony, the user, the sign-in's `sid`, the challenge and its
+  expiry, two minutes). One made for another session, another account or a registration opens
+  nothing. A replayed assertion is also bound to the session it was made for.
+- **Adding or removing one takes a code from the app**, as turning the factor off does, and for the
+  same reason: a held session could otherwise save a passkey of its own that outlives the cookie.
+  The code is checked when the ceremony starts (`register/options`, `[id]` DELETE), guesses share
+  `totpGuessLimit`, and the route that finishes it trusts only the signed challenge that came
+  out of the first.
+- Only the public key is stored (`Passkey`, `prisma/schema.prisma`), so nothing in the table can
+  sign in as the owner, and none of it is encrypted. The relying party is `NEXTAUTH_URL`'s host, not
+  the host a request carries: a passkey belongs to the domain it was made for, so **changing the
+  instance's address orphans them** and the authenticator app is the way in until new ones are saved.
+- Not built: discoverable ("usernameless") sign-in and passkeys as a replacement for the Google
+  first factor. A synced passkey reports a counter of 0, so the counter check protects only
+  single-device keys.
 
 ## IBAN hashes
 

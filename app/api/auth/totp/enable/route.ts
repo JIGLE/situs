@@ -96,6 +96,11 @@ export async function POST(request: NextRequest) {
 
     rememberSessionsValidFrom(userId, validFrom);
 
+    // A factor turned on starts with no passkeys. Turning it off removes them (`totp/disable`), but
+    // that is a second statement that can fail, and one saved in the instant the factor went off
+    // would otherwise come back to life here.
+    await prisma.passkey.deleteMany({ where: { userId } });
+
     // This session is the owner's own, so it carries on: the proof renews its sign-in time when the
     // browser hands it back (`update({ keepProof })`). Without one the session ends with the rest.
     const serverSecret = process.env.NEXTAUTH_SECRET;

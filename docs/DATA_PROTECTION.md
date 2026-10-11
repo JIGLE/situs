@@ -127,9 +127,14 @@ Recorded here deliberately rather than left implicit:
 | `PayerAccount`         | `holderName`       | The name the bank showed on the movement that was confirmed. Removed with the tenant, or when forgotten    |
 | `AccessInvitation`     | `email`            | An invited person's email, until they create the account. Lapses in 30 days; masked in the audit trail     |
 | `BankConnection`       | `label`            | Shown instead of the bank's name. **Free text: may contain anything the owner typed**                      |
+| `Passkey`              | `name`             | What the owner called the device ("Pixel 9"), shown in Settings; see the paragraph below                   |
 | `UserSettings`         | `residenceCountry` | The owner's country of tax residence, as a two-letter code, shown under their name in the side bar         |
 | `Property`, `Building` | address fields     | Personal data where a tenant lives there; core to the product                                              |
 | `Document`             | receipt archives   | The PDF kept when a receipt is emitted: the tenant's name, the property's address and the amount, on disk  |
+
+A `Passkey` row also holds the **public** half of a passkey and its credential id. The private key never
+leaves the person's device, so nothing stored can sign in as them, and the row is not encrypted. It goes with
+the account, or when the authenticator app is turned off.
 
 `BankTransaction.rawData` preserves the imported row for re-matching, with the IBAN stripped
 before it is written (`redactRowForStorage`, `lib/services/bank/rows.ts`). It previously stored

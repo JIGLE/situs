@@ -232,7 +232,34 @@
       "integrationTabs": {
         "banks": "Bancos",
         "at": "Finanças"
-      }
+      },
+      "passkeysTitle": "Passkeys",
+      "passkeysDescription": "Entre com a impressão digital, o rosto ou o bloqueio de ecrã do telemóvel em vez de escrever um código. A aplicação de autenticação continua como alternativa.",
+      "passkeysNone": "Ainda não há passkeys.",
+      "passkeysNeedApp": "Ative primeiro a autenticação de dois fatores: a aplicação de autenticação é a alternativa quando não tem a passkey à mão.",
+      "passkeysGoWithApp": "Desativar a autenticação de dois fatores também remove as suas passkeys.",
+      "passkeyNameLabel": "Nome",
+      "passkeyNamePlaceholder": "ex.: O meu telemóvel",
+      "passkeyAdd": "Adicionar uma passkey",
+      "passkeyAddHint": "Introduza um código da sua aplicação de autenticação, ou um código de recuperação, e confirme com a impressão digital, o rosto ou o bloqueio de ecrã.",
+      "passkeySave": "Guardar passkey",
+      "passkeySaving": "A aguardar o seu dispositivo…",
+      "passkeySynced": "Sincronizada",
+      "passkeyAdded": "Adicionada a {date}",
+      "passkeyUsed": "Última utilização a {date}",
+      "passkeyNeverUsed": "Nunca utilizada",
+      "passkeyRemove": "Remover",
+      "passkeyRemoveHint": "Introduza um código da sua aplicação de autenticação, ou um código de recuperação, para remover “{name}”.",
+      "passkeyToastAdded": "Passkey guardada",
+      "passkeyToastRemoved": "Passkey removida",
+      "passkeyErrCancelled": "Cancelado. Nenhuma passkey foi guardada.",
+      "passkeyErrUnsupported": "Este navegador ou endereço não pode guardar passkeys. Uma passkey precisa de um endereço seguro (https).",
+      "passkeyErrInvalid": "Esse código não está certo.",
+      "passkeyErrDuplicate": "A passkey deste dispositivo já está guardada.",
+      "passkeyErrLimit": "Atingiu o limite de 10 passkeys. Remova uma primeiro.",
+      "passkeyErrTooMany": "Demasiadas tentativas. Aguarde um momento e tente novamente.",
+      "passkeyErrGeneric": "Não foi possível guardar a passkey. Tente novamente.",
+      "passkeyRemoveFailed": "Não foi possível remover a passkey."
     },
     "at": {
       "description": "O Situs entra na AT como um subutilizador do Portal, com o certificado que a AT assinou para esta instância.",
@@ -1660,8 +1687,13 @@
       "errors": {
         "invalid": "Esse código não está certo.",
         "tooMany": "Demasiadas tentativas. Aguarde um momento e tente de novo.",
-        "generic": "Algo correu mal. Tente de novo."
-      }
+        "generic": "Algo correu mal. Tente de novo.",
+        "passkeyCancelled": "Cancelado. Tente novamente ou introduza um código.",
+        "passkeyUnsupported": "Este navegador não pode usar uma passkey aqui. Introduza um código."
+      },
+      "passkeyButton": "Usar a sua passkey",
+      "passkeyWorking": "A aguardar o seu dispositivo…",
+      "orCode": "ou introduza um código"
     },
     "brand": {
       "system": "Sovereign Capital System",
