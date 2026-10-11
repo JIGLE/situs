@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 
+import { DARK_THEME_COLOR } from "@/lib/theme/boot-script";
+
 /**
  * Web App Manifest — makes Situs installable as a standalone app
  * (Android/Chrome "Add to Home screen", desktop PWA install).
@@ -16,8 +18,8 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait-primary",
-    background_color: "#f6f0e4",
-    theme_color: "#006600",
+    background_color: DARK_THEME_COLOR,
+    theme_color: DARK_THEME_COLOR,
     categories: ["business", "finance", "productivity"],
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
@@ -41,7 +43,6 @@ export default function manifest(): MetadataRoute.Manifest {
     shortcuts: [
       { name: "Portfolio", short_name: "Portfolio", url: "/portfolio" },
       { name: "Finance", short_name: "Finance", url: "/financials" },
-      { name: "Operations", short_name: "Operations", url: "/operations" },
     ],
   };
 }

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 
+import { DARK_THEME_COLOR, LIGHT_THEME_COLOR } from "@/lib/theme/boot-script";
 import {
   DEFAULT_COUNTRY,
   isCountryCode,
@@ -64,8 +65,10 @@ function normalizeMode(value: string | null | undefined): ThemeMode | null {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }): React.ReactElement {
-  const [theme, setThemeState] = useState<ThemeMode>("normal");
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedMode>("normal");
+  // Dark until this device says otherwise: the document starts dark (`app/layout.tsx`) and the
+  // boot script has already applied a stored choice by the time this mounts.
+  const [theme, setThemeState] = useState<ThemeMode>("dark");
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedMode>("dark");
   const [country, setCountryState] = useState<CountryCode>(DEFAULT_COUNTRY);
   const [_mounted, setMounted] = useState(false);
 
@@ -94,6 +97,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
     root.classList.remove("light", "dark", "dark-oled");
     root.classList.add(resolved === "dark" ? "dark" : "light");
     root.setAttribute("data-theme", resolved === "dark" ? "dark" : "light");
+    root.style.colorScheme = resolved === "dark" ? "dark" : "light";
+    // The status bar of an installed app follows this tag, so it moves with the theme.
+    document.querySelectorAll('meta[name="theme-color"]').forEach((tag) => {
+      tag.setAttribute("content", resolved === "dark" ? DARK_THEME_COLOR : LIGHT_THEME_COLOR);
+      tag.removeAttribute("media");
+    });
 
     const vars = resolveThemeVars(nextCountry, resolved);
     for (const [name, value] of Object.entries(vars)) {
@@ -103,8 +112,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
     setResolvedTheme(resolved);
   }, []);
 
-  // Initialize: local choice wins (instant, flash-free). Fresh browsers follow
-  // the OS, then adopt the account's saved theme once /api/settings responds.
+  // Initialize: local choice wins (instant, flash-free). Fresh browsers start dark,
+  // then adopt the account's saved theme once /api/settings responds.
   useEffect(() => {
     const storedCountryRaw = localStorage.getItem(COUNTRY_STORAGE_KEY);
     const storedCountry =
@@ -122,8 +131,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
       return;
     }
 
-    setThemeState("system");
-    applyTheme(storedCountry, resolveMode("system"));
+    // No choice on this device: dark. (It used to follow the phone, which left a phone in light
+    // mode opening a dark-first brand in light.) An account that saved an explicit theme still
+    // wins below; the column's default, "system", is not a choice.
+    setThemeState("dark");
+    applyTheme(storedCountry, resolveMode("dark"));
     setMounted(true);
 
     let cancelled = false;

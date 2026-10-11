@@ -136,6 +136,29 @@ describe("resolveThemeVars", () => {
   });
 
   /**
+   * Dark is the default, so most text is read on the surfaces the dark theme puts over its canvas,
+   * not on the bare canvas: a card is a 3.5% white wash, and the sidebar's active row a green
+   * one. A text colour that clears the canvas by a hair (the danger red at 4.47:1) failed the
+   * accessibility check on those, so the readable tokens are held to 4.5:1 on both.
+   */
+  it.each(COUNTRY_CODES)(
+    "%s dark text variants reach 4.5:1 on a card and on the active row",
+    (code) => {
+      const vars = resolveThemeVars(code, "dark");
+      const canvas = vars["--color-canvas"];
+      const card = mixWith(canvas, "#FFFFFF", 0.035);
+      const activeRow = mixWith(canvas, COUNTRY_THEMES[code].roles.primary, 0.12);
+      for (const key of ["success", "warning", "danger", "info"] as const) {
+        expect(contrastRatio(vars[`--semantic-${key}-readable`], card)).toBeGreaterThanOrEqual(4.5);
+      }
+      expect(contrastRatio(vars["--country-highlight-readable"], card)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(vars["--country-highlight-readable"], activeRow)).toBeGreaterThanOrEqual(
+        4.5,
+      );
+    },
+  );
+
+  /**
    * `--color-muted` used to receive `theme.muted`, which is a mid-tone TEXT colour — so the
    * surface token and the foreground token resolved to the same value (PT dark: both #A5B8A9),
    * i.e. 1:1 contrast. Every muted surface in the app rendered as a mid-tone slab and any muted

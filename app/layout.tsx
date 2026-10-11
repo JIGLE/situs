@@ -4,6 +4,7 @@ import { Instrument_Sans, JetBrains_Mono } from "next/font/google";
 import "@/lib/dev/patch-react-children-only";
 import "./globals.css";
 import { getNonce } from "@/lib/utils/csp-nonce";
+import { THEME_BOOT_SCRIPT } from "@/lib/theme/boot-script";
 import UpdateBannerClient from "@/components/shared/update-banner-client";
 import { PwaRegister } from "@/components/shared/pwa-register";
 import { NextIntlClientProvider } from "next-intl";
@@ -67,10 +68,8 @@ export const viewport: Viewport = {
   // Let content extend under the notch / home indicator so the mobile top bar
   // and bottom nav can pad themselves with env(safe-area-inset-*).
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f0e4" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b110d" },
-  ],
+  // No `themeColor` here on purpose: the boot script writes the one `theme-color` tag
+  // (`lib/theme/boot-script.ts` says why neither Next nor a rendered tag can).
 };
 
 export default async function RootLayout({
@@ -93,13 +92,22 @@ export default async function RootLayout({
   return (
     <html
       lang={chromeLocale}
-      className={`${instrumentSans.variable} ${jetbrainsMono.variable}`}
+      className={`${instrumentSans.variable} ${jetbrainsMono.variable} dark`}
+      style={{ colorScheme: "dark" }}
       data-country="PT"
-      data-mode="normal"
+      data-mode="dark"
+      data-theme="dark"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
-      <head>{nonce && <meta name="csp-nonce" content={nonce} />}</head>
+      <head>
+        {nonce && <meta name="csp-nonce" content={nonce} />}
+        {/* Applies this device's theme before anything is painted (`lib/theme/boot-script.ts`). */}
+        <script
+          nonce={nonce || undefined}
+          dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }}
+        />
+      </head>
       <body className={`${instrumentSans.className} antialiased`}>
         <DevAuthProvider>
           {/* These two are siblings of `children`, so they sit outside the

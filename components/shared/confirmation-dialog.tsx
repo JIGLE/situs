@@ -73,7 +73,7 @@ export function ConfirmationDialog({ dialog }: ConfirmationDialogProps) {
             className={
               isDestructive
                 ? "rounded-lg bg-[var(--color-destructive)] text-white hover:bg-[var(--color-destructive)]/90 disabled:opacity-50"
-                : "rounded-lg bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90 disabled:opacity-50"
+                : "rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:bg-[var(--color-primary)]/90 disabled:opacity-50"
             }
           >
             {state.isLoading ? (

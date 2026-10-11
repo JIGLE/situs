@@ -229,7 +229,7 @@
   --color-muted-foreground: #a5b8a9;
   --color-accent: rgba(255, 255, 255, 0.06);
   --color-accent-foreground: #eef7f0;
-  --color-destructive: #cd5c5c;
+  --color-destructive: #d06767;
   --color-destructive-foreground: #0d1117;
   --color-border: #263428;
   --color-border-hover: rgba(255, 255, 255, 0.24);
@@ -256,22 +256,22 @@
   --color-hover: rgba(255, 255, 255, 0.06);
   --color-active: rgba(255, 255, 255, 0.09);
 
-  --color-success: #57906d;
+  --color-success: #5f9674;
   --color-success-foreground: #0d1117;
   --color-success-muted: rgba(22, 101, 52, 0.15);
-  --color-warning: #bd6827;
+  --color-warning: #c57a41;
   --color-warning-foreground: #0d1117;
   --color-warning-muted: rgba(180, 83, 9, 0.15);
-  --color-info: #5c80e3;
+  --color-info: #6385e4;
   --color-info-foreground: #0d1117;
   --color-info-muted: rgba(29, 78, 216, 0.15);
-  --color-error: #cd5c5c;
+  --color-error: #d06767;
   --color-error-foreground: #0d1117;
   --color-error-muted: rgba(185, 28, 28, 0.15);
 
-  --color-accent-primary: #479147;
+  --color-accent-primary: #5d9e5d;
   --color-accent-primary-foreground: #0d1117;
-  --color-accent-secondary: #479147;
+  --color-accent-secondary: #5d9e5d;
   --color-accent-secondary-foreground: #0d1117;
 
   --color-overlay: rgba(0, 0, 0, 0.65);
@@ -294,7 +294,7 @@
   --shadow-glow: none;
 
   --ui-accent: #ffff00;
-  --country-highlight-readable: #479147;
+  --country-highlight-readable: #5c9d5c;
   --country-highlight-soft: rgba(71, 145, 71, 0.08);
   /* Already clears contrast against the dark canvas, so it passes through untinted. */
   --logo-accent-readable: #ffff00;
@@ -302,8 +302,8 @@
   --logo-keyline: rgba(255, 255, 255, 0.68);
 
   --semantic-success-readable: #57906d;
-  --semantic-warning-readable: #bd6827;
-  --semantic-danger-readable: #cd5c5c;
+  --semantic-warning-readable: #c3753a;
+  --semantic-danger-readable: #d26e6e;
   --semantic-info-readable: #5c80e3;
 }
 
