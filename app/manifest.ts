@@ -17,7 +17,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     scope: "/",
     display: "standalone",
-    orientation: "portrait-primary",
+    // No `orientation`: a lock to portrait kept a tablet or a phone on its side from rotating the
+    // app. The pages adapt to a short screen (the sign-in page drops its list below 700px high).
     background_color: DARK_THEME_COLOR,
     theme_color: DARK_THEME_COLOR,
     categories: ["business", "finance", "productivity"],

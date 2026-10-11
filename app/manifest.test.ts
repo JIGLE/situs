@@ -13,12 +13,17 @@ import manifest from "./manifest";
  * "Operations", a page that does not exist.
  */
 const ROOT = join(import.meta.dirname, "..");
-const { background_color, theme_color, shortcuts = [], icons = [] } = manifest();
+const manifestData = manifest();
+const { background_color, theme_color, shortcuts = [], icons = [] } = manifestData;
 
 describe("web app manifest", () => {
   it("opens on the app's own dark colour, for the splash and the status bar", () => {
     expect(background_color).toBe(DARK_THEME_COLOR);
     expect(theme_color).toBe(DARK_THEME_COLOR);
+  });
+
+  it("does not lock the app to one orientation", () => {
+    expect(manifestData.orientation).toBeUndefined();
   });
 
   it("has the icons Android needs for a splash: 192, 512 and a maskable one", () => {

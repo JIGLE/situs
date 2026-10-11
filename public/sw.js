@@ -8,9 +8,14 @@
  *  - Stay-out-of-the-way for everything else: network-first for navigations so
  *    authenticated, always-fresh pages are never served stale; never touch API
  *    calls or auth.
+ *
+ * The manifest is network-first too. It was precached and then served cache-first under a version
+ * that never changed, so a changed manifest (the dark splash colours, a dropped shortcut) reached
+ * an installed app late or never: the worker kept answering with the copy from the day it was
+ * installed. Bump VERSION when a precached file changes, since those are cache-first.
  */
 
-const VERSION = "situs-v1";
+const VERSION = "situs-v2";
 const SHELL_CACHE = `${VERSION}-shell`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 
@@ -20,8 +25,8 @@ const PRECACHE_URLS = [
   "/icon-192.png",
   "/icon-512.png",
   "/apple-touch-icon.png",
-  "/manifest.webmanifest",
 ];
+const MANIFEST_PATH = "/manifest.webmanifest";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -78,11 +83,28 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Static assets (icons, manifest, _next static): cache-first with background fill.
+  // The manifest: network-first, so an installed app sees a changed one; the last copy is the
+  // fallback offline.
+  if (url.pathname === MANIFEST_PATH) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request)),
+    );
+    return;
+  }
+
+  // Static assets (icons, _next static): cache-first with background fill.
   if (
     url.pathname.startsWith("/_next/static/") ||
     PRECACHE_URLS.includes(url.pathname) ||
-    /\.(?:png|svg|webmanifest|woff2?)$/.test(url.pathname)
+    /\.(?:png|svg|woff2?)$/.test(url.pathname)
   ) {
     event.respondWith(
       caches.match(request).then(
