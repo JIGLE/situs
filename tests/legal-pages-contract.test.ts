@@ -38,14 +38,19 @@ describe("legal pages", () => {
     expect(source(page)).not.toMatch(/title:\s*`[^`]*—\s*Situs`/);
   });
 
-  it.each([
-    ["the sign-in page", "components/features/auth/auth-view.tsx"],
-    ["Settings", "components/features/settings/settings-account.tsx"],
-  ])("%s links to both pages", (_where, file) => {
+  it("Settings links to both pages", () => {
     // Neither page was linked from anywhere: they existed and could be reached only by typing the
-    // address. The privacy notice has to be reachable where an account is created, and the bank
-    // registration asks for both URLs.
-    expect(source(file)).toMatch(/<LegalLinks\b/);
+    // address. The bank registration asks for both URLs.
+    expect(source("components/features/settings/settings-account.tsx")).toMatch(/<LegalLinks\b/);
+  });
+
+  it("the sign-in page links to both pages, in its consent line", () => {
+    // The privacy notice has to be reachable where an account is created. The sign-in page says
+    // "by continuing you accept the Terms and the Privacy Policy" and links each.
+    expect(source("components/features/auth/auth-view.tsx")).toMatch(/<ConsentLine\b/);
+    const line = source("components/features/auth/consent-line.tsx");
+    expect(line).toMatch(/href="\/terms"/);
+    expect(line).toMatch(/href="\/privacy"/);
   });
 
   it.each(PAGES)("%s is indexable", (page) => {

@@ -10,8 +10,8 @@ import { cn } from "@/lib/utils/utils";
  *
  * Nothing linked to either page: they existed, in four languages, and could be reached only by
  * typing the address. A privacy notice has to be reachable where an account is created, and the
- * bank registration asks for both URLs, so a reviewer opens the app and looks for them. They sit
- * under the sign-in form, small and muted, and in Settings. `min-h-11` keeps the tap target the
+ * bank registration asks for both URLs, so a reviewer opens the app and looks for them. They are in
+ * the sign-in page's consent line (`ConsentLine`) and, as this component, in Settings. `min-h-11` keeps the tap target the
  * house rule asks for on a phone without making the line louder.
  */
 export function LegalLinks({ className }: { className?: string }): React.ReactElement {

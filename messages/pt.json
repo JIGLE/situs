@@ -1625,6 +1625,10 @@
     "signIn": "Entrar",
     "createAccount": "Criar conta",
     "demoModeHint": "Modo de demonstração ativo — introduza quaisquer credenciais",
+    "accessByInvitation": "Acesso por convite",
+    "accessByInvitationNote": "Esta é uma instância privada. Se recebeu um convite, continue com a conta Google para onde foi enviado.",
+    "consent": "Ao continuar, aceita os <terms>Termos de Serviço</terms> e a <privacy>Política de Privacidade</privacy>.",
+    "ledgerLabel": "Como o Situs funciona",
     "signin": {
       "eyebrow": "Bem-vindo de volta",
       "heading": "Entrar no Situs",

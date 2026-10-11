@@ -75,6 +75,28 @@ export async function readSignUpSettings(): Promise<SignUpSettings | null> {
   }
 }
 
+/**
+ * Whether a visitor with no account can create one: the first run, which makes the first account the
+ * administrator, or the Google sign-up switch. What the sign-in page offers someone who has no
+ * account hangs on it ("Create an account" or "by invitation").
+ *
+ * An invitation is not counted: it admits one named email, and that person signs in with the same
+ * Google button everyone else does. Anything unreadable is closed, as everywhere in this file.
+ */
+export async function isSignUpOpen(): Promise<boolean> {
+  try {
+    if ((await getPrismaClient().user.count()) === 0) return true;
+  } catch (error) {
+    logger.error(
+      "Could not count the accounts — treating sign-up as closed",
+      error instanceof Error ? error : new Error(String(error)),
+    );
+    return false;
+  }
+  const settings = await readSignUpSettings();
+  return settings?.googleSignUp === true;
+}
+
 /** The invitation that admits this email now, if there is one. A failed read finds none. */
 export async function findLiveInvitation(
   email: string,
