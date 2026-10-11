@@ -10,7 +10,7 @@ import { SitusPortalMark } from "@/components/shared/situs-portal-logo";
 export default function Loading() {
   return (
     <div
-      className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[var(--color-background)] px-6"
+      className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[var(--color-background)] px-6"
       role="status"
       aria-live="polite"
     >

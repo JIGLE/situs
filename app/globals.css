@@ -323,10 +323,24 @@ html {
   scroll-behavior: smooth;
 }
 
+/* An installed app has no browser chrome to explain a bounce: pulling a page that fits down starts
+   Chrome's refresh gesture and the edge glow, which reads as the page scrolling. */
+@media (display-mode: standalone) {
+  html {
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
 body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  /* `vh` is the LARGEST the viewport can be. In an installed Android app that is taller than what
+     is visible (the system bars), so a 100vh page scrolls by the difference and a fixed bottom bar
+     sits below the fold. `dvh` is the visible height; the line above is the fallback for engines
+     that predate it. */
+  min-height: 100dvh;
   background-color: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
@@ -341,6 +355,7 @@ body {
 
 #__next {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Visible keyboard focus everywhere — 2px country accent, square. */

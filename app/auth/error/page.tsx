@@ -42,7 +42,7 @@ function AuthErrorContent() {
   const canRetry = !key || RETRYABLE.has(code);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)] p-4">
+    <div className="flex min-h-dvh items-center justify-center bg-[var(--color-background)] p-4">
       <div className="w-full max-w-md rounded-lg border border-[var(--color-destructive)]/20 bg-[var(--color-card)] p-6">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-error-muted)]">
           <AlertTriangle className="h-6 w-6 text-[var(--color-destructive)]" />
@@ -89,7 +89,7 @@ export default function AuthError() {
   return (
     <ErrorBoundary>
       <Suspense
-        fallback={<div className="min-h-screen bg-[var(--color-background)]" aria-busy="true" />}
+        fallback={<div className="min-h-dvh bg-[var(--color-background)]" aria-busy="true" />}
       >
         <AuthErrorContent />
       </Suspense>

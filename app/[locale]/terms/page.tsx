@@ -26,7 +26,7 @@ export default async function TermsPage() {
   const email = legalContactEmail();
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-300">
+    <div className="min-h-dvh bg-zinc-950 text-zinc-300">
       <header className="sticky top-0 z-50 border-b border-white/[0.04] bg-zinc-950/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <Link
