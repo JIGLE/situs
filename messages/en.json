@@ -1625,6 +1625,10 @@
     "signIn": "Sign in",
     "createAccount": "Create account",
     "demoModeHint": "Demo mode active — enter any credentials",
+    "accessByInvitation": "By invitation only",
+    "accessByInvitationNote": "This is a private instance. If you were invited, continue with the Google account the invitation was sent to.",
+    "consent": "By continuing, you accept the <terms>Terms of Service</terms> and the <privacy>Privacy Policy</privacy>.",
+    "ledgerLabel": "How Situs works",
     "signin": {
       "eyebrow": "Welcome back",
       "heading": "Sign in to Situs",

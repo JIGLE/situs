@@ -1625,6 +1625,10 @@
     "signIn": "Accedi",
     "createAccount": "Crea account",
     "demoModeHint": "Modalità demo attiva — inserisci credenziali qualsiasi",
+    "accessByInvitation": "Accesso su invito",
+    "accessByInvitationNote": "Questa è un'istanza privata. Se hai ricevuto un invito, continua con l'account Google a cui è stato inviato.",
+    "consent": "Continuando, accetti i <terms>Termini di servizio</terms> e l''<privacy>Informativa sulla privacy</privacy>.",
+    "ledgerLabel": "Come funziona Situs",
     "signin": {
       "eyebrow": "Bentornato",
       "heading": "Accedi a Situs",
