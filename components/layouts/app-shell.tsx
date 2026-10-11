@@ -40,7 +40,7 @@ export async function AppShell({ children, modal, admin = false }: AppShellProps
   return (
     <UserSettingsProvider>
       <LanguageSync />
-      <div className="flex h-screen overflow-hidden bg-[var(--color-background)]">
+      <div className="flex h-dvh overflow-hidden bg-[var(--color-background)]">
         {/* Skip Navigation Links for Accessibility */}
         <SkipLink href="#main-content">{t("skipToContent")}</SkipLink>
         <SkipLink href="#main-navigation">{t("skipToNavigation")}</SkipLink>
