@@ -15,7 +15,10 @@ import { totpGenerate, totpGenerateSecret } from "@/lib/utils/totp";
  */
 
 const { prisma, session } = vi.hoisted(() => ({
-  prisma: { user: { findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn() } },
+  prisma: {
+    user: { findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+    passkey: { deleteMany: vi.fn() },
+  },
   session: { current: null as Record<string, unknown> | null },
 }));
 
@@ -94,6 +97,7 @@ beforeEach(() => {
   });
   prisma.user.update.mockResolvedValue({});
   prisma.user.updateMany.mockResolvedValue({ count: 1 });
+  prisma.passkey.deleteMany.mockResolvedValue({ count: 0 });
 });
 
 describe("POST /api/auth/totp/setup", () => {
@@ -180,6 +184,20 @@ describe("POST /api/auth/totp/setup", () => {
 });
 
 describe("POST /api/auth/totp/enable", () => {
+  it("starts the factor with no passkeys, whatever was left from before", async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "owner@example.test",
+      totpEnabled: false,
+      totpSecret: `enc:${secret}`,
+    });
+
+    const res = await confirm(totpGenerate(secret));
+
+    expect(res.status).toBe(200);
+    expect(prisma.passkey.deleteMany).toHaveBeenCalledWith({ where: { userId: "user-1" } });
+  });
+
   const secret = totpGenerateSecret();
   const pending = `enc:${secret}`;
 
@@ -476,6 +494,22 @@ describe("DELETE /api/auth/totp/disable", () => {
         where: { id: "user-1", totpSecret: `enc:${secret}`, totpEnabled: true },
         data: { totpEnabled: false, totpSecret: null, totpBackupCodes: null },
       });
+    });
+
+    it("takes the account's passkeys with it, and only after the factor is off", async () => {
+      const res = await turnOff({ code: totpGenerate(secret) });
+
+      expect(res.status).toBe(200);
+      expect(prisma.passkey.deleteMany).toHaveBeenCalledWith({ where: { userId: "user-1" } });
+    });
+
+    it("keeps the passkeys when the setup changed since the code was checked", async () => {
+      prisma.user.updateMany.mockResolvedValue({ count: 0 });
+
+      const res = await turnOff({ code: totpGenerate(secret) });
+
+      expect(res.status).toBe(409);
+      expect(prisma.passkey.deleteMany).not.toHaveBeenCalled();
     });
 
     it("turns it off for a backup code, whatever its case", async () => {

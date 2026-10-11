@@ -232,7 +232,34 @@
       "integrationTabs": {
         "banks": "Banks",
         "at": "Finanças"
-      }
+      },
+      "passkeysTitle": "Passkeys",
+      "passkeysDescription": "Sign in with your phone's fingerprint, face or screen lock instead of typing a code. The authenticator app stays as your fallback.",
+      "passkeysNone": "No passkeys yet.",
+      "passkeysNeedApp": "Turn on two-factor authentication first: the authenticator app is what you fall back to when a passkey is not to hand.",
+      "passkeysGoWithApp": "Turning off two-factor authentication also removes your passkeys.",
+      "passkeyNameLabel": "Name",
+      "passkeyNamePlaceholder": "e.g. My phone",
+      "passkeyAdd": "Add a passkey",
+      "passkeyAddHint": "Enter a code from your authenticator app, or a backup code, then confirm with your fingerprint, face or screen lock.",
+      "passkeySave": "Save passkey",
+      "passkeySaving": "Waiting for your device…",
+      "passkeySynced": "Synced",
+      "passkeyAdded": "Added {date}",
+      "passkeyUsed": "Last used {date}",
+      "passkeyNeverUsed": "Never used",
+      "passkeyRemove": "Remove",
+      "passkeyRemoveHint": "Enter a code from your authenticator app, or a backup code, to remove “{name}”.",
+      "passkeyToastAdded": "Passkey saved",
+      "passkeyToastRemoved": "Passkey removed",
+      "passkeyErrCancelled": "Cancelled. No passkey was saved.",
+      "passkeyErrUnsupported": "This browser or address can't save passkeys. A passkey needs a secure (https) address.",
+      "passkeyErrInvalid": "That code is not right.",
+      "passkeyErrDuplicate": "This device's passkey is already saved.",
+      "passkeyErrLimit": "You have reached the limit of 10 passkeys. Remove one first.",
+      "passkeyErrTooMany": "Too many attempts. Wait a moment and try again.",
+      "passkeyErrGeneric": "Couldn't save the passkey. Try again.",
+      "passkeyRemoveFailed": "Couldn't remove the passkey."
     },
     "at": {
       "description": "Situs signs in to AT as a Portal sub-user, with the certificate AT signed for this instance.",
@@ -1660,8 +1687,13 @@
       "errors": {
         "invalid": "That code is not right.",
         "tooMany": "Too many attempts. Wait a moment and try again.",
-        "generic": "Something went wrong. Try again."
-      }
+        "generic": "Something went wrong. Try again.",
+        "passkeyCancelled": "Cancelled. Try again, or enter a code.",
+        "passkeyUnsupported": "This browser can't use a passkey here. Enter a code instead."
+      },
+      "passkeyButton": "Use your passkey",
+      "passkeyWorking": "Waiting for your device…",
+      "orCode": "or enter a code"
     },
     "brand": {
       "system": "Sovereign Capital System",

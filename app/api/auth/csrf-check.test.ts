@@ -41,12 +41,26 @@ const EXEMPT: Record<string, { methods: string[]; reason: string }> = {
       "not hold a CSRF cookie: the proxy seeds it for portal pages, which that session is kept " +
       "out of. The route answers only a correct code, and is rate limited per account.",
   },
+  "passkey/authenticate/options/route.ts": {
+    methods: ["POST"],
+    reason:
+      "The same session as totp/verify: first factor passed, second pending, and so no CSRF cookie. " +
+      "It answers a challenge and the names of the account's passkeys, and changes nothing.",
+  },
+  "passkey/authenticate/verify/route.ts": {
+    methods: ["POST"],
+    reason:
+      "A session that has passed only its first factor has to be able to answer with its passkey, " +
+      "as totp/verify lets it send a code. It releases only the session the signed challenge was " +
+      "made for, only for a passkey of that account, and is rate limited per account.",
+  },
 };
 
 /** The GETs under /api/auth, each a read. A GET that is not named here fails. */
 const READS: Record<string, string[]> = {
   "[...nextauth]/route.ts": ["GET"],
   "totp/status/route.ts": ["GET"],
+  "passkey/route.ts": ["GET"],
 };
 
 const WRITES = ["POST", "PUT", "PATCH", "DELETE"];

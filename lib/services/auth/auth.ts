@@ -220,6 +220,7 @@ function createBaseAuthOptions(): NextAuthOptions {
             picture?: string;
             role?: string;
             mfaPending?: boolean;
+            mfaPasskey?: boolean;
             sid?: string;
             signedAt?: number;
             locale?: Locale;
@@ -299,6 +300,8 @@ function createBaseAuthOptions(): NextAuthOptions {
                 where: { id: resolvedId },
                 select: {
                   totpEnabled: true,
+                  // Whether the code page can offer a passkey: one is enough to know.
+                  passkeys: { select: { id: true }, take: 1 },
                   settings: { select: { language: true, languageChosenAt: true } },
                 },
               });
@@ -306,6 +309,7 @@ function createBaseAuthOptions(): NextAuthOptions {
                 t.mfaPending = true;
                 // The name a proof of this session's code is made for (`mfa-proof.ts`).
                 t.sid = randomUUID();
+                if (dbUser.passkeys.length > 0) t.mfaPasskey = true;
               }
               // Carried from sign-in so a device with no language of its own can take it on
               // (`LanguageSync`). Read once, here: a choice made later on another device does
@@ -335,6 +339,7 @@ function createBaseAuthOptions(): NextAuthOptions {
             sub?: string;
             email?: string;
             mfaPending?: boolean;
+            mfaPasskey?: boolean;
             sid?: string;
             isDevAuth?: boolean;
             uidVerified?: boolean;
@@ -438,6 +443,7 @@ function createBaseAuthOptions(): NextAuthOptions {
             ) {
               t.mfaPending = false;
               delete t.sid;
+              delete t.mfaPasskey;
             }
           }
         }
@@ -468,6 +474,7 @@ function createBaseAuthOptions(): NextAuthOptions {
               role?: string;
               isDevAuth?: boolean;
               mfaPending?: boolean;
+              mfaPasskey?: boolean;
               signedAt?: number;
               locale?: Locale;
             };
@@ -478,6 +485,10 @@ function createBaseAuthOptions(): NextAuthOptions {
             // Every token the sign-in mints has a role, so one without is not an administrator.
             session.user.role = t.role || session.user.role || "USER";
             (session as unknown as Record<string, unknown>).mfaPending = t.mfaPending ?? false;
+            // Only a session waiting for its second factor is told a passkey can answer it.
+            if (t.mfaPending && t.mfaPasskey) {
+              (session as unknown as Record<string, unknown>).mfaPasskey = true;
+            }
             // The session's own sign-in time, which the enable route names in a keep proof.
             if (typeof t.signedAt === "number") {
               (session as unknown as Record<string, unknown>).signedAt = t.signedAt;

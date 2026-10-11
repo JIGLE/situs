@@ -10,6 +10,27 @@ datasource db {
   provider = "sqlite"
 }
 
+/// A passkey registered as a way past the second factor, next to the authenticator app.
+/// Only the PUBLIC half is stored: the private key never leaves the person's device or its
+/// password manager, so nothing here can sign in as them, which is why none of it is encrypted.
+model Passkey {
+  id           String    @id @default(cuid())
+  userId       String
+  credentialId String    @unique // base64url, as the authenticator names the credential
+  publicKey    String // base64url of the COSE public key
+  counter      Int       @default(0) // the authenticator's own count; synced passkeys keep it at 0
+  transports   String? // JSON array: how the authenticator can be reached (internal, hybrid, usb…)
+  deviceType   String // singleDevice | multiDevice (a synced passkey)
+  backedUp     Boolean   @default(false)
+  name         String // what the owner calls it, e.g. "Pixel 9"
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -31,6 +52,7 @@ model User {
   accounts  Account[]
   sessions  Session[]
   auditLogs AuditLog[] // GDPR logging
+  passkeys  Passkey[] // A second way past the second factor (lib/services/auth/passkey.ts)
 
   // App-specific relations
   properties             Property[]

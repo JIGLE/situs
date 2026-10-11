@@ -4,16 +4,26 @@ import { useEffect, useRef, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { KeyRound, ShieldCheck } from "lucide-react";
+import { Fingerprint, KeyRound, ShieldCheck } from "lucide-react";
 import { LanguageSelector } from "@/components/shared/language-selector";
 import { SitusPortalMark } from "@/components/shared/situs-portal-logo";
 import { Button } from "@/components/ui/button";
+import { PasskeyError, signInWithPasskey, type PasskeyProblem } from "@/lib/utils/passkey-client";
 
 /** What the screen says when a code is not accepted, by the status the server answered. */
-type Problem = "invalid" | "tooMany" | "generic";
+type Problem = "invalid" | "tooMany" | "generic" | "passkeyCancelled" | "passkeyUnsupported";
 
 const problemOf = (status: number): Problem =>
   status === 429 ? "tooMany" : status === 400 ? "invalid" : "generic";
+
+const problemOfPasskey = (problem: PasskeyProblem): Problem =>
+  problem === "cancelled"
+    ? "passkeyCancelled"
+    : problem === "unsupported"
+      ? "passkeyUnsupported"
+      : problem === "tooMany"
+        ? "tooMany"
+        : "generic";
 
 /**
  * The second step of signing in, for an account with an authenticator app.
@@ -23,6 +33,11 @@ const problemOf = (status: number): Problem =>
  * `/api/auth/totp/verify`, which answers with a proof made for this session; giving that proof to
  * the session, `update({ mfaProof })`, is what clears `mfaPending` on it
  * (`lib/services/auth/auth.ts`, `mfa-proof.ts`).
+ *
+ * An account with a passkey is offered it first: one tap with the phone's fingerprint, face or lock,
+ * and nothing to copy. It ends in the same place, a proof made for this session
+ * (`/api/auth/passkey/authenticate/verify`), so the code stays as the way in when the passkey is not
+ * to hand.
  *
  * The server's answer is never shown: its words are English, so the screen says its own by status.
  */
@@ -36,9 +51,11 @@ export function MfaView() {
   const [useBackup, setUseBackup] = useState(false);
   const [problem, setProblem] = useState<Problem | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [passkeyWorking, setPasskeyWorking] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const pending = (session as { mfaPending?: boolean } | null)?.mfaPending === true;
+  const hasPasskey = (session as { mfaPasskey?: boolean } | null)?.mfaPasskey === true;
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/auth/signin");
@@ -51,6 +68,37 @@ export function MfaView() {
   }, [useBackup, status]);
 
   const length = useBackup ? 8 : 6;
+
+  /** Gives the proof to this session. False, with the problem set, when the session was not released. */
+  async function release(proof: unknown): Promise<boolean> {
+    if (typeof proof !== "string") {
+      setProblem("generic");
+      return false;
+    }
+    // next-auth answers `null`, and does not throw, when this call fails. Leaving anyway would
+    // send the proxy's redirect straight back here, with the code (a backup code is single-use)
+    // already spent and no word on why.
+    const released = (await update({ mfaProof: proof })) as { mfaPending?: boolean } | null;
+    if (released?.mfaPending !== false) {
+      setProblem("generic");
+      return false;
+    }
+    router.replace("/dashboard");
+    return true;
+  }
+
+  async function signInWithKey() {
+    if (passkeyWorking || submitting) return;
+    setPasskeyWorking(true);
+    setProblem(null);
+    try {
+      await release(await signInWithPasskey());
+    } catch (err) {
+      setProblem(err instanceof PasskeyError ? problemOfPasskey(err.problem) : "generic");
+    } finally {
+      setPasskeyWorking(false);
+    }
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -68,21 +116,7 @@ export function MfaView() {
         // The answer carries a proof made for this session. Handing it to the session is what
         // releases it: the same code entered anywhere else releases nothing here.
         const { proof } = (await res.json()) as { proof?: unknown };
-        if (typeof proof !== "string") {
-          setProblem("generic");
-          setCode("");
-          return;
-        }
-        // next-auth answers `null`, and does not throw, when this call fails. Leaving anyway would
-        // send the proxy's redirect straight back here, with the code (a backup code is single-use)
-        // already spent and no word on why.
-        const released = (await update({ mfaProof: proof })) as { mfaPending?: boolean } | null;
-        if (released?.mfaPending !== false) {
-          setProblem("generic");
-          setCode("");
-          return;
-        }
-        router.replace("/dashboard");
+        if (!(await release(proof))) setCode("");
         return;
       }
       setProblem(problemOf(res.status));
@@ -129,7 +163,27 @@ export function MfaView() {
           {useBackup ? t("subheadingBackup") : t("subheadingApp")}
         </p>
 
-        <form onSubmit={submit} className="mt-8 space-y-3">
+        {hasPasskey && !useBackup && (
+          <div className="mt-8">
+            <Button
+              type="button"
+              data-testid="passkey-sign-in"
+              onClick={signInWithKey}
+              disabled={passkeyWorking || submitting}
+              aria-busy={passkeyWorking}
+              className="h-12 w-full gap-2 bg-[var(--color-primary)] font-semibold text-[var(--color-primary-foreground)] hover:opacity-90"
+            >
+              <Fingerprint className="h-5 w-5" aria-hidden />
+              {passkeyWorking ? t("passkeyWorking") : t("passkeyButton")}
+            </Button>
+            <p className="mono-label-xs mt-5 text-center">{t("orCode")}</p>
+          </div>
+        )}
+
+        <form
+          onSubmit={submit}
+          className={hasPasskey && !useBackup ? "mt-3 space-y-3" : "mt-8 space-y-3"}
+        >
           <div>
             <label htmlFor="mfa-code" className="mono-label-xs mb-1.5 block">
               {useBackup ? t("backupLabel") : t("codeLabel")}

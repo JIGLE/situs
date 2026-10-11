@@ -14,6 +14,7 @@ import { apiFetch } from "@/lib/utils/api-client";
 import { httpError, useApiError } from "@/lib/utils/api-error";
 import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { PasskeysPanel } from "./passkeys-panel";
 
 export function SettingsSecurity() {
   const { success, error: showError } = useToast();
@@ -242,6 +243,8 @@ export function SettingsSecurity() {
                   </div>
                 </div>
               )}
+              <PasskeysPanel />
+              <p className="text-xs text-muted-foreground">{t("passkeysGoWithApp")}</p>
             </div>
           ) : totpSetupStep === "idle" ? (
             <div className="space-y-3">
