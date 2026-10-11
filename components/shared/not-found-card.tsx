@@ -22,7 +22,7 @@ export async function NotFoundCard({ locale }: { locale?: Locale }) {
     : await getTranslations("errors.notFound");
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex min-h-dvh items-center justify-center p-4">
       <Card className="w-full max-w-md text-center">
         <CardHeader>
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">

@@ -136,7 +136,7 @@ function AuthContent({ mode, demoLoginEnabled }: { mode: AuthMode; demoLoginEnab
 
   if (status === "loading" || session) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)]">
+      <div className="flex min-h-dvh items-center justify-center bg-[var(--color-background)]">
         <div className="flex items-center gap-3 text-[var(--color-muted-foreground)]">
           <SitusPortalMark className="h-6 w-6 motion-safe:animate-pulse" />
           <span className="text-sm">{t("loading")}</span>
@@ -150,10 +150,10 @@ function AuthContent({ mode, demoLoginEnabled }: { mode: AuthMode; demoLoginEnab
     // fixed ~384px card, stranding it in 336px of dead space either side at 1920px. Weighting
     // the brand side instead just moved the void there. Both halves now centre a bounded
     // content block, so the two read as a pair across the divider at any width.
-    <div className="grid min-h-screen bg-[var(--color-background)] lg:grid-cols-2">
+    <div className="grid min-h-dvh bg-[var(--color-background)] lg:grid-cols-2">
       <BrandPanel />
 
-      <div className="flex items-center justify-center px-5 py-12 sm:px-10">
+      <div className="flex items-center justify-center px-5 py-6 sm:px-10 sm:py-12">
         <div className="w-full max-w-sm motion-safe:animate-fade-in">
           {/* Brand lockup + locale control. The mark is desktop-hidden (BrandPanel carries it
               there), but the selector stays on every viewport: these pages sit outside the
@@ -294,7 +294,7 @@ export function AuthView({
     <ErrorBoundary>
       <Suspense
         fallback={
-          <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)]">
+          <div className="flex min-h-dvh items-center justify-center bg-[var(--color-background)]">
             <div className="flex items-center gap-3 text-[var(--color-muted-foreground)]">
               <SitusPortalMark className="h-6 w-6" />
               <span className="text-sm">{t("loading")}</span>

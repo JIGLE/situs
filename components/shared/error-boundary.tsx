@@ -84,7 +84,7 @@ function DefaultErrorFallback({
   const t = useTranslations("errors.boundary");
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)] p-4">
+    <div className="min-h-dvh flex items-center justify-center bg-[var(--color-background)] p-4">
       <Card className="w-full max-w-md bg-[var(--color-card)] border-[var(--color-border)]">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center">

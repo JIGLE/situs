@@ -264,6 +264,9 @@ themes.
    full-screen overlay whose body scrolls while header, footer and primary action stay visible.
    From `md` up, a side panel or centred dialog.
 6. **Multi-column forms are single-column below `md`.**
+7. **A page shell is `dvh`, never `vh`** (`min-h-dvh` / `h-dvh`): in an installed Android app `100vh`
+   is taller than the visible screen, so the page scrolls and a fixed bottom bar sits below the fold.
+   A browser test cannot see it; `tests/viewport-units-contract.test.ts` reads the source.
 
 **Run the audit with `npm run audit:local`**, never against a server started by hand.
 `scripts/audit-server.mjs` boots a disposable standalone app (`.next/standalone/server.js`, the

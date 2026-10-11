@@ -169,7 +169,7 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
   return (
     <div
       className={cn(
-        "glass-sidebar relative flex h-screen flex-col transition-all duration-300 min-w-0 overflow-x-hidden",
+        "glass-sidebar relative flex h-dvh flex-col transition-all duration-300 min-w-0 overflow-x-hidden",
         collapsed ? "w-16" : "w-60",
       )}
     >

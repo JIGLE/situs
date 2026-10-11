@@ -96,7 +96,7 @@ export function MfaView() {
 
   if (status !== "authenticated" || !pending) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)]">
+      <div className="flex min-h-dvh items-center justify-center bg-[var(--color-background)]">
         <div className="flex items-center gap-3 text-[var(--color-muted-foreground)]">
           <SitusPortalMark className="h-6 w-6 motion-safe:animate-pulse" />
           <span className="text-sm">{tAuth("loading")}</span>
@@ -108,7 +108,7 @@ export function MfaView() {
   const Icon = useBackup ? KeyRound : ShieldCheck;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)] px-5 py-12 sm:px-10">
+    <div className="flex min-h-dvh items-center justify-center bg-[var(--color-background)] px-5 py-12 sm:px-10">
       <div className="w-full max-w-sm motion-safe:animate-fade-in">
         <div className="mb-8 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
