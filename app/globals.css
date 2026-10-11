@@ -172,6 +172,13 @@
 /* Country/logo tokens + raw semantic constants (not Tailwind utilities —
    plain custom properties swapped by CountryThemeProvider at runtime). */
 :root {
+  /* Google's own button styles (its sign-in branding guidelines): a white button with a grey
+     border on a light page, a near-black one on a dark page. The sign-in button takes them rather
+     than the app's outline, which on the cream page read as disabled. */
+  --google-button-bg: #ffffff;
+  --google-button-fg: #1f1f1f;
+  --google-button-border: #747775;
+
   --ui-accent: #006600;
   --country-highlight-readable: #006600;
   --country-highlight-soft: rgba(0, 102, 0, 0.08);
@@ -210,6 +217,10 @@
 [data-theme="dark"],
 :root.dark-oled,
 [data-theme="dark-oled"] {
+  --google-button-bg: #131314;
+  --google-button-fg: #e3e3e3;
+  --google-button-border: #8e918f;
+
   --color-ink: #eef7f0;
   --color-bone: #0d1117;
   --color-canvas: #0b110d;
@@ -607,22 +618,8 @@ body {
   }
 }
 
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
-}
-.animate-slide-up {
-  animation: slide-up 0.4s ease-out;
 }
 .animate-shimmer {
   animation: shimmer 1.5s infinite linear;
