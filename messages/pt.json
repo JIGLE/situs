@@ -1811,6 +1811,7 @@
     "auditTrailEmpty": "Os inícios de sessão, exportações e alterações às definições aparecerão aqui.",
     "themeLight": "Claro",
     "themeDark": "Escuro",
+    "changeTheme": "Alterar tema",
     "taxConnectorsEmpty": "Ainda sem conectores fiscais — é criado automaticamente na primeira vez que emitir um recibo de renda através do fluxo fiscal de um país.",
     "taxConnectorsLoadFailed": "Não foi possível carregar os conectores fiscais. Tente novamente."
   },
@@ -1886,7 +1887,7 @@
       "rights6": "Apresentar reclamação junto da autoridade de controlo nacional: a CNPD em Portugal, a AEPD em Espanha.",
       "rightsExportNote": "A exportação omite deliberadamente os tokens OAuth e de sessão associados à sua conta. São credenciais de autenticação e não informação sobre si, e um ficheiro descarregável que os contivesse representaria um risco de segurança para si.",
       "cookiesTitle": "Cookies",
-      "cookiesBody": "Apenas cookies estritamente necessários: um para a sessão e outro para proteção CSRF. Sem cookies publicitários, sem rastreadores de terceiros e sem qualquer análise que saia desta instância.",
+      "cookiesBody": "Apenas os cookies de que a aplicação precisa: um para a sessão, outro para proteção CSRF e dois que memorizam o idioma e o tema que escolhe neste dispositivo. Sem cookies publicitários, sem rastreadores de terceiros e sem qualquer análise que saia desta instância.",
       "processorsTitle": "Quem mais trata os seus dados",
       "processorsIntro": "Uma instância self-hosted só partilha dados com um serviço quando esse serviço tiver sido configurado por si.",
       "processorEnableBanking": "Enable Banking",

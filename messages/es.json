@@ -1811,6 +1811,7 @@
     "auditTrailEmpty": "Los inicios de sesión, exportaciones y cambios de configuración aparecerán aquí.",
     "themeLight": "Claro",
     "themeDark": "Oscuro",
+    "changeTheme": "Cambiar tema",
     "taxConnectorsEmpty": "Aún no hay conectores fiscales: se crea automáticamente la primera vez que emitas un recibo de alquiler a través del flujo fiscal de un país.",
     "taxConnectorsLoadFailed": "No se han podido cargar los conectores fiscales. Inténtalo de nuevo."
   },
@@ -1886,7 +1887,7 @@
       "rights6": "Reclamar ante su autoridad de control nacional: la AEPD en España, la CNPD en Portugal.",
       "rightsExportNote": "La exportación omite deliberadamente los tokens OAuth y de sesión asociados a su cuenta. Son credenciales de acceso y no información sobre usted, y un archivo descargable que los contuviera supondría un riesgo de seguridad para usted.",
       "cookiesTitle": "Cookies",
-      "cookiesBody": "Solo cookies estrictamente necesarias: una para la sesión y otra para la protección CSRF. Sin cookies publicitarias, sin rastreadores de terceros y sin analítica que salga de esta instancia.",
+      "cookiesBody": "Solo las cookies que la aplicación necesita: una para la sesión, otra para la protección CSRF y dos que recuerdan el idioma y el tema que elige en este dispositivo. Sin cookies publicitarias, sin rastreadores de terceros y sin analítica que salga de esta instancia.",
       "processorsTitle": "Quién más trata sus datos",
       "processorsIntro": "Una instancia autoalojada solo comparte datos con un servicio cuando usted ha configurado ese servicio.",
       "processorEnableBanking": "Enable Banking",

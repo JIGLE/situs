@@ -12,9 +12,12 @@
  * of this: a change to one has to be a change to both (`lib/theme/boot-script.test.tsx` runs this
  * very string against the provider's rules).
  *
- * It also owns the `theme-color` tag: it writes it, so the document has exactly one. Rendering the
- * tag from React (or Next's `viewport.themeColor`) does not work, because the script has changed its
- * `content` by the time React hydrates, and React then inserts a second, dark, copy beside it.
+ * It also keeps the document at exactly one `theme-color` tag. `app/layout.tsx` renders it for a
+ * device with an explicit choice (the cookie), carrying the value this script would write, so React
+ * finds nothing to change; for any other device the script writes it. A tag whose `content` the
+ * script changed before React hydrates, or Next's `viewport.themeColor`, gets a second, dark, copy
+ * inserted beside it. It also copies a choice stored before the cookie existed into the cookie, so
+ * the server draws the right theme from the next request on.
  *
  * It is a string, not a function, because it is inlined into the document. It carries the page's
  * CSP nonce and does nothing that needs more than `script-src 'nonce-…'`.
@@ -23,11 +26,16 @@ export const DARK_THEME_COLOR = "#0b110d";
 export const LIGHT_THEME_COLOR = "#f6f0e4";
 
 export const THEME_BOOT_SCRIPT = `(function(){try{
-var d=document.documentElement,m=null;
-try{m=localStorage.getItem("situs-mode")||localStorage.getItem("proman-theme")}catch(e){}
+var d=document.documentElement;
+var norm=function(v){return v==="normal"||v==="light"?"normal":v==="dark"||v==="dark-oled"?"dark":v==="system"?"system":null};
+var choice=null,stored=null,cookie=null;
+try{stored=norm(localStorage.getItem("situs-mode"))||norm(localStorage.getItem("proman-theme"))}catch(e){}
+try{var k=document.cookie.match(/(?:^|;\\s*)situs-mode=([^;]+)/);cookie=k?norm(k[1]):null}catch(e){}
+choice=stored||cookie;
+if(stored&&stored!==cookie){try{document.cookie="situs-mode="+stored+"; Path=/; Max-Age=31536000; SameSite=Lax"}catch(e){}}
 var mode="dark";
-if(m==="normal"||m==="light"){mode="normal"}
-else if(m==="system"){mode=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"normal"}
+if(choice==="normal"){mode="normal"}
+else if(choice==="system"){mode=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"normal"}
 var dark=mode==="dark";
 d.setAttribute("data-mode",mode);
 d.setAttribute("data-theme",dark?"dark":"light");
