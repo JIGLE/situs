@@ -1811,6 +1811,7 @@
     "auditTrailEmpty": "Accessi, esportazioni e modifiche alle impostazioni compariranno qui.",
     "themeLight": "Chiaro",
     "themeDark": "Scuro",
+    "changeTheme": "Cambia tema",
     "taxConnectorsEmpty": "Ancora nessun connettore fiscale — viene creato automaticamente la prima volta che emetti una ricevuta di affitto tramite il flusso fiscale di un paese.",
     "taxConnectorsLoadFailed": "Impossibile caricare i connettori fiscali. Riprova."
   },
@@ -1886,7 +1887,7 @@
       "rights6": "Proporre reclamo all'autorità di controllo nazionale: la CNPD in Portogallo, l'AEPD in Spagna.",
       "rightsExportNote": "L'esportazione omette deliberatamente i token OAuth e di sessione associati al vostro account. Sono credenziali di accesso e non informazioni su di voi, e un file scaricabile che li contenesse rappresenterebbe un rischio per la vostra sicurezza.",
       "cookiesTitle": "Cookie",
-      "cookiesBody": "Solo cookie strettamente necessari: uno per la sessione e uno per la protezione CSRF. Nessun cookie pubblicitario, nessun tracciatore di terze parti e nessuna analisi che esca da questa istanza.",
+      "cookiesBody": "Solo i cookie di cui l'applicazione ha bisogno: uno per la sessione, uno per la protezione CSRF e due che ricordano la lingua e il tema scelti su questo dispositivo. Nessun cookie pubblicitario, nessun tracciatore di terze parti e nessuna analisi che esca da questa istanza.",
       "processorsTitle": "Chi altro tratta i vostri dati",
       "processorsIntro": "Un'istanza self-hosted condivide dati con un servizio solo quando avete configurato quel servizio.",
       "processorEnableBanking": "Enable Banking",

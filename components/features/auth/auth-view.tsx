@@ -9,6 +9,7 @@ import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/shared/language-selector";
 import { LegalLinks } from "@/components/shared/legal-links";
+import { ThemeSwitcher } from "@/components/shared/theme-switcher";
 import { SitusPortalMark } from "@/components/shared/situs-portal-logo";
 
 /** Only allow same-site relative paths, to rule out an open redirect via `callbackUrl`. */
@@ -166,7 +167,10 @@ function AuthContent({ mode, demoLoginEnabled }: { mode: AuthMode; demoLoginEnab
               <SitusPortalMark className="h-10 w-10" />
               <span className="text-[13px] font-semibold uppercase tracking-[0.22em]">Situs</span>
             </div>
-            <LanguageSelector />
+            <div className="flex items-center">
+              <ThemeSwitcher />
+              <LanguageSelector />
+            </div>
           </div>
 
           <p className="mono-label mb-3">{tMode("eyebrow")}</p>

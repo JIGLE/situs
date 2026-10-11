@@ -1811,6 +1811,7 @@
     "auditTrailEmpty": "Sign-ins, exports and settings changes will appear here.",
     "themeLight": "Light",
     "themeDark": "Dark",
+    "changeTheme": "Change theme",
     "taxConnectorsEmpty": "No tax connectors yet — one is created automatically the first time you emit a rent receipt through a country's fiscal workflow.",
     "taxConnectorsLoadFailed": "Couldn't load the tax connectors. Try again."
   },
@@ -1886,7 +1887,7 @@
       "rights6": "Complain to your national supervisory authority: the CNPD in Portugal, the AEPD in Spain.",
       "rightsExportNote": "The export deliberately omits the OAuth and session tokens stored against your account. Those are login credentials rather than information about you, and a downloadable file containing them would be a security risk to you.",
       "cookiesTitle": "Cookies",
-      "cookiesBody": "Only strictly necessary cookies: one for your session, one for CSRF protection. No advertising cookies, no third-party trackers, and no analytics that leave this instance.",
+      "cookiesBody": "Only the cookies the app needs: one for your session, one for CSRF protection, and two that remember the language and the theme you choose on this device. No advertising cookies, no third-party trackers, and no analytics that leave this instance.",
       "processorsTitle": "Who else processes your data",
       "processorsIntro": "A self-hosted instance shares data with a service only when you have configured that service.",
       "processorEnableBanking": "Enable Banking",

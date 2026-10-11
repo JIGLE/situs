@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 
 import { DARK_THEME_COLOR, LIGHT_THEME_COLOR } from "@/lib/theme/boot-script";
+import { normalizeMode, type ThemeMode } from "@/lib/theme/mode";
+import { readModeCookie, writeModeCookie } from "@/lib/theme/mode-cookie";
 import {
   DEFAULT_COUNTRY,
   isCountryCode,
@@ -22,7 +24,6 @@ import {
  * colours never change with country or mode.
  */
 
-type ThemeMode = "normal" | "dark" | "system";
 type ResolvedMode = "normal" | "dark";
 
 interface ThemeContextType {
@@ -47,22 +48,6 @@ const COUNTRY_STORAGE_KEY = "situs-country";
  * and dropping the theme preference of everyone it was written to rescue.
  */
 const LEGACY_THEME_STORAGE_KEY = "proman-theme";
-
-/** Map pre-Situs theme names (light/dark/dark-oled) onto the two Situs modes. */
-function normalizeMode(value: string | null | undefined): ThemeMode | null {
-  switch (value) {
-    case "normal":
-    case "light":
-      return "normal";
-    case "dark":
-    case "dark-oled":
-      return "dark";
-    case "system":
-      return "system";
-    default:
-      return null;
-  }
-}
 
 export function ThemeProvider({ children }: { children: React.ReactNode }): React.ReactElement {
   // Dark until this device says otherwise: the document starts dark (`app/layout.tsx`) and the
@@ -120,13 +105,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
       storedCountryRaw && isCountryCode(storedCountryRaw) ? storedCountryRaw : DEFAULT_COUNTRY;
     setCountryState(storedCountry);
 
+    // This device's storage first, then the cookie the server renders from (a device whose storage
+    // was cleared but not its cookies still knows its choice).
     const storedMode =
       normalizeMode(localStorage.getItem(MODE_STORAGE_KEY)) ??
-      normalizeMode(localStorage.getItem(LEGACY_THEME_STORAGE_KEY));
+      normalizeMode(localStorage.getItem(LEGACY_THEME_STORAGE_KEY)) ??
+      readModeCookie();
 
     if (storedMode) {
       setThemeState(storedMode);
       applyTheme(storedCountry, resolveMode(storedMode));
+      // A choice made before the cookie existed reaches the server from the next request on.
+      writeModeCookie(storedMode);
       setMounted(true);
       return;
     }
@@ -153,6 +143,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
         }
         setThemeState(serverMode);
         localStorage.setItem(MODE_STORAGE_KEY, serverMode);
+        writeModeCookie(serverMode);
         applyTheme(storedCountry, resolveMode(serverMode));
       })
       .catch(() => {
@@ -180,6 +171,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
     (newMode: ThemeMode) => {
       setThemeState(newMode);
       localStorage.setItem(MODE_STORAGE_KEY, newMode);
+      writeModeCookie(newMode);
       applyTheme(country, resolveMode(newMode));
     },
     [country, applyTheme, resolveMode],

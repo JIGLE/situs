@@ -4,7 +4,9 @@ import { Instrument_Sans, JetBrains_Mono } from "next/font/google";
 import "@/lib/dev/patch-react-children-only";
 import "./globals.css";
 import { getNonce } from "@/lib/utils/csp-nonce";
-import { THEME_BOOT_SCRIPT } from "@/lib/theme/boot-script";
+import { cookies } from "next/headers";
+import { DARK_THEME_COLOR, LIGHT_THEME_COLOR, THEME_BOOT_SCRIPT } from "@/lib/theme/boot-script";
+import { MODE_COOKIE, normalizeMode } from "@/lib/theme/mode";
 import UpdateBannerClient from "@/components/shared/update-banner-client";
 import { PwaRegister } from "@/components/shared/pwa-register";
 import { NextIntlClientProvider } from "next-intl";
@@ -68,8 +70,9 @@ export const viewport: Viewport = {
   // Let content extend under the notch / home indicator so the mobile top bar
   // and bottom nav can pad themselves with env(safe-area-inset-*).
   viewportFit: "cover",
-  // No `themeColor` here on purpose: the boot script writes the one `theme-color` tag
-  // (`lib/theme/boot-script.ts` says why neither Next nor a rendered tag can).
+  // No `themeColor` here on purpose: Next re-inserts that tag at hydration, beside the one the
+  // theme has already set. The one `theme-color` tag is rendered below for an explicit choice,
+  // and written by the boot script otherwise (`lib/theme/boot-script.ts`).
 };
 
 export default async function RootLayout({
@@ -89,19 +92,31 @@ export default async function RootLayout({
   setRequestLocale(chromeLocale);
   const chromeMessages = await getMessages({ locale: chromeLocale });
 
+  // The theme this device chose, drawn into the HTML itself, so the first frame is right with or
+  // without the inline script below. Dark is the default (no cookie, or a device that follows the
+  // phone, which only the script can know). The status-bar tag is rendered only for an explicit
+  // choice: the script writes the same value, and a `system` device would have it change, which
+  // React answers at hydration by inserting a second tag.
+  const chosen = normalizeMode((await cookies()).get(MODE_COOKIE)?.value);
+  const light = chosen === "normal";
+  const explicit = chosen === "normal" || chosen === "dark";
+
   return (
     <html
       lang={chromeLocale}
-      className={`${instrumentSans.variable} ${jetbrainsMono.variable} dark`}
-      style={{ colorScheme: "dark" }}
+      className={`${instrumentSans.variable} ${jetbrainsMono.variable} ${light ? "light" : "dark"}`}
+      style={{ colorScheme: light ? "light" : "dark" }}
       data-country="PT"
-      data-mode="dark"
-      data-theme="dark"
+      data-mode={light ? "normal" : "dark"}
+      data-theme={light ? "light" : "dark"}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
       <head>
         {nonce && <meta name="csp-nonce" content={nonce} />}
+        {explicit && (
+          <meta name="theme-color" content={light ? LIGHT_THEME_COLOR : DARK_THEME_COLOR} />
+        )}
         {/* Applies this device's theme before anything is painted (`lib/theme/boot-script.ts`). */}
         <script
           nonce={nonce || undefined}

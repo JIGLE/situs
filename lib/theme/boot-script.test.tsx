@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act } from "react";
 import { render, waitFor } from "@testing-library/react";
 
-import { ThemeProvider } from "@/lib/contexts/theme-context";
+import { ThemeProvider, useTheme } from "@/lib/contexts/theme-context";
 
 import { DARK_THEME_COLOR, LIGHT_THEME_COLOR, THEME_BOOT_SCRIPT } from "./boot-script";
 
@@ -26,6 +27,11 @@ function setPhone(dark: boolean) {
   window.matchMedia = globalThis.matchMedia;
 }
 
+const clearCookie = () => {
+  document.cookie = "situs-mode=; Path=/; Max-Age=0";
+};
+const cookieValue = () => document.cookie.match(/(?:^|;\s*)situs-mode=([^;]+)/)?.[1] ?? null;
+
 function resetDocument() {
   const root = document.documentElement;
   root.removeAttribute("data-mode");
@@ -48,6 +54,7 @@ const themeColors = () =>
 describe("theme boot script", () => {
   beforeEach(() => {
     localStorage.clear();
+    clearCookie();
     resetDocument();
     setPhone(false);
   });
@@ -97,6 +104,44 @@ describe("theme boot script", () => {
     expect(mode()).toBe("normal");
   });
 
+  it("takes the cookie when this device's storage has no choice", () => {
+    document.cookie = "situs-mode=normal; Path=/";
+    runScript();
+
+    expect(mode()).toBe("normal");
+  });
+
+  it("lets storage win over the cookie, and brings the cookie into line", () => {
+    document.cookie = "situs-mode=normal; Path=/";
+    localStorage.setItem("situs-mode", "dark");
+    runScript();
+
+    expect(mode()).toBe("dark");
+    expect(cookieValue()).toBe("dark");
+  });
+
+  it("skips a stored value it does not know and reads the cookie instead, as the provider does", () => {
+    localStorage.setItem("situs-mode", "something-new");
+    document.cookie = "situs-mode=normal; Path=/";
+    runScript();
+
+    expect(mode()).toBe("normal");
+  });
+
+  it("copies a choice stored before the cookie existed, so the server can draw it", () => {
+    localStorage.setItem("situs-mode", "light");
+    runScript();
+
+    expect(mode()).toBe("normal");
+    expect(cookieValue()).toBe("normal");
+  });
+
+  it("writes no cookie for a device that never chose", () => {
+    runScript();
+
+    expect(cookieValue()).toBeNull();
+  });
+
   it("colours the status bar to match, and drops the per-scheme split", () => {
     runScript();
     expect(themeColors()).toEqual([
@@ -130,6 +175,7 @@ describe("theme boot script", () => {
 describe("the provider agrees with the boot script", () => {
   beforeEach(() => {
     localStorage.clear();
+    clearCookie();
     resetDocument();
     vi.stubGlobal(
       "fetch",
@@ -181,5 +227,50 @@ describe("the provider agrees with the boot script", () => {
     await waitFor(() => expect(mode()).toBe("normal"));
 
     expect(themeColors().every((tag) => tag.content === LIGHT_THEME_COLOR)).toBe(true);
+  });
+
+  it("takes the cookie when storage has no choice, as the script does", async () => {
+    setPhone(false);
+    document.cookie = "situs-mode=normal; Path=/";
+    render(
+      <ThemeProvider>
+        <span />
+      </ThemeProvider>,
+    );
+
+    await waitFor(() => expect(mode()).toBe("normal"));
+  });
+
+  it("keeps the choice in the cookie for the server, and updates it when the theme changes", async () => {
+    setPhone(false);
+    localStorage.setItem("situs-mode", "dark");
+    let setTheme: (mode: "normal" | "dark" | "system") => void = () => {};
+    function Capture() {
+      setTheme = useTheme().setTheme;
+      return null;
+    }
+    render(
+      <ThemeProvider>
+        <Capture />
+      </ThemeProvider>,
+    );
+
+    await waitFor(() => expect(cookieValue()).toBe("dark"));
+    act(() => setTheme("normal"));
+    expect(cookieValue()).toBe("normal");
+    expect(localStorage.getItem("situs-mode")).toBe("normal");
+    expect(mode()).toBe("normal");
+  });
+
+  it("writes no cookie for a device that never chose", async () => {
+    setPhone(false);
+    render(
+      <ThemeProvider>
+        <span />
+      </ThemeProvider>,
+    );
+
+    await waitFor(() => expect(mode()).toBe("dark"));
+    expect(cookieValue()).toBeNull();
   });
 });
