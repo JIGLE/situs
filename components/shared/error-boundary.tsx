@@ -97,7 +97,7 @@ function DefaultErrorFallback({
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
-            <div className="bg-[var(--color-surface)] rounded-lg p-3 space-y-2">
+            <div className="bg-[var(--color-surface)] p-3 space-y-2">
               <p className="text-sm text-[var(--color-muted-foreground)] font-mono break-all">
                 {error.message}
               </p>

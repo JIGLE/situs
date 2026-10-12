@@ -5,21 +5,18 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg font-medium transition-all duration-200 focus-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.98]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-all duration-200 focus-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-md",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
         primary:
-          "bg-accent-primary text-accent-primary-foreground shadow-sm hover:bg-accent-primary/90 hover:shadow-md hover:-translate-y-0.5",
-        success: "bg-success text-success-foreground shadow-sm hover:bg-success/90 hover:shadow-md",
-        warning: "bg-warning text-warning-foreground shadow-sm hover:bg-warning/90 hover:shadow-md",
-        destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 hover:shadow-md",
-        outline:
-          "border border-border bg-card hover:bg-hover hover:text-foreground shadow-sm hover:shadow-md",
-        secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 hover:shadow-md",
+          "bg-accent-primary text-accent-primary-foreground hover:bg-accent-primary/90 hover:-translate-y-0.5",
+        success: "bg-success text-success-foreground hover:bg-success/90",
+        warning: "bg-warning text-warning-foreground hover:bg-warning/90",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline: "border border-border bg-card hover:bg-hover hover:text-foreground",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-hover hover:text-foreground",
         link: "text-primary underline-offset-4 hover:underline hover:text-primary/80",
       },
@@ -34,8 +31,8 @@ const buttonVariants = cva(
         // 28×44 target: exactly what the audit found on the portfolio tree. Floor the width
         // here rather than chase each call site, which is what the comment above always
         // claimed this did.
-        xs: "h-7 px-2 text-xs rounded-md max-md:min-h-11 max-md:min-w-11",
-        sm: "h-8 px-3 text-sm rounded-md max-md:min-h-11 max-md:min-w-11",
+        xs: "h-7 px-2 text-xs max-md:min-h-11 max-md:min-w-11",
+        sm: "h-8 px-3 text-sm max-md:min-h-11 max-md:min-w-11",
         default: "h-9 px-4 text-sm max-md:min-h-11 max-md:min-w-11",
         lg: "h-10 px-6 text-base max-md:min-h-11 max-md:min-w-11",
         xl: "h-12 px-8 text-lg",

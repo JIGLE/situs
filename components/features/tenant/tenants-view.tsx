@@ -137,7 +137,7 @@ function TenantForm({
       )}
 
       {(showMore || isEdit) && (
-        <div className="space-y-4 rounded-lg border border-[var(--color-border)] p-4">
+        <div className="space-y-4 border border-[var(--color-border)] p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="phone">{tForms("phone")}</Label>
@@ -631,10 +631,10 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
                   data={sortedTenants}
                   rowKey={(tenant) => tenant.id}
                   onRowClick={(tenant) => openTenantOverlay(tenant.id)}
-                  className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card-solid)]"
+                  className="border border-[var(--color-border)] bg-[var(--color-card-solid)]"
                   cardMode
                   renderCard={(tenant) => (
-                    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card-solid)] p-4">
+                    <div className="border border-[var(--color-border)] bg-[var(--color-card-solid)] p-4">
                       <div className="flex items-start justify-between gap-2">
                         {/* `py-3 -my-3` buys a 44px hit area without changing the layout — a
                             single line of 14px text is only a 20px target otherwise. */}
@@ -754,7 +754,7 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
                     compact={compact}
                   />
                 ) : (
-                  <div className="space-y-1 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-card)]">
+                  <div className="space-y-1 overflow-hidden border border-[var(--color-border)] bg-[var(--color-card)]">
                     {sortedTenants.map((tenant) => {
                       const isSelected = bulkSelection.isSelected(tenant.id);
                       const activeLease = getActiveLease(tenant.id, leases);

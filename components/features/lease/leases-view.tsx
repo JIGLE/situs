@@ -573,7 +573,7 @@ export function LeasesView(): React.ReactElement {
   const renderLeaseCard = (lease: Lease) => (
     <div
       className={cn(
-        "rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] p-4",
+        "border border-[var(--color-border)] bg-[var(--color-card)] p-4",
         selectedLeaseIds.has(lease.id) && "border-[var(--color-info)] bg-[var(--color-info-muted)]",
       )}
     >
@@ -757,7 +757,7 @@ export function LeasesView(): React.ReactElement {
                         </SelectContent>
                       </Select>
                       {properties.length === 0 && (
-                        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-hover)] p-4 text-center">
+                        <div className="border border-[var(--color-border)] bg-[var(--color-surface-hover)] p-4 text-center">
                           <p className="text-sm text-[var(--color-muted-foreground)] mb-2">
                             {t("selectProperty.noneFound")}
                           </p>
@@ -816,7 +816,7 @@ export function LeasesView(): React.ReactElement {
                         </SelectContent>
                       </Select>
                       {tenants.length === 0 && (
-                        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-hover)] p-4 text-center">
+                        <div className="border border-[var(--color-border)] bg-[var(--color-surface-hover)] p-4 text-center">
                           <p className="text-sm text-[var(--color-muted-foreground)] mb-2">
                             {t("selectTenant.noneFound")}
                           </p>
@@ -1006,7 +1006,7 @@ export function LeasesView(): React.ReactElement {
                         />
                         <Label
                           htmlFor="contractFile"
-                          className="flex items-center gap-2 px-4 py-2 bg-[var(--color-secondary)] border border-[var(--color-border)] rounded-md cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors"
+                          className="flex items-center gap-2 px-4 py-2 bg-[var(--color-secondary)] border border-[var(--color-border)] cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors"
                         >
                           <Upload className="w-4 h-4" />
                           {contractFile ? contractFile.name : t("choosePdf")}
@@ -1071,7 +1071,7 @@ export function LeasesView(): React.ReactElement {
         </div>
 
         {expiringSoon.length > 0 && (
-          <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
+          <div className="flex items-start gap-3 border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
             <Clock className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
             <div>
               <p className="font-medium text-amber-600 dark:text-amber-400">
@@ -1128,7 +1128,7 @@ export function LeasesView(): React.ReactElement {
             <>
               {/* Bulk actions bar */}
               {selectedLeaseIds.size > 0 && (
-                <div className="flex items-center gap-3 px-4 py-2.5 bg-[var(--color-info-muted)] border border-[var(--color-info)]/30 rounded-lg">
+                <div className="flex items-center gap-3 px-4 py-2.5 bg-[var(--color-info-muted)] border border-[var(--color-info)]/30">
                   <span className="text-sm font-medium text-[var(--color-info)]">
                     {t("bulk.selected", { count: selectedLeaseIds.size })}
                   </span>
@@ -1174,7 +1174,7 @@ export function LeasesView(): React.ReactElement {
 
                           {/* Preview */}
                           {bulkPct && !isNaN(parseFloat(bulkPct)) && parseFloat(bulkPct) > 0 && (
-                            <div className="rounded-md bg-[var(--color-card)] border border-[var(--color-border)] divide-y divide-[var(--color-border)] text-sm max-h-48 overflow-y-auto">
+                            <div className="bg-[var(--color-card)] border border-[var(--color-border)] divide-y divide-[var(--color-border)] text-sm max-h-48 overflow-y-auto">
                               {[...selectedLeaseIds].map((id) => {
                                 const lease = leases.find((l) => l.id === id);
                                 if (!lease) return null;
@@ -1254,7 +1254,7 @@ export function LeasesView(): React.ReactElement {
                     selectedLeaseIds.has(lease.id) && "bg-[var(--color-info-muted)]",
                   )
                 }
-                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)]"
+                className="border border-[var(--color-border)] bg-[var(--color-card)]"
               />
             </>
           )
@@ -1262,7 +1262,7 @@ export function LeasesView(): React.ReactElement {
           <>
             {/* Sortable Column Headers */}
             {filteredLeases.length > 0 && (
-              <div className="flex items-center gap-4 px-4 py-2 bg-[var(--color-surface-hover)] rounded-lg border border-[var(--color-border)]">
+              <div className="flex items-center gap-4 px-4 py-2 bg-[var(--color-surface-hover)] border border-[var(--color-border)]">
                 <div className="flex-1">
                   <SortableHeader
                     sortKey="startDate"
@@ -1338,7 +1338,7 @@ export function LeasesView(): React.ReactElement {
                 sortedLeases.map((lease: Lease) => (
                   <Card
                     key={lease.id}
-                    className="overflow-hidden transition-all hover:shadow-lg cursor-pointer"
+                    className="overflow-hidden transition-all cursor-pointer"
                     onClick={() => openLeaseOverlay(lease.id)}
                   >
                     <div className="aspect-video w-full bg-[var(--color-secondary)] relative">

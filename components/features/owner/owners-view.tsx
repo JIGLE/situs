@@ -375,7 +375,7 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
                 filteredOwners.map((owner) => (
                   <Card
                     key={owner.id}
-                    className="bg-[var(--color-card)] border-[var(--color-border)] cursor-pointer hover:border-[var(--color-accent-primary)]/40 hover:shadow-lg transition-all duration-200"
+                    className="bg-[var(--color-card)] border-[var(--color-border)] cursor-pointer hover:border-[var(--color-accent-primary)]/40 transition-all duration-200"
                     onClick={() => openOwnerOverlay(owner.id)}
                   >
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

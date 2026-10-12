@@ -51,7 +51,7 @@ export function RelationshipBadge({ variant, label, count, className }: Relation
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[12px] md:text-[10px] font-medium leading-tight",
+        "inline-flex items-center gap-1 border px-1.5 py-0.5 text-[12px] md:text-[10px] font-medium leading-tight",
         config.className,
         className,
       )}

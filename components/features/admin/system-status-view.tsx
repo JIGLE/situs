@@ -156,7 +156,7 @@ export function SystemStatusView() {
       {failed && (
         <div
           role="alert"
-          className="rounded-lg border border-[var(--semantic-danger)] bg-[var(--semantic-danger-soft)] p-4"
+          className="border border-[var(--semantic-danger)] bg-[var(--semantic-danger-soft)] p-4"
         >
           <p className="text-sm text-[var(--color-foreground)]">{t("loadFailed")}</p>
         </div>
@@ -178,7 +178,7 @@ export function SystemStatusView() {
                   {t(`group.${group}`)}
                 </h2>
 
-                <div className="divide-y divide-[var(--color-inner-border)] overflow-hidden rounded-xl border border-[var(--color-inner-border)] bg-[var(--color-surface-solid)]">
+                <div className="divide-y divide-[var(--color-inner-border)] overflow-hidden border border-[var(--color-inner-border)] bg-[var(--color-surface-solid)]">
                   {rows.map((check) => {
                     const style = SEVERITY_STYLE[check.severity];
                     const Icon = style.icon;

@@ -94,7 +94,7 @@ export function BulkActionBar({
           // all. Sit above the nav below `md`; keep the 24px offset once the nav is gone.
           "fixed left-1/2 z-50 -translate-x-1/2",
           "max-md:bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] md:bottom-6",
-          "flex items-center gap-3 px-4 py-3 rounded-xl",
+          "flex items-center gap-3 px-4 py-3",
           "bg-[var(--color-popover)] border border-[var(--color-border)]",
           className,
         )}
@@ -104,7 +104,7 @@ export function BulkActionBar({
           onClick={isAllSelected ? onClearSelection : onSelectAll}
           aria-label={isAllSelected ? `Deselect all ${itemLabel}` : `Select all ${itemLabel}`}
           aria-pressed={isAllSelected}
-          className="p-1.5 rounded-lg hover:bg-[var(--color-hover)] transition-colors"
+          className="p-1.5 hover:bg-[var(--color-hover)] transition-colors"
           title={isAllSelected ? "Deselect all" : "Select all"}
         >
           {isAllSelected ? (
@@ -184,7 +184,7 @@ export function BulkActionBar({
         <button
           onClick={onClearSelection}
           aria-label="Clear selection"
-          className="p-1.5 rounded-lg hover:bg-[var(--color-hover)] transition-colors ml-1"
+          className="p-1.5 hover:bg-[var(--color-hover)] transition-colors ml-1"
           title="Clear selection"
         >
           <X className="h-4 w-4 text-[var(--color-muted-foreground)]" aria-hidden="true" />

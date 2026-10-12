@@ -282,7 +282,7 @@ export function AtConnectionPanel() {
         <h3 id="at-files" className="text-sm font-medium">
           {t("filesTitle")}
         </h3>
-        <ul className="divide-y divide-[var(--color-border)] rounded-md border border-[var(--color-border)]">
+        <ul className="divide-y divide-[var(--color-border)] border border-[var(--color-border)]">
           {FILES.map((name) => {
             const file = files.files[name];
             return (

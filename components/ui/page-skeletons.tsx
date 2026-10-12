@@ -17,14 +17,14 @@ export function DashboardSkeleton({ className }: { className?: string }) {
           <Skeleton className="h-4 w-56" />
         </div>
         <div className="hidden lg:flex items-center gap-2">
-          <Skeleton className="h-9 w-28 rounded-md" />
-          <Skeleton className="h-9 w-28 rounded-md" />
-          <Skeleton className="h-9 w-9 rounded-md" />
+          <Skeleton className="h-9 w-28" />
+          <Skeleton className="h-9 w-28" />
+          <Skeleton className="h-9 w-9" />
         </div>
       </div>
 
       {/* Onboarding checklist skeleton */}
-      <Skeleton className="h-14 w-full rounded-xl" />
+      <Skeleton className="h-14 w-full" />
 
       {/* Stat cards skeleton */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
@@ -38,7 +38,7 @@ export function DashboardSkeleton({ className }: { className?: string }) {
             <Card>
               <CardContent className="p-4 md:p-6">
                 <div className="flex items-center gap-3 mb-3">
-                  <Skeleton className="h-9 w-9 rounded-lg" />
+                  <Skeleton className="h-9 w-9" />
                   <Skeleton className="h-3 w-24" />
                 </div>
                 <Skeleton className="h-7 w-16 mb-2" />
@@ -64,7 +64,7 @@ export function DashboardSkeleton({ className }: { className?: string }) {
                 <Skeleton className="h-3 w-48" />
               </CardHeader>
               <CardContent>
-                <Skeleton className="h-48 w-full rounded-lg" />
+                <Skeleton className="h-48 w-full" />
               </CardContent>
             </Card>
           </motion.div>
@@ -111,8 +111,8 @@ export function PropertiesListSkeleton({ className }: { className?: string }) {
           <Skeleton className="h-4 w-64" />
         </div>
         <div className="flex items-center gap-2">
-          <Skeleton className="h-9 w-24 rounded-md" />
-          <Skeleton className="h-9 w-32 rounded-md" />
+          <Skeleton className="h-9 w-24" />
+          <Skeleton className="h-9 w-32" />
         </div>
       </div>
 
@@ -124,7 +124,7 @@ export function PropertiesListSkeleton({ className }: { className?: string }) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] p-4"
+            className="border border-[var(--color-border)] bg-[var(--color-card)] p-4"
           >
             <Skeleton className="h-3 w-20 mb-2" />
             <Skeleton className="h-6 w-12" />
@@ -133,10 +133,10 @@ export function PropertiesListSkeleton({ className }: { className?: string }) {
       </div>
 
       {/* Search bar */}
-      <Skeleton className="h-10 w-full max-w-sm rounded-md" />
+      <Skeleton className="h-10 w-full max-w-sm" />
 
       {/* Table skeleton */}
-      <div className="rounded-lg border border-[var(--color-border)] overflow-hidden">
+      <div className="border border-[var(--color-border)] overflow-hidden">
         {/* Table header */}
         <div className="flex gap-4 p-3 bg-[var(--color-muted)]/30 border-b border-[var(--color-border)]">
           {[1, 2, 3, 4, 5].map((i) => (
@@ -176,7 +176,7 @@ export function PeopleListSkeleton({ className }: { className?: string }) {
           <Skeleton className="h-8 w-40" />
           <Skeleton className="h-4 w-56" />
         </div>
-        <Skeleton className="h-9 w-24 rounded-md" />
+        <Skeleton className="h-9 w-24" />
       </div>
 
       {/* Stats row */}
@@ -187,7 +187,7 @@ export function PeopleListSkeleton({ className }: { className?: string }) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] p-4"
+            className="border border-[var(--color-border)] bg-[var(--color-card)] p-4"
           >
             <Skeleton className="h-3 w-20 mb-2" />
             <Skeleton className="h-6 w-12" />
@@ -197,8 +197,8 @@ export function PeopleListSkeleton({ className }: { className?: string }) {
 
       {/* Tabs skeleton */}
       <div className="flex gap-4 border-b border-[var(--color-border)] pb-2">
-        <Skeleton className="h-8 w-24 rounded-md" />
-        <Skeleton className="h-8 w-24 rounded-md" />
+        <Skeleton className="h-8 w-24" />
+        <Skeleton className="h-8 w-24" />
       </div>
 
       {/* Cards grid */}
@@ -275,8 +275,8 @@ export function FinancialSkeleton({ className }: { className?: string }) {
           <Skeleton className="h-4 w-60" />
         </div>
         <div className="flex items-center gap-2">
-          <Skeleton className="h-9 w-28 rounded-lg" />
-          <Skeleton className="h-9 w-28 rounded-lg" />
+          <Skeleton className="h-9 w-28" />
+          <Skeleton className="h-9 w-28" />
         </div>
       </div>
 
@@ -302,8 +302,8 @@ export function FinancialSkeleton({ className }: { className?: string }) {
 
       {/* Filter bar */}
       <div className="flex items-center gap-3">
-        <Skeleton className="h-10 w-64 rounded-lg" />
-        <Skeleton className="h-10 w-32 rounded-lg" />
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-10 w-32" />
       </div>
 
       {/* Table rows */}
@@ -343,7 +343,7 @@ export function LeasesSkeleton({ className }: { className?: string }) {
           <Skeleton className="h-8 w-36" />
           <Skeleton className="h-4 w-52" />
         </div>
-        <Skeleton className="h-9 w-28 rounded-lg" />
+        <Skeleton className="h-9 w-28" />
       </div>
 
       {/* Status badges row */}
@@ -371,11 +371,11 @@ export function LeasesSkeleton({ className }: { className?: string }) {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Skeleton className="h-4 w-4 rounded" />
+                  <Skeleton className="h-4 w-4" />
                   <Skeleton className="h-4 w-32" />
                 </div>
                 <div className="flex items-center gap-2">
-                  <Skeleton className="h-4 w-4 rounded" />
+                  <Skeleton className="h-4 w-4" />
                   <Skeleton className="h-4 w-28" />
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t border-[var(--color-inner-border)]">

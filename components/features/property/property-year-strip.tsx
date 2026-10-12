@@ -123,7 +123,6 @@ export function PropertyYearStrip({
           <Button
             variant="ghost"
             size="icon-sm"
-            className="rounded-none"
             onClick={() => setYear((y) => y - 1)}
             aria-label={t("previousYear")}
           >
@@ -133,7 +132,6 @@ export function PropertyYearStrip({
           <Button
             variant="ghost"
             size="icon-sm"
-            className="rounded-none"
             onClick={() => setYear((y) => y + 1)}
             aria-label={t("nextYear")}
           >
@@ -188,7 +186,7 @@ export function PropertyYearStrip({
               }
               title={summary}
               aria-label={`${label} ${year} — ${summary}`}
-              className={`${outline} rounded-sm py-1 transition-colors hover:bg-[var(--color-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] max-md:min-h-11`}
+              className={`${outline} py-1 transition-colors hover:bg-[var(--color-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] max-md:min-h-11`}
             >
               <span className="mono-label block text-[9px]">{label}</span>
               <span className={swatch} />

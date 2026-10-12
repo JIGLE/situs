@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils/utils";
 
 const badgeVariants = cva(
   // Situs is rectilinear — badges are square-cornered, 1px-bordered chips.
-  "inline-flex items-center rounded-none border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2",
+  "inline-flex items-center border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2",
   {
     variants: {
       variant: {

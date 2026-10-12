@@ -173,10 +173,10 @@ export function EmptyStateIllustration({
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.1, duration: 0.4, ease: "easeOut" }}
-        className={cn("relative rounded-2xl bg-gradient-to-br p-6 mb-6", meta.gradient)}
+        className={cn("relative bg-gradient-to-br p-6 mb-6", meta.gradient)}
       >
         {/* Decorative ring */}
-        <div className="absolute inset-0 rounded-2xl border border-[var(--color-border)] opacity-50" />
+        <div className="absolute inset-0 border border-[var(--color-border)] opacity-50" />
 
         {/* Floating particles (decorative) */}
         <motion.div

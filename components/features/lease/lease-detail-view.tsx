@@ -180,7 +180,7 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex items-start gap-4">
-          <div className="p-3 rounded-xl bg-violet-500/10">
+          <div className="p-3 bg-violet-500/10">
             <FileText className="h-8 w-8 text-violet-500" />
           </div>
           <div>
@@ -460,7 +460,7 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
         </CardContent>
       </Card>
       {/* Danger Zone */}
-      <div className="rounded-xl border border-red-800/30 p-5 space-y-3">
+      <div className="border border-red-800/30 p-5 space-y-3">
         <div className="flex items-center gap-2">
           <XCircle className="h-4 w-4 text-red-500" />
           <h3 className="text-sm font-semibold text-red-500">{t("dangerZone")}</h3>

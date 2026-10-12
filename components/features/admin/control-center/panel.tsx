@@ -25,7 +25,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "flex flex-col overflow-hidden rounded-xl border border-[var(--color-inner-border)] bg-[var(--color-surface-solid)]",
+        "flex flex-col overflow-hidden border border-[var(--color-inner-border)] bg-[var(--color-surface-solid)]",
         "lg:min-h-0",
         className,
       )}

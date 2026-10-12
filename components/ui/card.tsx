@@ -21,19 +21,15 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
     <div
       ref={ref}
       className={cn(
-        "rounded-xl bg-[var(--color-card)] text-[var(--color-card-foreground)]",
+        "bg-[var(--color-card)] text-[var(--color-card-foreground)]",
         "border border-[var(--color-inner-border)]",
-        "shadow-[var(--shadow-card)]",
-        // `transition-colors`, not `transition-all`. Both `--shadow-card` and
-        // `--shadow-card-hover` are `none` and every radius token is 0, so border colour is the
-        // only thing left that actually changes — `all` was animating a list of properties that
-        // no longer move.
+        // `transition-colors`, not `transition-all`: a card has no shadow and no radius, so border
+        // colour is the only thing that changes, and `all` would animate properties that never move.
         "transition-colors duration-200 ease-out",
-        // The 2px hover lift is gone. It arrived with the shadowed, rounded card it was designed
-        // for; against a zero-radius panel with no shadow it reads as the surface twitching, and
-        // it fired on static panels that are not interactive at all. The border-colour change is
-        // the affordance, and it is the honest one — it lands on cards that respond to a click.
-        "hover:shadow-[var(--shadow-card-hover)] hover:border-[var(--color-inner-border-hover)]",
+        // No hover lift: against a square panel with no shadow it reads as the surface twitching,
+        // and it fired on static panels that are not interactive at all. The border-colour change
+        // is the affordance, and it is the honest one — it lands on cards that respond to a click.
+        "hover:border-[var(--color-inner-border-hover)]",
         className,
       )}
       {...props}

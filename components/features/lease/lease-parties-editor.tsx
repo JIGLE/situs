@@ -59,7 +59,7 @@ export function LeasePartiesEditor({
       {parties.map((party, index) => (
         <div
           key={index}
-          className="space-y-3 rounded-lg border border-[var(--color-border)] p-3"
+          className="space-y-3 border border-[var(--color-border)] p-3"
           data-testid="lease-party"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

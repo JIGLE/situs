@@ -43,7 +43,7 @@ function AuthErrorContent() {
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-[var(--color-background)] p-4">
-      <div className="w-full max-w-md rounded-lg border border-[var(--color-destructive)]/20 bg-[var(--color-card)] p-6">
+      <div className="w-full max-w-md border border-[var(--color-destructive)]/20 bg-[var(--color-card)] p-6">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-error-muted)]">
           <AlertTriangle className="h-6 w-6 text-[var(--color-destructive)]" />
         </div>
@@ -76,7 +76,7 @@ function AuthErrorContent() {
           <summary className="cursor-pointer text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]">
             {t("details")}
           </summary>
-          <p className="mt-2 rounded bg-[var(--color-muted)] p-3 font-mono text-xs text-[var(--color-muted-foreground)]">
+          <p className="mt-2 bg-[var(--color-muted)] p-3 font-mono text-xs text-[var(--color-muted-foreground)]">
             {t("codeLabel")}: {code}
           </p>
         </details>

@@ -186,7 +186,7 @@ function DetailLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="flex items-center gap-1 rounded px-1.5 py-1 text-xs text-[var(--color-muted-foreground)] transition-colors hover:text-[var(--color-foreground)]"
+      className="flex items-center gap-1 px-1.5 py-1 text-xs text-[var(--color-muted-foreground)] transition-colors hover:text-[var(--color-foreground)]"
     >
       {label}
       <ArrowRight className="size-3" aria-hidden />

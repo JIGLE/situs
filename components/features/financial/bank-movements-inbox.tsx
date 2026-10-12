@@ -303,7 +303,7 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 rounded-none px-2 text-xs"
+          className="h-7 px-2 text-xs"
           onClick={() => void act(row, "restore")}
           disabled={busyId === row.id}
         >
@@ -321,10 +321,7 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
             onValueChange={(leaseId) => void act(row, "reassign", leaseId)}
             disabled={busyId === row.id}
           >
-            <SelectTrigger
-              className="h-7 w-[190px] rounded-none text-xs"
-              aria-label={t("assignToLease")}
-            >
+            <SelectTrigger className="h-7 w-[190px] text-xs" aria-label={t("assignToLease")}>
               <SelectValue placeholder={t("assignToLease")} />
             </SelectTrigger>
             <SelectContent>
@@ -338,7 +335,7 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 rounded-none p-0"
+            className="h-7 w-7 p-0"
             onClick={() => setReassigningId(null)}
             aria-label={t("cancelReassign")}
           >
@@ -358,7 +355,7 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
                 key={payment.id}
                 variant="ghost"
                 size="sm"
-                className="h-7 rounded-none px-2 text-xs"
+                className="h-7 px-2 text-xs"
                 onClick={() => void act(row, "link", undefined, { receiptId: payment.id })}
                 disabled={busyId === row.id}
               >
@@ -371,7 +368,7 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 rounded-none px-2 text-xs"
+              className="h-7 px-2 text-xs"
               onClick={() => void act(row, "confirm", undefined, { newPayment: true })}
               disabled={busyId === row.id}
             >
@@ -383,7 +380,7 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 rounded-none px-2 text-xs"
+            className="h-7 px-2 text-xs"
             onClick={() => void act(row, "confirm")}
             disabled={busyId === row.id}
           >
@@ -395,7 +392,7 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 rounded-none px-2 text-xs"
+            className="h-7 px-2 text-xs"
             onClick={() => setReassigningId(row.id)}
             disabled={busyId === row.id}
           >
@@ -405,7 +402,7 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 rounded-none px-2 text-xs text-[var(--color-muted-foreground)]"
+          className="h-7 px-2 text-xs text-[var(--color-muted-foreground)]"
           onClick={() => void act(row, "ignore")}
           disabled={busyId === row.id}
         >
@@ -430,10 +427,7 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
       {/* No heading: the tab label is this view's heading. */}
       <div className="flex flex-wrap items-center gap-3 border-b border-[var(--color-border)] px-4 py-3">
         <Select value={filter} onValueChange={(value) => isInboxFilter(value) && setFilter(value)}>
-          <SelectTrigger
-            className="h-8 w-[220px] rounded-none text-xs"
-            aria-label={t("filterStatus")}
-          >
+          <SelectTrigger className="h-8 w-[220px] text-xs" aria-label={t("filterStatus")}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

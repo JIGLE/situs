@@ -130,11 +130,11 @@ export function MobileBottomNav({
           {session && (
             <Sheet>
               <SheetTrigger className={tabItemClass(isSecondaryActive)} aria-label={tNav("more")}>
-                <Avatar className="h-6 w-6 rounded-none ring-1 ring-[var(--color-border)]">
+                <Avatar className="h-6 w-6 ring-1 ring-[var(--color-border)]">
                   <AvatarImage src={user?.image || ""} alt={user?.name || "User"} />
                   <AvatarFallback
                     data-audit-chrome
-                    className="rounded-none bg-[var(--country-highlight-readable)] text-[10px] font-semibold text-[var(--color-background)]"
+                    className="bg-[var(--country-highlight-readable)] text-[10px] font-semibold text-[var(--color-background)]"
                   >
                     {initials}
                   </AvatarFallback>
@@ -145,7 +145,7 @@ export function MobileBottomNav({
               </SheetTrigger>
               <SheetContent
                 side="bottom"
-                className="max-h-[85vh] overflow-y-auto rounded-none px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-5"
+                className="max-h-[85vh] overflow-y-auto px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-5"
               >
                 <SheetTitle className="sr-only">{tNav("more")}</SheetTitle>
                 <div className="mb-4 flex items-center gap-3">

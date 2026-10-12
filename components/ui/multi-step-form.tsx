@@ -398,7 +398,7 @@ export function DraftBanner({ onRestore, onDiscard }: DraftBannerProps): React.R
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-info)]/10 border border-[var(--color-info)]/30"
+      className="flex items-center justify-between p-3 bg-[var(--color-info)]/10 border border-[var(--color-info)]/30"
     >
       <p className="text-sm text-[var(--color-info)]">{t("draftFound")}</p>
       <div className="flex items-center gap-2">

@@ -258,12 +258,12 @@ export function SettingsSecurity() {
               <p className="text-sm text-muted-foreground">{t("scanQr")}</p>
               {totpQr && (
                 <picture>
-                  <img src={totpQr} alt={t("qrAlt")} className="w-48 h-48 rounded-lg" />
+                  <img src={totpQr} alt={t("qrAlt")} className="w-48 h-48" />
                 </picture>
               )}
               <details className="text-xs">
                 <summary className="cursor-pointer text-muted-foreground">{t("cantScan")}</summary>
-                <code className="block mt-2 p-2 bg-muted rounded text-xs break-all select-all">
+                <code className="block mt-2 p-2 bg-muted text-xs break-all select-all">
                   {totpSecret}
                 </code>
               </details>
@@ -308,7 +308,7 @@ export function SettingsSecurity() {
               <div className="space-y-2">
                 <p className="text-sm font-medium">{t("backupCodes")}</p>
                 <p className="text-sm text-muted-foreground">{t("backupCodesHelp")}</p>
-                <div className="grid grid-cols-2 gap-1.5 p-3 bg-muted rounded-lg font-mono text-sm">
+                <div className="grid grid-cols-2 gap-1.5 p-3 bg-muted font-mono text-sm">
                   {totpBackupCodes.map((c) => (
                     <span key={c}>{c}</span>
                   ))}
@@ -348,14 +348,14 @@ export function SettingsSecurity() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-border p-4 space-y-2">
+            <div className="border border-border p-4 space-y-2">
               <p className="text-sm font-medium">{t("exportTitle")}</p>
               <p className="text-xs text-muted-foreground">{t("exportHelp")}</p>
               <Button variant="outline" size="sm" onClick={exportData}>
                 {t("exportTitle")}
               </Button>
             </div>
-            <div className="rounded-lg border border-destructive/30 p-4 space-y-2">
+            <div className="border border-destructive/30 p-4 space-y-2">
               <p className="text-sm font-medium text-destructive">{t("deleteTitle")}</p>
               <p className="text-xs text-muted-foreground">{t("deleteHelp")}</p>
               <Button variant="destructive" size="sm" onClick={requestDelete}>

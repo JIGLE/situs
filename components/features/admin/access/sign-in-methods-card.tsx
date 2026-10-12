@@ -26,7 +26,7 @@ export function SignInMethodsCard({ providers, allowlist }: Props) {
 
   return (
     <>
-      <section className="rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3">
+      <section className="border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3">
         <h2 className="text-sm font-medium text-[var(--color-foreground)]">{t("providers")}</h2>
         <ul className="mt-2 space-y-1.5">
           {providers.map((provider) => (
@@ -51,7 +51,7 @@ export function SignInMethodsCard({ providers, allowlist }: Props) {
         <p className="mt-3 text-sm text-muted-foreground">{t("providersHelp")}</p>
       </section>
 
-      <section className="rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3">
+      <section className="border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3">
         <h2 className="text-sm font-medium text-[var(--color-foreground)]">{t("allowlist")}</h2>
         {allowlist.length === 0 ? (
           <p className="mt-1 text-sm text-muted-foreground">{t("allowlistEmpty")}</p>

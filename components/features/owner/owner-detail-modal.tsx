@@ -274,7 +274,7 @@ export function OwnerDetailModal({ ownerId, onClose }: OwnerDetailModalProps) {
                     {owner.properties.map((po) => (
                       <div
                         key={po.id}
-                        className="flex items-center justify-between p-2 bg-[var(--color-card)] rounded"
+                        className="flex items-center justify-between p-2 bg-[var(--color-card)]"
                       >
                         <span className="text-sm text-[var(--color-foreground)]">
                           {po.property?.name || "Unknown Property"}

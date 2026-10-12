@@ -65,7 +65,7 @@ function SidebarFooter({
             route to account settings was a nav row of its own; that row is gone now. */}
         <Link
           href={"/settings?tab=account"}
-          className="flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-[var(--color-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--country-highlight-readable)]"
+          className="flex min-h-11 min-w-0 flex-1 items-center gap-3 px-2 py-2 transition-colors hover:bg-[var(--color-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--country-highlight-readable)]"
           title={tNav("account")}
         >
           <Avatar className="w-8 h-8 ring-2 ring-[var(--color-inner-border)]">

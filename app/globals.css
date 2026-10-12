@@ -163,10 +163,7 @@
   --radius-full: 9999px;
 
   /* Shadows — borders do the separation work; only overlays get depth */
-  --shadow-card: none;
-  --shadow-card-hover: none;
   --shadow-modal: 0 24px 48px rgba(0, 0, 0, 0.18);
-  --shadow-glow: none;
 }
 
 /* Country/logo tokens + raw semantic constants (not Tailwind utilities —
@@ -299,10 +296,7 @@
   --color-inner-border-hover: rgba(255, 255, 255, 0.24);
   --color-inner-border-active: #479147;
 
-  --shadow-card: none;
-  --shadow-card-hover: none;
   --shadow-modal: 0 24px 48px rgba(0, 0, 0, 0.5);
-  --shadow-glow: none;
 
   --ui-accent: #ffff00;
   --country-highlight-readable: #5c9d5c;
