@@ -79,7 +79,7 @@ export function PwaRegister(): React.ReactElement | null {
     <div
       role="dialog"
       aria-label={t("install")}
-      className="fixed inset-x-3 bottom-[5.5rem] z-[var(--z-toast)] mx-auto flex max-w-sm items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-3 shadow-[var(--shadow-modal)] backdrop-blur-md md:inset-x-auto md:right-4 md:bottom-4 md:left-auto"
+      className="fixed inset-x-3 bottom-[5.5rem] z-[var(--z-toast)] mx-auto flex max-w-sm items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-3 shadow-[var(--shadow-modal)] md:inset-x-auto md:right-4 md:bottom-4 md:left-auto"
     >
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_oklab,var(--color-primary)_15%,transparent)] text-[var(--color-primary)]">
         <Download className="h-5 w-5" />

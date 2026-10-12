@@ -374,7 +374,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
       <PropertyFormDialog ref={editFormDialogRef} />
 
       {/* Header */}
-      <div className="flex flex-col gap-4 sticky top-0 z-20 bg-[var(--color-card-solid)]/95 backdrop-blur-sm">
+      <div className="flex flex-col gap-4 sticky top-0 z-20 bg-[var(--color-card-solid)]">
         <div className="flex flex-col gap-4 @lg:flex-row @lg:items-start @lg:justify-between">
           <div className="flex items-start gap-4">
             <div className="p-3 lg:p-4 bg-[var(--color-info-muted)]">
