@@ -55,18 +55,9 @@ const OVERLAYS = [
 
 const everything = [...walk(join(root, "components")), ...walk(join(root, "app"))];
 
-/** The legal pages still blur their header; they move onto the theme tokens in their own change. */
-const BLUR_UNTIL_LEGAL_PAGES_MOVE = new Set([
-  "app/[locale]/privacy/page.tsx",
-  "app/[locale]/terms/page.tsx",
-]);
-
 describe("overlays are solid and flat", () => {
   it("nothing blurs what is behind it", () => {
-    const offenders = offendersIn(
-      everything.filter((f) => !BLUR_UNTIL_LEGAL_PAGES_MOVE.has(relative(root, f))),
-      /backdrop-blur/,
-    );
+    const offenders = offendersIn(everything, /backdrop-blur/);
     expect(
       offenders,
       `backdrop-blur is not part of the language:\n${offenders.join("\n")}`,
