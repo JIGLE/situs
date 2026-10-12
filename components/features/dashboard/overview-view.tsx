@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/shared/page-header";
 import { type ElementType, type ReactElement, useCallback, useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -221,10 +222,7 @@ export function OverviewView({
     <div className="space-y-5 motion-safe:animate-fade-in">
       {showChecklist && <OnboardingChecklist steps={onboardingSteps} />}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-lg font-light text-[var(--color-foreground)]" data-testid="greeting">
-          {greeting}
-        </p>
+      <PageHeader title={greeting ?? ""} titleOnMobile titleTestId="greeting">
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -250,7 +248,7 @@ export function OverviewView({
             <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
-      </div>
+      </PageHeader>
 
       {error ? (
         <p

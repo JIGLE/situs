@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/shared/page-header";
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -91,17 +92,10 @@ export function AssetsView(): React.ReactElement {
 
   return (
     <div className="space-y-5">
-      {/* Compact page header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          {/* Title alone. These same figures used to trail the heading as a subtitle AND are
-              what the workspace summary is for; one screen stating a number twice is the thing
-              the declutter rule in CLAUDE.md exists to stop. */}
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-            {t("title")}
-          </h1>
-        </div>
-      </div>
+      {/* Title alone. These same figures used to trail the heading as a subtitle AND are what the
+          workspace summary is for; one screen stating a number twice is the thing the declutter
+          rule in CLAUDE.md exists to stop. */}
+      <PageHeader title={t("title")} />
 
       {/* Portfolio inventory — tree + workspace (table available via the toggle). Create and
           export are handed down as tree actions so they sit with the asset list rather than
