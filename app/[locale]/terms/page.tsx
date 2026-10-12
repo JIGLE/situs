@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { pageLocale } from "@/lib/i18n/page-title";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/shared/language-selector";
 import { legalContactEmail } from "@/lib/legal/contact";
 
-export async function generateMetadata() {
-  const t = await getTranslations("legal");
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props) {
+  const t = await getTranslations({ locale: await pageLocale(params), namespace: "legal" });
   return {
     title: t("termsTitle"),
     description: "The terms under which this Situs instance is provided.",
@@ -21,8 +24,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export default async function TermsPage() {
-  const t = await getTranslations("legal");
+export default async function TermsPage({ params }: Props) {
+  const t = await getTranslations({ locale: await pageLocale(params), namespace: "legal" });
   const email = legalContactEmail();
 
   return (
