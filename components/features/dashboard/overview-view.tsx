@@ -176,6 +176,14 @@ export function OverviewView({
   ];
   const showChecklist = !onboardingSteps.every((step) => step.completed);
 
+  const firstName = session?.user?.name?.trim().split(/\s+/)[0];
+  const greeting =
+    hour === null
+      ? null
+      : firstName
+        ? t("greetingNamed", { greeting: t(greetingKey(hour)), name: firstName })
+        : t(greetingKey(hour));
+
   if (loading) {
     return <div className="h-40 animate-pulse bg-[var(--color-muted)]/30" />;
   }
@@ -188,6 +196,7 @@ export function OverviewView({
     }));
     return (
       <div className="space-y-6">
+        <PageHeader title={greeting ?? ""} titleOnMobile titleTestId="greeting" />
         <OnboardingChecklist steps={richSteps} />
         <div className="grid gap-4 sm:grid-cols-3">
           <FeatureHighlightCard
@@ -209,14 +218,6 @@ export function OverviewView({
       </div>
     );
   }
-
-  const firstName = session?.user?.name?.trim().split(/\s+/)[0];
-  const greeting =
-    hour === null
-      ? null
-      : firstName
-        ? t("greetingNamed", { greeting: t(greetingKey(hour)), name: firstName })
-        : t(greetingKey(hour));
 
   return (
     <div className="space-y-5 motion-safe:animate-fade-in">
