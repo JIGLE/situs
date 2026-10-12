@@ -17,7 +17,7 @@ const SheetOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm",
+      "fixed inset-0 z-50 bg-black/60",
       "data-[state=open]:animate-in data-[state=closed]:animate-out",
       "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className,
@@ -48,7 +48,7 @@ const sheetVariants: Record<SheetSide, string> = {
   // long overlay outgrowing the viewport while letting a short one be short.
   //
   // Mobile is untouched: `inset-0 h-full` still makes it full-screen below `md`.
-  center: `inset-0 h-full w-full ${SAFE_TOP} ${SAFE_BOTTOM} md:pt-0 md:pb-0 md:inset-auto md:left-1/2 md:top-16 md:translate-x-[-50%] md:transform md:w-[75vw] md:max-w-5xl md:h-auto md:max-h-[calc(100dvh-6.5rem)] md:rounded-xl md:border md:border-[var(--color-border)] md:shadow-2xl md:ring-1 md:ring-[var(--color-border)] data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95`,
+  center: `inset-0 h-full w-full ${SAFE_TOP} ${SAFE_BOTTOM} md:pt-0 md:pb-0 md:inset-auto md:left-1/2 md:top-16 md:translate-x-[-50%] md:transform md:w-[75vw] md:max-w-5xl md:h-auto md:max-h-[calc(100dvh-6.5rem)] md:rounded-xl md:border md:border-[var(--color-border)] md:ring-1 md:ring-[var(--color-border)] data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95`,
 };
 
 interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
@@ -65,7 +65,7 @@ const SheetContent = React.forwardRef<
       ref={ref}
       className={cn(
         "fixed z-50 flex flex-col gap-0",
-        "bg-[var(--color-card-solid)] border-[var(--color-border)] shadow-2xl",
+        "bg-[var(--color-card-solid)] border-[var(--color-border)]",
         "transition ease-in-out",
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
         "data-[state=closed]:duration-200 data-[state=open]:duration-300",

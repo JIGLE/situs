@@ -95,8 +95,7 @@ export function BulkActionBar({
           "fixed left-1/2 z-50 -translate-x-1/2",
           "max-md:bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] md:bottom-6",
           "flex items-center gap-3 px-4 py-3 rounded-xl",
-          "bg-[var(--color-card)] border border-[var(--color-border)]",
-          "shadow-lg backdrop-blur-sm",
+          "bg-[var(--color-popover)] border border-[var(--color-border)]",
           className,
         )}
       >

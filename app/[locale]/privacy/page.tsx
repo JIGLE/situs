@@ -19,8 +19,8 @@ export async function generateMetadata({ params }: Props) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="mb-3 text-lg font-semibold text-zinc-100">{title}</h2>
-      <div className="space-y-3 text-zinc-400">{children}</div>
+      <h2 className="mb-3 text-lg font-medium text-[var(--color-foreground)]">{title}</h2>
+      <div className="space-y-3 text-[var(--color-muted-foreground)]">{children}</div>
     </section>
   );
 }
@@ -28,7 +28,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Term({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <li>
-      <strong className="text-zinc-300">{label}:</strong> {children}
+      <strong className="text-[var(--color-foreground)]">{label}:</strong> {children}
     </li>
   );
 }
@@ -38,12 +38,12 @@ export default async function PrivacyPage({ params }: Props) {
   const email = dataProtectionEmail();
 
   return (
-    <div className="min-h-dvh bg-zinc-950 text-zinc-300">
-      <header className="sticky top-0 z-50 border-b border-white/[0.04] bg-zinc-950/80 backdrop-blur-md">
+    <div className="min-h-dvh bg-[var(--color-background)] text-[var(--color-foreground)]">
+      <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-background)]">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <Link
             href={"/"}
-            className="text-sm font-semibold tracking-tight text-zinc-50 transition-opacity hover:opacity-80"
+            className="text-sm font-semibold tracking-tight text-[var(--color-foreground)] transition-opacity hover:opacity-80"
           >
             Situs
           </Link>
@@ -53,13 +53,11 @@ export default async function PrivacyPage({ params }: Props) {
 
       <main className="mx-auto max-w-3xl px-4 py-16 sm:py-24">
         <div className="mb-12">
-          <p className="mb-3 text-xs font-medium uppercase tracking-widest text-indigo-400">
-            {t("eyebrow")}
-          </p>
-          <h1 className="font-display text-3xl font-bold tracking-tight text-zinc-50 sm:text-4xl">
+          <p className="mono-label mb-3 text-[var(--country-highlight-readable)]">{t("eyebrow")}</p>
+          <h1 className="text-3xl font-normal tracking-[-0.03em] text-[var(--color-foreground)] sm:text-4xl">
             {t("privacyTitle")}
           </h1>
-          <p className="mt-3 text-sm text-zinc-500">{t("lastUpdated")}</p>
+          <p className="mt-3 text-sm text-[var(--color-muted-foreground)]">{t("lastUpdated")}</p>
         </div>
 
         <div className="space-y-10 text-[15px] leading-7">
@@ -116,7 +114,9 @@ export default async function PrivacyPage({ params }: Props) {
               <li>{t("privacy.rights5")}</li>
               <li>{t("privacy.rights6")}</li>
             </ul>
-            <p className="text-sm text-zinc-500">{t("privacy.rightsExportNote")}</p>
+            <p className="text-sm text-[var(--color-muted-foreground)]">
+              {t("privacy.rightsExportNote")}
+            </p>
           </Section>
 
           <Section title={t("privacy.cookiesTitle")}>
@@ -139,20 +139,24 @@ export default async function PrivacyPage({ params }: Props) {
               {t("privacy.contactBody")}{" "}
               <a
                 href={`mailto:${email}`}
-                className="text-indigo-400 underline-offset-4 hover:underline"
+                className="text-[var(--country-highlight-readable)] underline-offset-4 hover:underline"
               >
                 {email}
               </a>
             </p>
           </Section>
 
-          <p className="border-t border-white/[0.06] pt-6 text-sm text-zinc-500">
+          <p className="border-t border-[var(--color-border)] pt-6 text-sm text-[var(--color-muted-foreground)]">
             {t("reviewNote")}
           </p>
         </div>
 
-        <div className="mt-16 border-t border-white/[0.06] pt-8">
-          <Button variant="ghost" asChild className="text-zinc-500 hover:text-zinc-300">
+        <div className="mt-16 border-t border-[var(--color-border)] pt-8">
+          <Button
+            variant="ghost"
+            asChild
+            className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+          >
             <Link href={"/"}>&larr; {t("backToHome")}</Link>
           </Button>
         </div>

@@ -452,11 +452,6 @@ body {
    TYPOGRAPHY SCALE
    ============================================ */
 
-/* Display alias — same family, boldness spent on weight/tracking */
-.font-display {
-  font-family: var(--font-display);
-}
-
 /* ============================================
    OVERLAY ENTER / EXIT
    ============================================
