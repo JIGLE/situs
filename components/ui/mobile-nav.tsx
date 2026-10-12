@@ -98,7 +98,7 @@ export function MobileBottomNav({
       role="navigation"
       aria-label={tNav("mobileNavLabel")}
     >
-      <div className="bg-[var(--color-background)]/95 backdrop-blur-sm border-t border-[var(--color-border)]">
+      <div className="bg-[var(--color-background)] border-t border-[var(--color-border)]">
         {/* The nav's true height is the wrapper's 1px `border-t` + this `h-16` + the safe-area
             spacer below. `<main>` reserves that same three-term expression as bottom padding
             (`app/[locale]/(main)/layout.tsx`) — change one and change the other, or content
@@ -254,7 +254,7 @@ export function MobileTopBar(): React.ReactElement {
 
   return (
     <header
-      className="sticky top-0 z-30 flex items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-background)]/95 px-4 pt-[env(safe-area-inset-top,0px)] backdrop-blur md:hidden"
+      className="sticky top-0 z-30 flex items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-background)] px-4 pt-[env(safe-area-inset-top,0px)] md:hidden"
       style={{ height: "calc(3.5rem + env(safe-area-inset-top, 0px))" }}
     >
       <Link
