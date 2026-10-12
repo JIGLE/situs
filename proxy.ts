@@ -10,7 +10,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { locales, defaultLocale } from "./lib/i18n/config";
+import { locales } from "./lib/i18n/config";
+import { resolveLocale as resolveLocaleFrom } from "./lib/i18n/resolve-locale";
 
 import {
   verifyCsrfToken,
@@ -44,20 +45,14 @@ function isSupportedLocale(segment: string): segment is SupportedLocale {
  *
  * The `situs-locale` cookie wins: it is an explicit choice the visitor made through one of the
  * language controls, so it should outrank whatever their browser advertises. `Accept-Language`
- * is the fallback, then `defaultLocale`. Mirrors `lib/i18n/server-locale.ts`, which resolves the
- * same thing for server components — the proxy cannot import it because that module reads
- * `next/headers`.
+ * is the fallback, then `defaultLocale`. `lib/i18n/resolve-locale.ts` decides it, for this file and for
+ * `lib/i18n/server-locale.ts` (which reads `next/headers`, so the proxy cannot import that one).
  */
 function resolveLocale(request: NextRequest): string {
-  const saved = request.cookies.get("situs-locale")?.value;
-  if (saved && isSupportedLocale(saved)) return saved;
-
-  const fromHeader = (request.headers.get("accept-language") ?? "")
-    .split(",")
-    .map((part) => part.split(";")[0].trim().slice(0, 2).toLowerCase())
-    .find(isSupportedLocale);
-
-  return fromHeader ?? defaultLocale;
+  return resolveLocaleFrom(
+    request.cookies.get("situs-locale")?.value,
+    request.headers.get("accept-language"),
+  );
 }
 
 /**
