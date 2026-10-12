@@ -369,7 +369,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
           <div className="space-y-4">
             {/* ── Zone 2: Primary Action ─────────────────────────────── */}
             {primaryAction && (
-              <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] p-4">
+              <div className="border border-[var(--color-border)] bg-[var(--color-card)] p-4">
                 <div className="flex items-center justify-between gap-4">
                   <p className="text-sm text-[var(--color-muted-foreground)]">
                     {isOverdue && "This tenant has an overdue payment. Record it now."}
@@ -399,7 +399,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                 {issues.map((issue) => (
                   <div
                     key={issue.id}
-                    className="flex items-center gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-sm"
+                    className="flex items-center gap-2 border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-sm"
                   >
                     <issue.icon className={`h-3.5 w-3.5 shrink-0 ${issue.color}`} />
                     <span className="text-[var(--color-foreground)]">{issue.label}</span>
@@ -423,7 +423,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                     which clipped `joao.silva@outlook.pt` by 16px with only a `title` tooltip to
                     recover it — and a phone has no hover. */}
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-card)] p-3">
+                  <div className="border border-[var(--color-border)] bg-[var(--color-card)] p-3">
                     <p className="text-[12px] md:text-[10px] text-[var(--color-muted-foreground)] uppercase tracking-wide mb-2">
                       {t("modal.contact")}
                     </p>
@@ -440,7 +440,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                       </div>
                     </div>
                   </div>
-                  <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-card)] p-3">
+                  <div className="border border-[var(--color-border)] bg-[var(--color-card)] p-3">
                     <p className="text-[12px] md:text-[10px] text-[var(--color-muted-foreground)] uppercase tracking-wide mb-2">
                       {tForms("property")}
                     </p>
@@ -451,7 +451,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                   </div>
                 </div>
                 {tenant.notes && (
-                  <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-card)] p-3">
+                  <div className="border border-[var(--color-border)] bg-[var(--color-card)] p-3">
                     <p className="text-[12px] md:text-[10px] text-[var(--color-muted-foreground)] uppercase tracking-wide mb-1">
                       {tForms("notes")}
                     </p>
@@ -464,7 +464,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
               <TabsContent value="lease" className="mt-4">
                 {activeLease ? (
                   <div className="space-y-3">
-                    <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-card)] p-4">
+                    <div className="border border-[var(--color-border)] bg-[var(--color-card)] p-4">
                       <div className="flex items-center justify-between mb-3">
                         <p className="text-sm font-medium text-[var(--color-foreground)]">
                           {t("modal.activeLease")}
@@ -521,7 +521,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-md border border-dashed border-[var(--color-border)] p-6 text-center">
+                  <div className="border border-dashed border-[var(--color-border)] p-6 text-center">
                     <Calendar className="mx-auto h-8 w-8 text-[var(--color-muted-foreground)] mb-2 opacity-50" />
                     <p className="text-sm text-[var(--color-muted-foreground)]">
                       {t("modal.noActiveLease")}
@@ -533,7 +533,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
               {/* Payments tab */}
               <TabsContent value="payments" className="mt-4">
                 {tenantReceipts.length === 0 ? (
-                  <div className="rounded-md border border-dashed border-[var(--color-border)] p-6 text-center">
+                  <div className="border border-dashed border-[var(--color-border)] p-6 text-center">
                     <DollarSign className="mx-auto h-8 w-8 text-[var(--color-muted-foreground)] mb-2 opacity-50" />
                     <p className="text-sm text-[var(--color-muted-foreground)]">
                       {t("modal.noPayments")}
@@ -544,7 +544,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                     {tenantReceipts.map((r) => (
                       <div
                         key={r.id}
-                        className="flex items-center justify-between rounded-md border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2.5"
+                        className="flex items-center justify-between border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2.5"
                       >
                         <div>
                           <p className="text-sm font-medium text-[var(--color-foreground)]">

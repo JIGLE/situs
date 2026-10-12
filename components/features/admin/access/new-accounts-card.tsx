@@ -70,7 +70,7 @@ export function NewAccountsCard({ settings, onChanged }: Props) {
   }
 
   return (
-    <section className="rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3">
+    <section className="border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3">
       <h2 className="text-sm font-medium text-[var(--color-foreground)]">{t("title")}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{t("help")}</p>
       <div className="mt-2 divide-y divide-[var(--color-border)]">
@@ -148,7 +148,7 @@ function SwitchRow({
       >
         <span
           className={cn(
-            "block h-5 w-5 rounded-full bg-background shadow-lg transition-transform",
+            "block h-5 w-5 rounded-full bg-background transition-transform",
             checked ? "translate-x-5" : "translate-x-0",
           )}
         />

@@ -25,14 +25,14 @@ export function ConfirmationDialog({ dialog }: ConfirmationDialogProps) {
 
   return (
     <AlertDialog open={state.isOpen} onOpenChange={(open) => !open && cancel()}>
-      <AlertDialogContent className="glass-modal rounded-xl max-w-md">
+      <AlertDialogContent className="glass-modal max-w-md">
         <AlertDialogHeader>
           <div className="flex items-start gap-4">
             <div
               className={
                 isDestructive
-                  ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-destructive)]/10 text-[var(--color-destructive)]"
-                  : "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+                  ? "flex h-10 w-10 shrink-0 items-center justify-center bg-[var(--color-destructive)]/10 text-[var(--color-destructive)]"
+                  : "flex h-10 w-10 shrink-0 items-center justify-center bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
               }
             >
               {isDestructive ? (
@@ -60,7 +60,7 @@ export function ConfirmationDialog({ dialog }: ConfirmationDialogProps) {
           <AlertDialogCancel
             onClick={cancel}
             disabled={state.isLoading}
-            className="rounded-lg border-[var(--color-inner-border)] bg-transparent text-[var(--color-foreground)] hover:bg-[var(--color-hover)]"
+            className="border-[var(--color-inner-border)] bg-transparent text-[var(--color-foreground)] hover:bg-[var(--color-hover)]"
           >
             {state.cancelLabel}
           </AlertDialogCancel>
@@ -72,8 +72,8 @@ export function ConfirmationDialog({ dialog }: ConfirmationDialogProps) {
             disabled={state.isLoading}
             className={
               isDestructive
-                ? "rounded-lg bg-[var(--color-destructive)] text-white hover:bg-[var(--color-destructive)]/90 disabled:opacity-50"
-                : "rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:bg-[var(--color-primary)]/90 disabled:opacity-50"
+                ? "bg-[var(--color-destructive)] text-white hover:bg-[var(--color-destructive)]/90 disabled:opacity-50"
+                : "bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:bg-[var(--color-primary)]/90 disabled:opacity-50"
             }
           >
             {state.isLoading ? (

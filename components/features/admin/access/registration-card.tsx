@@ -21,8 +21,8 @@ export function RegistrationCard({ status }: { status: SignInStatus }) {
     <section
       className={
         copy.open
-          ? "rounded-md border-l-2 border-[var(--semantic-warning-readable)] bg-[var(--semantic-warning-soft)] px-3 py-3"
-          : "rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3"
+          ? "border-l-2 border-[var(--semantic-warning-readable)] bg-[var(--semantic-warning-soft)] px-3 py-3"
+          : "border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3"
       }
     >
       <p className="text-sm font-medium text-[var(--color-foreground)]">{t(copy.title)}</p>

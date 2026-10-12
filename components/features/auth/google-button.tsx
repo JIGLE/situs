@@ -67,7 +67,7 @@ export function GoogleButton({
         void signIn("google", { callbackUrl: destination }).catch(() => setPending(false));
       }}
       className={cn(
-        "h-[52px] w-full gap-3 border border-[var(--google-button-border)] bg-[var(--google-button-bg)] text-[15px] font-medium text-[var(--google-button-fg)] shadow-none hover:bg-[var(--google-button-bg)] hover:text-[var(--google-button-fg)] hover:opacity-90",
+        "h-[52px] w-full gap-3 border border-[var(--google-button-border)] bg-[var(--google-button-bg)] text-[15px] font-medium text-[var(--google-button-fg)] hover:bg-[var(--google-button-bg)] hover:text-[var(--google-button-fg)] hover:opacity-90",
         className,
       )}
     >

@@ -204,7 +204,7 @@ export function SearchFilter({
           <Popover.Content
             align="end"
             sideOffset={6}
-            className="w-64 space-y-3 border border-[var(--color-border)] bg-[var(--color-card-solid)] p-3 shadow-xl"
+            className="w-64 space-y-3 border border-[var(--color-border)] bg-[var(--color-card-solid)] p-3"
           >
             {filters.map((filter) => (
               <div key={filter.key} className="space-y-1.5">

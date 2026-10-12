@@ -17,9 +17,9 @@ export function Skeleton({ className = "", variant = "text", width, height }: Sk
   const baseClasses = "bg-[var(--color-muted)] animate-shimmer";
 
   const variantClasses = {
-    text: "h-4 rounded",
+    text: "h-4",
     circular: "rounded-full",
-    rectangular: "rounded-lg",
+    rectangular: "",
   };
 
   const style: React.CSSProperties = {};
@@ -38,7 +38,7 @@ interface SkeletonCardProps {
 export function SkeletonCard({ lines = 3, showAvatar = false, className = "" }: SkeletonCardProps) {
   return (
     <motion.div
-      className={`p-4 border border-[var(--color-border)] rounded-lg bg-[var(--color-card)] ${className}`}
+      className={`p-4 border border-[var(--color-border)] bg-[var(--color-card)] ${className}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}

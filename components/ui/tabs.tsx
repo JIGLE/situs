@@ -80,7 +80,7 @@ const TabsMobileSelect = ({
     onChange={(e) => onValueChange(e.target.value)}
     aria-label={ariaLabel}
     className={cn(
-      "h-11 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-card-solid)] px-3",
+      "h-11 w-full border border-[var(--color-border)] bg-[var(--color-card-solid)] px-3",
       "font-mono text-xs uppercase tracking-[0.06em] text-[var(--color-foreground)]",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--country-highlight-readable)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]",
       className,

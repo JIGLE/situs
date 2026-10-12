@@ -927,7 +927,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                       variant="full"
                     />
                     {isExpiring && (
-                      <div className="flex items-center justify-between rounded-md border border-[var(--color-warning)]/20 bg-[var(--color-warning-muted)] px-3 py-1.5">
+                      <div className="flex items-center justify-between border border-[var(--color-warning)]/20 bg-[var(--color-warning-muted)] px-3 py-1.5">
                         <span className="text-xs text-[var(--color-warning)]">
                           {t("expiresIn", { days: daysUntilExpiry })}
                         </span>
@@ -945,7 +945,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                 );
               })}
               {relatedTenants.length === 0 && relatedLeases.length === 0 && (
-                <div className="rounded-lg border border-dashed border-[var(--color-border)] p-4 text-center space-y-2">
+                <div className="border border-dashed border-[var(--color-border)] p-4 text-center space-y-2">
                   <p className="text-sm text-[var(--color-muted-foreground)]">
                     {property.status === "vacant" ? t("vacantNotice") : t("noRelatedEntities")}
                   </p>
@@ -993,7 +993,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                     return (
                       <div
                         key={owner.id}
-                        className="flex items-center gap-3 p-2 rounded-lg bg-[var(--color-card-solid)] border border-[var(--color-border)]"
+                        className="flex items-center gap-3 p-2 bg-[var(--color-card-solid)] border border-[var(--color-border)]"
                       >
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-[var(--color-foreground)] truncate">

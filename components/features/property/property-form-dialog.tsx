@@ -252,12 +252,12 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                       }
                     />
                     {showSuggestions && addressSuggestions.length > 0 && (
-                      <div className="absolute z-10 w-full bg-[var(--color-popover)] border border-[var(--color-border)] rounded-md mt-1 max-h-60 overflow-y-auto">
+                      <div className="absolute z-10 w-full bg-[var(--color-popover)] border border-[var(--color-border)] mt-1 max-h-60 overflow-y-auto">
                         {addressSuggestions.map((suggestion, _index) => (
                           <button
                             key={suggestion.place_id}
                             type="button"
-                            className="w-full text-left px-3 py-2 hover:bg-[var(--color-surface-hover)] first:rounded-t-md last:rounded-b-md"
+                            className="w-full text-left px-3 py-2 hover:bg-[var(--color-surface-hover)]"
                             onClick={() => handleAddressSelect(suggestion)}
                           >
                             <div className="text-sm text-[var(--color-foreground)]">
@@ -280,7 +280,7 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                 {/* Sub-fields: shown when not verified (user typed manually) or toggled open */}
                 {(showManualFields ||
                   (!dialog.formData.addressVerified && dialog.formData.address.length > 0)) && (
-                  <div className="space-y-3 rounded-md border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-3">
+                  <div className="space-y-3 border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-3">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label htmlFor="zipCode">{t("postalCode")}</Label>
@@ -458,7 +458,7 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                 </button>
 
                 {showDetails && (
-                  <div className="mt-3 space-y-3 rounded-md border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-3">
+                  <div className="mt-3 space-y-3 border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-3">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label htmlFor="bedrooms">{t("fields.bedrooms")}</Label>

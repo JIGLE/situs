@@ -80,7 +80,7 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex items-start gap-4">
-          <div className="p-3 rounded-xl bg-emerald-500/10">
+          <div className="p-3 bg-emerald-500/10">
             <Users className="h-8 w-8 text-emerald-500" />
           </div>
           <div>

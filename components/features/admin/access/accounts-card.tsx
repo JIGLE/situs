@@ -86,10 +86,10 @@ export function AccountsCard({ accounts, onChanged }: Props) {
   }
 
   return (
-    <section className="rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3">
+    <section className="border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3">
       <h2 className="text-sm font-medium text-[var(--color-foreground)]">{t("title")}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{t("help")}</p>
-      <ul className="mt-3 divide-y divide-[var(--color-border)] rounded-md border border-[var(--color-border)]">
+      <ul className="mt-3 divide-y divide-[var(--color-border)] border border-[var(--color-border)]">
         {accounts.map((account) => {
           // A name that is empty is no name: the account is then known by its email.
           const name = account.name?.trim() || null;

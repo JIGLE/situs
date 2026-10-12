@@ -76,11 +76,11 @@ export function InvitationsCard({ invitations, switchedOn, onChanged }: Props) {
   }
 
   return (
-    <section className="rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3">
+    <section className="border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3">
       <h2 className="text-sm font-medium text-[var(--color-foreground)]">{t("title")}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{t("help")}</p>
       {!switchedOn && (
-        <p className="mt-2 rounded-md bg-[var(--semantic-warning-soft)] px-3 py-2 text-sm text-[var(--semantic-warning-readable)]">
+        <p className="mt-2 bg-[var(--semantic-warning-soft)] px-3 py-2 text-sm text-[var(--semantic-warning-readable)]">
           {t("off")}
         </p>
       )}
@@ -127,7 +127,7 @@ export function InvitationsCard({ invitations, switchedOn, onChanged }: Props) {
       {invitations.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">{t("empty")}</p>
       ) : (
-        <ul className="mt-3 divide-y divide-[var(--color-border)] rounded-md border border-[var(--color-border)]">
+        <ul className="mt-3 divide-y divide-[var(--color-border)] border border-[var(--color-border)]">
           {invitations.map((invitation) => (
             <li
               key={invitation.id}

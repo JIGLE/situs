@@ -65,7 +65,7 @@ export function AdminAccessView() {
     return (
       <p
         role="alert"
-        className="rounded-md bg-[var(--semantic-danger-soft)] px-3 py-2 text-sm text-[var(--semantic-danger-readable)]"
+        className="bg-[var(--semantic-danger-soft)] px-3 py-2 text-sm text-[var(--semantic-danger-readable)]"
       >
         {t("loadFailed")}
       </p>

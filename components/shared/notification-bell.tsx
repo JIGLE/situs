@@ -148,7 +148,7 @@ export function NotificationBell({ className }: { className?: string } = {}): Re
       <Popover.Content
         align="end"
         sideOffset={8}
-        className="w-[min(360px,calc(100vw-2rem))] rounded-lg border border-[var(--color-border)] bg-[var(--color-card-solid)] shadow-2xl"
+        className="w-[min(360px,calc(100vw-2rem))] border border-[var(--color-border)] bg-[var(--color-card-solid)]"
       >
         <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
           <h2 className="text-sm font-semibold text-[var(--color-foreground)]">{t("title")}</h2>
@@ -189,7 +189,7 @@ export function NotificationBell({ className }: { className?: string } = {}): Re
                         !navigable && "cursor-default",
                       )}
                     >
-                      <span className="mt-0.5 shrink-0 rounded-md bg-[var(--color-muted)] p-1.5">
+                      <span className="mt-0.5 shrink-0 bg-[var(--color-muted)] p-1.5">
                         <Icon className="h-4 w-4 text-[var(--color-muted-foreground)]" />
                       </span>
                       <span className="min-w-0 flex-1">

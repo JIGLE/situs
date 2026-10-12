@@ -82,12 +82,12 @@ export function EntityLink({
       <Link
         href={href}
         className={cn(
-          "flex items-center gap-3 p-3 rounded-lg border border-[var(--color-border)]",
+          "flex items-center gap-3 p-3 border border-[var(--color-border)]",
           "hover:bg-[var(--color-surface-hover)] transition-colors group",
           className,
         )}
       >
-        <div className={cn("p-2 rounded-lg bg-[var(--color-muted)]")}>
+        <div className={cn("p-2 bg-[var(--color-muted)]")}>
           <Icon className={cn("h-4 w-4", config.color)} />
         </div>
         <div className="flex-1 min-w-0">
@@ -124,13 +124,13 @@ export function EntityLink({
     <Link
       href={href}
       className={cn(
-        "block p-4 rounded-xl border border-[var(--color-border)]",
+        "block p-4 border border-[var(--color-border)]",
         "hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-primary)]/30 transition-all group",
         className,
       )}
     >
       <div className="flex items-start gap-3">
-        <div className={cn("p-2.5 rounded-xl bg-[var(--color-muted)]")}>
+        <div className={cn("p-2.5 bg-[var(--color-muted)]")}>
           <Icon className={cn("h-5 w-5", config.color)} />
         </div>
         <div className="flex-1 min-w-0">

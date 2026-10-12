@@ -128,7 +128,7 @@ export function OnboardingChecklist({
   return (
     <div
       className={cn(
-        "rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] overflow-hidden",
+        "border border-[var(--color-border)] bg-[var(--color-card)] overflow-hidden",
         className,
       )}
     >
@@ -272,7 +272,7 @@ export function OnboardingChecklist({
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.05 }}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors",
+                        "flex items-center gap-3 px-3 py-2.5 transition-colors",
                         isNext
                           ? "bg-[var(--color-accent)]/5 border border-[var(--color-accent)]/20"
                           : "hover:bg-[var(--color-surface-hover)]",

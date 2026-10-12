@@ -81,7 +81,7 @@ export function PayerAccountsPanel({ tenantId, tenantName }: Props) {
       <p className="text-xs text-[var(--color-muted-foreground)]">
         {t("description", { tenant: tenantName })}
       </p>
-      <ul className="divide-y divide-[var(--color-border)] rounded-md border border-[var(--color-border)] bg-[var(--color-card)]">
+      <ul className="divide-y divide-[var(--color-border)] border border-[var(--color-border)] bg-[var(--color-card)]">
         {accounts.map((account) => {
           const name = [
             account.holderName,

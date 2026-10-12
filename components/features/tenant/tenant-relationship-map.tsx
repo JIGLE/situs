@@ -22,7 +22,7 @@ export function TenantRelationshipMap({ tenantId }: TenantRelationshipMapProps) 
 
   if (loading) {
     return (
-      <div className="rounded-md border border-dashed border-[var(--color-border)] p-6 text-center">
+      <div className="border border-dashed border-[var(--color-border)] p-6 text-center">
         <p className="text-sm text-[var(--color-muted-foreground)]">Loading relationship map…</p>
       </div>
     );
@@ -30,7 +30,7 @@ export function TenantRelationshipMap({ tenantId }: TenantRelationshipMapProps) 
 
   if (error || !data) {
     return (
-      <div className="rounded-md border border-dashed border-[var(--color-border)] p-6 text-center">
+      <div className="border border-dashed border-[var(--color-border)] p-6 text-center">
         <p className="text-sm text-[var(--color-muted-foreground)]">
           {error || "No relationship data available"}
         </p>
@@ -90,7 +90,7 @@ export function TenantRelationshipMap({ tenantId }: TenantRelationshipMapProps) 
       {stages.map((stage) => (
         <div
           key={stage.key}
-          className="rounded-md border border-[var(--color-border)] bg-[var(--color-card)] p-3"
+          className="border border-[var(--color-border)] bg-[var(--color-card)] p-3"
         >
           <div className="flex items-center gap-1.5 text-[12px] md:text-[10px] uppercase tracking-wide text-[var(--color-muted-foreground)]">
             <stage.icon className="h-3 w-3 shrink-0" />

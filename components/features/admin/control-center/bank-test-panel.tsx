@@ -293,7 +293,7 @@ export function BankTestPanel({ className }: { className?: string }) {
           {/* The remedy, not just the finding. An unregistered redirect is the failure that does
               not announce itself until you have already been bounced back from a bank. */}
           {primary.authenticated && primary.redirectUrlRegistered === false && (
-            <p className="mt-2 flex gap-2 rounded-md bg-[var(--semantic-warning-soft)] px-3 py-2 text-xs text-[var(--color-foreground)]">
+            <p className="mt-2 flex gap-2 bg-[var(--semantic-warning-soft)] px-3 py-2 text-xs text-[var(--color-foreground)]">
               <AlertTriangle
                 className="mt-0.5 size-3.5 shrink-0 text-[var(--semantic-warning-readable)]"
                 aria-hidden
@@ -318,7 +318,7 @@ export function BankTestPanel({ className }: { className?: string }) {
               id="admin-test-institution"
               value={chosen}
               onChange={(event) => setChosen(event.target.value)}
-              className="min-h-11 min-w-0 flex-1 rounded-md border border-[var(--color-border)] bg-[var(--color-canvas)] px-2 text-sm text-[var(--color-foreground)]"
+              className="min-h-11 min-w-0 flex-1 border border-[var(--color-border)] bg-[var(--color-canvas)] px-2 text-sm text-[var(--color-foreground)]"
             >
               {institutions.map((institution) => (
                 <option key={institution.id} value={institution.id}>
@@ -347,7 +347,7 @@ export function BankTestPanel({ className }: { className?: string }) {
             {connections.map((connection) => (
               <li
                 key={connection.id}
-                className="flex items-center justify-between gap-2 rounded-md bg-[var(--color-canvas)] px-2.5 py-2"
+                className="flex items-center justify-between gap-2 bg-[var(--color-canvas)] px-2.5 py-2"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm text-[var(--color-foreground)]">
