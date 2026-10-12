@@ -35,7 +35,7 @@ for (const { locale, lang, control, privacy, signIn } of CASES) {
       await page.goto("/privacy", { waitUntil: "networkidle" });
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(privacy);
       await expect(page.locator("html")).toHaveAttribute("lang", lang);
-      await expect(page.getByRole("button", { name: control, exact: true })).toBeVisible();
+      await expect(page.locator("button", { hasText: new RegExp(`^${control}$`) })).toBeVisible();
     });
 
     test("the sign-in page speaks the same language", async ({ page }) => {

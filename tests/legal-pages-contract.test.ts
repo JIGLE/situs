@@ -69,7 +69,13 @@ describe("legal pages", () => {
 
   it.each(PAGES)("%s renders its prose from the catalogue", (page) => {
     const text = source(page);
-    expect(text).toMatch(/getTranslations\("legal"\)/);
+    // In the URL's own locale. The bare `getTranslations("legal")` read the request locale, which
+    // this app's proxy never sets (it rewrites the path, it does not run next-intl's middleware), so
+    // an English visitor read the Portuguese catalogue under `lang="en"`.
+    expect(text).toMatch(
+      /getTranslations\(\{\s*locale:\s*await pageLocale\(params\),\s*namespace:\s*"legal"/,
+    );
+    expect(text).not.toMatch(/getTranslations\("legal"\)/);
 
     // A paragraph or list item holding a sentence of literal text rather than a t() call is the
     // regression this is really about: it would be complete in four catalogues and still render

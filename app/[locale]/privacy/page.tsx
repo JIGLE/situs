@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { pageLocale } from "@/lib/i18n/page-title";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/shared/language-selector";
 import { dataProtectionEmail } from "@/lib/legal/contact";
 
-export async function generateMetadata() {
-  const t = await getTranslations("legal");
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props) {
+  const t = await getTranslations({ locale: await pageLocale(params), namespace: "legal" });
   return {
     title: t("privacyTitle"),
     description: "How Situs collects, uses, and protects your personal data.",
@@ -30,8 +33,8 @@ function Term({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-export default async function PrivacyPage() {
-  const t = await getTranslations("legal");
+export default async function PrivacyPage({ params }: Props) {
+  const t = await getTranslations({ locale: await pageLocale(params), namespace: "legal" });
   const email = dataProtectionEmail();
 
   return (
