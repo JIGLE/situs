@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/shared/page-header";
 import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -146,29 +147,23 @@ export function FinancialsContainer() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">{t("title")}</h1>
-          <p className="text-sm text-[var(--color-muted-foreground)]">{ownerDescription}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <ExportButton
-            data={state.receipts}
-            filename="payments-export"
-            columns={[
-              { key: "tenantName", label: t("colTenant") },
-              { key: "propertyName", label: t("colProperty") },
-              { key: "amount", label: t("colAmount") },
-              { key: "date", label: t("colDate") },
-              { key: "status", label: t("colStatus") },
-            ]}
-          />
-          <Button onClick={() => setRecordingPayment(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            {t("recordPayment")}
-          </Button>
-        </div>
-      </div>
+      <PageHeader title={t("title")} description={ownerDescription}>
+        <ExportButton
+          data={state.receipts}
+          filename="payments-export"
+          columns={[
+            { key: "tenantName", label: t("colTenant") },
+            { key: "propertyName", label: t("colProperty") },
+            { key: "amount", label: t("colAmount") },
+            { key: "date", label: t("colDate") },
+            { key: "status", label: t("colStatus") },
+          ]}
+        />
+        <Button onClick={() => setRecordingPayment(true)} className="gap-2">
+          <Plus className="h-4 w-4" />
+          {t("recordPayment")}
+        </Button>
+      </PageHeader>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <button

@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/shared/page-header";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -186,12 +187,7 @@ export function CompleteView() {
   return (
     <section className="mx-auto w-full max-w-xl space-y-4" aria-labelledby="complete-title">
       <div>
-        <h1
-          id="complete-title"
-          className="text-[clamp(22px,4vw,28px)] font-normal leading-tight tracking-[-0.02em] text-[var(--color-foreground)]"
-        >
-          {t("title")}
-        </h1>
+        <PageHeader title={t("title")} id="complete-title" titleOnMobile />
         {data && data.items.length > 0 && (
           <p
             className="mt-1 text-sm text-[var(--color-muted-foreground)]"

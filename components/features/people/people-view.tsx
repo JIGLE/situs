@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/shared/page-header";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -83,26 +84,15 @@ export function PeopleView(): React.ReactElement {
       {/* Page header. Tenant/owner totals live on the tab count badges below,
           so no separate stat row is needed. Export only applies to the
           tenant/owner directories. */}
-      <div className="flex flex-row items-center justify-between gap-4">
-        {/* The bottom nav already labels this screen — hide the repeated
-            title/subtitle on mobile so content starts higher. */}
-        <div className="hidden sm:block">
-          <h1 className="text-3xl font-bold text-[var(--color-foreground)] flex items-center gap-2">
-            <Users className="h-8 w-8" />
-            {t("title")}
-          </h1>
-          <p className="text-sm text-[var(--color-muted-foreground)] mt-1">{t("subtitle")}</p>
-        </div>
+      <PageHeader title={t("title")} description={t("subtitle")}>
         {(activeTab === "tenants" || activeTab === "owners") && (
-          <div className="ml-auto flex items-center gap-2">
-            <ExportButton
-              data={exportConfig.data}
-              filename={`${activeTab}-export`}
-              columns={exportConfig.columns}
-            />
-          </div>
+          <ExportButton
+            data={exportConfig.data}
+            filename={`${activeTab}-export`}
+            columns={exportConfig.columns}
+          />
         )}
-      </div>
+      </PageHeader>
 
       {/* Tab Navigation - Tenants and Owners */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

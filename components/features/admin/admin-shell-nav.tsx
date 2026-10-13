@@ -1,9 +1,9 @@
 "use client";
 
+import { PageHeader } from "@/components/shared/page-header";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ShieldCheck } from "lucide-react";
 
 import { cn } from "@/lib/utils/utils";
 
@@ -30,11 +30,8 @@ export function AdminShellNav() {
   const current = pathname.replace(/\/$/, "") || "/admin";
 
   return (
-    <header className="space-y-4">
-      <h1 className="flex items-center gap-2 text-2xl font-bold text-[var(--color-foreground)]">
-        <ShieldCheck className="h-6 w-6" aria-hidden />
-        {t("title")}
-      </h1>
+    <div className="space-y-4">
+      <PageHeader title={t("title")} />
       <nav
         aria-label={t("sections")}
         className="flex items-center gap-1 overflow-x-auto border-b border-[var(--color-border)]"
@@ -58,7 +55,7 @@ export function AdminShellNav() {
           );
         })}
       </nav>
-    </header>
+    </div>
   );
 }
 

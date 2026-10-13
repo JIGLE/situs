@@ -12,7 +12,10 @@ import { formatDate } from "@/lib/utils/format-date";
  * and its tests); this checks that the screen says them, links them and moves between months.
  */
 
-const { apiFetchMock } = vi.hoisted(() => ({ apiFetchMock: vi.fn() }));
+const { apiFetchMock, nothingSetUp } = vi.hoisted(() => ({
+  apiFetchMock: vi.fn(),
+  nothingSetUp: { value: false },
+}));
 
 vi.mock("@/lib/utils/api-client", () => ({ apiFetch: apiFetchMock }));
 vi.mock("next-auth/react", () => ({
@@ -32,7 +35,7 @@ vi.mock("@/lib/contexts/currency-context", () => ({
 vi.mock("@/lib/contexts/app-context", () => ({
   useApp: () => ({
     state: {
-      properties: [{ id: "p1", name: "T2 Lisboa", status: "occupied" }],
+      properties: nothingSetUp.value ? [] : [{ id: "p1", name: "T2 Lisboa", status: "occupied" }],
       tenants: [{ id: "t1", name: "Ana Silva" }],
       leases: [{ id: "l1" }],
       receipts: [{ id: "r1" }],
@@ -84,10 +87,22 @@ function show(answer: DashboardMonth = month(), search = "?month=2026-08") {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  nothingSetUp.value = false;
 });
 
 afterEach(() => {
   window.history.replaceState({}, "", "/");
+});
+
+describe("OverviewView — the heading", () => {
+  it("is the page's h1 before anything is set up, when the top bar is not a heading", async () => {
+    nothingSetUp.value = true;
+    show();
+
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent(
+      /^(Bom dia|Boa tarde|Boa noite), José$/,
+    );
+  });
 });
 
 describe("OverviewView — the month", () => {

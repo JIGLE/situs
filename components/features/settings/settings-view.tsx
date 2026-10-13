@@ -1,9 +1,10 @@
 "use client";
 
+import { PageHeader } from "@/components/shared/page-header";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { Save, Settings } from "lucide-react";
+import { Save } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
@@ -171,22 +172,14 @@ export function SettingsView(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)] flex items-center gap-2">
-            <Settings className="h-6 w-6" />
-            {t("heading")}
-          </h1>
-          <p className="text-sm text-[var(--color-muted-foreground)]">{t("subtitle")}</p>
-        </div>
+      <PageHeader title={t("heading")} description={t("subtitle")}>
         {hasChanges && (
           <Button onClick={saveSettings} disabled={saving}>
             <Save className="h-4 w-4 mr-2" />
             {saving ? tForms("saving") : tActions("save")}
           </Button>
         )}
-      </div>
+      </PageHeader>
 
       <div className="grid gap-6 md:grid-cols-[clamp(180px,16vw,260px)_minmax(0,1fr)]">
         {/* Desktop vertical section nav.

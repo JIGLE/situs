@@ -127,8 +127,12 @@ import { PageHeader } from "@/components/shared/page-header";
 </PageHeader>;
 ```
 
-Actions go in `children`. One heading per screen: a tab's view does not repeat the page title
-(`CLAUDE.md`, screen density).
+Actions go in `children`. `PageHeader` writes the screen's `h1`, and a main screen writes no other
+(`tests/page-header-contract.test.ts` names the exceptions). Below `md` the mobile top bar already
+names the screen, so the title is read by a screen reader only and the visible header shrinks to
+the actions; pass `titleOnMobile` for a title that says more than the bar, as the dashboard's
+greeting does. One heading per screen: a tab's view does not repeat the page title (`CLAUDE.md`,
+screen density).
 
 ### Empty State
 

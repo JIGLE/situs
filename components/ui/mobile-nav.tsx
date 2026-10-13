@@ -264,9 +264,10 @@ export function MobileTopBar(): React.ReactElement {
       >
         <SitusPortalMark size="sm" className="h-6 w-6" />
       </Link>
-      <h1 className="min-w-0 flex-1 truncate text-base font-semibold tracking-tight text-[var(--color-foreground)]">
+      {/* Not a heading: the page's own `h1` (`PageHeader`) is the one heading a screen has. */}
+      <p className="min-w-0 flex-1 truncate text-base font-semibold tracking-tight text-[var(--color-foreground)]">
         {title}
-      </h1>
+      </p>
       <div className="shrink-0">
         <NotificationBell />
       </div>
