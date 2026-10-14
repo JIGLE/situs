@@ -26,7 +26,6 @@ import { useCsrf } from "@/lib/contexts/csrf-context";
 import { useCurrency } from "@/lib/contexts/currency-context";
 import { Tabs, TabsContent, TabsList, TabsMobileSelect, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,16 +63,12 @@ import { PropertyYearStrip, type YearStripSelection } from "./property-year-stri
 import { expenseCategoryKey } from "@/lib/utils/expense-labels";
 import { rentPeriodStatusKey } from "@/lib/utils/rent-period-labels";
 import { joinContact } from "@/lib/utils/contact";
+import { StatusMark } from "@/components/ui/status-mark";
+import { propertyStatus } from "@/lib/utils/status-tone";
 
 interface PropertyDetailViewProps {
   propertyId: string;
 }
-
-const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive"> = {
-  occupied: "default",
-  vacant: "secondary",
-  maintenance: "destructive",
-};
 
 export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
   const { state, refreshData, addExpense, addReceipt, addTenant } = useApp();
@@ -389,9 +384,9 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                 <span>{property.address}</span>
               </div>
               <div className="flex items-center gap-3 mt-2">
-                <Badge variant={STATUS_VARIANT[property.status] || "secondary"}>
+                <StatusMark {...propertyStatus(property.status)}>
                   {t(`status.${property.status}`) || property.status}
-                </Badge>
+                </StatusMark>
                 {/* Unknown is null, and shows nothing: a bare icon would read as none. */}
                 {property.bedrooms != null && (
                   <span className="text-sm text-[var(--color-muted-foreground)] flex items-center gap-1">
@@ -967,18 +962,17 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                   <Users className="h-4 w-4" />
                   {t("ownership.title")}
                 </h3>
-                <span
-                  className={cn(
-                    "px-2 py-0.5 text-xs font-medium",
+                <StatusMark
+                  tone={
                     Math.abs(ownershipTotal - 100) < 0.01
-                      ? "bg-[var(--color-success-muted)] text-[var(--color-success)]"
+                      ? "success"
                       : ownershipTotal > 0
-                        ? "bg-[var(--color-warning-muted)] text-[var(--color-warning)]"
-                        : "bg-[var(--color-popover)] text-[var(--color-muted-foreground)]",
-                  )}
+                        ? "warning"
+                        : "neutral"
+                  }
                 >
                   {t("ownership.assigned", { percent: ownershipTotal.toFixed(1) })}
-                </span>
+                </StatusMark>
               </div>
               {propertyOwners.length === 0 ? (
                 <p className="text-sm italic text-[var(--color-muted-foreground)]">

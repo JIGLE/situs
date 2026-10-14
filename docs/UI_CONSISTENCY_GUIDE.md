@@ -151,6 +151,20 @@ names the panel. A tab bar is `TabsList` for tabs that swap a panel and `TabNav`
 tabs that are pages, both from `components/ui/tabs.tsx`; the style is written there and nowhere
 else (`tests/panel-and-tab-contract.test.ts`).
 
+### Status
+
+```tsx
+import { StatusMark } from "@/components/ui/status-mark";
+import { leaseStatus } from "@/lib/utils/status-tone";
+
+<StatusMark {...leaseStatus(lease.status)}>{tLease(lease.status)}</StatusMark>;
+```
+
+A state is a `StatusMark`: a square dot in the state's colour and its name in mono capitals. Which
+tone a stored value takes is decided in `lib/utils/status-tone.ts` and nowhere else; add a state
+there, not in a screen. `Badge` is for a label that is not a state (a count, a flag), and has no
+success, warning or danger variant (`tests/status-mark-contract.test.ts`).
+
 ### Empty State
 
 ```tsx

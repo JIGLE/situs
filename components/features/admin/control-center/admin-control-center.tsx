@@ -13,6 +13,8 @@ import { BankTestPanel } from "./bank-test-panel";
 import { Fact, Panel } from "@/components/shared/panel";
 import type { SignInStatus } from "@/lib/services/admin/sign-in-status";
 import { REGISTRATION_COPY } from "@/lib/utils/access-labels";
+import { StatusMark } from "@/components/ui/status-mark";
+import { severityStatus } from "@/lib/utils/status-tone";
 
 /**
  * The instance at a glance.
@@ -67,12 +69,9 @@ export function AdminControlCenter() {
           {status && (
             <div className="flex flex-wrap gap-1.5" aria-label={t("summary")}>
               {SUMMARY_ORDER.filter((severity) => status.counts[severity] > 0).map((severity) => (
-                <span
-                  key={severity}
-                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${SEVERITY_STYLE[severity].chip}`}
-                >
+                <StatusMark key={severity} {...severityStatus(severity)}>
                   {status.counts[severity]} {t(`severity.${severity}`)}
-                </span>
+                </StatusMark>
               ))}
             </div>
           )}
@@ -114,11 +113,9 @@ export function AdminControlCenter() {
                     {check.severity === "ok" ? (
                       <span className="sr-only">{t(`severity.${check.severity}`)}</span>
                     ) : (
-                      <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${style.chip}`}
-                      >
+                      <StatusMark className="shrink-0" {...severityStatus(check.severity)}>
                         {t(`severity.${check.severity}`)}
-                      </span>
+                      </StatusMark>
                     )}
                   </li>
                 );

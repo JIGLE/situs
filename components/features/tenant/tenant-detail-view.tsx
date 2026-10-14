@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils/utils";
 import { useCurrency } from "@/lib/contexts/currency-context";
 import { Tabs, TabsContent, TabsList, TabsMobileSelect, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RECEIPT_TYPE_KEY } from "@/lib/utils/receipt-labels";
 import { useApp } from "@/lib/contexts/app-context";
@@ -18,16 +17,12 @@ import { EmptyStateIllustration } from "@/components/ui/empty-state-illustration
 import { getActiveLease as findActiveLease } from "@/lib/utils/lease-helpers";
 import { buildFinancialReviewPath } from "@/lib/utils/financial-navigation";
 import { withEntityDetail } from "@/lib/utils/entity-detail-url";
+import { StatusMark } from "@/components/ui/status-mark";
+import { paymentStatus } from "@/lib/utils/status-tone";
 
 interface TenantDetailViewProps {
   tenantId: string;
 }
-
-const PAYMENT_STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive"> = {
-  paid: "default",
-  pending: "secondary",
-  overdue: "destructive",
-};
 
 export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
   const t = useTranslations("tenantDetail");
@@ -99,9 +94,9 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
               )}
             </div>
             <div className="flex items-center gap-3 mt-2">
-              <Badge variant={PAYMENT_STATUS_VARIANT[tenant.paymentStatus] || "secondary"}>
+              <StatusMark {...paymentStatus(tenant.paymentStatus)}>
                 {tStatus(tenant.paymentStatus)}
-              </Badge>
+              </StatusMark>
               {/* Derived from active lease's monthlyRent */}
               <span className="text-sm font-medium">
                 {formatCurrency(activeLease?.monthlyRent ?? tenant.rent)}/mo
@@ -313,9 +308,9 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant={receipt.status === "paid" ? "default" : "secondary"}>
+                          <StatusMark {...paymentStatus(receipt.status)}>
                             {tStatus(receipt.status)}
-                          </Badge>
+                          </StatusMark>
                           <span
                             className={cn(
                               "text-sm font-semibold",

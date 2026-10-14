@@ -4,9 +4,8 @@ import { Badge } from "./badge";
 
 describe("Badge component", () => {
   it("renders children and variant class", () => {
-    render(<Badge variant="success">OK</Badge>);
-    expect(screen.getByText("OK")).toBeDefined();
-    const el = screen.getByText("OK");
-    expect(el.className).toMatch(/bg-\[var\(--color-success\)\]/);
+    render(<Badge variant="outline">Renova</Badge>);
+    const el = screen.getByText("Renova");
+    expect(el.className).toMatch(/border-\[var\(--color-border\)\]/);
   });
 });

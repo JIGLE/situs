@@ -14,7 +14,6 @@ import { DataViewToggle, DataViewMode } from "@/components/ui/data-view-toggle";
 import { RenderTable } from "@/components/ui/table";
 import { useCurrency } from "@/lib/contexts/currency-context";
 import { cn } from "@/lib/utils/utils";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -62,6 +61,8 @@ import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { SwipeableListItem } from "@/components/ui/swipeable-list-item";
 import { TaxIdentityFields } from "@/components/shared/tax-identity-fields";
+import { StatusMark } from "@/components/ui/status-mark";
+import { paymentStatus } from "@/lib/utils/status-tone";
 
 export type TenantsViewProps = { density?: "comfortable" | "compact" };
 
@@ -357,16 +358,9 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
       },
     }));
 
-    const getPaymentStatusBadge = (status: Tenant["paymentStatus"]) => {
-      switch (status) {
-        case "paid":
-          return <Badge variant="success">{tStatus("paid")}</Badge>;
-        case "overdue":
-          return <Badge variant="destructive">{tStatus("overdue")}</Badge>;
-        case "pending":
-          return <Badge variant="secondary">{tStatus("pending")}</Badge>;
-      }
-    };
+    const getPaymentStatusBadge = (status: Tenant["paymentStatus"]) => (
+      <StatusMark {...paymentStatus(status)}>{tStatus(status)}</StatusMark>
+    );
 
     // Bulk delete handler
     const handleBulkDelete = useCallback(
