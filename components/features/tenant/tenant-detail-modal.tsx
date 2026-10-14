@@ -19,7 +19,6 @@ import { useCurrency } from "@/lib/contexts/currency-context";
 import { formatDate as formatDateWithLocale } from "@/lib/utils/format-date";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,19 +38,13 @@ import { getActiveLease } from "@/lib/utils/lease-helpers";
 import { useSaveFailureMessage } from "@/lib/utils/api-error";
 import { TenantRelationshipMap } from "@/components/features/tenant/tenant-relationship-map";
 import { PayerAccountsPanel } from "@/components/features/tenant/payer-accounts-panel";
+import { StatusMark } from "@/components/ui/status-mark";
+import { leaseEndStatus, paymentStatus } from "@/lib/utils/status-tone";
 
 interface TenantDetailModalProps {
   tenantId: string;
   onClose: () => void;
 }
-
-const PAYMENT_STATUS_STYLES: Record<string, string> = {
-  paid: "bg-[var(--color-success-muted)] text-[var(--color-success)] border-[var(--color-success)]/30",
-  pending:
-    "bg-[var(--color-warning-muted)] text-[var(--color-warning)] border-[var(--color-warning)]/30",
-  overdue:
-    "bg-[var(--color-error-muted)] text-[var(--color-destructive)] border-[var(--color-destructive)]/30",
-};
 
 export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps) {
   const { formatCurrency } = useCurrency();
@@ -61,6 +54,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
   const { success, error } = useToast();
   const saveFailure = useSaveFailureMessage();
   const t = useTranslations("tenants");
+  const tLease = useTranslations("leases");
   const tForms = useTranslations("forms");
   const tActions = useTranslations("actions");
   // `status` already carries paid / pending / overdue in all four catalogues — the chip below was
@@ -275,15 +269,13 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
             </div>
             {!isEditing && (
               <div className="flex items-center gap-2 shrink-0">
-                <span
-                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${PAYMENT_STATUS_STYLES[tenant.paymentStatus] ?? ""}`}
-                >
+                <StatusMark {...paymentStatus(tenant.paymentStatus)}>
                   {tStatus(tenant.paymentStatus)}
-                </span>
+                </StatusMark>
                 {isLeaseExpiringSoon && leaseExpiryDays !== null && (
-                  <span className="inline-flex items-center rounded-full border border-[var(--color-warning)]/30 bg-[var(--color-warning-muted)] px-2.5 py-0.5 text-xs font-semibold text-[var(--color-warning)]">
+                  <StatusMark tone="warning">
                     {t("leaseExpiresInDays", { days: leaseExpiryDays })}
-                  </span>
+                  </StatusMark>
                 )}
               </div>
             )}
@@ -470,18 +462,11 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                           {t("modal.activeLease")}
                         </p>
                         {leaseExpiryDays !== null && (
-                          <Badge
-                            variant="outline"
-                            className={
-                              leaseExpiryDays <= 30
-                                ? "border-[var(--color-destructive)]/30 bg-[var(--color-error-muted)] text-[var(--color-destructive)]"
-                                : leaseExpiryDays <= 60
-                                  ? "border-[var(--color-warning)]/30 bg-[var(--color-warning-muted)] text-[var(--color-warning)]"
-                                  : "border-[var(--color-success)]/30 bg-[var(--color-success-muted)] text-[var(--color-success)]"
-                            }
-                          >
-                            {leaseExpiryDays > 0 ? `${leaseExpiryDays} days left` : "Expired"}
-                          </Badge>
+                          <StatusMark {...leaseEndStatus(leaseExpiryDays)}>
+                            {leaseExpiryDays > 0
+                              ? t("leaseExpiresInDays", { days: leaseExpiryDays })
+                              : tLease("expired")}
+                          </StatusMark>
                         )}
                       </div>
                       <div className="grid grid-cols-2 gap-3 text-sm">

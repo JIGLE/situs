@@ -2,17 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import {
-  FileText,
-  Edit,
-  ArrowLeft,
-  Calendar,
-  RotateCcw,
-  XCircle,
-  CheckCircle2,
-  Clock,
-  Ban,
-} from "lucide-react";
+import { FileText, Edit, ArrowLeft, Calendar, RotateCcw, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils/utils";
 import { useCurrency } from "@/lib/contexts/currency-context";
@@ -40,17 +30,12 @@ import { csrfHeaders } from "@/lib/utils/api-client";
 import { wasReported } from "@/lib/utils/api-error";
 import { joinContact } from "@/lib/utils/contact";
 import { downloadContract } from "./lease-contract";
+import { StatusMark } from "@/components/ui/status-mark";
+import { leaseEndStatus, leaseStatus, paymentStatus } from "@/lib/utils/status-tone";
 
 interface LeaseDetailViewProps {
   leaseId: string;
 }
-
-const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive"> = {
-  active: "default",
-  pending: "secondary",
-  expired: "destructive",
-  terminated: "destructive",
-};
 
 export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
   const { state, updateLease, refreshData } = useApp();
@@ -194,34 +179,28 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
               </span>
             </div>
             <div className="flex items-center gap-3 mt-2 flex-wrap">
-              <Badge variant={STATUS_VARIANT[lease.status] || "secondary"}>
+              <StatusMark {...leaseStatus(lease.status)}>
                 {/* The list view translates this; the detail view printed the stored enum, so
                     the same lease read "Ativo" on one screen and "active" on the other. */}
                 {tLease(lease.status)}
-              </Badge>
+              </StatusMark>
               <span className="text-sm font-medium">
                 {tLease("perMonth", { amount: formatCurrency(lease.monthlyRent) })}
               </span>
               {lease.autoRenew && <Badge variant="outline">{t("autoRenewBadge")}</Badge>}
               {lease.status === "active" && daysUntilExpiry <= 60 && (
-                <Badge variant="secondary" className="text-amber-500">
+                <StatusMark {...leaseEndStatus(daysUntilExpiry)}>
                   {t("expiresIn", { days: daysUntilExpiry })}
-                </Badge>
+                </StatusMark>
               )}
               {lease.renewalStatus === "offered" && (
-                <Badge variant="secondary" className="gap-1 text-sky-600 dark:text-sky-400">
-                  <Clock className="h-3 w-3" /> {t("renewalOffered")}
-                </Badge>
+                <StatusMark tone="info">{t("renewalOffered")}</StatusMark>
               )}
               {lease.renewalStatus === "accepted" && (
-                <Badge variant="secondary" className="gap-1 text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="h-3 w-3" /> {t("renewalAccepted")}
-                </Badge>
+                <StatusMark tone="success">{t("renewalAccepted")}</StatusMark>
               )}
               {lease.renewalStatus === "declined" && (
-                <Badge variant="secondary" className="gap-1 text-[var(--color-destructive)]">
-                  <Ban className="h-3 w-3" /> Renewal declined
-                </Badge>
+                <StatusMark tone="danger">{tLease("renewalDeclined")}</StatusMark>
               )}
             </div>
           </div>
@@ -439,9 +418,9 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={receipt.status === "paid" ? "default" : "secondary"}>
+                      <StatusMark {...paymentStatus(receipt.status)}>
                         {tStatus(receipt.status)}
-                      </Badge>
+                      </StatusMark>
                       <span
                         className={cn(
                           "text-sm font-semibold",

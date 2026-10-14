@@ -4,8 +4,15 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Building2, Users, UserCircle, FileText, FileIcon, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils/utils";
-import { Badge } from "@/components/ui/badge";
+import { StatusMark, type StatusTone } from "@/components/ui/status-mark";
 import { withEntityDetail } from "@/lib/utils/entity-detail-url";
+
+const STATUS_TONE: Record<NonNullable<EntityLinkProps["statusVariant"]>, StatusTone> = {
+  success: "success",
+  warning: "warning",
+  destructive: "danger",
+  default: "neutral",
+};
 
 type EntityType = "property" | "tenant" | "owner" | "lease" | "document" | "receipt";
 
@@ -100,21 +107,7 @@ export function EntityLink({
             </p>
           )}
         </div>
-        {status && (
-          <Badge
-            variant={
-              statusVariant === "success"
-                ? "default"
-                : statusVariant === "warning"
-                  ? "secondary"
-                  : statusVariant === "destructive"
-                    ? "destructive"
-                    : "outline"
-            }
-          >
-            {status}
-          </Badge>
-        )}
+        {status && <StatusMark tone={STATUS_TONE[statusVariant]}>{status}</StatusMark>}
       </Link>
     );
   }
@@ -138,21 +131,7 @@ export function EntityLink({
             <p className="text-sm font-semibold text-[var(--color-foreground)] truncate group-hover:underline">
               {title}
             </p>
-            {status && (
-              <Badge
-                variant={
-                  statusVariant === "success"
-                    ? "default"
-                    : statusVariant === "warning"
-                      ? "secondary"
-                      : statusVariant === "destructive"
-                        ? "destructive"
-                        : "outline"
-                }
-              >
-                {status}
-              </Badge>
-            )}
+            {status && <StatusMark tone={STATUS_TONE[statusVariant]}>{status}</StatusMark>}
           </div>
           {subtitle && (
             <p className="text-xs text-[var(--color-muted-foreground)] mt-1">{subtitle}</p>

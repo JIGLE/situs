@@ -56,6 +56,8 @@ import {
   type BankConnectionRow,
 } from "@/lib/hooks/use-bank-connections";
 import { formatDate } from "@/lib/utils/format-date";
+import { StatusMark } from "@/components/ui/status-mark";
+import { connectionStatus } from "@/lib/utils/status-tone";
 
 interface Institution {
   id: string;
@@ -88,15 +90,6 @@ const COUNTRY_LABEL_KEYS = {
   PT: "bankCountry.PT",
   ES: "bankCountry.ES",
 } as const;
-
-const STATUS_STYLES: Record<string, string> = {
-  active: "bg-[var(--semantic-success-soft)] text-[var(--semantic-success-readable)]",
-  pending_consent: "bg-[var(--semantic-warning-soft)] text-[var(--semantic-warning-readable)]",
-  expired: "bg-[var(--semantic-danger-soft)] text-[var(--semantic-danger-readable)]",
-  // Disconnected on purpose: a state, not a fault.
-  revoked: "bg-[var(--color-muted)] text-muted-foreground",
-  error: "bg-[var(--semantic-danger-soft)] text-[var(--semantic-danger-readable)]",
-};
 
 /** How asking the bank went, as the owner reads it once a disconnect is done. */
 const DISCONNECT_NOTICE_KEYS = {
@@ -437,11 +430,7 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
-                <span
-                  className={`inline-block rounded-full px-2 py-0.5 text-xs ${STATUS_STYLES[c.status] ?? ""}`}
-                >
-                  {statusLabel(c.status)}
-                </span>
+                <StatusMark {...connectionStatus(c.status)}>{statusLabel(c.status)}</StatusMark>
 
                 {c.status === "expired" ? (
                   // The same connection, renewed: its accounts keep their ids, so the movements

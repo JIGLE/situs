@@ -32,6 +32,8 @@ import { bankStatusKey, matchSignals, type MatchSignal } from "@/lib/utils/bank-
 import { formatDate } from "@/lib/utils/format-date";
 import { cn } from "@/lib/utils/utils";
 import { BankSyncStrip } from "./bank-sync-strip";
+import { StatusMark } from "@/components/ui/status-mark";
+import { movementStatus } from "@/lib/utils/status-tone";
 
 /**
  * Situs Bank Movements inbox: the owner's to-do list for money that arrived. It opens on the
@@ -71,15 +73,6 @@ interface ActionResult {
   /** The confirmation taught an account: the same amount as the rent from it is matched on its own. */
   remembered?: boolean;
 }
-
-const STATUS_STYLES: Record<string, string> = {
-  auto_matched: "bg-[var(--semantic-success-soft)] text-[var(--semantic-success-readable)]",
-  matched_confirmed: "bg-[var(--semantic-success-soft)] text-[var(--semantic-success-readable)]",
-  needs_review: "bg-[var(--semantic-warning-soft)] text-[var(--semantic-warning-readable)]",
-  imported: "bg-[var(--semantic-info-soft)] text-[var(--semantic-info-readable)]",
-  ignored: "text-[var(--color-muted-foreground)]",
-  duplicate: "text-[var(--color-muted-foreground)] line-through",
-};
 
 /** Each filter's label, under `financial.bank`. */
 const FILTER_LABEL_KEY = {
@@ -276,14 +269,7 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
   };
 
   const renderStatus = (row: InboxRow) => (
-    <span
-      className={cn(
-        "inline-block px-1.5 py-0.5 text-xs font-medium",
-        STATUS_STYLES[row.status] ?? "",
-      )}
-    >
-      {statusLabel(row.status)}
-    </span>
+    <StatusMark {...movementStatus(row.status)}>{statusLabel(row.status)}</StatusMark>
   );
 
   const renderAmount = (row: InboxRow) => (

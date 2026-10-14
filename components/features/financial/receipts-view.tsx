@@ -16,7 +16,6 @@ import {
 import { useCurrency } from "@/lib/contexts/currency-context";
 import { useCsrf } from "@/lib/contexts/csrf-context";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -66,22 +65,13 @@ import jsPDF from "jspdf";
 import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { AtReceiptsSheet } from "./at-receipts-sheet";
+import { StatusMark } from "@/components/ui/status-mark";
+import { paymentStatus, receiptStage } from "@/lib/utils/status-tone";
 
 export interface ReceiptsViewProps {
   tenantId?: string;
   propertyId?: string;
 }
-
-/** A receipt's document stage, by colour; the label beside it carries the meaning. */
-const STAGE_STYLES: Record<string, string> = {
-  draft: "bg-[var(--semantic-warning-soft)] text-[var(--semantic-warning-readable)]",
-  review: "bg-[var(--semantic-warning-soft)] text-[var(--semantic-warning-readable)]",
-  rejected: "bg-[var(--semantic-danger-soft)] text-[var(--semantic-danger-readable)]",
-  submitted: "bg-[var(--semantic-info-soft)] text-[var(--semantic-info-readable)]",
-  accepted: "bg-[var(--semantic-success-soft)] text-[var(--semantic-success-readable)]",
-  emitted: "bg-[var(--semantic-success-soft)] text-[var(--semantic-success-readable)]",
-  voided: "text-[var(--color-muted-foreground)] line-through",
-};
 
 const thisMonth = (): MonthKey => {
   const now = new Date();
@@ -369,15 +359,13 @@ export function ReceiptsView(props: ReceiptsViewProps) {
 
   const stageBadge = (receipt: Receipt) => {
     const key = receiptLifecycleKey(receipt.lifecycle);
-    return key ? (
-      <Badge className={STAGE_STYLES[receipt.lifecycle ?? ""] ?? ""}>{t(key)}</Badge>
-    ) : null;
+    return key ? <StatusMark {...receiptStage(receipt.lifecycle)}>{t(key)}</StatusMark> : null;
   };
 
   const paymentBadge = (receipt: Receipt) => (
-    <Badge variant={receipt.status === "paid" ? "status-success" : "status-warning"}>
+    <StatusMark {...paymentStatus(receipt.status === "paid" ? "paid" : "pending")}>
       {tStatus(receipt.status === "paid" ? "paid" : "pending")}
-    </Badge>
+    </StatusMark>
   );
 
   const sourceLabel = (receipt: Receipt) =>

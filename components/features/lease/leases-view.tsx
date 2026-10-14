@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCurrency } from "@/lib/contexts/currency-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -76,6 +75,8 @@ import { useSortableData } from "@/lib/hooks/use-sortable-data";
 import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { PageHeader } from "@/components/shared/page-header";
+import { StatusMark } from "@/components/ui/status-mark";
+import { leaseStatus } from "@/lib/utils/status-tone";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { withEntityDetail } from "@/lib/utils/entity-detail-url";
@@ -226,20 +227,23 @@ export function LeasesView(): React.ReactElement {
     },
   });
 
-  const getStatusBadge = (status: string) => {
+  const statusLabel = (status: string) => {
     switch (status) {
       case "active":
-        return <Badge variant="success">{t("active")}</Badge>;
+        return t("active");
       case "expired":
-        return <Badge variant="destructive">{t("expired")}</Badge>;
+        return t("expired");
       case "terminated":
-        return <Badge variant="secondary">{t("terminated")}</Badge>;
+        return t("terminated");
       case "pending":
-        return <Badge variant="default">{t("pending")}</Badge>;
+        return t("pending");
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return status;
     }
   };
+  const getStatusBadge = (status: string) => (
+    <StatusMark {...leaseStatus(status)}>{statusLabel(status)}</StatusMark>
+  );
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

@@ -12,6 +12,8 @@ import type {
   StatusSeverity,
   SystemStatus,
 } from "@/lib/services/admin/system-status";
+import { StatusMark } from "@/components/ui/status-mark";
+import { severityStatus } from "@/lib/utils/status-tone";
 
 /**
  * Operator view of what this instance is actually connected to.
@@ -39,10 +41,7 @@ import type {
  */
 
 export interface SeverityStyle {
-  /** Badge fill + text, used only where a row is not `ok`. */
-  chip: string;
-  /** Icon and left-rule colour. Kept separate from `chip`: this used to be recovered by
-   *  `chip.split(" ").pop()`, which worked only while the text class happened to be last. */
+  /** Icon colour. */
   accent: string;
   /** Left rule. The `-readable` variant, not the raw hue: raw `--semantic-success` is #166534,
    *  which on the dark theme's #121B15 panel is a rule you have to hunt for. */
@@ -52,25 +51,21 @@ export interface SeverityStyle {
 
 export const SEVERITY_STYLE: Record<StatusSeverity, SeverityStyle> = {
   ok: {
-    chip: "bg-[var(--semantic-success-soft)] text-[var(--semantic-success-readable)]",
     accent: "text-[var(--semantic-success-readable)]",
     rule: "bg-[var(--semantic-success-readable)]",
     icon: CheckCircle2,
   },
   simulated: {
-    chip: "bg-[var(--semantic-info-soft)] text-[var(--semantic-info-readable)]",
     accent: "text-[var(--semantic-info-readable)]",
     rule: "bg-[var(--semantic-info-readable)]",
     icon: FlaskConical,
   },
   warning: {
-    chip: "bg-[var(--semantic-warning-soft)] text-[var(--semantic-warning-readable)]",
     accent: "text-[var(--semantic-warning-readable)]",
     rule: "bg-[var(--semantic-warning-readable)]",
     icon: Info,
   },
   error: {
-    chip: "bg-[var(--semantic-danger-soft)] text-[var(--semantic-danger-readable)]",
     accent: "text-[var(--semantic-danger-readable)]",
     rule: "bg-[var(--semantic-danger-readable)]",
     icon: AlertTriangle,
@@ -130,12 +125,9 @@ export function SystemStatusView() {
         {status && (
           <div className="flex flex-wrap gap-2" aria-label={t("summary")}>
             {SUMMARY_ORDER.filter((severity) => status.counts[severity] > 0).map((severity) => (
-              <span
-                key={severity}
-                className={`rounded-full px-3 py-1 text-xs font-medium ${SEVERITY_STYLE[severity].chip}`}
-              >
+              <StatusMark key={severity} {...severityStatus(severity)}>
                 {status.counts[severity]} {t(`severity.${severity}`)}
-              </span>
+              </StatusMark>
             ))}
           </div>
         )}
@@ -206,11 +198,9 @@ export function SystemStatusView() {
                             {check.severity === "ok" ? (
                               <span className="sr-only">{severityLabel}</span>
                             ) : (
-                              <span
-                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${style.chip}`}
-                              >
+                              <StatusMark {...severityStatus(check.severity)}>
                                 {severityLabel}
-                              </span>
+                              </StatusMark>
                             )}
                           </div>
                           {check.detail && (
