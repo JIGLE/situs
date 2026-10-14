@@ -602,21 +602,15 @@ export function LeasesView(): React.ReactElement {
         {getStatusBadge(lease.status)}
         {renderLeaseActions(lease)}
       </div>
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-        <div>
-          <dt className="text-xs text-[var(--color-muted-foreground)]">{t("field.monthlyRent")}</dt>
-          <dd className="font-medium text-[var(--color-foreground)]">
-            {formatCurrency(lease.monthlyRent)}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs text-[var(--color-muted-foreground)]">{t("field.period")}</dt>
-          <dd className="text-[var(--color-muted-foreground)]">
-            {new Date(lease.startDate).toLocaleDateString(locale)} →{" "}
-            {new Date(lease.endDate).toLocaleDateString(locale)}
-          </dd>
-        </div>
-      </dl>
+      <p className="mt-2 flex flex-wrap items-baseline justify-between gap-x-4 text-sm">
+        <span className="font-medium text-[var(--color-foreground)]">
+          {formatCurrency(lease.monthlyRent)}
+        </span>
+        <span className="text-[var(--color-muted-foreground)]">
+          {new Date(lease.startDate).toLocaleDateString(locale)} →{" "}
+          {new Date(lease.endDate).toLocaleDateString(locale)}
+        </span>
+      </p>
     </div>
   );
 
@@ -1047,30 +1041,30 @@ export function LeasesView(): React.ReactElement {
           </Dialog>
         </PageHeader>
 
-        {/* Search and Filter */}
-        <SearchFilter
-          searchPlaceholder={t("searchPlaceholder")}
-          onSearchChange={setSearchQuery}
-          onFilterChange={(key, value) => {
-            if (key === "status") setStatusFilter(value);
-          }}
-          filters={[
-            {
-              key: "status",
-              label: t("field.status"),
-              options: [
-                { label: t("filter.allStatuses"), value: "all" },
-                { label: t("active"), value: "active" },
-                { label: t("pending"), value: "pending" },
-                { label: t("expired"), value: "expired" },
-                { label: t("terminated"), value: "terminated" },
-              ],
-              defaultValue: "all",
-            },
-          ]}
-        />
-
-        <div className="flex items-center justify-end">
+        {/* One toolbar row: search, filter and the view toggle */}
+        <div className="flex items-start gap-3">
+          <SearchFilter
+            className="min-w-0 flex-1"
+            searchPlaceholder={t("searchPlaceholder")}
+            onSearchChange={setSearchQuery}
+            onFilterChange={(key, value) => {
+              if (key === "status") setStatusFilter(value);
+            }}
+            filters={[
+              {
+                key: "status",
+                label: t("field.status"),
+                options: [
+                  { label: t("filter.allStatuses"), value: "all" },
+                  { label: t("active"), value: "active" },
+                  { label: t("pending"), value: "pending" },
+                  { label: t("expired"), value: "expired" },
+                  { label: t("terminated"), value: "terminated" },
+                ],
+                defaultValue: "all",
+              },
+            ]}
+          />
           <DataViewToggle mode={dataViewMode} onChange={handleViewModeChange} />
         </div>
 
@@ -1345,17 +1339,14 @@ export function LeasesView(): React.ReactElement {
                     className="overflow-hidden transition-all cursor-pointer"
                     onClick={() => openLeaseOverlay(lease.id)}
                   >
-                    <div className="aspect-video w-full bg-[var(--color-secondary)] relative">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <FileText className="h-16 w-16 text-[var(--color-muted-foreground)]" />
-                      </div>
-                      <div className="absolute top-3 right-3">{getStatusBadge(lease.status)}</div>
-                    </div>
                     <CardHeader>
-                      <CardTitle className="text-[var(--color-foreground)] flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        {lease.tenant?.name}
-                      </CardTitle>
+                      <div className="flex items-start justify-between gap-3">
+                        <CardTitle className="text-[var(--color-foreground)] flex min-w-0 items-center gap-2">
+                          <User className="h-4 w-4 shrink-0" />
+                          <span className="truncate">{lease.tenant?.name}</span>
+                        </CardTitle>
+                        {getStatusBadge(lease.status)}
+                      </div>
                       <CardDescription className="flex items-start gap-1">
                         <Building2 className="h-4 w-4 shrink-0 mt-0.5" />
                         <span className="text-xs">{lease.property?.name}</span>
