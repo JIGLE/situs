@@ -88,7 +88,7 @@ export function AuthView({ mode, demoLoginEnabled, signUpOpen, callbackUrl }: Au
           <div className="mx-auto w-full max-w-md">
             <div className="flex h-11 items-center gap-3">
               <SitusPortalMark className="h-8 w-8" />
-              <span className="text-[13px] font-semibold uppercase tracking-[0.22em] text-[var(--color-foreground)]">
+              <span className="text-meta font-semibold uppercase tracking-[0.22em] text-[var(--color-foreground)]">
                 Situs
               </span>
             </div>

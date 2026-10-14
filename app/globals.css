@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/*
+ * `dark:` follows the app's own theme (data-mode, set from the cookie and the picker), never the
+ * operating system's setting, which is what Tailwind's default would read. The semantic tokens
+ * already change with the theme, so nothing uses it today; it is here so the first `dark:` that
+ * does appear cannot disagree with the screen.
+ */
+@custom-variant dark (&:where([data-mode=dark], [data-mode=dark] *, .dark, .dark *, [data-theme=dark], [data-theme=dark] *, [data-theme=dark-oled], [data-theme=dark-oled] *));
+
 /* ============================================
    SITUS DESIGN SYSTEM — SOVEREIGN CAPITAL SYSTEM
    ============================================
@@ -426,6 +434,40 @@ body {
   .mono-label-xs {
     font-size: 9px;
   }
+}
+
+/*
+ * The type scale below the headings. Six sizes, named for what they are for; an arbitrary
+ * `text-[Npx]` is refused (tests/design-language-contract.test.ts). `label` is the one that
+ * changes with the screen: 12px on a phone, where 10px falls under the legibility floor the
+ * mobile audit measures, and the designed 10px from `md` up. Font size only, like the arbitrary
+ * values they replace, so each keeps the line height of the element around it.
+ */
+@utility text-label {
+  font-size: 12px;
+  @media (min-width: 768px) {
+    font-size: 10px;
+  }
+}
+
+@utility text-badge {
+  font-size: 10px;
+}
+
+@utility text-caption {
+  font-size: 11px;
+}
+
+@utility text-meta {
+  font-size: 13px;
+}
+
+@utility text-reading {
+  font-size: 15px;
+}
+
+@utility text-tick {
+  font-size: 9px;
 }
 
 /* Status dots — 8px squares, semantic only */

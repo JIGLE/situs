@@ -190,7 +190,7 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
           <>
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <SitusPortalMark className="h-7 w-7 shrink-0" />
-              <span className="text-[13px] font-medium uppercase tracking-[0.22em] text-[var(--color-foreground)] truncate">
+              <span className="text-meta font-medium uppercase tracking-[0.22em] text-[var(--color-foreground)] truncate">
                 Situs
               </span>
             </div>

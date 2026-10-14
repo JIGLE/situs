@@ -10,8 +10,8 @@ interface SkeletonProps {
 
 export function Skeleton({ className = "", variant = "text", width, height }: SkeletonProps) {
   // One background, not three. This carried `bg-[var(--color-surface)]`, a Tailwind
-  // `bg-gradient-to-r from-zinc-700…`, AND `.animate-shimmer`'s own gradient — the unlayered rule
-  // won, so the zinc stops never rendered and the hardcoded palette was dead weight that also
+  // gradient utility with hardcoded palette stops, AND `.animate-shimmer`'s own gradient — the unlayered rule
+  // won, so those stops never rendered and the hardcoded palette was dead weight that also
   // ignored the theme. `--color-muted` is the raised-surface token, so the placeholder is legible
   // against the canvas in both themes; the shimmer sweeps over it rather than replacing it.
   const baseClasses = "bg-[var(--color-muted)] animate-shimmer";

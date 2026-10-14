@@ -75,7 +75,7 @@ const ALLOWLIST = ["empty-state-illustrations", "scenario-runner", "opengraph-im
 // 148 → 133: "Ocupação e renda" took its 15 raw emeralds, yellows and reds when it was folded
 // into the rent matrix.
 // 133 → 131: the receipt cards' orange "maintenance" badge went with them.
-const BASELINE = 131;
+const BASELINE = 0;
 
 function walk(dir, acc) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

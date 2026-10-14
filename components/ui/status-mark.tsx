@@ -37,7 +37,7 @@ export function StatusMark({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.06em] md:text-[10px]",
+        "inline-flex items-center gap-1.5 font-mono text-label uppercase tracking-[0.06em]",
         struck
           ? "text-[var(--color-muted-foreground)] line-through"
           : "text-[var(--color-foreground)]",

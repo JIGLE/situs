@@ -228,11 +228,13 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
                       id="name"
                       value={dialog.formData.name}
                       onChange={(e) => dialog.updateFormData({ name: e.target.value })}
-                      className={dialog.formErrors.name ? "border-red-500" : ""}
+                      className={dialog.formErrors.name ? "border-[var(--semantic-danger)]" : ""}
                       placeholder={t("namePlaceholder")}
                     />
                     {dialog.formErrors.name && (
-                      <p className="text-sm text-red-500">{dialog.formErrors.name}</p>
+                      <p className="text-sm text-[var(--semantic-danger-readable)]">
+                        {dialog.formErrors.name}
+                      </p>
                     )}
                   </div>
 
@@ -244,11 +246,13 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
                         type="email"
                         value={dialog.formData.email ?? ""}
                         onChange={(e) => dialog.updateFormData({ email: e.target.value })}
-                        className={dialog.formErrors.email ? "border-red-500" : ""}
+                        className={dialog.formErrors.email ? "border-[var(--semantic-danger)]" : ""}
                         placeholder={t("emailPlaceholder")}
                       />
                       {dialog.formErrors.email && (
-                        <p className="text-sm text-red-500">{dialog.formErrors.email}</p>
+                        <p className="text-sm text-[var(--semantic-danger-readable)]">
+                          {dialog.formErrors.email}
+                        </p>
                       )}
                     </div>
                     <div className="space-y-2">
@@ -257,11 +261,13 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
                         id="phone"
                         value={dialog.formData.phone}
                         onChange={(e) => dialog.updateFormData({ phone: e.target.value })}
-                        className={dialog.formErrors.phone ? "border-red-500" : ""}
+                        className={dialog.formErrors.phone ? "border-[var(--semantic-danger)]" : ""}
                         placeholder={t("phonePlaceholder")}
                       />
                       {dialog.formErrors.phone && (
-                        <p className="text-sm text-red-500">{dialog.formErrors.phone}</p>
+                        <p className="text-sm text-[var(--semantic-danger-readable)]">
+                          {dialog.formErrors.phone}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -278,11 +284,13 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
                       id="address"
                       value={dialog.formData.address}
                       onChange={(e) => dialog.updateFormData({ address: e.target.value })}
-                      className={dialog.formErrors.address ? "border-red-500" : ""}
+                      className={dialog.formErrors.address ? "border-[var(--semantic-danger)]" : ""}
                       placeholder={t("addressPlaceholder")}
                     />
                     {dialog.formErrors.address && (
-                      <p className="text-sm text-red-500">{dialog.formErrors.address}</p>
+                      <p className="text-sm text-[var(--semantic-danger-readable)]">
+                        {dialog.formErrors.address}
+                      </p>
                     )}
                   </div>
 
@@ -292,12 +300,14 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
                       id="notes"
                       value={dialog.formData.notes}
                       onChange={(e) => dialog.updateFormData({ notes: e.target.value })}
-                      className={dialog.formErrors.notes ? "border-red-500" : ""}
+                      className={dialog.formErrors.notes ? "border-[var(--semantic-danger)]" : ""}
                       placeholder={t("notesPlaceholder")}
                       rows={3}
                     />
                     {dialog.formErrors.notes && (
-                      <p className="text-sm text-red-500">{dialog.formErrors.notes}</p>
+                      <p className="text-sm text-[var(--semantic-danger-readable)]">
+                        {dialog.formErrors.notes}
+                      </p>
                     )}
                   </div>
 
@@ -456,7 +466,7 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
                                   <p className="text-[var(--color-muted-foreground)]">
                                     {t("incomeShare")}
                                   </p>
-                                  <p className="font-semibold text-green-400">
+                                  <p className="font-semibold text-[var(--semantic-success-readable)]">
                                     {formatCurrency(ownerIncome)}
                                   </p>
                                 </div>
@@ -467,7 +477,9 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
                                   <p
                                     className={cn(
                                       "font-semibold",
-                                      net >= 0 ? "text-green-400" : "text-red-400",
+                                      net >= 0
+                                        ? "text-[var(--semantic-success-readable)]"
+                                        : "text-[var(--semantic-danger-readable)]",
                                     )}
                                   >
                                     {formatCurrency(net)}

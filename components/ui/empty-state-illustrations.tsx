@@ -67,73 +67,51 @@ export interface EmptyStateIllustrationProps {
 
 // Icon and color treatment per entity type — text comes from the "emptyState"
 // i18n namespace (see messages/*.json), looked up by type in the component.
+/** Every empty state wears the same neutral treatment; the icon says which one it is. */
+const EMPTY_GRADIENT = "from-[var(--color-muted)] to-[var(--color-card)]";
+const EMPTY_ACCENT = "text-[var(--color-muted-foreground)]";
+
 const emptyStateMeta: Record<
   string,
   {
     icon: React.ComponentType<{ className?: string }>;
-    gradient: string;
-    accentColor: string;
   }
 > = {
   properties: {
     icon: Building2,
-    gradient: "from-blue-500/20 to-indigo-500/20",
-    accentColor: "text-blue-400",
   },
   tenants: {
     icon: Users,
-    gradient: "from-emerald-500/20 to-teal-500/20",
-    accentColor: "text-emerald-400",
   },
   payments: {
     icon: Receipt,
-    gradient: "from-amber-500/20 to-orange-500/20",
-    accentColor: "text-amber-400",
   },
   leases: {
     icon: FileText,
-    gradient: "from-violet-500/20 to-purple-500/20",
-    accentColor: "text-violet-400",
   },
   reports: {
     icon: BarChart3,
-    gradient: "from-lime-500/20 to-green-500/20",
-    accentColor: "text-lime-400",
   },
   generic: {
     icon: Plus,
-    gradient: "from-zinc-500/20 to-zinc-400/20",
-    accentColor: "text-[var(--color-muted-foreground)]",
   },
   owners: {
     icon: Briefcase,
-    gradient: "from-indigo-500/20 to-blue-500/20",
-    accentColor: "text-indigo-400",
   },
   receipts: {
     icon: Receipt,
-    gradient: "from-amber-500/20 to-orange-500/20",
-    accentColor: "text-amber-400",
   },
   expenses: {
     icon: DollarSign,
-    gradient: "from-red-500/20 to-rose-500/20",
-    accentColor: "text-red-400",
   },
   invoices: {
     icon: FileSpreadsheet,
-    gradient: "from-teal-500/20 to-emerald-500/20",
-    accentColor: "text-teal-400",
   },
   contracts: {
     icon: FileText,
-    gradient: "from-violet-500/20 to-purple-500/20",
-    accentColor: "text-violet-400",
   },
   documents: {
     icon: FileText,
-    gradient: "from-sky-500/20 to-cyan-500/20",
-    accentColor: "text-sky-400",
   },
 };
 
@@ -173,7 +151,7 @@ export function EmptyStateIllustration({
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.1, duration: 0.4, ease: "easeOut" }}
-        className={cn("relative bg-gradient-to-br p-6 mb-6", meta.gradient)}
+        className={cn("relative bg-gradient-to-br p-6 mb-6", EMPTY_GRADIENT)}
       >
         {/* Decorative ring */}
         <div className="absolute inset-0 border border-[var(--color-border)] opacity-50" />
@@ -183,7 +161,7 @@ export function EmptyStateIllustration({
           animate={{ y: [-4, 4, -4] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Icon className={cn(meta.accentColor, compact ? "h-10 w-10" : "h-14 w-14")} />
+          <Icon className={cn(EMPTY_ACCENT, compact ? "h-10 w-10" : "h-14 w-14")} />
         </motion.div>
 
         {/* Small decorative dots */}
@@ -192,7 +170,7 @@ export function EmptyStateIllustration({
           transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
           className={cn(
             "absolute -top-1 -right-1 h-3 w-3 rounded-full",
-            meta.accentColor.replace("text-", "bg-"),
+            EMPTY_ACCENT.replace("text-", "bg-"),
           )}
         />
         <motion.div
@@ -200,7 +178,7 @@ export function EmptyStateIllustration({
           transition={{ duration: 2.5, repeat: Infinity, delay: 1 }}
           className={cn(
             "absolute -bottom-1 -left-1 h-2 w-2 rounded-full",
-            meta.accentColor.replace("text-", "bg-"),
+            EMPTY_ACCENT.replace("text-", "bg-"),
           )}
         />
       </motion.div>

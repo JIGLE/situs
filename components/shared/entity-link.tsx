@@ -31,12 +31,16 @@ const ENTITY_CONFIG: Record<
     color: string;
   }
 > = {
-  property: { icon: Building2, overlay: true, color: "text-blue-500" },
-  tenant: { icon: Users, overlay: true, color: "text-emerald-500" },
-  owner: { icon: UserCircle, overlay: true, color: "text-sky-500" },
-  lease: { icon: FileText, overlay: true, color: "text-violet-500" },
+  property: { icon: Building2, overlay: true, color: "text-[var(--color-muted-foreground)]" },
+  tenant: { icon: Users, overlay: true, color: "text-[var(--color-muted-foreground)]" },
+  owner: { icon: UserCircle, overlay: true, color: "text-[var(--color-muted-foreground)]" },
+  lease: { icon: FileText, overlay: true, color: "text-[var(--color-muted-foreground)]" },
   document: { icon: FileIcon, overlay: true, color: "text-[var(--color-muted-foreground)]" },
-  receipt: { icon: Receipt, basePath: "/financials", color: "text-green-500" },
+  receipt: {
+    icon: Receipt,
+    basePath: "/financials",
+    color: "text-[var(--color-muted-foreground)]",
+  },
 };
 
 export interface EntityLinkProps {

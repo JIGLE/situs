@@ -809,7 +809,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
             <DollarSign className="h-3.5 w-3.5" />
             {t("tabs.money")}
             {totalRevenue > 0 && (
-              <span className="ml-1 bg-[var(--color-popover)] px-1.5 py-0.5 font-mono text-[12px] md:text-[10px] tabular-nums text-[var(--color-muted-foreground)]">
+              <span className="ml-1 bg-[var(--color-popover)] px-1.5 py-0.5 font-mono text-label tabular-nums text-[var(--color-muted-foreground)]">
                 {formatCurrency(totalRevenue)}
               </span>
             )}

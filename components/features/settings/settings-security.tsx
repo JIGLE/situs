@@ -193,7 +193,7 @@ export function SettingsSecurity() {
         ) : totpEnabled && totpSetupStep !== "backup" ? (
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-sm">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <CheckCircle2 className="h-4 w-4 text-[var(--semantic-success-readable)]" />
               <span>{t("twoFactorOn")}</span>
             </div>
             {disableCode === null ? (
@@ -292,7 +292,7 @@ export function SettingsSecurity() {
           </div>
         ) : totpSetupStep === "backup" ? (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+            <div className="flex items-center gap-2 text-sm text-[var(--semantic-success-readable)]">
               <CheckCircle2 className="h-4 w-4" />
               <span>{t("twoFactorEnabled")}</span>
             </div>

@@ -125,7 +125,7 @@ export function TaxConnectorDashboard(): React.ReactElement | null {
                   </div>
                   <div className="flex items-center gap-3">
                     <span
-                      className={`px-1.5 py-0.5 font-mono text-[12px] md:text-[10px] uppercase tracking-[0.04em] ${connectorMode.badgeClass(
+                      className={`px-1.5 py-0.5 font-mono text-label uppercase tracking-[0.04em] ${connectorMode.badgeClass(
                         connector.mode,
                       )}`}
                       title={connectorMode.help(connector.mode, connector.country)}

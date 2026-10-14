@@ -98,7 +98,7 @@ function TenantForm({
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               dialog.updateFormData({ name: e.target.value })
             }
-            className={dialog.formErrors.name ? "border-red-500" : ""}
+            className={dialog.formErrors.name ? "border-[var(--semantic-danger)]" : ""}
             required
           />
           {dialog.formErrors.name && (
@@ -114,7 +114,7 @@ function TenantForm({
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               dialog.updateFormData({ email: e.target.value })
             }
-            className={dialog.formErrors.email ? "border-red-500" : ""}
+            className={dialog.formErrors.email ? "border-[var(--semantic-danger)]" : ""}
           />
           {dialog.formErrors.email && (
             <p className="text-sm text-destructive">{dialog.formErrors.email}</p>
@@ -148,7 +148,7 @@ function TenantForm({
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   dialog.updateFormData({ phone: e.target.value })
                 }
-                className={dialog.formErrors.phone ? "border-red-500" : ""}
+                className={dialog.formErrors.phone ? "border-[var(--semantic-danger)]" : ""}
               />
               {dialog.formErrors.phone && (
                 <p className="text-sm text-destructive">{dialog.formErrors.phone}</p>
@@ -160,7 +160,9 @@ function TenantForm({
                 value={dialog.formData.propertyId ?? ""}
                 onValueChange={(value: string) => dialog.updateFormData({ propertyId: value })}
               >
-                <SelectTrigger className={dialog.formErrors.propertyId ? "border-red-500" : ""}>
+                <SelectTrigger
+                  className={dialog.formErrors.propertyId ? "border-[var(--semantic-danger)]" : ""}
+                >
                   <SelectValue placeholder={tForms("selectProperty")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -188,7 +190,7 @@ function TenantForm({
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   dialog.updateFormData({ rent: parseInt(e.target.value) || 0 })
                 }
-                className={dialog.formErrors.rent ? "border-red-500" : ""}
+                className={dialog.formErrors.rent ? "border-[var(--semantic-danger)]" : ""}
               />
               {dialog.formErrors.rent && (
                 <p className="text-sm text-destructive">{dialog.formErrors.rent}</p>
@@ -203,7 +205,7 @@ function TenantForm({
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   dialog.updateFormData({ leaseStart: e.target.value })
                 }
-                className={dialog.formErrors.leaseStart ? "border-red-500" : ""}
+                className={dialog.formErrors.leaseStart ? "border-[var(--semantic-danger)]" : ""}
               />
               {dialog.formErrors.leaseStart && (
                 <p className="text-sm text-destructive">{dialog.formErrors.leaseStart}</p>
@@ -218,7 +220,7 @@ function TenantForm({
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   dialog.updateFormData({ leaseEnd: e.target.value })
                 }
-                className={dialog.formErrors.leaseEnd ? "border-red-500" : ""}
+                className={dialog.formErrors.leaseEnd ? "border-[var(--semantic-danger)]" : ""}
               />
               {dialog.formErrors.leaseEnd && (
                 <p className="text-sm text-destructive">{dialog.formErrors.leaseEnd}</p>
@@ -253,7 +255,7 @@ function TenantForm({
                 dialog.updateFormData({ notes: e.target.value })
               }
               rows={3}
-              className={dialog.formErrors.notes ? "border-red-500" : ""}
+              className={dialog.formErrors.notes ? "border-[var(--semantic-danger)]" : ""}
             />
             {dialog.formErrors.notes && (
               <p className="text-sm text-destructive">{dialog.formErrors.notes}</p>

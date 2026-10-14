@@ -416,7 +416,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                     recover it — and a phone has no hover. */}
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="border border-[var(--color-border)] bg-[var(--color-card)] p-3">
-                    <p className="text-[12px] md:text-[10px] text-[var(--color-muted-foreground)] uppercase tracking-wide mb-2">
+                    <p className="text-label text-[var(--color-muted-foreground)] uppercase tracking-wide mb-2">
                       {t("modal.contact")}
                     </p>
                     <div className="space-y-1.5">
@@ -433,7 +433,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                     </div>
                   </div>
                   <div className="border border-[var(--color-border)] bg-[var(--color-card)] p-3">
-                    <p className="text-[12px] md:text-[10px] text-[var(--color-muted-foreground)] uppercase tracking-wide mb-2">
+                    <p className="text-label text-[var(--color-muted-foreground)] uppercase tracking-wide mb-2">
                       {tForms("property")}
                     </p>
                     <div className="flex items-start gap-2 text-sm">
@@ -444,7 +444,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                 </div>
                 {tenant.notes && (
                   <div className="border border-[var(--color-border)] bg-[var(--color-card)] p-3">
-                    <p className="text-[12px] md:text-[10px] text-[var(--color-muted-foreground)] uppercase tracking-wide mb-1">
+                    <p className="text-label text-[var(--color-muted-foreground)] uppercase tracking-wide mb-1">
                       {tForms("notes")}
                     </p>
                     <p className="text-sm text-[var(--color-foreground)]">{tenant.notes}</p>
@@ -471,7 +471,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                       </div>
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
-                          <p className="text-[12px] md:text-[10px] text-[var(--color-muted-foreground)] uppercase tracking-wide">
+                          <p className="text-label text-[var(--color-muted-foreground)] uppercase tracking-wide">
                             {t("monthlyRent")}
                           </p>
                           <p className="mt-0.5 font-semibold text-[var(--color-foreground)]">
@@ -479,7 +479,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                           </p>
                         </div>
                         <div>
-                          <p className="text-[12px] md:text-[10px] text-[var(--color-muted-foreground)] uppercase tracking-wide">
+                          <p className="text-label text-[var(--color-muted-foreground)] uppercase tracking-wide">
                             {tForms("status")}
                           </p>
                           <p className="mt-0.5 font-medium text-[var(--color-foreground)]">
@@ -487,7 +487,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                           </p>
                         </div>
                         <div>
-                          <p className="text-[12px] md:text-[10px] text-[var(--color-muted-foreground)] uppercase tracking-wide">
+                          <p className="text-label text-[var(--color-muted-foreground)] uppercase tracking-wide">
                             {tForms("leaseStart")}
                           </p>
                           <p className="mt-0.5 text-[var(--color-foreground)]">
@@ -495,7 +495,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                           </p>
                         </div>
                         <div>
-                          <p className="text-[12px] md:text-[10px] text-[var(--color-muted-foreground)] uppercase tracking-wide">
+                          <p className="text-label text-[var(--color-muted-foreground)] uppercase tracking-wide">
                             {tForms("leaseEnd")}
                           </p>
                           <p className="mt-0.5 text-[var(--color-foreground)]">

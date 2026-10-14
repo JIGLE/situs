@@ -438,7 +438,9 @@ export function ReceiptsView(props: ReceiptsViewProps) {
                 value={dialog.formData.tenantId}
                 onValueChange={(value) => dialog.updateFormData({ tenantId: value })}
               >
-                <SelectTrigger className={dialog.formErrors.tenantId ? "border-red-500" : ""}>
+                <SelectTrigger
+                  className={dialog.formErrors.tenantId ? "border-[var(--semantic-danger)]" : ""}
+                >
                   <SelectValue placeholder={t("selectTenant")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -459,7 +461,9 @@ export function ReceiptsView(props: ReceiptsViewProps) {
                 value={dialog.formData.propertyId}
                 onValueChange={(value) => dialog.updateFormData({ propertyId: value })}
               >
-                <SelectTrigger className={dialog.formErrors.propertyId ? "border-red-500" : ""}>
+                <SelectTrigger
+                  className={dialog.formErrors.propertyId ? "border-[var(--semantic-danger)]" : ""}
+                >
                   <SelectValue placeholder={t("selectProperty")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -490,7 +494,7 @@ export function ReceiptsView(props: ReceiptsViewProps) {
                     amount: parseFloat(e.target.value) || 0,
                   })
                 }
-                className={dialog.formErrors.amount ? "border-red-500" : ""}
+                className={dialog.formErrors.amount ? "border-[var(--semantic-danger)]" : ""}
                 required
               />
               {dialog.formErrors.amount && (
@@ -504,7 +508,7 @@ export function ReceiptsView(props: ReceiptsViewProps) {
                 type="date"
                 value={dialog.formData.date}
                 onChange={(e) => dialog.updateFormData({ date: e.target.value })}
-                className={dialog.formErrors.date ? "border-red-500" : ""}
+                className={dialog.formErrors.date ? "border-[var(--semantic-danger)]" : ""}
                 required
               />
               {dialog.formErrors.date && (
@@ -517,7 +521,9 @@ export function ReceiptsView(props: ReceiptsViewProps) {
                 value={dialog.formData.type}
                 onValueChange={(value: Receipt["type"]) => dialog.updateFormData({ type: value })}
               >
-                <SelectTrigger className={dialog.formErrors.type ? "border-red-500" : ""}>
+                <SelectTrigger
+                  className={dialog.formErrors.type ? "border-[var(--semantic-danger)]" : ""}
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -539,7 +545,7 @@ export function ReceiptsView(props: ReceiptsViewProps) {
               id="description"
               value={dialog.formData.description}
               onChange={(e) => dialog.updateFormData({ description: e.target.value })}
-              className={dialog.formErrors.description ? "border-red-500" : ""}
+              className={dialog.formErrors.description ? "border-[var(--semantic-danger)]" : ""}
               rows={3}
             />
             {dialog.formErrors.description && (

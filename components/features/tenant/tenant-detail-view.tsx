@@ -75,8 +75,8 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex items-start gap-4">
-          <div className="p-3 bg-emerald-500/10">
-            <Users className="h-8 w-8 text-emerald-500" />
+          <div className="p-3 bg-[var(--color-secondary)]">
+            <Users className="h-8 w-8 text-[var(--color-muted-foreground)]" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-[var(--color-foreground)]">{tenant.name}</h1>
@@ -219,7 +219,7 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
             <Card>
               <CardContent className="p-4">
                 <div className="text-sm text-[var(--color-muted-foreground)]">{t("totalPaid")}</div>
-                <div className="text-2xl font-bold text-green-500 mt-1">
+                <div className="text-2xl font-bold text-[var(--semantic-success-readable)] mt-1">
                   {formatCurrency(totalPaid)}
                 </div>
               </CardContent>
@@ -315,7 +315,7 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                             className={cn(
                               "text-sm font-semibold",
                               receipt.status === "paid"
-                                ? "text-green-500"
+                                ? "text-[var(--semantic-success-readable)]"
                                 : "text-[var(--color-foreground)]",
                             )}
                           >

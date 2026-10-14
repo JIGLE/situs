@@ -107,7 +107,7 @@ export function SwipeableListItem({
             className="flex flex-col items-center gap-1"
           >
             <span className="text-white">{startAction.icon}</span>
-            <span className="text-[12px] md:text-[10px] font-medium text-white/90 uppercase tracking-wide">
+            <span className="text-label font-medium text-white/90 uppercase tracking-wide">
               {startAction.label}
             </span>
           </motion.div>
@@ -128,7 +128,7 @@ export function SwipeableListItem({
             className="flex flex-col items-center gap-1"
           >
             <span className="text-white">{endAction.icon}</span>
-            <span className="text-[12px] md:text-[10px] font-medium text-white/90 uppercase tracking-wide">
+            <span className="text-label font-medium text-white/90 uppercase tracking-wide">
               {endAction.label}
             </span>
           </motion.div>

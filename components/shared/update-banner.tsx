@@ -74,7 +74,7 @@ export function UpdateBanner(): React.ReactElement | null {
   if (cmp <= 0) return null;
 
   return (
-    <div className="bg-yellow-50 border border-yellow-200 text-yellow-900 p-3 mb-4 mx-4">
+    <div className="border border-[var(--semantic-warning)] bg-[var(--semantic-warning-soft)] text-[var(--color-foreground)] p-3 mb-4 mx-4">
       <div className="flex items-start justify-between gap-4">
         <div>
           <strong className="block">New release available: {latest.name || latest.tag_name}</strong>
