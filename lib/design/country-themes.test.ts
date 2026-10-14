@@ -136,6 +136,21 @@ describe("resolveThemeVars", () => {
   });
 
   /**
+   * A `Panel` is the solid surface token, lighter than the card wash, and the status chips on it
+   * are the semantic text on its own soft wash (8% of the hue). The "Active" chip on a bank
+   * connection read 4.47:1 there and failed the accessibility spec, so the readable tokens are
+   * held to 4.5:1 on the chip as drawn on a panel, in every country's dark theme.
+   */
+  it.each(COUNTRY_CODES)("%s dark text variants reach 4.5:1 on a chip on a panel", (code) => {
+    const vars = resolveThemeVars(code, "dark");
+    const panel = vars["--color-surface-solid"];
+    for (const key of ["success", "warning", "danger", "info"] as const) {
+      const chip = mixWith(panel, SEMANTIC_TOKENS[`--semantic-${key}`], 0.08);
+      expect(contrastRatio(vars[`--semantic-${key}-readable`], chip)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  /**
    * Dark is the default, so most text is read on the surfaces the dark theme puts over its canvas,
    * not on the bare canvas: a card is a 3.5% white wash, and the sidebar's active row a green
    * one. A text colour that clears the canvas by a hair (the danger red at 4.47:1) failed the
