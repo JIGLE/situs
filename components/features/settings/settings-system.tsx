@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Panel } from "@/components/shared/panel";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -24,21 +24,12 @@ export function SettingsSystem() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5" />
-            {t("systemStatus")}
-          </CardTitle>
-          <CardDescription>{t("systemStatusMovedHelp")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button variant="outline" size="sm" onClick={() => router.push("/admin")}>
-            <ShieldCheck className="h-4 w-4 mr-1.5" />
-            {t("openAdmin")}
-          </Button>
-        </CardContent>
-      </Card>
+      <Panel title={t("systemStatus")} description={t("systemStatusMovedHelp")} padded>
+        <Button variant="outline" size="sm" onClick={() => router.push("/admin")}>
+          <ShieldCheck className="h-4 w-4 mr-1.5" />
+          {t("openAdmin")}
+        </Button>
+      </Panel>
     </div>
   );
 }

@@ -208,6 +208,18 @@ export function resolveThemeVars(country: CountryCode, mode: ThemeMode): Record<
   const textBackdrop = isDark(theme.canvas) ? mixWith(theme.canvas, "#FFFFFF", 0.05) : theme.canvas;
   const logoKeyline = isDark(theme.surfaceSolid) ? "rgba(255,255,255,0.68)" : "rgba(0,0,0,0.48)";
 
+  // On a light theme the canvas is the backdrop; on a dark one text is light, so the lightest
+  // background is the one that costs it the most contrast.
+  const readableOnChip = (token: keyof typeof SEMANTIC_TOKENS & `--semantic-${string}`) => {
+    if (!isDark(theme.canvas)) return readableHighlight(SEMANTIC_TOKENS[token], textBackdrop);
+    const chipOnPanel = mixWith(theme.surfaceSolid, SEMANTIC_TOKENS[token], 0.08);
+    const backdrop =
+      contrastRatio(chipOnPanel, "#000000") > contrastRatio(textBackdrop, "#000000")
+        ? chipOnPanel
+        : textBackdrop;
+    return readableHighlight(SEMANTIC_TOKENS[token], backdrop);
+  };
+
   return {
     "--color-ink": theme.ink,
     "--color-bone": theme.bone,
@@ -248,22 +260,13 @@ export function resolveThemeVars(country: CountryCode, mode: ThemeMode): Record<
     // Text-safe semantic variants: raw semantic hues are kept for borders and
     // soft washes, but as body/badge TEXT they miss 4.5:1 on dark canvases, so
     // the same contrast algorithm that fixes the country highlight fixes these.
-    // They are measured on the card, not the bare canvas: a card is a 3.5% white wash
-    // (`--color-card`), which is what most of this text sits on, and a hue that clears the canvas
-    // by a hair (4.47:1) fails there.
-    "--semantic-success-readable": readableHighlight(
-      SEMANTIC_TOKENS["--semantic-success"],
-      textBackdrop,
-    ),
-    "--semantic-warning-readable": readableHighlight(
-      SEMANTIC_TOKENS["--semantic-warning"],
-      textBackdrop,
-    ),
-    "--semantic-danger-readable": readableHighlight(
-      SEMANTIC_TOKENS["--semantic-danger"],
-      textBackdrop,
-    ),
-    "--semantic-info-readable": readableHighlight(SEMANTIC_TOKENS["--semantic-info"], textBackdrop),
+    // They are measured on the lightest background the text lands on: the card, a 3.5% white wash
+    // (`--color-card`), which a hue that clears the canvas by a hair (4.47:1) fails on; and a
+    // status chip on a `Panel`, its own 8% wash over the solid surface, which is lighter still.
+    "--semantic-success-readable": readableOnChip("--semantic-success"),
+    "--semantic-warning-readable": readableOnChip("--semantic-warning"),
+    "--semantic-danger-readable": readableOnChip("--semantic-danger"),
+    "--semantic-info-readable": readableOnChip("--semantic-info"),
   };
 }
 

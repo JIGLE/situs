@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronRight, Info, Shield } from "lucide-react";
+import { ChevronRight, Info } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Panel } from "@/components/shared/panel";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -50,61 +50,52 @@ export function SettingsAccount({ appVersion, settings, updateSetting }: Setting
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            {t("accountInfo")}
-          </CardTitle>
-          <CardDescription>{t("accountInfoDescription")}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-1">
-            <Label>{t("email")}</Label>
-            <p className="text-sm text-muted-foreground">
-              {session?.user?.email || t("notAvailable")}
-            </p>
-          </div>
-          <div className="space-y-1">
-            <Label>{t("name")}</Label>
-            <p className="text-sm text-muted-foreground">{session?.user?.name || t("notSet")}</p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="settings-residence-country">{t("residenceCountry")}</Label>
-            <Select
-              value={settings.residenceCountry}
-              onValueChange={(code) => updateSetting("residenceCountry", code)}
+      <Panel title={t("accountInfo")} description={t("accountInfoDescription")} padded>
+        <div className="space-y-1">
+          <Label>{t("email")}</Label>
+          <p className="text-sm text-muted-foreground">
+            {session?.user?.email || t("notAvailable")}
+          </p>
+        </div>
+        <div className="space-y-1">
+          <Label>{t("name")}</Label>
+          <p className="text-sm text-muted-foreground">{session?.user?.name || t("notSet")}</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="settings-residence-country">{t("residenceCountry")}</Label>
+          <Select
+            value={settings.residenceCountry}
+            onValueChange={(code) => updateSetting("residenceCountry", code)}
+          >
+            <SelectTrigger
+              id="settings-residence-country"
+              className="max-w-xs"
+              aria-describedby="settings-residence-country-help"
             >
-              <SelectTrigger
-                id="settings-residence-country"
-                className="max-w-xs"
-                aria-describedby="settings-residence-country-help"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {countries.map((option) => (
-                  <SelectItem key={option.code} value={option.code}>
-                    {option.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p id="settings-residence-country-help" className="text-xs text-muted-foreground">
-              {t("residenceCountryHelp")}
-            </p>
-          </div>
-          <div className="pt-4 border-t border-border space-y-2">
-            {appVersion && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Info className="h-3.5 w-3.5" />
-                <span>{t("version", { version: appVersion })}</span>
-              </div>
-            )}
-            <LegalLinks className="justify-start" />
-          </div>
-        </CardContent>
-      </Card>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {countries.map((option) => (
+                <SelectItem key={option.code} value={option.code}>
+                  {option.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p id="settings-residence-country-help" className="text-xs text-muted-foreground">
+            {t("residenceCountryHelp")}
+          </p>
+        </div>
+        <div className="pt-4 border-t border-border space-y-2">
+          {appVersion && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Info className="h-3.5 w-3.5" />
+              <span>{t("version", { version: appVersion })}</span>
+            </div>
+          )}
+          <LegalLinks className="justify-start" />
+        </div>
+      </Panel>
 
       <div className="space-y-2">
         <Button

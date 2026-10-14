@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
+import { Panel } from "@/components/shared/panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,8 +77,7 @@ export function InvitationsCard({ invitations, switchedOn, onChanged }: Props) {
   }
 
   return (
-    <section className="border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3">
-      <h2 className="text-sm font-medium text-[var(--color-foreground)]">{t("title")}</h2>
+    <Panel title={t("title")} bodyClassName="p-4">
       <p className="mt-1 text-sm text-muted-foreground">{t("help")}</p>
       {!switchedOn && (
         <p className="mt-2 bg-[var(--semantic-warning-soft)] px-3 py-2 text-sm text-[var(--semantic-warning-readable)]">
@@ -162,6 +162,6 @@ export function InvitationsCard({ invitations, switchedOn, onChanged }: Props) {
           ))}
         </ul>
       )}
-    </section>
+    </Panel>
   );
 }

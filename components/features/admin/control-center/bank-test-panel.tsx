@@ -7,7 +7,7 @@ import { AlertTriangle, Check, Loader2, Plug, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/utils/api-client";
 import { useCsrf } from "@/lib/contexts/csrf-context";
-import { Fact, Panel } from "./panel";
+import { Fact, Panel } from "@/components/shared/panel";
 
 /**
  * The reasons the catalogue names. Any other — another HTTP status, a configuration error's own

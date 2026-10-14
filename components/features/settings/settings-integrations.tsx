@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Landmark, Layers } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { Panel } from "@/components/shared/panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AtConnectionPanel } from "./at-connection-panel";
 import { useBankConnections } from "@/lib/hooks/use-bank-connections";
@@ -62,30 +62,20 @@ export function SettingsIntegrations() {
       </TabsList>
 
       <TabsContent value="banks" className="mt-0">
-        <Card>
-          <CardHeader>
-            <CardDescription>{t("bankConnectionsHelp")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <BankConnectPanel
-              connections={connections}
-              providersConfigured={providersConfigured}
-              loading={loading}
-              onRefresh={reload}
-            />
-          </CardContent>
-        </Card>
+        <Panel description={t("bankConnectionsHelp")} padded>
+          <BankConnectPanel
+            connections={connections}
+            providersConfigured={providersConfigured}
+            loading={loading}
+            onRefresh={reload}
+          />
+        </Panel>
       </TabsContent>
 
       <TabsContent value="at" className="mt-0">
-        <Card>
-          <CardHeader>
-            <CardDescription>{tAt("description")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AtConnectionPanel />
-          </CardContent>
-        </Card>
+        <Panel description={tAt("description")} padded>
+          <AtConnectionPanel />
+        </Panel>
       </TabsContent>
     </Tabs>
   );

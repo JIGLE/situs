@@ -134,6 +134,23 @@ the actions; pass `titleOnMobile` for a title that says more than the bar, as th
 greeting does. One heading per screen: a tab's view does not repeat the page title (`CLAUDE.md`,
 screen density).
 
+### Panel
+
+```tsx
+import { Panel } from "@/components/shared/panel";
+
+<Panel title={t("title")} description={t("description")} padded>
+  {/* the body */}
+</Panel>;
+```
+
+Settings and Administration draw every panel with `Panel`: an `h2` under the page's `h1`, a ruled
+header, a line under it, a body. `tone="warning"` or `tone="danger"` carries the meaning in the
+border (Delete account is a `danger` panel of its own). Leave `title` out only where a tab already
+names the panel. A tab bar is `TabsList` for tabs that swap a panel and `TabNav` with `TabLink` for
+tabs that are pages, both from `components/ui/tabs.tsx`; the style is written there and nowhere
+else (`tests/panel-and-tab-contract.test.ts`).
+
 ### Empty State
 
 ```tsx

@@ -2,6 +2,8 @@
 
 import { useTranslations } from "next-intl";
 
+import { Panel } from "@/components/shared/panel";
+
 import type { SignInStatus } from "@/lib/services/admin/sign-in-status";
 import { REGISTRATION_COPY } from "@/lib/utils/access-labels";
 
@@ -18,20 +20,15 @@ export function RegistrationCard({ status }: { status: SignInStatus }) {
   const copy = REGISTRATION_COPY[status.registration];
 
   return (
-    <section
-      className={
-        copy.open
-          ? "border-l-2 border-[var(--semantic-warning-readable)] bg-[var(--semantic-warning-soft)] px-3 py-3"
-          : "border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3"
-      }
+    <Panel
+      tone={copy.open ? "warning" : "default"}
+      title={t(copy.title)}
+      description={t(copy.help, { count: status.pendingInvitations })}
+      padded
     >
-      <p className="text-sm font-medium text-[var(--color-foreground)]">{t(copy.title)}</p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {t(copy.help, { count: status.pendingInvitations })}
-      </p>
-      <p className="mt-2 text-sm text-muted-foreground">
+      <p className="text-sm text-muted-foreground">
         {tAccess("summary", { total: status.totalAccounts, admins: status.adminAccounts })}
       </p>
-    </section>
+    </Panel>
   );
 }

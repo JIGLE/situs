@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
+import { Panel } from "@/components/shared/panel";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import {
   Select,
@@ -86,8 +87,7 @@ export function AccountsCard({ accounts, onChanged }: Props) {
   }
 
   return (
-    <section className="border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3">
-      <h2 className="text-sm font-medium text-[var(--color-foreground)]">{t("title")}</h2>
+    <Panel title={t("title")} bodyClassName="p-4">
       <p className="mt-1 text-sm text-muted-foreground">{t("help")}</p>
       <ul className="mt-3 divide-y divide-[var(--color-border)] border border-[var(--color-border)]">
         {accounts.map((account) => {
@@ -141,6 +141,6 @@ export function AccountsCard({ accounts, onChanged }: Props) {
         })}
       </ul>
       <ConfirmationDialog dialog={confirmDialog} />
-    </section>
+    </Panel>
   );
 }

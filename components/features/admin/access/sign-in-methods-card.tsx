@@ -1,6 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+
+import { Panel } from "@/components/shared/panel";
 import { Check, Minus } from "lucide-react";
 
 import type { SignInStatus } from "@/lib/services/admin/sign-in-status";
@@ -26,8 +28,7 @@ export function SignInMethodsCard({ providers, allowlist }: Props) {
 
   return (
     <>
-      <section className="border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3">
-        <h2 className="text-sm font-medium text-[var(--color-foreground)]">{t("providers")}</h2>
+      <Panel title={t("providers")} bodyClassName="p-4">
         <ul className="mt-2 space-y-1.5">
           {providers.map((provider) => (
             <li key={provider.key} className="flex items-center gap-2 text-sm">
@@ -49,10 +50,9 @@ export function SignInMethodsCard({ providers, allowlist }: Props) {
           ))}
         </ul>
         <p className="mt-3 text-sm text-muted-foreground">{t("providersHelp")}</p>
-      </section>
+      </Panel>
 
-      <section className="border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3">
-        <h2 className="text-sm font-medium text-[var(--color-foreground)]">{t("allowlist")}</h2>
+      <Panel title={t("allowlist")} bodyClassName="p-4">
         {allowlist.length === 0 ? (
           <p className="mt-1 text-sm text-muted-foreground">{t("allowlistEmpty")}</p>
         ) : (
@@ -68,7 +68,7 @@ export function SignInMethodsCard({ providers, allowlist }: Props) {
           </ul>
         )}
         <p className="mt-3 text-sm text-muted-foreground">{t("allowlistHelp")}</p>
-      </section>
+      </Panel>
     </>
   );
 }

@@ -299,8 +299,9 @@ describe("AdminAccessView: who can create an account", () => {
     expect(screen.getByText(title)).toBeInTheDocument();
     // A state that lets a person nobody named in is tinted as a warning; the others are not.
     const card = screen.getByText(title).closest("section");
-    if (open_) expect(card).toHaveClass("border-l-2");
-    else expect(card).not.toHaveClass("border-l-2");
+    const warning = "border-[var(--semantic-warning-readable)]";
+    if (open_) expect(card).toHaveClass(warning);
+    else expect(card).not.toHaveClass(warning);
     // The help runs on after the title's sentence in some states, so it is matched as part of the text.
     expect(screen.getByText(help, { exact: false })).toBeInTheDocument();
     // The count of accounts, as text, in the owner's language.

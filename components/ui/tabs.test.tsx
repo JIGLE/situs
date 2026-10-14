@@ -1,30 +1,32 @@
-import { describe, it, expect, vi } from "vitest";
-import {
-  renderWithProviders as render,
-  screen,
-  fireEvent,
-} from "@/tests/helpers/render-with-providers";
-import { TabsMobileSelect } from "./tabs";
+import { describe, expect, it } from "vitest";
+import { render, screen } from "@testing-library/react";
 
-describe("TabsMobileSelect", () => {
-  const items = [
-    { value: "overview", label: "Overview" },
-    { value: "history", label: "History", badge: 3 },
-  ];
+import { TabLink, TabNav } from "./tabs";
 
-  it("renders one option per item and reflects the current value", () => {
-    render(<TabsMobileSelect value="overview" onValueChange={() => {}} items={items} />);
-    const select = screen.getByRole("combobox", { name: /select tab/i }) as HTMLSelectElement;
-    expect(select.value).toBe("overview");
-    expect(screen.getByText("Overview")).toBeDefined();
-    expect(screen.getByText("History (3)")).toBeDefined();
-  });
+/**
+ * A tab that is a page wears the same style as a tab that swaps a panel, and says which page is
+ * current to a screen reader as well as to the eye.
+ */
+describe("TabNav and TabLink", () => {
+  it("marks the current page and dresses it as the active tab", () => {
+    render(
+      <TabNav aria-label="Secções">
+        <TabLink href="/admin" active>
+          Visão geral
+        </TabLink>
+        <TabLink href="/admin/status" active={false}>
+          Estado
+        </TabLink>
+      </TabNav>,
+    );
 
-  it("calls onValueChange with the selected value", () => {
-    const onValueChange = vi.fn();
-    render(<TabsMobileSelect value="overview" onValueChange={onValueChange} items={items} />);
-    const select = screen.getByRole("combobox", { name: /select tab/i });
-    fireEvent.change(select, { target: { value: "history" } });
-    expect(onValueChange).toHaveBeenCalledWith("history");
+    expect(screen.getByRole("navigation", { name: "Secções" })).toBeDefined();
+    const current = screen.getByRole("link", { name: "Visão geral" });
+    expect(current.getAttribute("aria-current")).toBe("page");
+    expect(current.className).toContain("border-t-[var(--country-highlight-readable)]");
+
+    const other = screen.getByRole("link", { name: "Estado" });
+    expect(other.getAttribute("aria-current")).toBeNull();
+    expect(other.className).not.toContain("border-t-[var(--country-highlight-readable)]");
   });
 });
