@@ -186,7 +186,7 @@ export function FinancialsContainer() {
           >
             {formatCurrency(metrics.overdueAmount)}
           </p>
-          <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">
+          <p className="mt-2 text-meta leading-snug text-[var(--color-muted-foreground)]">
             {t("overdueRentHint")}
           </p>
         </button>
@@ -204,7 +204,7 @@ export function FinancialsContainer() {
           <p className="mt-2 text-xl font-light tabular-nums text-[var(--color-foreground)] sm:text-2xl">
             {metrics.pendingReceipts}
           </p>
-          <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">
+          <p className="mt-2 text-meta leading-snug text-[var(--color-muted-foreground)]">
             {t("pendingReceiptsHint")}
           </p>
         </button>
@@ -218,7 +218,7 @@ export function FinancialsContainer() {
           <p className="mt-2 text-xl font-light tabular-nums text-[var(--semantic-success-readable)] sm:text-2xl">
             {formatCurrency(metrics.monthlyCollected)}
           </p>
-          <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted-foreground)]">
+          <p className="mt-2 text-meta leading-snug text-[var(--color-muted-foreground)]">
             {t("collectedMonthHint")}
           </p>
         </button>

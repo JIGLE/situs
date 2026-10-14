@@ -60,7 +60,7 @@ export default async function PrivacyPage({ params }: Props) {
           <p className="mt-3 text-sm text-[var(--color-muted-foreground)]">{t("lastUpdated")}</p>
         </div>
 
-        <div className="space-y-10 text-[15px] leading-7">
+        <div className="space-y-10 text-reading leading-7">
           <Section title={t("privacy.introTitle")}>
             <p>{t("privacy.intro")}</p>
           </Section>

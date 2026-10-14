@@ -118,7 +118,7 @@ export function AssetsView(): React.ReactElement {
                 <DropdownMenuItem onClick={() => propertiesViewRef.current?.openDialog()}>
                   <Home className="mr-2 h-3.5 w-3.5" />
                   {t("newProperty")}
-                  <span className="ml-auto text-[11px] text-[var(--color-muted-foreground)]">
+                  <span className="ml-auto text-caption text-[var(--color-muted-foreground)]">
                     {t("newPropertyHint")}
                   </span>
                 </DropdownMenuItem>
@@ -126,7 +126,7 @@ export function AssetsView(): React.ReactElement {
                 <DropdownMenuItem onClick={() => setBuildingDialogOpen(true)}>
                   <Building2 className="mr-2 h-3.5 w-3.5" />
                   {t("newBuilding")}
-                  <span className="ml-auto text-[11px] text-[var(--color-muted-foreground)]">
+                  <span className="ml-auto text-caption text-[var(--color-muted-foreground)]">
                     {t("newBuildingHint")}
                   </span>
                 </DropdownMenuItem>

@@ -15,7 +15,7 @@ const Tabs = TabsPrimitive.Root;
  */
 const TAB_LIST = "flex items-center gap-1 border-b border-[var(--color-border)]";
 const TAB_BASE =
-  "inline-flex items-center justify-center whitespace-nowrap border border-b-0 border-transparent px-3 py-2 font-mono text-[12px] md:text-[10px] uppercase tracking-[0.06em] text-[var(--color-muted-foreground)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--country-highlight-readable)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] hover:text-[var(--color-foreground)] max-md:min-h-11";
+  "inline-flex items-center justify-center whitespace-nowrap border border-b-0 border-transparent px-3 py-2 font-mono text-label uppercase tracking-[0.06em] text-[var(--color-muted-foreground)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--country-highlight-readable)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] hover:text-[var(--color-foreground)] max-md:min-h-11";
 
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,

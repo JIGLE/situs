@@ -147,7 +147,7 @@ export function MfaView() {
         <div className="mb-8 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <SitusPortalMark className="h-10 w-10" />
-            <span className="text-[13px] font-semibold uppercase tracking-[0.22em]">Situs</span>
+            <span className="text-meta font-semibold uppercase tracking-[0.22em]">Situs</span>
           </div>
           <LanguageSelector />
         </div>

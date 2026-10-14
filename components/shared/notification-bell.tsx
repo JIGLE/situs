@@ -214,7 +214,7 @@ export function NotificationBell({ className }: { className?: string } = {}): Re
                         <span className="mt-0.5 line-clamp-2 block text-xs text-[var(--color-muted-foreground)]">
                           {row.message}
                         </span>
-                        <span className="mt-1 block text-[12px] md:text-[10px] uppercase tracking-wide text-[var(--color-muted-foreground)]">
+                        <span className="mt-1 block text-label uppercase tracking-wide text-[var(--color-muted-foreground)]">
                           {tTypes(NOTIFICATION_TYPE_KEY[row.type])} ·{" "}
                           {formatDateTime(row.createdAt, locale)}
                         </span>

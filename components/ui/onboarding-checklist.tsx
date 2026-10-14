@@ -147,7 +147,7 @@ export function OnboardingChecklist({
         }}
       >
         <div className="flex items-center gap-3">
-          <Sparkles className="h-4 w-4 text-amber-400" />
+          <Sparkles className="h-4 w-4 text-[var(--country-highlight-readable)]" />
           <div>
             <h3 className="text-sm font-semibold text-[var(--color-foreground)]">
               {allComplete ? `🎉 ${t("setupComplete")}` : t("gettingStarted")}

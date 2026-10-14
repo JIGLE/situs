@@ -165,8 +165,8 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex items-start gap-4">
-          <div className="p-3 bg-violet-500/10">
-            <FileText className="h-8 w-8 text-violet-500" />
+          <div className="p-3 bg-[var(--color-secondary)]">
+            <FileText className="h-8 w-8 text-[var(--color-muted-foreground)]" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
@@ -383,7 +383,9 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
             <CardTitle>{t("paymentHistory")}</CardTitle>
             <span className="text-sm text-[var(--color-muted-foreground)]">
               {t("totalPaid")}{" "}
-              <span className="font-semibold text-green-500">{formatCurrency(totalPaid)}</span>
+              <span className="font-semibold text-[var(--semantic-success-readable)]">
+                {formatCurrency(totalPaid)}
+              </span>
             </span>
           </div>
         </CardHeader>
@@ -403,7 +405,9 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
                       <div
                         className={cn(
                           "w-2 h-2 rounded-full",
-                          receipt.status === "paid" ? "bg-green-500" : "bg-amber-500",
+                          receipt.status === "paid"
+                            ? "bg-[var(--semantic-success)]"
+                            : "bg-[var(--semantic-warning)]",
                         )}
                       />
                       <div>
@@ -425,7 +429,7 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
                         className={cn(
                           "text-sm font-semibold",
                           receipt.status === "paid"
-                            ? "text-green-500"
+                            ? "text-[var(--semantic-success-readable)]"
                             : "text-[var(--color-foreground)]",
                         )}
                       >
@@ -439,10 +443,12 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
         </CardContent>
       </Card>
       {/* Danger Zone */}
-      <div className="border border-red-800/30 p-5 space-y-3">
+      <div className="border border-[var(--semantic-danger)] p-5 space-y-3">
         <div className="flex items-center gap-2">
-          <XCircle className="h-4 w-4 text-red-500" />
-          <h3 className="text-sm font-semibold text-red-500">{t("dangerZone")}</h3>
+          <XCircle className="h-4 w-4 text-[var(--semantic-danger-readable)]" />
+          <h3 className="text-sm font-semibold text-[var(--semantic-danger-readable)]">
+            {t("dangerZone")}
+          </h3>
         </div>
         <p className="text-sm text-[var(--color-muted-foreground)]">{t("terminateWarning")}</p>
         <Button

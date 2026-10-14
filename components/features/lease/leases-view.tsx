@@ -731,7 +731,9 @@ export function LeasesView(): React.ReactElement {
                         onValueChange={(value) => wizard.updateFormData({ propertyId: value })}
                       >
                         <SelectTrigger
-                          className={wizard.stepErrors.propertyId ? "border-red-500" : ""}
+                          className={
+                            wizard.stepErrors.propertyId ? "border-[var(--semantic-danger)]" : ""
+                          }
                         >
                           <SelectValue placeholder={t("selectProperty.placeholder")} />
                         </SelectTrigger>
@@ -788,7 +790,9 @@ export function LeasesView(): React.ReactElement {
                         onValueChange={(value) => wizard.updateFormData({ tenantId: value })}
                       >
                         <SelectTrigger
-                          className={wizard.stepErrors.tenantId ? "border-red-500" : ""}
+                          className={
+                            wizard.stepErrors.tenantId ? "border-[var(--semantic-danger)]" : ""
+                          }
                         >
                           <SelectValue placeholder={t("selectTenant.placeholder")} />
                         </SelectTrigger>
@@ -857,7 +861,9 @@ export function LeasesView(): React.ReactElement {
                               startDate: e.target.value,
                             })
                           }
-                          className={wizard.stepErrors.startDate ? "border-red-500" : ""}
+                          className={
+                            wizard.stepErrors.startDate ? "border-[var(--semantic-danger)]" : ""
+                          }
                         />
                         {wizard.stepErrors.startDate && (
                           <p className="text-sm text-destructive">{wizard.stepErrors.startDate}</p>
@@ -871,7 +877,9 @@ export function LeasesView(): React.ReactElement {
                           type="date"
                           value={wizard.formData.endDate}
                           onChange={(e) => wizard.updateFormData({ endDate: e.target.value })}
-                          className={wizard.stepErrors.endDate ? "border-red-500" : ""}
+                          className={
+                            wizard.stepErrors.endDate ? "border-[var(--semantic-danger)]" : ""
+                          }
                         />
                         {wizard.stepErrors.endDate && (
                           <p className="text-sm text-destructive">{wizard.stepErrors.endDate}</p>
@@ -895,7 +903,9 @@ export function LeasesView(): React.ReactElement {
                               monthlyRent: parseFloat(e.target.value) || 0,
                             })
                           }
-                          className={wizard.stepErrors.monthlyRent ? "border-red-500" : ""}
+                          className={
+                            wizard.stepErrors.monthlyRent ? "border-[var(--semantic-danger)]" : ""
+                          }
                         />
                         {wizard.stepErrors.monthlyRent && (
                           <p className="text-sm text-destructive">
@@ -919,7 +929,9 @@ export function LeasesView(): React.ReactElement {
                               deposit: parseFloat(e.target.value) || 0,
                             })
                           }
-                          className={wizard.stepErrors.deposit ? "border-red-500" : ""}
+                          className={
+                            wizard.stepErrors.deposit ? "border-[var(--semantic-danger)]" : ""
+                          }
                         />
                         {wizard.stepErrors.deposit && (
                           <p className="text-sm text-destructive">{wizard.stepErrors.deposit}</p>
@@ -1028,7 +1040,7 @@ export function LeasesView(): React.ReactElement {
                         onChange={(e) => wizard.updateFormData({ notes: e.target.value })}
                         placeholder={t("notesPlaceholder")}
                         rows={6}
-                        className={wizard.stepErrors.notes ? "border-red-500" : ""}
+                        className={wizard.stepErrors.notes ? "border-[var(--semantic-danger)]" : ""}
                       />
                       {wizard.stepErrors.notes && (
                         <p className="text-sm text-destructive">{wizard.stepErrors.notes}</p>
@@ -1069,10 +1081,10 @@ export function LeasesView(): React.ReactElement {
         </div>
 
         {expiringSoon.length > 0 && (
-          <div className="flex items-start gap-3 border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
-            <Clock className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+          <div className="flex items-start gap-3 border border-[var(--semantic-warning)] bg-[var(--semantic-warning-soft)] p-4 text-sm">
+            <Clock className="mt-0.5 h-4 w-4 shrink-0 text-[var(--semantic-warning-readable)]" />
             <div>
-              <p className="font-medium text-amber-600 dark:text-amber-400">
+              <p className="font-medium text-[var(--semantic-warning-readable)]">
                 {t("expiringSoon", { count: expiringSoon.length })}
               </p>
               <p className="mt-1 text-[var(--color-muted-foreground)]">
@@ -1192,7 +1204,7 @@ export function LeasesView(): React.ReactElement {
                                     <span className="text-[var(--color-muted-foreground)] line-through mr-2">
                                       {formatCurrency(lease.monthlyRent)}
                                     </span>
-                                    <span className="text-green-400 font-medium">
+                                    <span className="text-[var(--semantic-success-readable)] font-medium">
                                       {formatCurrency(newRent)}
                                     </span>
                                   </div>

@@ -159,7 +159,7 @@ export function SitusLogo({
   return (
     <span className={cn("flex items-center gap-3", className)}>
       <SitusPortalMark size={size} className={markClassName} />
-      <span className="text-[13px] font-medium uppercase tracking-[0.22em] text-[var(--color-foreground)]">
+      <span className="text-meta font-medium uppercase tracking-[0.22em] text-[var(--color-foreground)]">
         Situs
       </span>
     </span>

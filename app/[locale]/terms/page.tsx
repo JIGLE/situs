@@ -51,7 +51,7 @@ export default async function TermsPage({ params }: Props) {
           <p className="mt-3 text-sm text-[var(--color-muted-foreground)]">{t("lastUpdated")}</p>
         </div>
 
-        <div className="space-y-10 text-[15px] leading-7">
+        <div className="space-y-10 text-reading leading-7">
           <Section title={t("terms.acceptanceTitle")}>
             <p>{t("terms.acceptanceBody")}</p>
           </Section>

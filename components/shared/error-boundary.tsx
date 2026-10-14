@@ -87,8 +87,8 @@ function DefaultErrorFallback({
     <div className="min-h-dvh flex items-center justify-center bg-[var(--color-background)] p-4">
       <Card className="w-full max-w-md bg-[var(--color-card)] border-[var(--color-border)]">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center">
-            <AlertTriangle className="w-6 h-6 text-red-400" />
+          <div className="mx-auto mb-4 w-12 h-12 bg-[var(--semantic-danger-soft)] rounded-full flex items-center justify-center">
+            <AlertTriangle className="w-6 h-6 text-[var(--semantic-danger-readable)]" />
           </div>
           <CardTitle className="text-[var(--color-foreground)]">{t("title")}</CardTitle>
           <CardDescription className="text-[var(--color-muted-foreground)]">

@@ -234,6 +234,22 @@ const wizard = useMultiStepForm<FormData>({
 
 ---
 
+## Colour and type
+
+Colour comes from the theme's tokens, never a palette name: a state is `StatusMark`, a warning strip
+is `bg-[var(--semantic-warning-soft)]` with a `border-[var(--semantic-warning)]` edge, text that
+means "danger" or "success" is `text-[var(--semantic-danger-readable)]` or `...success-readable`,
+and an icon with no meaning is `text-[var(--color-muted-foreground)]`. A raw hue (`text-red-500`,
+`from-violet-500/20`) does not change with the theme or the country; `dark:` is not needed because
+the tokens already do, and `@custom-variant dark` in `app/globals.css` follows the app's own theme
+should one ever be.
+
+Type below the headings is six named sizes, defined as `@utility` in `app/globals.css`:
+`text-label` (12px on a phone, 10px from `md`), `text-badge` (10px), `text-caption` (11px),
+`text-meta` (13px), `text-reading` (15px) and `text-tick` (9px). An arbitrary `text-[Npx]` is
+refused. `lib/utils/utils.ts` teaches `cn()` that they are sizes, so a later text colour does not
+drop them. `tests/colour-and-type-contract.test.ts` names the file and line.
+
 ## Cross-Domain Navigation
 
 - ✅ Open a related record in its detail overlay (`?detail=<type>:<id>`,

@@ -120,7 +120,7 @@ export function MobileBottomNav({
                 aria-current={isActive ? "page" : undefined}
               >
                 <Icon className="h-5 w-5" aria-hidden="true" />
-                <span data-audit-chrome className="text-[11px] font-medium tracking-tight">
+                <span data-audit-chrome className="text-caption font-medium tracking-tight">
                   {item.label}
                 </span>
               </Link>
@@ -134,12 +134,12 @@ export function MobileBottomNav({
                   <AvatarImage src={user?.image || ""} alt={user?.name || "User"} />
                   <AvatarFallback
                     data-audit-chrome
-                    className="bg-[var(--country-highlight-readable)] text-[10px] font-semibold text-[var(--color-background)]"
+                    className="bg-[var(--country-highlight-readable)] text-badge font-semibold text-[var(--color-background)]"
                   >
                     {initials}
                   </AvatarFallback>
                 </Avatar>
-                <span data-audit-chrome className="text-[11px] font-medium tracking-tight">
+                <span data-audit-chrome className="text-caption font-medium tracking-tight">
                   {tNav("more")}
                 </span>
               </SheetTrigger>

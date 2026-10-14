@@ -192,7 +192,7 @@ export function SearchFilter({
               <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
               {tActions("filter")}
               {activeCount > 0 && (
-                <span className="bg-[var(--color-popover)] px-1.5 py-0.5 font-mono text-[12px] md:text-[10px] tabular-nums">
+                <span className="bg-[var(--color-popover)] px-1.5 py-0.5 font-mono text-label tabular-nums">
                   {activeCount}
                 </span>
               )}
