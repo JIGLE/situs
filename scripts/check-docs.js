@@ -46,6 +46,19 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // AT's manual v1.6 was read in full on 14 October 2026: test credentials are the ones AT
+    // creates for the tests, the certificate and key come from asi-cd@at.gov.pt, and the
+    // production steps are in §3.1 and §6.4.
+    pattern:
+      /sub-user created under your own NIF at acesso\.gov\.pt|request AT's signed certificate and a test sub-user|the manual's own section on going from test to production/,
+    retired: "2026-10-14 (AT manual v1.6 read)",
+    because:
+      "the manual (v1.6, 29/07/2024) says the tests use the user and password created for them " +
+      "(e.g. 555555555), AT's public key and the test certificate are requested from " +
+      "asi-cd@at.gov.pt, and production is the e-fatura adhesion form plus the :409 address " +
+      "(docs/GOING_LIVE.md)",
+  },
+  {
     // main is guarded by a repository ruleset with an admin bypass, not classic protection.
     pattern: /depends on `enforce_admins: false`|branch-protection-config\.json/,
     retired: "2026-10-09 (ruleset 'main protection')",
