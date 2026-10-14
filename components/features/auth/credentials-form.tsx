@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
 import type { AuthMode } from "./auth-view";
 
 const INPUT =
@@ -16,6 +17,11 @@ const INPUT =
  *
  * `text-base` (16px) keeps iOS from zooming the page when a field is focused; the keyboard hints
  * give a phone the email keyboard and a "Go" key.
+ *
+ * The form is in the server's HTML, so it can be submitted before React attaches `onSubmit`. The
+ * browser would then submit it itself, and a form with no `method` is a GET: the email and the
+ * password would land in the address bar, the history and every access log. So the button waits
+ * for hydration, and `method="post"` keeps a secret out of a URL whatever happens.
  */
 export function CredentialsForm({
   mode,
@@ -25,6 +31,7 @@ export function CredentialsForm({
   destination: string;
 }): React.ReactElement {
   const t = useTranslations("auth");
+  const hydrated = useHydrated();
 
   return (
     <>
@@ -40,6 +47,7 @@ export function CredentialsForm({
       </div>
 
       <form
+        method="post"
         onSubmit={(event) => {
           event.preventDefault();
           const formData = new FormData(event.currentTarget);
@@ -84,6 +92,7 @@ export function CredentialsForm({
         </div>
         <Button
           type="submit"
+          disabled={!hydrated}
           className="h-12 w-full bg-[var(--color-primary)] font-semibold text-[var(--color-primary-foreground)] hover:opacity-90"
         >
           {mode === "signup" ? t("createAccount") : t("signIn")}
