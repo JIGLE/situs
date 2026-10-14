@@ -67,6 +67,13 @@ describe("MfaView", () => {
     expect(screen.queryByText(/two-factor|verify|enter the/i)).not.toBeInTheDocument();
   });
 
+  it("is a POST, so a code submitted before React is attached never lands in a URL", () => {
+    pending();
+    render(<MfaView />, { initialLocale: "pt" });
+
+    expect(submit().closest("form")?.getAttribute("method")).toBe("post");
+  });
+
   it("holds the button until the six digits are in", () => {
     pending();
     render(<MfaView />, { initialLocale: "pt" });

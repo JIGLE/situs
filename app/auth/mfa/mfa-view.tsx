@@ -180,7 +180,10 @@ export function MfaView() {
           </div>
         )}
 
+        {/* `method="post"`: a code submitted before hydration must not land in a URL. The button
+            already stays disabled until a whole code is typed, which needs React. */}
         <form
+          method="post"
           onSubmit={submit}
           className={hasPasskey && !useBackup ? "mt-3 space-y-3" : "mt-8 space-y-3"}
         >
