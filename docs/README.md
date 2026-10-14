@@ -41,6 +41,7 @@ because setup is deployment-shaped rather than integration-shaped.
 
 ## UX and accessibility
 
+- [Design language](DESIGN_LANGUAGE.md)
 - [UI consistency guide](UI_CONSISTENCY_GUIDE.md)
 - [Accessibility](ACCESSIBILITY.md) — WCAG 2.1 AA patterns, and the axe check in
   `e2e/situs-a11y.spec.ts`
