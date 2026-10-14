@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { Panel } from "@/components/shared/panel";
+
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { useCsrf } from "@/lib/contexts/csrf-context";
 import { useToast } from "@/lib/contexts/toast-context";
@@ -70,8 +72,7 @@ export function NewAccountsCard({ settings, onChanged }: Props) {
   }
 
   return (
-    <section className="border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-3">
-      <h2 className="text-sm font-medium text-[var(--color-foreground)]">{t("title")}</h2>
+    <Panel title={t("title")} bodyClassName="p-4">
       <p className="mt-1 text-sm text-muted-foreground">{t("help")}</p>
       <div className="mt-2 divide-y divide-[var(--color-border)]">
         <SwitchRow
@@ -92,7 +93,7 @@ export function NewAccountsCard({ settings, onChanged }: Props) {
         />
       </div>
       <ConfirmationDialog dialog={confirmDialog} />
-    </section>
+    </Panel>
   );
 }
 

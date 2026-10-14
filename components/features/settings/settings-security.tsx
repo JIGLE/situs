@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Copy, Lock, Shield } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle2, Copy } from "lucide-react";
+import { Panel } from "@/components/shared/panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -187,185 +187,164 @@ export function SettingsSecurity() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lock className="h-5 w-5" />
-            {t("twoFactor")}
-          </CardTitle>
-          <CardDescription>{t("twoFactorDescription")}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {totpLoading ? (
-            <p className="text-sm text-muted-foreground">{t("loading")}</p>
-          ) : totpEnabled && totpSetupStep !== "backup" ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <span>{t("twoFactorOn")}</span>
-              </div>
-              {disableCode === null ? (
-                <Button variant="destructive" size="sm" onClick={() => setDisableCode("")}>
-                  {t("disable2fa")}
-                </Button>
-              ) : (
-                <div className="space-y-2">
-                  <Label htmlFor="totp-disable-code">{t("verificationCode")}</Label>
-                  <p className="text-xs text-muted-foreground">{t("disable2faHint")}</p>
-                  <Input
-                    id="totp-disable-code"
-                    type="text"
-                    inputMode="text"
-                    autoComplete="one-time-code"
-                    autoCapitalize="characters"
-                    maxLength={8}
-                    value={disableCode}
-                    onChange={(e) => setDisableCode(e.target.value.replace(/\s/g, ""))}
-                    className="w-40 text-center tracking-widest text-lg"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={disableTotp}
-                      disabled={totpWorking || disableCode.length < 6}
-                    >
-                      {t("disable2fa")}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setDisableCode(null)}
-                      disabled={totpWorking}
-                    >
-                      {tActions("cancel")}
-                    </Button>
-                  </div>
-                </div>
-              )}
-              <PasskeysPanel />
-              <p className="text-xs text-muted-foreground">{t("passkeysGoWithApp")}</p>
+      <Panel title={t("twoFactor")} description={t("twoFactorDescription")} padded>
+        {totpLoading ? (
+          <p className="text-sm text-muted-foreground">{t("loading")}</p>
+        ) : totpEnabled && totpSetupStep !== "backup" ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm">
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <span>{t("twoFactorOn")}</span>
             </div>
-          ) : totpSetupStep === "idle" ? (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">{t("twoFactorIntro")}</p>
-              <Button size="sm" onClick={startTotpSetup} disabled={totpWorking}>
-                {totpWorking ? t("loading") : t("setUp2fa")}
+            {disableCode === null ? (
+              <Button variant="destructive" size="sm" onClick={() => setDisableCode("")}>
+                {t("disable2fa")}
               </Button>
-            </div>
-          ) : totpSetupStep === "qr" ? (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">{t("scanQr")}</p>
-              {totpQr && (
-                <picture>
-                  <img src={totpQr} alt={t("qrAlt")} className="w-48 h-48" />
-                </picture>
-              )}
-              <details className="text-xs">
-                <summary className="cursor-pointer text-muted-foreground">{t("cantScan")}</summary>
-                <code className="block mt-2 p-2 bg-muted text-xs break-all select-all">
-                  {totpSecret}
-                </code>
-              </details>
+            ) : (
               <div className="space-y-2">
-                <Label htmlFor="totp-code">{t("verificationCode")}</Label>
+                <Label htmlFor="totp-disable-code">{t("verificationCode")}</Label>
+                <p className="text-xs text-muted-foreground">{t("disable2faHint")}</p>
                 <Input
-                  id="totp-code"
+                  id="totp-disable-code"
                   type="text"
-                  inputMode="numeric"
-                  placeholder="000000"
-                  maxLength={6}
-                  value={totpCode}
-                  onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
+                  inputMode="text"
+                  autoComplete="one-time-code"
+                  autoCapitalize="characters"
+                  maxLength={8}
+                  value={disableCode}
+                  onChange={(e) => setDisableCode(e.target.value.replace(/\s/g, ""))}
                   className="w-40 text-center tracking-widest text-lg"
                 />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={confirmTotpEnable}
-                  disabled={totpWorking || totpCode.length !== 6}
-                >
-                  {totpWorking ? t("verifying") : t("enable2fa")}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setTotpSetupStep("idle")}
-                  disabled={totpWorking}
-                >
-                  {tActions("cancel")}
-                </Button>
-              </div>
-            </div>
-          ) : totpSetupStep === "backup" ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>{t("twoFactorEnabled")}</span>
-              </div>
-              <p className="text-sm text-muted-foreground">{t("othersSignedOut")}</p>
-              <div className="space-y-2">
-                <p className="text-sm font-medium">{t("backupCodes")}</p>
-                <p className="text-sm text-muted-foreground">{t("backupCodesHelp")}</p>
-                <div className="grid grid-cols-2 gap-1.5 p-3 bg-muted font-mono text-sm">
-                  {totpBackupCodes.map((c) => (
-                    <span key={c}>{c}</span>
-                  ))}
+                <div className="flex gap-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={disableTotp}
+                    disabled={totpWorking || disableCode.length < 6}
+                  >
+                    {t("disable2fa")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setDisableCode(null)}
+                    disabled={totpWorking}
+                  >
+                    {tActions("cancel")}
+                  </Button>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5"
-                  onClick={() => {
-                    navigator.clipboard
-                      .writeText(totpBackupCodes.join("\n"))
-                      .then(() => success(t("codesCopied")))
-                      .catch(() => {});
-                  }}
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  {t("copyCodes")}
-                </Button>
               </div>
-              <Button size="sm" onClick={() => setTotpSetupStep("idle")}>
-                {t("done")}
-              </Button>
+            )}
+            <PasskeysPanel />
+            <p className="text-xs text-muted-foreground">{t("passkeysGoWithApp")}</p>
+          </div>
+        ) : totpSetupStep === "idle" ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">{t("twoFactorIntro")}</p>
+            <Button size="sm" onClick={startTotpSetup} disabled={totpWorking}>
+              {totpWorking ? t("loading") : t("setUp2fa")}
+            </Button>
+          </div>
+        ) : totpSetupStep === "qr" ? (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">{t("scanQr")}</p>
+            {totpQr && (
+              <picture>
+                <img src={totpQr} alt={t("qrAlt")} className="w-48 h-48" />
+              </picture>
+            )}
+            <details className="text-xs">
+              <summary className="cursor-pointer text-muted-foreground">{t("cantScan")}</summary>
+              <code className="block mt-2 p-2 bg-muted text-xs break-all select-all">
+                {totpSecret}
+              </code>
+            </details>
+            <div className="space-y-2">
+              <Label htmlFor="totp-code">{t("verificationCode")}</Label>
+              <Input
+                id="totp-code"
+                type="text"
+                inputMode="numeric"
+                placeholder="000000"
+                maxLength={6}
+                value={totpCode}
+                onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
+                className="w-40 text-center tracking-widest text-lg"
+              />
             </div>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      {/* GDPR data rights. These sat under Account, which also held identity fields and the
-          appearance controls; they belong with the other account-level risk surface. */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            {t("dataRights")}
-          </CardTitle>
-          <CardDescription>{t("dataRightsDescription")}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="border border-border p-4 space-y-2">
-              <p className="text-sm font-medium">{t("exportTitle")}</p>
-              <p className="text-xs text-muted-foreground">{t("exportHelp")}</p>
-              <Button variant="outline" size="sm" onClick={exportData}>
-                {t("exportTitle")}
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={confirmTotpEnable}
+                disabled={totpWorking || totpCode.length !== 6}
+              >
+                {totpWorking ? t("verifying") : t("enable2fa")}
               </Button>
-            </div>
-            <div className="border border-destructive/30 p-4 space-y-2">
-              <p className="text-sm font-medium text-destructive">{t("deleteTitle")}</p>
-              <p className="text-xs text-muted-foreground">{t("deleteHelp")}</p>
-              <Button variant="destructive" size="sm" onClick={requestDelete}>
-                {t("deleteTitle")}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setTotpSetupStep("idle")}
+                disabled={totpWorking}
+              >
+                {tActions("cancel")}
               </Button>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">{t("retention")}</p>
-        </CardContent>
-      </Card>
+        ) : totpSetupStep === "backup" ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+              <CheckCircle2 className="h-4 w-4" />
+              <span>{t("twoFactorEnabled")}</span>
+            </div>
+            <p className="text-sm text-muted-foreground">{t("othersSignedOut")}</p>
+            <div className="space-y-2">
+              <p className="text-sm font-medium">{t("backupCodes")}</p>
+              <p className="text-sm text-muted-foreground">{t("backupCodesHelp")}</p>
+              <div className="grid grid-cols-2 gap-1.5 p-3 bg-muted font-mono text-sm">
+                {totpBackupCodes.map((c) => (
+                  <span key={c}>{c}</span>
+                ))}
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => {
+                  navigator.clipboard
+                    .writeText(totpBackupCodes.join("\n"))
+                    .then(() => success(t("codesCopied")))
+                    .catch(() => {});
+                }}
+              >
+                <Copy className="h-3.5 w-3.5" />
+                {t("copyCodes")}
+              </Button>
+            </div>
+            <Button size="sm" onClick={() => setTotpSetupStep("idle")}>
+              {t("done")}
+            </Button>
+          </div>
+        ) : null}
+      </Panel>
+
+      {/* GDPR data rights. These sat under Account, which also held identity fields and the
+          appearance controls; they belong with the other account-level risk surface. */}
+      <Panel title={t("dataRights")} description={t("dataRightsDescription")} padded>
+        <div className="space-y-2">
+          <p className="text-sm font-medium">{t("exportTitle")}</p>
+          <p className="text-xs text-muted-foreground">{t("exportHelp")}</p>
+          <Button variant="outline" size="sm" onClick={exportData}>
+            {t("exportTitle")}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">{t("retention")}</p>
+      </Panel>
+
+      <Panel tone="danger" title={t("deleteTitle")} description={t("deleteHelp")} padded>
+        <Button variant="destructive" size="sm" onClick={requestDelete}>
+          {t("deleteTitle")}
+        </Button>
+      </Panel>
 
       <ConfirmationDialog dialog={confirmDialog} />
     </div>

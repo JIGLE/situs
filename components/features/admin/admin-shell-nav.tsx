@@ -1,11 +1,10 @@
 "use client";
 
 import { PageHeader } from "@/components/shared/page-header";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 
-import { cn } from "@/lib/utils/utils";
+import { TabLink, TabNav } from "@/components/ui/tabs";
 
 /**
  * Admin's page header: one heading, and a tab per section.
@@ -32,29 +31,13 @@ export function AdminShellNav() {
   return (
     <div className="space-y-4">
       <PageHeader title={t("title")} />
-      <nav
-        aria-label={t("sections")}
-        className="flex items-center gap-1 overflow-x-auto border-b border-[var(--color-border)]"
-      >
-        {SECTIONS.map((section) => {
-          const active = current === section.href;
-          return (
-            <Link
-              key={section.key}
-              href={section.href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "inline-flex items-center justify-center whitespace-nowrap border border-b-0 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.06em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--country-highlight-readable)] max-md:min-h-11 md:text-[10px]",
-                active
-                  ? "border-[var(--color-border)] border-t-2 border-t-[var(--country-highlight-readable)] bg-[var(--color-hover)] text-[var(--color-foreground)]"
-                  : "border-transparent text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]",
-              )}
-            >
-              {t(`nav.${section.key}`)}
-            </Link>
-          );
-        })}
-      </nav>
+      <TabNav aria-label={t("sections")}>
+        {SECTIONS.map((section) => (
+          <TabLink key={section.key} href={section.href} active={current === section.href}>
+            {t(`nav.${section.key}`)}
+          </TabLink>
+        ))}
+      </TabNav>
     </div>
   );
 }

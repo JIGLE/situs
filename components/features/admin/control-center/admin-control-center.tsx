@@ -10,7 +10,7 @@ import { apiFetch } from "@/lib/utils/api-client";
 import type { SystemStatus } from "@/lib/services/admin/system-status";
 import { SEVERITY_STYLE, SUMMARY_ORDER, checkLabelKey } from "../system-status-view";
 import { BankTestPanel } from "./bank-test-panel";
-import { Fact, Panel } from "./panel";
+import { Fact, Panel } from "@/components/shared/panel";
 import type { SignInStatus } from "@/lib/services/admin/sign-in-status";
 import { REGISTRATION_COPY } from "@/lib/utils/access-labels";
 
