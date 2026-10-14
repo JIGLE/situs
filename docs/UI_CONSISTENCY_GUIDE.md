@@ -2,6 +2,8 @@
 
 This document defines the **non-negotiable rules** for all UI development in Situs. Engineers must pass this checklist before any UI PR is merged.
 
+The vocabulary these rules draw from, and the test behind each part, is in [DESIGN_LANGUAGE.md](DESIGN_LANGUAGE.md).
+
 ---
 
 ## Information Architecture
