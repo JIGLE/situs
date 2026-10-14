@@ -105,7 +105,7 @@ export function AdminControlCenter() {
                 return (
                   <li key={check.id} className="flex items-center gap-2.5 px-4 py-2">
                     <Icon className={`size-3.5 shrink-0 ${style.accent}`} aria-hidden />
-                    <span className="min-w-0 flex-1 truncate text-sm text-[var(--color-foreground)]">
+                    <span className="min-w-0 flex-1 break-words text-sm text-[var(--color-foreground)]">
                       {t(checkLabelKey(check.id), {
                         country: check.id.split(":")[1] ?? "",
                       })}
