@@ -92,7 +92,7 @@
     "next": "^16.4.0",
     "next-auth": "^4.24.15",
     "next-intl": "^4.14.9",
-    "nodemailer": "^10.1.0",
+    "nodemailer": "^10.1.4",
     "otplib": "^13.5.0",
     "qrcode": "^1.5.4",
     "react": "19.3.0",
