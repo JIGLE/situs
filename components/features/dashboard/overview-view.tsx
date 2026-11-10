@@ -234,7 +234,7 @@ export function OverviewView({
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </Button>
           <p
-            className="min-w-36 text-center text-sm font-medium capitalize"
+            className="min-w-36 text-center text-sm font-medium first-letter:uppercase"
             aria-live="polite"
             data-testid="dashboard-month"
           >

@@ -42,7 +42,7 @@ export function EntityDetailOverlay({
             <div className="flex justify-start px-6 pt-4">
               <Link
                 href={fullPageHref}
-                className="flex items-center gap-1 text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:underline max-md:min-h-11"
+                className="flex min-h-6 items-center gap-1 text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:underline max-md:min-h-11"
               >
                 {t("openFullPage")} <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </Link>

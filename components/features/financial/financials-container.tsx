@@ -32,6 +32,7 @@ function isPaymentTab(value: string | null): value is PaymentTab {
 
 export function FinancialsContainer() {
   const t = useTranslations("payments");
+  const tNav = useTranslations("navigation");
   const [activeTab, setActiveTab] = useTabPersistence("payments", "rent-matrix");
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -147,7 +148,9 @@ export function FinancialsContainer() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("title")} description={ownerDescription}>
+      {/* The heading is the menu label, so the page you land on is named as the link you
+          tapped (it read "Pagamentos" under "Finanças", "Gestão de Contratos" under "Contratos"). */}
+      <PageHeader title={tNav("finance")} description={ownerDescription}>
         <ExportButton
           data={state.receipts}
           filename="payments-export"
@@ -165,12 +168,15 @@ export function FinancialsContainer() {
         </Button>
       </PageHeader>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+      {/* Three across at every width. Two columns on a phone left the third tile alone on a
+          second row and pushed the tabs a full screen down; below sm the hints go, since the
+          label already says what the number is. */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <button
           type="button"
           onClick={() => setActiveTab("rent-matrix")}
           className={cn(
-            "panel p-4 text-left transition-colors hover:border-[var(--color-border-hover)]",
+            "panel p-3 text-left sm:p-4 transition-colors hover:border-[var(--color-border-hover)]",
             metrics.overdueAmount > 0 &&
               "border-l-[3px] border-l-[var(--semantic-danger)] bg-[var(--semantic-danger-soft)]",
           )}
@@ -178,7 +184,7 @@ export function FinancialsContainer() {
           <p className="mono-label">{t("overdueRent")}</p>
           <p
             className={cn(
-              "mt-2 text-xl font-light tabular-nums sm:text-2xl",
+              "mt-2 text-base font-light tabular-nums sm:text-2xl",
               metrics.overdueAmount > 0
                 ? "text-[var(--semantic-danger-readable)]"
                 : "text-[var(--color-foreground)]",
@@ -186,7 +192,7 @@ export function FinancialsContainer() {
           >
             {formatCurrency(metrics.overdueAmount)}
           </p>
-          <p className="mt-2 text-meta leading-snug text-[var(--color-muted-foreground)]">
+          <p className="mt-2 text-meta leading-snug max-sm:hidden text-[var(--color-muted-foreground)]">
             {t("overdueRentHint")}
           </p>
         </button>
@@ -195,16 +201,16 @@ export function FinancialsContainer() {
           type="button"
           onClick={() => setActiveTab("receipts")}
           className={cn(
-            "panel p-4 text-left transition-colors hover:border-[var(--color-border-hover)]",
+            "panel p-3 text-left sm:p-4 transition-colors hover:border-[var(--color-border-hover)]",
             metrics.pendingReceipts > 0 &&
               "border-l-[3px] border-l-[var(--country-highlight-readable)] bg-[var(--country-highlight-soft)]",
           )}
         >
           <p className="mono-label">{t("pendingReceipts")}</p>
-          <p className="mt-2 text-xl font-light tabular-nums text-[var(--color-foreground)] sm:text-2xl">
+          <p className="mt-2 text-base font-light tabular-nums text-[var(--color-foreground)] sm:text-2xl">
             {metrics.pendingReceipts}
           </p>
-          <p className="mt-2 text-meta leading-snug text-[var(--color-muted-foreground)]">
+          <p className="mt-2 text-meta leading-snug max-sm:hidden text-[var(--color-muted-foreground)]">
             {t("pendingReceiptsHint")}
           </p>
         </button>
@@ -212,13 +218,13 @@ export function FinancialsContainer() {
         <button
           type="button"
           onClick={() => setActiveTab("receipts")}
-          className="panel p-4 text-left transition-colors hover:border-[var(--color-border-hover)]"
+          className="panel p-3 text-left sm:p-4 transition-colors hover:border-[var(--color-border-hover)]"
         >
           <p className="mono-label">{t("collectedMonth")}</p>
-          <p className="mt-2 text-xl font-light tabular-nums text-[var(--semantic-success-readable)] sm:text-2xl">
+          <p className="mt-2 text-base font-light tabular-nums text-[var(--semantic-success-readable)] sm:text-2xl">
             {formatCurrency(metrics.monthlyCollected)}
           </p>
-          <p className="mt-2 text-meta leading-snug text-[var(--color-muted-foreground)]">
+          <p className="mt-2 text-meta leading-snug max-sm:hidden text-[var(--color-muted-foreground)]">
             {t("collectedMonthHint")}
           </p>
         </button>

@@ -94,6 +94,7 @@ export function LeasesView(): React.ReactElement {
   const searchParams = useSearchParams();
   const locale = useLocale();
   const t = useTranslations("leases");
+  const tNav = useTranslations("navigation");
   const openLeaseOverlay = (leaseId: string) => {
     router.push(withEntityDetail(pathname, searchParams.toString(), "lease", leaseId));
   };
@@ -621,7 +622,7 @@ export function LeasesView(): React.ReactElement {
   return (
     <>
       <div className="space-y-6">
-        <PageHeader title={t("pageTitle")} description={t("pageDescription")}>
+        <PageHeader title={tNav("contracts")} description={t("pageDescription")}>
           <ExportButton
             data={sortedLeases}
             filename="leases"
@@ -1270,33 +1271,29 @@ export function LeasesView(): React.ReactElement {
           )
         ) : (
           <>
-            {/* Sortable Column Headers */}
+            {/* Sort controls. These sat in a table-header strip whose columns lined up with
+                nothing, since the list below is a grid of cards — and at 390px "Data de início"
+                wrapped onto three lines. A row of sort buttons says the same without the grid. */}
             {filteredLeases.length > 0 && (
-              <div className="flex items-center gap-4 px-4 py-2 bg-[var(--color-surface-hover)] border border-[var(--color-border)]">
-                <div className="flex-1">
-                  <SortableHeader
-                    sortKey="startDate"
-                    label={t("field.startDate")}
-                    currentSort={getSortDirection("startDate")}
-                    onSort={(key) => requestSort(key as keyof Lease)}
-                  />
-                </div>
-                <div className="w-32">
-                  <SortableHeader
-                    sortKey="monthlyRent"
-                    label={t("field.rent")}
-                    currentSort={getSortDirection("monthlyRent")}
-                    onSort={(key) => requestSort(key as keyof Lease)}
-                  />
-                </div>
-                <div className="w-32">
-                  <SortableHeader
-                    sortKey="status"
-                    label={t("field.status")}
-                    currentSort={getSortDirection("status")}
-                    onSort={(key) => requestSort(key as keyof Lease)}
-                  />
-                </div>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border border-[var(--color-border)] bg-[var(--color-surface-hover)] px-4 py-1">
+                <SortableHeader
+                  sortKey="startDate"
+                  label={t("field.startDate")}
+                  currentSort={getSortDirection("startDate")}
+                  onSort={(key) => requestSort(key as keyof Lease)}
+                />
+                <SortableHeader
+                  sortKey="monthlyRent"
+                  label={t("field.rent")}
+                  currentSort={getSortDirection("monthlyRent")}
+                  onSort={(key) => requestSort(key as keyof Lease)}
+                />
+                <SortableHeader
+                  sortKey="status"
+                  label={t("field.status")}
+                  currentSort={getSortDirection("status")}
+                  onSort={(key) => requestSort(key as keyof Lease)}
+                />
               </div>
             )}
 
@@ -1375,7 +1372,9 @@ export function LeasesView(): React.ReactElement {
                               />
                             );
                           }
-                          if (days !== null && days < 0) {
+                          // Past its end date, the status mark beside the name already says
+                          // "Expirado"; a second badge saying it again only added a line.
+                          if (days !== null && days < 0 && lease.status !== "expired") {
                             return <RelationshipBadge variant="overdue" label={t("expired")} />;
                           }
                           return null;

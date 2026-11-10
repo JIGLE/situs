@@ -59,6 +59,7 @@ export function SettingsView(): React.ReactElement {
   const { data: session } = useSession();
   const { success, error: showError } = useToast();
   const t = useTranslations("settings.nav");
+  const tNav = useTranslations("navigation");
   const tForms = useTranslations("forms");
   const tActions = useTranslations("actions");
   const { token: csrfToken } = useCsrf();
@@ -172,7 +173,7 @@ export function SettingsView(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("heading")} description={t("subtitle")}>
+      <PageHeader title={tNav("settings")} description={t("subtitle")}>
         {hasChanges && (
           <Button onClick={saveSettings} disabled={saving}>
             <Save className="h-4 w-4 mr-2" />

@@ -37,6 +37,7 @@ export function AssetsView(): React.ReactElement {
   const t = useTranslations("portfolio");
   const tForms = useTranslations("forms");
   const tActions = useTranslations("actions");
+  const tNav = useTranslations("navigation");
   const { success } = useToast();
 
   // Onboarding checklist deep-links here with ?action=create-property
@@ -97,7 +98,9 @@ export function AssetsView(): React.ReactElement {
       {/* Title alone. These same figures used to trail the heading as a subtitle AND are what the
           workspace summary is for; one screen stating a number twice is the thing the declutter
           rule in CLAUDE.md exists to stop. */}
-      <PageHeader title={t("title")} />
+      {/* The heading is the menu label, so the page you land on is named as the link you
+          tapped (it read "Pagamentos" under "Finanças", "Gestão de Contratos" under "Contratos"). */}
+      <PageHeader title={tNav("portfolio")} />
 
       {/* Portfolio inventory — tree + workspace (table available via the toggle). Create and
           export are handed down as tree actions so they sit with the asset list rather than
