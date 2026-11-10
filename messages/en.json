@@ -1899,7 +1899,10 @@
     "taxConnectorsEmpty": "No tax connectors yet — one is created automatically the first time you emit a rent receipt through a country's fiscal workflow.",
     "taxConnectorsLoadFailed": "Couldn't load the tax connectors. Try again.",
     "newRelease": "New release available: {name}",
-    "newReleaseBody": "A new version of Situs is available."
+    "newReleaseBody": "A new version of Situs is available.",
+    "sortBy": "Sort by {label}",
+    "sortByAscending": "Sort by {label}, sorted ascending",
+    "sortByDescending": "Sort by {label}, sorted descending"
   },
   "rentPeriodStatus": {
     "upcoming": "Upcoming",

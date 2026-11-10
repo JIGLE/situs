@@ -1,5 +1,6 @@
 "use client";
 
+import { BreakableEmail } from "@/components/shared/breakable-email";
 import React, {
   useMemo,
   useState,
@@ -646,7 +647,7 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
                             className="block break-words text-xs text-[var(--color-muted-foreground)] md:truncate"
                             title={tenant.email ?? undefined}
                           >
-                            {tenant.email || "—"}
+                            {tenant.email ? <BreakableEmail email={tenant.email} /> : "—"}
                           </span>
                         </button>
                         <div className="shrink-0">{renderTenantActions(tenant)}</div>
@@ -823,7 +824,7 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
                                   className="break-words text-xs text-[var(--color-muted-foreground)] md:truncate"
                                   title={tenant.email ?? undefined}
                                 >
-                                  {tenant.email || "—"}
+                                  {tenant.email ? <BreakableEmail email={tenant.email} /> : "—"}
                                 </p>
                               </div>
                             </div>

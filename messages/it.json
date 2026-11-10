@@ -1899,7 +1899,10 @@
     "taxConnectorsEmpty": "Ancora nessun connettore fiscale — viene creato automaticamente la prima volta che emetti una ricevuta di affitto tramite il flusso fiscale di un paese.",
     "taxConnectorsLoadFailed": "Impossibile caricare i connettori fiscali. Riprova.",
     "newRelease": "Nuova versione disponibile: {name}",
-    "newReleaseBody": "È disponibile una nuova versione di Situs."
+    "newReleaseBody": "È disponibile una nuova versione di Situs.",
+    "sortBy": "Ordina per {label}",
+    "sortByAscending": "Ordina per {label}, ordine crescente",
+    "sortByDescending": "Ordina per {label}, ordine decrescente"
   },
   "rentPeriodStatus": {
     "upcoming": "In arrivo",
