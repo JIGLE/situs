@@ -64,6 +64,8 @@ interface Institution {
   name: string;
   country: string;
   maxHistoricalDays?: number;
+  /** Set only when the bank has separate personal and business logins. */
+  psuType?: "personal" | "business";
 }
 
 /**
@@ -155,8 +157,19 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
           ? t("bankRenewed")
           : null,
     );
-    setError(outcome === "failed" ? t("bankConnectFailed") : null);
+    // What the bank answered, when it said: a reason the owner can act on.
+    const reason = params.get("reason");
+    setError(
+      outcome !== "failed"
+        ? null
+        : reason === "no_accounts"
+          ? t("bankConnectNoAccounts")
+          : reason === "bank_refused"
+            ? t("bankConnectRefused")
+            : t("bankConnectFailed"),
+    );
     params.delete("bank");
+    params.delete("reason");
     const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
     window.history.replaceState({}, "", next);
     if (outcome === "connected" || outcome === "renewed") onRefresh();
@@ -618,7 +631,19 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
                       disabled={busyId === bank.id}
                       className="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm hover:bg-[var(--color-muted)] disabled:opacity-60"
                     >
-                      <span className="truncate">{bank.name}</span>
+                      <span className="truncate">
+                        {bank.name}
+                        {bank.psuType ? (
+                          <span className="text-muted-foreground">
+                            {" · "}
+                            {t(
+                              bank.psuType === "business"
+                                ? "bankLoginBusiness"
+                                : "bankLoginPersonal",
+                            )}
+                          </span>
+                        ) : null}
+                      </span>
                       {busyId === bank.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                     </button>
                   </li>

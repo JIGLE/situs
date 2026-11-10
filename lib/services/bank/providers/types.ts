@@ -33,6 +33,11 @@ export interface Institution {
    * fortnight.
    */
   maxHistoricalDays?: number;
+  /**
+   * Which of the bank's logins this entry consents through, set only when the bank has both: a
+   * company account (Millennium Empresas, say) cannot be authorised through the personal one.
+   */
+  psuType?: "personal" | "business";
 }
 
 /**
@@ -118,11 +123,24 @@ export type RevocationResult = "revoked" | "already_gone";
  * a silent, indefinite outage of the thing the feature exists to do.
  */
 export class ConsentExpiredError extends Error {
-  constructor(message = "Bank consent has expired and must be renewed") {
+  /**
+   * Why a consent never completed, when the bank's reply says: the owner cancelled or the bank
+   * refused (`bank_refused`), or the bank granted no account (`no_accounts`). Shown to the owner
+   * after the callback, which reaches the provider only once the reference was proved theirs.
+   */
+  readonly reason?: ConsentFailureReason;
+
+  constructor(
+    message = "Bank consent has expired and must be renewed",
+    reason?: ConsentFailureReason,
+  ) {
     super(message);
     this.name = "ConsentExpiredError";
+    if (reason) this.reason = reason;
   }
 }
+
+export type ConsentFailureReason = "bank_refused" | "no_accounts";
 
 /**
  * What a provider can tell an operator about its own configuration, without moving any money or
