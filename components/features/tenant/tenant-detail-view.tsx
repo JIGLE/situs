@@ -20,6 +20,7 @@ import { buildFinancialReviewPath } from "@/lib/utils/financial-navigation";
 import { withEntityDetail } from "@/lib/utils/entity-detail-url";
 import { StatusMark } from "@/components/ui/status-mark";
 import { paymentStatus } from "@/lib/utils/status-tone";
+import { receivedTotal } from "@/lib/utils/receipt-income";
 
 interface TenantDetailViewProps {
   tenantId: string;
@@ -70,9 +71,7 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
 
   // Derive lease data from active lease instead of redundant tenant fields
   const activeLease = findActiveLease(tenantId, state.leases);
-  const totalPaid = relatedReceipts
-    .filter((r) => r.status === "paid")
-    .reduce((sum, r) => sum + r.amount, 0);
+  const totalPaid = receivedTotal(relatedReceipts);
   return (
     <div className="space-y-6">
       {/* Header */}

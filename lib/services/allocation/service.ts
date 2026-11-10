@@ -12,6 +12,7 @@ import { getPrismaClient } from "@/lib/services/database/database";
 import { logAudit } from "@/lib/services/audit-log";
 
 import { derivePeriodStatus, deriveTenantStatus, periodDueDate, planAllocation } from "./engine";
+import { MONEY_EPSILON } from "@/lib/utils/money";
 import type { AllocationPlan, PeriodSnapshot, RentPeriodStatus } from "./types";
 
 const HORIZON_MONTHS = 12;
@@ -25,15 +26,57 @@ type PrismaTransactionClient = Parameters<
   Parameters<ReturnType<typeof getPrismaClient>["$transaction"]>[0]
 >[0];
 
+/** A client that reads and writes: the base client, or a transaction's. */
+type LedgerClient = PrismaTransactionClient | ReturnType<typeof getPrismaClient>;
+
+/** The first day of the month a date falls in, UTC. */
+function monthStart(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+}
+
 /**
- * Ensure a lease has RentPeriod rows from its start date through
+ * Ensure an ACTIVE lease has RentPeriod rows from its start date through
  * min(endDate, now + horizon). Idempotent — existing periods are left alone
  * (their dueAmount snapshot must survive rent adjustments).
+ *
+ * A draft, pending or ended lease gets none: nobody owes rent on a contract that has not started
+ * or has stopped, and every month generated here is chased by the dashboard and the overdue
+ * reminders once its due date passes. Activating the lease (`syncLeasePeriods`) generates them.
  */
 export async function generateRentPeriods(leaseId: string): Promise<number> {
-  const prisma = getPrismaClient();
-  const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
-  if (!lease) return 0;
+  const created = await createMissingPeriods(leaseId, getPrismaClient());
+  if (created) await auditGenerated(created);
+  return created?.count ?? 0;
+}
+
+interface CreatedPeriods {
+  userId: string;
+  leaseId: string;
+  count: number;
+}
+
+/** The audit line for months created, written after (never inside) the transaction. */
+async function auditGenerated(created: CreatedPeriods): Promise<void> {
+  await logAudit({
+    userId: created.userId,
+    action: "GENERATE_RENT_PERIODS",
+    resourceType: "lease",
+    resourceId: created.leaseId,
+    details: { created: created.count },
+  });
+}
+
+/**
+ * The write half of `generateRentPeriods`, on the client it is given. It writes no audit line:
+ * inside a transaction that would be a second writer on the SQLite file while the transaction
+ * holds it. Callers audit the result once their transaction has committed.
+ */
+async function createMissingPeriods(
+  leaseId: string,
+  client: LedgerClient,
+): Promise<CreatedPeriods | null> {
+  const lease = await client.lease.findUnique({ where: { id: leaseId } });
+  if (!lease || lease.status !== "active") return null;
 
   const start = new Date(lease.startDate);
   const horizon = new Date();
@@ -41,23 +84,23 @@ export async function generateRentPeriods(leaseId: string): Promise<number> {
   const end = new Date(Math.min(new Date(lease.endDate).getTime(), horizon.getTime()));
 
   const wanted: { year: number; month: number }[] = [];
-  const cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
+  const cursor = monthStart(start);
   while (cursor.getTime() <= end.getTime()) {
     wanted.push({ year: cursor.getUTCFullYear(), month: cursor.getUTCMonth() + 1 });
     cursor.setUTCMonth(cursor.getUTCMonth() + 1);
   }
-  if (wanted.length === 0) return 0;
+  if (wanted.length === 0) return null;
 
-  const existing = await prisma.rentPeriod.findMany({
+  const existing = await client.rentPeriod.findMany({
     where: { leaseId },
     select: { year: true, month: true },
   });
   const have = new Set(existing.map((p) => `${p.year}-${p.month}`));
   const missing = wanted.filter((p) => !have.has(`${p.year}-${p.month}`));
-  if (missing.length === 0) return 0;
+  if (missing.length === 0) return null;
 
   const now = new Date();
-  await prisma.rentPeriod.createMany({
+  await client.rentPeriod.createMany({
     data: missing.map((p) => {
       const dueDate = periodDueDate(p);
       return {
@@ -79,74 +122,190 @@ export async function generateRentPeriods(leaseId: string): Promise<number> {
     }),
   });
 
+  return { userId: lease.userId, leaseId, count: missing.length };
+}
+
+export interface LeasePeriodSync {
+  created: number;
+  /** Months removed: outside the lease's term, never paid, with no allocation history. */
+  removed: number;
+  /** Months outside the term that keep reversed allocation history, marked waived instead. */
+  waived: number;
+  /** Future unpaid months whose due amount took the lease's new rent. */
+  repriced: number;
+}
+
+/**
+ * Bring a lease's rent months in step with its terms, after the lease changed.
+ *
+ * - Months OUTSIDE what the lease now owes are taken off the ledger: before its start, after its
+ *   end, after today for a terminated lease, and all of them for a draft or pending one. A month
+ *   with no allocation rows at all is deleted; a month whose only allocations were reversed is
+ *   marked `waived`, so its history stays; a month with live money on it is left alone, since
+ *   that money has to be dealt with by a person (void the receipt) rather than by this.
+ * - Future months with nothing allocated take the lease's current rent: they were generated up
+ *   to a year ahead with the rent of that day, and a rent update has to reach them. Past months
+ *   keep their snapshot — what was owed then does not change after the fact.
+ * - An active lease then gets its missing months (`generateRentPeriods`).
+ *
+ * Runs on the client it is given so the lease write and this land together.
+ */
+export async function syncLeasePeriods(
+  leaseId: string,
+  client: LedgerClient = getPrismaClient(),
+  now: Date = new Date(),
+): Promise<LeasePeriodSync> {
+  const result: LeasePeriodSync = { created: 0, removed: 0, waived: 0, repriced: 0 };
+  const lease = await client.lease.findUnique({ where: { id: leaseId } });
+  if (!lease) return result;
+
+  const firstOwed = monthStart(new Date(lease.startDate)).getTime();
+  const lastOwed =
+    lease.status === "terminated"
+      ? Math.min(new Date(lease.endDate).getTime(), now.getTime())
+      : new Date(lease.endDate).getTime();
+  const owesNothing = lease.status === "draft" || lease.status === "pending";
+
+  const periods = await client.rentPeriod.findMany({
+    where: { leaseId },
+    select: {
+      id: true,
+      dueDate: true,
+      dueAmount: true,
+      status: true,
+      allocations: { select: { reversedAt: true } },
+    },
+  });
+
+  for (const period of periods) {
+    const due = period.dueDate.getTime();
+    const outside = owesNothing || due < firstOwed || due > lastOwed;
+    const live = period.allocations.some((a) => a.reversedAt === null);
+
+    if (outside) {
+      if (live) continue;
+      if (period.allocations.length === 0) {
+        await client.rentPeriod.delete({ where: { id: period.id } });
+        result.removed += 1;
+      } else if (period.status !== "waived") {
+        await client.rentPeriod.update({ where: { id: period.id }, data: { status: "waived" } });
+        result.waived += 1;
+      }
+      continue;
+    }
+
+    if (
+      due > now.getTime() &&
+      period.allocations.length === 0 &&
+      Math.abs(period.dueAmount - lease.monthlyRent) > MONEY_EPSILON
+    ) {
+      await client.rentPeriod.update({
+        where: { id: period.id },
+        data: { dueAmount: lease.monthlyRent },
+      });
+      result.repriced += 1;
+    }
+  }
+
+  const created = await createMissingPeriods(leaseId, client);
+  result.created = created?.count ?? 0;
+  return result;
+}
+
+/** The audit line for a `syncLeasePeriods` that changed anything, written after its transaction. */
+export async function auditLeasePeriodSync(
+  userId: string,
+  leaseId: string,
+  sync: LeasePeriodSync,
+): Promise<void> {
+  if (sync.created + sync.removed + sync.waived + sync.repriced === 0) return;
   await logAudit({
-    userId: lease.userId,
+    userId,
     action: "GENERATE_RENT_PERIODS",
     resourceType: "lease",
     resourceId: leaseId,
-    details: { created: missing.length },
+    details: { ...sync },
   });
-
-  return missing.length;
 }
 
 /**
  * Allocate a rent Receipt to reference months via the waterfall. Idempotent:
  * a receipt with live (non-reversed) allocations is skipped. Returns the plan
  * that was applied, or null when skipped/not applicable.
+ *
+ * Only money that arrived is allocated: a `pending` receipt records a payment promised, and
+ * allocating it marked the month paid and stopped the overdue reminders for rent nobody had paid.
+ *
+ * The idempotency check, the read of the lease's months and the plan all happen inside the
+ * transaction that writes the allocations. They used to run before it, so two allocations racing
+ * on one lease (a bank sync and a Confirm, or a double click) each planned against the same open
+ * month, and both landed: the month ended up allocated past its rent, or one receipt was credited
+ * twice.
  */
 export async function allocateReceipt(receiptId: string): Promise<AllocationPlan | null> {
   const prisma = getPrismaClient();
 
   const receipt = await prisma.receipt.findUnique({ where: { id: receiptId } });
-  if (!receipt || receipt.type !== "rent") return null;
+  if (!receipt || receipt.type !== "rent" || receipt.status !== "paid") return null;
 
-  const existing = await prisma.paymentAllocation.count({
-    where: { receiptId, reversedAt: null },
-  });
-  if (existing > 0) return null; // idempotency
-
-  // Resolve the lease: explicit link first, else the tenant's single lease.
+  // Resolve the lease: explicit link first, else the tenant's single active lease on the
+  // receipt's property. A lease on another property would put the payment on a ledger the
+  // receipt does not name.
   let leaseId = receipt.leaseId;
-  if (!leaseId) {
+  if (leaseId) {
+    const lease = await prisma.lease.findUnique({
+      where: { id: leaseId },
+      select: { tenantId: true, propertyId: true },
+    });
+    if (!lease || lease.tenantId !== receipt.tenantId || lease.propertyId !== receipt.propertyId) {
+      return null;
+    }
+  } else {
     const leases = await prisma.lease.findMany({
-      where: { tenantId: receipt.tenantId, status: "active" },
+      where: { tenantId: receipt.tenantId, propertyId: receipt.propertyId, status: "active" },
       select: { id: true },
       take: 2,
     });
     if (leases.length !== 1) return null; // ambiguous or none — needs review, not guesswork
     leaseId = leases[0].id;
   }
+  const resolvedLeaseId = leaseId;
 
-  await generateRentPeriods(leaseId);
-
-  const periods = await prisma.rentPeriod.findMany({ where: { leaseId } });
-  const snapshots: PeriodSnapshot[] = periods.map((p) => ({
-    id: p.id,
-    year: p.year,
-    month: p.month,
-    dueAmount: p.dueAmount,
-    allocatedAmount: p.allocatedAmount,
-  }));
-
-  const plan = planAllocation({
-    payment: { id: receipt.id, amount: receipt.amount, bookingDate: receipt.date },
-    periods: snapshots,
-    horizonMonths: HORIZON_MONTHS,
-  });
-  if (plan.entries.length === 0) return plan;
-
-  const lease = await prisma.lease.findUniqueOrThrow({ where: { id: leaseId } });
   const now = new Date();
 
-  await prisma.$transaction(async (tx) => {
+  const outcome = await prisma.$transaction(async (tx) => {
+    const existing = await tx.paymentAllocation.count({
+      where: { receiptId, reversedAt: null },
+    });
+    if (existing > 0) return null; // idempotency
+
+    const created = await createMissingPeriods(resolvedLeaseId, tx);
+
+    const periods = await tx.rentPeriod.findMany({ where: { leaseId: resolvedLeaseId } });
+    // A waived month owes nothing: it reads as settled, so the waterfall passes over it rather
+    // than filling it, and still counts it when it works out which month comes next.
+    const snapshots: PeriodSnapshot[] = periods.map((p) => ({
+      id: p.id,
+      year: p.year,
+      month: p.month,
+      dueAmount: p.dueAmount,
+      allocatedAmount: p.status === "waived" ? p.dueAmount : p.allocatedAmount,
+    }));
+
+    const plan = planAllocation({
+      payment: { id: receipt.id, amount: receipt.amount, bookingDate: receipt.date },
+      periods: snapshots,
+      horizonMonths: HORIZON_MONTHS,
+    });
+    if (plan.entries.length === 0) return { plan, lease: null, created };
+
+    const lease = await tx.lease.findUniqueOrThrow({ where: { id: resolvedLeaseId } });
+
     // The row id the receipt is back-linked to, captured as the first entry resolves. It cannot be
     // read off `plan.entries[0].period` afterwards: an engine-created future period carries no `id`
     // until the loop below inserts it, so a receipt whose first entry is one of those — a tenant
     // paying a month ahead, where no existing period is short — would take `undefined` and leave
-    // `Receipt.rentPeriodId` null while `referenceMonth` was set. Nothing downstream complains,
-    // which is why it survived: the ledger rows are all correct, only the receipt's own pointer
-    // back into them is missing.
+    // `Receipt.rentPeriodId` null while `referenceMonth` was set.
     let primaryPeriodId: string | undefined;
 
     for (const entry of plan.entries) {
@@ -157,7 +316,7 @@ export async function allocateReceipt(receiptId: string): Promise<AllocationPlan
         periodRow = await tx.rentPeriod.create({
           data: {
             userId: lease.userId,
-            leaseId,
+            leaseId: resolvedLeaseId,
             tenantId: lease.tenantId,
             propertyId: lease.propertyId,
             year: entry.period.year,
@@ -212,7 +371,7 @@ export async function allocateReceipt(receiptId: string): Promise<AllocationPlan
     await tx.receipt.update({
       where: { id: receipt.id },
       data: {
-        leaseId,
+        leaseId: resolvedLeaseId,
         rentPeriodId: primaryPeriodId,
         referenceMonth: `${primary.year}-${String(primary.month).padStart(2, "0")}`,
       },
@@ -230,7 +389,14 @@ export async function allocateReceipt(receiptId: string): Promise<AllocationPlan
         lastPayment: receipt.date,
       },
     });
+
+    return { plan, lease, created };
   });
+
+  if (!outcome) return null;
+  const { plan, lease, created } = outcome;
+  if (created) await auditGenerated(created);
+  if (!lease) return plan;
 
   await logAudit({
     userId: lease.userId,
@@ -238,7 +404,7 @@ export async function allocateReceipt(receiptId: string): Promise<AllocationPlan
     resourceType: "receipt",
     resourceId: receipt.id,
     details: {
-      leaseId,
+      leaseId: resolvedLeaseId,
       entries: plan.entries.map((e) => ({
         period: `${e.period.year}-${e.period.month}`,
         amount: e.amount,

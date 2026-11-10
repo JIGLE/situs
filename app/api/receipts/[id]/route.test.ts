@@ -10,7 +10,14 @@ import { NextRequest } from "next/server";
 
 const { prismaMock, allocation } = vi.hoisted(() => ({
   prismaMock: {
-    receipt: { findUnique: vi.fn(), findUniqueOrThrow: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    receipt: {
+      findUnique: vi.fn(),
+      findFirst: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    paymentAllocation: { count: vi.fn() },
     tenant: { findFirst: vi.fn() },
     property: { findFirst: vi.fn() },
     $transaction: vi.fn(),
@@ -38,6 +45,7 @@ const stored = {
   date: new Date("2026-03-01T00:00:00.000Z"),
   type: "rent",
   status: "pending",
+  lifecycle: "draft",
   description: null,
   createdAt: new Date("2026-03-01T00:00:00.000Z"),
   updatedAt: new Date("2026-03-01T00:00:00.000Z"),
@@ -59,6 +67,8 @@ describe("PUT /api/receipts/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     prismaMock.receipt.findUnique.mockResolvedValue(stored);
+    prismaMock.receipt.findFirst.mockResolvedValue(stored);
+    prismaMock.paymentAllocation.count.mockResolvedValue(0);
     // Prisma ignores an `undefined` field, so the stand-in must too, or `date: undefined` would
     // wipe the stored date.
     prismaMock.receipt.update.mockImplementation(async ({ data }) => ({
@@ -95,6 +105,66 @@ describe("PUT /api/receipts/[id]", () => {
 
     expect(res.status).toBe(200);
     expect(prismaMock.receipt.update.mock.calls[0][0].data.status).toBeUndefined();
+  });
+
+  // The months a receipt paid were written from its amount, date, tenant and property. Editing
+  // them afterwards left the allocations as they were, so the ledger and the receipt disagreed.
+  describe("once its payment is on the ledger", () => {
+    beforeEach(() => {
+      prismaMock.paymentAllocation.count.mockResolvedValue(1);
+    });
+
+    it.each([
+      ["amount", { amount: 1000 }],
+      ["date", { date: "2026-03-05" }],
+      ["tenant", { tenantId: "tenant-2" }],
+      ["property", { propertyId: "prop-2" }],
+      ["type", { type: "other" }],
+      ["status", { status: "paid" }],
+    ])("refuses a change to its %s", async (_field, body) => {
+      const res = await put(body);
+
+      expect(res.status).toBe(409);
+      expect((await res.json()).reason).toBe("receipt_allocated");
+      expect(prismaMock.receipt.update).not.toHaveBeenCalled();
+    });
+
+    it("still takes a new description", async () => {
+      const res = await put({ description: "Renda de março" });
+
+      expect(res.status).toBe(200);
+      expect(prismaMock.receipt.update).toHaveBeenCalled();
+    });
+
+    it("accepts the edit form sending every field back unchanged", async () => {
+      const res = await put({
+        tenantId: "tenant-1",
+        propertyId: "prop-1",
+        amount: 950,
+        date: "2026-03-01",
+        type: "rent",
+        status: "pending",
+        description: "Renda de março",
+      });
+
+      expect(res.status).toBe(200);
+    });
+  });
+
+  it("refuses a change to the amount of an issued receipt even with nothing allocated", async () => {
+    prismaMock.receipt.findFirst.mockResolvedValue({ ...stored, lifecycle: "emitted" });
+
+    const res = await put({ amount: 1000 });
+
+    // The tenant holds the issued document; its figures stay as issued.
+    expect(res.status).toBe(409);
+  });
+
+  it("lets an unallocated draft change its amount", async () => {
+    const res = await put({ amount: 1000 });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.receipt.update.mock.calls[0][0].data.amount).toBe(1000);
   });
 });
 

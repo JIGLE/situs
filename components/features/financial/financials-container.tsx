@@ -22,6 +22,7 @@ import { FinancialsView } from "./financials-view";
 import { RecordPaymentDialog } from "./record-payment-dialog";
 import { FileText, Grid3X3, Landmark, Plus, Receipt } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { countsAsIncome } from "@/lib/utils/receipt-income";
 
 const PAYMENT_TABS = ["receipts", "rent-matrix", "bank", "tax"] as const;
 type PaymentTab = (typeof PAYMENT_TABS)[number];
@@ -88,7 +89,7 @@ export function FinancialsContainer() {
       .filter((receipt) => {
         const receiptDate = new Date(receipt.date);
         return (
-          receipt.status === "paid" &&
+          countsAsIncome(receipt) &&
           receipt.type === "rent" &&
           receiptDate >= monthStart &&
           receiptDate <= monthEnd

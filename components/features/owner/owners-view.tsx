@@ -32,6 +32,7 @@ import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { withEntityDetail } from "@/lib/utils/entity-detail-url";
 import { OwnerNifField } from "./owner-nif-field";
+import { incomeTotal } from "@/lib/utils/receipt-income";
 
 export type OwnersViewRef = {
   openDialog: () => void;
@@ -128,9 +129,7 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
             // Let's do All Time for simplicity of this demo, or last 30 days.
             // Doing "All Time" effectively for now to ensure data shows up.
 
-            const propIncome = receipts
-              .filter((r) => r.propertyId === po.propertyId)
-              .reduce((sum, r) => sum + r.amount, 0);
+            const propIncome = incomeTotal(receipts.filter((r) => r.propertyId === po.propertyId));
 
             const propExpenses = expenses
               .filter((e) => e.propertyId === po.propertyId)
@@ -444,11 +443,9 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
                           owner.properties.length > 0 &&
                           (() => {
                             const ownerIncome = owner.properties.reduce((sum, po) => {
-                              const propIncome = receipts
-                                .filter(
-                                  (r) => r.propertyId === po.propertyId && r.status === "paid",
-                                )
-                                .reduce((s, r) => s + r.amount, 0);
+                              const propIncome = incomeTotal(
+                                receipts.filter((r) => r.propertyId === po.propertyId),
+                              );
                               return sum + propIncome * (po.ownershipPercentage / 100);
                             }, 0);
                             const ownerExpenses = owner.properties.reduce((sum, po) => {

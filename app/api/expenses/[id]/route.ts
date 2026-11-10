@@ -7,7 +7,7 @@ import {
   readJsonObject,
 } from "@/lib/utils/error-handling";
 import { getPrismaClient } from "@/lib/services/database/database";
-import { assertOwnsRelations } from "@/lib/services/database/assert-owned";
+import { assertExpenseLinks } from "@/lib/services/database/expense-links";
 import { sanitizeForDatabase, sanitizeNumber } from "@/lib/utils/sanitize";
 import { isMockMode } from "@/lib/config/data-mode";
 import { z } from "zod";
@@ -120,8 +120,13 @@ async function handlePut(
 
     const validatedData = updateExpenseSchema.parse(sanitizedBody);
 
-    // POST checks the property an expense is booked against; moving it to another must too.
-    await assertOwnsRelations(userId, { propertyId: validatedData.propertyId });
+    // POST checks what an expense points at; an update must too, as the expense will stand after it.
+    await assertExpenseLinks(userId, {
+      propertyId: validatedData.propertyId ?? existing.propertyId,
+      leaseId: existing.leaseId,
+      documentId:
+        validatedData.documentId !== undefined ? validatedData.documentId : existing.documentId,
+    });
 
     const updateData: Record<string, unknown> = { ...validatedData };
     if (validatedData.date) {

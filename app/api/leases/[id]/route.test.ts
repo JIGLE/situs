@@ -13,7 +13,9 @@ import { NextRequest } from "next/server";
 
 const { prismaMock } = vi.hoisted(() => {
   const prismaMock = {
-    lease: { update: vi.fn(), delete: vi.fn() },
+    lease: { update: vi.fn(), delete: vi.fn(), findFirst: vi.fn() },
+    paymentAllocation: { count: vi.fn() },
+    rentPeriod: { updateMany: vi.fn() },
     property: { findFirst: vi.fn() },
     tenant: { findFirst: vi.fn() },
     leaseParty: { deleteMany: vi.fn(), createMany: vi.fn(), findMany: vi.fn() },
@@ -29,6 +31,12 @@ vi.mock("@/lib/services/auth/auth-middleware", () => ({
   handleOptions: vi.fn(),
 }));
 vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prismaMock }));
+
+const { syncLeasePeriodsMock } = vi.hoisted(() => ({ syncLeasePeriodsMock: vi.fn() }));
+vi.mock("@/lib/services/allocation/service", () => ({
+  syncLeasePeriods: syncLeasePeriodsMock,
+  auditLeasePeriodSync: vi.fn(),
+}));
 
 import { PUT } from "./route";
 
@@ -51,6 +59,9 @@ describe("PUT /api/leases/[id]", () => {
     prismaMock.property.findFirst.mockResolvedValue({ id: "prop-1" });
     prismaMock.tenant.findFirst.mockResolvedValue({ id: "tenant-1" });
     prismaMock.leaseParty.findMany.mockResolvedValue([]);
+    prismaMock.lease.findFirst.mockResolvedValue({ tenantId: "tenant-1", propertyId: "prop-1" });
+    prismaMock.paymentAllocation.count.mockResolvedValue(0);
+    syncLeasePeriodsMock.mockResolvedValue({ created: 0, removed: 0, waived: 0, repriced: 0 });
   });
 
   it("never moves the lease into another account", async () => {
@@ -200,5 +211,76 @@ describe("PUT /api/leases/[id]", () => {
 
       expect(body.data.parties).toEqual([{ id: "party-1", role: "guarantor", name: "Hans Weber" }]);
     });
+  });
+});
+
+describe("PUT /api/leases/[id] — the rent ledger follows the lease", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prismaMock.lease.update.mockImplementation(async ({ data }) => ({ id: "lease-1", ...data }));
+    prismaMock.property.findFirst.mockResolvedValue({ id: "prop-1" });
+    prismaMock.tenant.findFirst.mockResolvedValue({ id: "tenant-1" });
+    prismaMock.leaseParty.findMany.mockResolvedValue([]);
+    prismaMock.lease.findFirst.mockResolvedValue({ tenantId: "tenant-1", propertyId: "prop-1" });
+    prismaMock.paymentAllocation.count.mockResolvedValue(0);
+    syncLeasePeriodsMock.mockResolvedValue({ created: 0, removed: 0, waived: 0, repriced: 0 });
+  });
+
+  it("refuses to move a lease with payments to another tenant", async () => {
+    prismaMock.paymentAllocation.count.mockResolvedValue(2);
+
+    const res = await put({ tenantId: "tenant-2" });
+
+    // The months already paid were written for this tenant; moving the lease would leave that
+    // money on months that name someone else.
+    expect(res.status).toBe(409);
+    expect((await res.json()).reason).toBe("lease_has_payments");
+    expect(prismaMock.lease.update).not.toHaveBeenCalled();
+    expect(prismaMock.rentPeriod.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("refuses to move a lease with payments to another property", async () => {
+    prismaMock.paymentAllocation.count.mockResolvedValue(1);
+
+    const res = await put({ propertyId: "prop-2" });
+
+    expect(res.status).toBe(409);
+    expect(prismaMock.lease.update).not.toHaveBeenCalled();
+  });
+
+  it("moves the months with a lease that has no payments", async () => {
+    const res = await put({ tenantId: "tenant-2" });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.rentPeriod.updateMany).toHaveBeenCalledWith({
+      where: { leaseId: "lease-1" },
+      data: { tenantId: "tenant-2" },
+    });
+  });
+
+  it("lets the edit form send the same tenant and property back on a paid lease", async () => {
+    prismaMock.paymentAllocation.count.mockResolvedValue(3);
+
+    // The wizard sends every term on an edit; unchanged parties are not a move.
+    const res = await put({ tenantId: "tenant-1", propertyId: "prop-1", notes: "Garage" });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.paymentAllocation.count).not.toHaveBeenCalled();
+  });
+
+  it("keeps the months in step with the lease, in the same transaction", async () => {
+    await put({ monthlyRent: 950, status: "terminated" });
+
+    expect(syncLeasePeriodsMock).toHaveBeenCalledWith("lease-1", prismaMock);
+  });
+
+  it("answers 404 for a lease that is not the caller's, before touching anything", async () => {
+    prismaMock.lease.findFirst.mockResolvedValue(null);
+
+    const res = await put({ monthlyRent: 950 });
+
+    expect(res.status).toBe(404);
+    expect(prismaMock.lease.update).not.toHaveBeenCalled();
+    expect(syncLeasePeriodsMock).not.toHaveBeenCalled();
   });
 });

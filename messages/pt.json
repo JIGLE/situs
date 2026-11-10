@@ -776,6 +776,8 @@
       "tenantHasHistory": "Este inquilino tem um contrato ou pagamentos registados, por isso o Situs mantém-no nos seus registos. Termine o contrato em vez de o eliminar.",
       "propertyHasHistory": "Este imóvel tem contratos, pagamentos ou despesas registados, por isso o Situs mantém-no para o seu histórico fiscal.",
       "leaseHasHistory": "Há pagamentos registados neste contrato, por isso o Situs mantém-no nos seus registos. Termine o contrato em vez de o eliminar.",
+      "leaseHasPayments": "Há pagamentos atribuídos a este contrato, por isso o inquilino e o imóvel não podem mudar. Termine-o e crie um novo contrato.",
+      "receiptAllocated": "O pagamento deste recibo já está registado, por isso o valor, a data, o inquilino e o tipo não podem mudar. Anule-o e registe o pagamento de novo.",
       "ownerHasHistory": "Este proprietário está associado a um imóvel ou a distribuições de rendimento, por isso o Situs mantém-no nos seus registos. Retire-o primeiro do imóvel.",
       "emailInUse": "Já tem um registo com esse endereço de email. Use outro, ou deixe-o vazio.",
       "lastAdmin": "A instância precisa de um administrador. Torne primeiro outra pessoa administradora.",
