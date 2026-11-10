@@ -46,6 +46,7 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
   const tForms = useTranslations("forms");
   const tActions = useTranslations("actions");
   const tStatus = useTranslations("status");
+  const tPropertyStatus = useTranslations("propertyDetail.status");
   const tReceipts = useTranslations("financial.receipts");
   const locale = useLocale();
   const confirmDialog = useConfirmDialog();
@@ -170,7 +171,9 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
-              Lease {lease.id.slice(0, 8)}
+              {/* Named by who and where, as every other list in the app names a lease. The id
+                  prefix it used to show meant nothing to an owner and read in English. */}
+              {[tenant?.name, property?.name].filter(Boolean).join(" · ") || t("untitled")}
             </h1>
             <div className="flex items-center gap-2 mt-1 text-sm text-[var(--color-muted-foreground)]">
               <Calendar className="h-4 w-4" />
@@ -238,7 +241,7 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
             id={property.id}
             title={property.name}
             subtitle={property.address}
-            status={property.status}
+            status={tPropertyStatus(property.status)}
             statusVariant={
               property.status === "occupied"
                 ? "success"
@@ -255,7 +258,7 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
             id={tenant.id}
             title={tenant.name}
             subtitle={joinContact(tenant.email, tenant.phone) || undefined}
-            status={tenant.paymentStatus}
+            status={tStatus(tenant.paymentStatus)}
             statusVariant={
               tenant.paymentStatus === "paid"
                 ? "success"

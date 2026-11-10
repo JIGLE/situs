@@ -17,7 +17,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useCurrency } from "@/lib/contexts/currency-context";
 import { formatDate as formatDateWithLocale } from "@/lib/utils/format-date";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsMobileSelect, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -244,7 +244,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
       <div className="space-y-4">
         {/* ── Zone 1: Header + Status ─────────────────────────────────── */}
         <div className="flex flex-col space-y-2 text-left">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-primary/20 ring-1 ring-accent-primary/30">
                 <span className="text-sm font-semibold text-accent-primary">
@@ -257,7 +257,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
               </div>
               <div className="min-w-0">
                 <h2 className="text-lg font-semibold leading-none tracking-tight text-[var(--color-foreground)] truncate">
-                  {isEditing ? "Edit Tenant" : tenant.name}
+                  {isEditing ? t("dialogEditTitle") : tenant.name}
                 </h2>
                 <div className="flex items-center gap-2 mt-0.5 text-sm text-[var(--color-muted-foreground)]">
                   <span className="flex items-center gap-1 text-xs">
@@ -362,15 +362,13 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
             {/* ── Zone 2: Primary Action ─────────────────────────────── */}
             {primaryAction && (
               <div className="border border-[var(--color-border)] bg-[var(--color-card)] p-4">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                   <p className="text-sm text-[var(--color-muted-foreground)]">
-                    {isOverdue && "This tenant has an overdue payment. Record it now."}
+                    {isOverdue && t("modal.overdueAction")}
                     {isLeaseExpiringSoon &&
                       !isOverdue &&
-                      `Lease expires in ${leaseExpiryDays} days. Renew before it lapses.`}
-                    {!activeLease &&
-                      !isOverdue &&
-                      "No active lease found. Create one to track rent."}
+                      t("modal.expiringAction", { days: leaseExpiryDays ?? 0 })}
+                    {!activeLease && !isOverdue && t("modal.noLeaseAction")}
                   </p>
                   <Button
                     size="sm"
@@ -402,7 +400,20 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
 
             {/* ── Zone 4: Tabbed Info ─────────────────────────────────── */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="w-full justify-start">
+              {/* Four Portuguese labels overflowed the bar at 390px and cut "Atividade" off. */}
+              <TabsMobileSelect
+                className="md:hidden"
+                value={activeTab}
+                onValueChange={setActiveTab}
+                aria-label={t("modal.tabOverview")}
+                items={[
+                  { value: "overview", label: t("modal.tabOverview") },
+                  { value: "lease", label: t("modal.tabLease") },
+                  { value: "payments", label: t("modal.tabPayments") },
+                  { value: "activity", label: t("modal.tabActivity") },
+                ]}
+              />
+              <TabsList className="w-full justify-start max-md:hidden">
                 <TabsTrigger value="overview">{t("modal.tabOverview")}</TabsTrigger>
                 <TabsTrigger value="lease">{t("modal.tabLease")}</TabsTrigger>
                 <TabsTrigger value="payments">{t("modal.tabPayments")}</TabsTrigger>
@@ -438,7 +449,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
                     </p>
                     <div className="flex items-start gap-2 text-sm">
                       <MapPin className="h-3.5 w-3.5 text-[var(--color-muted-foreground)] mt-0.5" />
-                      <span className="font-medium">{tenant.propertyName || "Unassigned"}</span>
+                      <span className="font-medium">{tenant.propertyName || t("unassigned")}</span>
                     </div>
                   </div>
                 </div>

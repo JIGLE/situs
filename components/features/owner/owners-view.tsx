@@ -373,10 +373,8 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
                 <div className="col-span-full">
                   <EmptyStateIllustration
                     type={owners.length === 0 ? "owners" : "generic"}
-                    title={owners.length === 0 ? undefined : "No owners found"}
-                    description={
-                      owners.length === 0 ? undefined : "Try adjusting your search or filters"
-                    }
+                    title={owners.length === 0 ? undefined : t("noneFound")}
+                    description={owners.length === 0 ? undefined : t("adjustFilters")}
                     onAction={owners.length === 0 ? dialog.openDialog : undefined}
                     compact={compact}
                   />
@@ -500,7 +498,7 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
                           disabled={generatingPdf === owner.id}
                         >
                           <Download className="w-4 h-4 mr-2" />
-                          {generatingPdf === owner.id ? "Generating..." : "Owner Statement"}
+                          {generatingPdf === owner.id ? t("statementGenerating") : t("statement")}
                         </Button>
                       </div>
                     </CardContent>

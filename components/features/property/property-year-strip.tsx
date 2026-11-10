@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCurrency } from "@/lib/contexts/currency-context";
+import { formatMonth, formatMonthYear } from "@/lib/utils/format-date";
+import { receiptLifecycleKey } from "@/lib/utils/receipt-labels";
+import { rentPeriodStatusKey } from "@/lib/utils/rent-period-labels";
 import type {
   PropertyCurrentPeriod,
   PropertyYearStrip as PropertyYearStripData,
@@ -29,20 +33,7 @@ interface PropertyYearStripProps {
   onSelectMonth?: (selection: YearStripSelection) => void;
 }
 
-const MONTH_LABELS = [
-  "JAN",
-  "FEB",
-  "MAR",
-  "APR",
-  "MAY",
-  "JUN",
-  "JUL",
-  "AUG",
-  "SEP",
-  "OCT",
-  "NOV",
-  "DEC",
-];
+const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 // Same status vocabulary + semantic tokens as YearlyRentMatrix (Finance > Rent
 // Matrix) — a property's ledger cell means the same thing everywhere it
@@ -57,15 +48,6 @@ const STATUS_SWATCH: Record<string, string> = {
   overdue: "bg-[var(--semantic-danger-soft)] border-[var(--semantic-danger-readable)]",
   due: "border-[var(--semantic-warning-readable)]",
   waived: "border-[var(--color-border)] opacity-60",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  paid: "Paid",
-  paid_late: "Paid late",
-  partially_paid: "Partial",
-  overdue: "Overdue",
-  due: "Due",
-  waived: "Waived",
 };
 
 const LEGEND_ORDER = ["paid", "paid_late", "partially_paid", "due", "overdue", "waived"];
@@ -85,6 +67,16 @@ export function PropertyYearStrip({
   onSelectMonth,
 }: PropertyYearStripProps) {
   const t = useTranslations("common");
+  const tLedger = useTranslations("propertyDetail.ledger");
+  const tPeriod = useTranslations("rentPeriodStatus");
+  const tReceipts = useTranslations("financial.receipts");
+  const locale = useLocale();
+  const { formatCurrency } = useCurrency();
+  const statusLabel = (status: string) => {
+    const key = rentPeriodStatusKey(status);
+    return key ? tPeriod(key) : status;
+  };
+  const lifecycleKey = receiptLifecycleKey(receiptLifecycle);
   const defaultYear = defaultYearStrip.year;
   const [year, setYear] = useState(defaultYear);
   const [strip, setStrip] = useState(defaultYearStrip);
@@ -118,7 +110,7 @@ export function PropertyYearStrip({
   return (
     <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
       <div className="flex items-center justify-between gap-4">
-        <p className="mono-label">Rent ledger · reference months</p>
+        <p className="mono-label">{tLedger("title")}</p>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -143,13 +135,13 @@ export function PropertyYearStrip({
       <div
         className={`mt-3 grid grid-cols-6 gap-2 sm:grid-cols-12 ${loading ? "opacity-50 transition-opacity" : ""}`}
       >
-        {MONTH_LABELS.map((label, i) => {
-          const month = i + 1;
+        {MONTHS.map((month) => {
+          const label = formatMonth(year, month, locale);
           const cell = strip.months[month];
           const isCurrentCell = isCurrentYear && currentPeriod?.month === month;
           const summary = cell
-            ? `${STATUS_LABEL[cell.status] ?? cell.status} · €${cell.allocatedAmount.toFixed(2)} / €${cell.dueAmount.toFixed(2)}`
-            : "No period";
+            ? `${statusLabel(cell.status)} · ${formatCurrency(cell.allocatedAmount)} / ${formatCurrency(cell.dueAmount)}`
+            : tLedger("noPeriod");
           const swatch = `mx-auto mt-1 block h-3.5 w-3.5 border ${
             cell
               ? (STATUS_SWATCH[cell.status] ?? "border-[var(--color-border)]")
@@ -185,7 +177,7 @@ export function PropertyYearStrip({
                 })
               }
               title={summary}
-              aria-label={`${label} ${year} — ${summary}`}
+              aria-label={`${formatMonthYear(year, month, locale)} — ${summary}`}
               className={`${outline} py-1 transition-colors hover:bg-[var(--color-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] max-md:min-h-11`}
             >
               <span className="mono-label block text-tick">{label}</span>
@@ -202,7 +194,7 @@ export function PropertyYearStrip({
             className="mono-label flex items-center gap-1.5 text-tick text-[var(--color-muted-foreground)]"
           >
             <span className={`inline-block h-2.5 w-2.5 border ${STATUS_SWATCH[status]}`} />
-            {STATUS_LABEL[status]}
+            {statusLabel(status)}
           </span>
         ))}
       </div>
@@ -210,13 +202,21 @@ export function PropertyYearStrip({
       {isCurrentYear && currentPeriod && (
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[var(--color-border)] pt-3 text-xs text-[var(--color-muted-foreground)]">
           <span className="mono-label text-[var(--color-foreground)]">
-            Current: {String(currentPeriod.month).padStart(2, "0")}/{currentPeriod.year}
+            {tLedger("current", {
+              month: formatMonthYear(currentPeriod.year, currentPeriod.month, locale),
+            })}
           </span>
           <span className="tabular-nums">
-            €{currentPeriod.allocatedAmount.toFixed(2)} / €{currentPeriod.dueAmount.toFixed(2)}{" "}
-            allocated
+            {tLedger("allocated", {
+              allocated: formatCurrency(currentPeriod.allocatedAmount),
+              due: formatCurrency(currentPeriod.dueAmount),
+            })}
           </span>
-          <span>receipt: {receiptLifecycle ? receiptLifecycle.replace(/_/g, " ") : "—"}</span>
+          <span>
+            {tLedger("receipt", {
+              state: lifecycleKey ? tReceipts(lifecycleKey) : "—",
+            })}
+          </span>
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { formatDate } from "@/lib/utils/format-date";
 import { Users, Mail, Phone, Calendar, Edit, ArrowLeft, FileText, DollarSign } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils/utils";
@@ -27,6 +28,8 @@ interface TenantDetailViewProps {
 export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
   const t = useTranslations("tenantDetail");
   const tStatus = useTranslations("status");
+  const tLeases = useTranslations("leases");
+  const tPropertyStatus = useTranslations("propertyDetail.status");
   const tReceipts = useTranslations("financial.receipts");
   const locale = useLocale();
   const { state } = useApp();
@@ -99,7 +102,9 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
               </StatusMark>
               {/* Derived from active lease's monthlyRent */}
               <span className="text-sm font-medium">
-                {formatCurrency(activeLease?.monthlyRent ?? tenant.rent)}/mo
+                {tLeases("perMonth", {
+                  amount: formatCurrency(activeLease?.monthlyRent ?? tenant.rent),
+                })}
               </span>
             </div>
           </div>
@@ -143,7 +148,7 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
             id={property.id}
             title={property.name}
             subtitle={property.address}
-            status={property.status}
+            status={tPropertyStatus(property.status)}
             statusVariant={
               property.status === "occupied"
                 ? "success"
@@ -159,8 +164,8 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
             type="lease"
             id={activeLease.id}
             title={t("activeLease")}
-            subtitle={`${formatCurrency(activeLease.monthlyRent)}/mo · ${t("ends", { date: activeLease.endDate })}`}
-            status={activeLease.status}
+            subtitle={`${tLeases("perMonth", { amount: formatCurrency(activeLease.monthlyRent) })} · ${t("ends", { date: formatDate(activeLease.endDate, locale) })}`}
+            status={tLeases(activeLease.status)}
             statusVariant="success"
             variant="full"
           />
@@ -264,9 +269,9 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                   key={lease.id}
                   type="lease"
                   id={lease.id}
-                  title={`${t("lease")} ${lease.id.slice(0, 8)}`}
-                  subtitle={`${formatCurrency(lease.monthlyRent)}/mo · ${lease.startDate} — ${lease.endDate} · ${t("deposit")}: ${formatCurrency(lease.deposit)}`}
-                  status={lease.status}
+                  title={`${formatDate(lease.startDate, locale)} — ${formatDate(lease.endDate, locale)}`}
+                  subtitle={`${tLeases("perMonth", { amount: formatCurrency(lease.monthlyRent) })} · ${t("deposit")}: ${formatCurrency(lease.deposit)}`}
+                  status={tLeases(lease.status)}
                   statusVariant={
                     lease.status === "active"
                       ? "success"
@@ -304,7 +309,7 @@ export function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                             {tReceipts(RECEIPT_TYPE_KEY[receipt.type])}
                           </p>
                           <p className="text-xs text-[var(--color-muted-foreground)]">
-                            {new Date(receipt.date).toLocaleDateString(locale)}
+                            {formatDate(receipt.date, locale)}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">

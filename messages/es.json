@@ -61,7 +61,14 @@
       "noPriorMonth": "Sin recibos el mes anterior",
       "vsLastMonth": "vs mes anterior"
     },
-    "toastBuildingCreated": "Edificio añadido"
+    "toastBuildingCreated": "Edificio añadido",
+    "buildingDialog": {
+      "title": "Añadir edificio",
+      "description": "Agrupe inmuebles relacionados en un edificio.",
+      "name": "Nombre del edificio *",
+      "namePlaceholder": "p. ej. Edificio Ribera",
+      "submit": "Crear edificio"
+    }
   },
   "settings": {
     "title": "Configuración",
@@ -1006,7 +1013,8 @@
       },
       "atContract": "Contrato en la AT",
       "atContractVersion": "{number}, versión {version}",
-      "notRecorded": "No registrado"
+      "notRecorded": "No registrado",
+      "untitled": "Contrato"
     },
     "unknown": "Desconocido",
     "parties": {
@@ -1105,7 +1113,13 @@
     "editOwner": "Editar propietario",
     "deleteOwner": "Eliminar propietario",
     "toastDeleted": "Propietario eliminado correctamente",
-    "deleteDescription": "Este propietario se eliminará de forma permanente. Esta acción no se puede deshacer."
+    "deleteDescription": "Este propietario se eliminará de forma permanente. Esta acción no se puede deshacer.",
+    "noneFound": "No se encontraron propietarios",
+    "adjustFilters": "Ajuste la búsqueda o los filtros",
+    "statement": "Extracto del propietario",
+    "statementGenerating": "Generando…",
+    "unknownProperty": "Inmueble desconocido",
+    "ownershipShare": "{percent}% de propiedad"
   },
   "forms": {
     "fullName": "Nombre Completo",
@@ -1572,6 +1586,32 @@
       "selectOwner": "Elegir propietario…",
       "remove": "Eliminar propietario",
       "reachesFull": "El total llegará exactamente al 100% ✓"
+    },
+    "expenseDialog": {
+      "title": "Registrar gasto",
+      "description": "Registre un gasto de {property}",
+      "category": "Categoría",
+      "descriptionOptional": "Descripción (opcional)",
+      "notesPlaceholder": "Notas…",
+      "save": "Guardar gasto"
+    },
+    "paymentDialog": {
+      "title": "Registrar pago",
+      "description": "Registre un pago de alquiler o fianza de {property}",
+      "save": "Guardar pago"
+    },
+    "dialog": {
+      "amount": "Importe",
+      "date": "Fecha"
+    },
+    "paymentTimeline": "Cronología de pagos",
+    "timelineReversed": "Revertido",
+    "ledger": {
+      "title": "Libro de alquileres · meses de referencia",
+      "current": "Actual: {month}",
+      "allocated": "{allocated} de {due} imputados",
+      "receipt": "Recibo: {state}",
+      "noPeriod": "Sin mes de alquiler"
     }
   },
   "notificationCenter": {
@@ -1784,14 +1824,18 @@
       "contact": "Contacto",
       "activeLease": "Contrato activo",
       "noPayments": "Sin registros de pago",
-      "editTenant": "Editar inquilino"
+      "editTenant": "Editar inquilino",
+      "overdueAction": "Este inquilino tiene un pago atrasado. Regístrelo ahora.",
+      "expiringAction": "El contrato termina en {days, plural, one {# día} other {# días}}. Renuévelo antes de que venza.",
+      "noLeaseAction": "Sin contrato activo. Cree uno para seguir el alquiler."
     },
     "relationship": {
       "lease": "Contrato",
       "rentPeriods": "Periodos de alquiler",
       "bankMovements": "Movimientos bancarios",
       "receipts": "Recibos",
-      "taxLog": "Registro fiscal"
+      "taxLog": "Registro fiscal",
+      "unavailable": "No se pudo cargar el historial de este inquilino."
     },
     "leaseExpiresInDays": "faltan {days}d",
     "payerAccounts": {
@@ -1853,7 +1897,9 @@
     "themeDark": "Oscuro",
     "changeTheme": "Cambiar tema",
     "taxConnectorsEmpty": "Aún no hay conectores fiscales: se crea automáticamente la primera vez que emitas un recibo de alquiler a través del flujo fiscal de un país.",
-    "taxConnectorsLoadFailed": "No se han podido cargar los conectores fiscales. Inténtalo de nuevo."
+    "taxConnectorsLoadFailed": "No se han podido cargar los conectores fiscales. Inténtalo de nuevo.",
+    "newRelease": "Nueva versión disponible: {name}",
+    "newReleaseBody": "Hay una nueva versión de Situs disponible."
   },
   "rentPeriodStatus": {
     "upcoming": "Próximo",
