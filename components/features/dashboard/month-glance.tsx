@@ -18,7 +18,6 @@ const LINKS = {
   rentMatrix: "/financials?tab=rent-matrix",
   bank: "/financials?tab=bank",
   receipts: "/financials?tab=receipts",
-  tax: "/financials?tab=tax",
   leases: "/leases",
   activity: "/settings?tab=account",
   complete: "/complete",
@@ -139,7 +138,10 @@ export function MonthFigures({ figures }: { figures: DashboardMonth["figures"] }
   );
 }
 
-/** Rendas → pagas → conciliadas → recibos → Finanças, each count opening where its work is. */
+/**
+ * Rendas → pagas → conciliadas → recibos, each count opening where its work is. Finanças joins the
+ * strip when Situs files with it; until then a count of filings would always read 0.
+ */
 export function LoopStrip({ loop }: { loop: DashboardMonth["loop"] }) {
   const t = useTranslations("dashboard");
 
@@ -157,7 +159,6 @@ export function LoopStrip({ loop }: { loop: DashboardMonth["loop"] }) {
         toIssue: loop.receiptsToIssue,
       }),
     },
-    { key: "filed", label: t("loopFiled"), count: loop.filed, href: LINKS.tax },
   ];
 
   return (
@@ -167,7 +168,7 @@ export function LoopStrip({ loop }: { loop: DashboardMonth["loop"] }) {
         <p className="px-4 py-3 text-sm text-[var(--color-muted-foreground)]">{t("loopEmpty")}</p>
       ) : (
         <>
-          <ol className="grid grid-cols-2 gap-px bg-[var(--color-border)] sm:grid-cols-5">
+          <ol className="grid grid-cols-2 gap-px bg-[var(--color-border)] sm:grid-cols-4">
             {steps.map((step) => (
               <li key={step.key} className="bg-[var(--color-card)]">
                 <Link

@@ -1,34 +1,5 @@
 import { test, expect } from "@playwright/test";
 
-// ─── Rent Receipts (Portugal) ────────────────────────────────────────────────
-
-test.describe("Compliance: Rent Receipts (PT)", () => {
-  test("GET /api/compliance/rent-receipts requires authentication", async ({ request }) => {
-    const response = await request.get("/api/compliance/rent-receipts");
-    expect([401, 403, 302].includes(response.status())).toBeTruthy();
-  });
-
-  test("POST /api/compliance/rent-receipts requires authentication", async ({ request }) => {
-    const response = await request.post("/api/compliance/rent-receipts", {
-      data: {
-        leaseId: "lease_123",
-        landlordNif: "123456789",
-        tenantNif: "987654321",
-        rentAmount: 800,
-        paymentDate: "2026-03-01",
-        rentalPeriodStart: "2026-03-01",
-        rentalPeriodEnd: "2026-03-31",
-      },
-    });
-    expect([401, 403, 302].includes(response.status())).toBeTruthy();
-  });
-
-  test("GET /api/compliance/rent-receipts endpoint exists (not 404)", async ({ request }) => {
-    const response = await request.get("/api/compliance/rent-receipts");
-    expect(response.status()).not.toBe(404);
-  });
-});
-
 // ─── Lease Template Generation ────────────────────────────────────────────────
 
 test.describe("Compliance: Lease Template Generation", () => {

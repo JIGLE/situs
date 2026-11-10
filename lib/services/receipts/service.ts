@@ -5,7 +5,8 @@
  *  - archive: generating the receipt PDF and filing it as a Document the
  *    moment a receipt reaches "emitted" or "accepted" (idempotent — a
  *    second entry into an archive state never re-files it)
- *  - the PT connector round trip (submit → AT, poll → accepted/rejected)
+ *  - refusing "submitted" and "accepted": nothing files a receipt with Finanças yet, so nothing
+ *    may say one was filed
  *  - reversing live allocations when a receipt is voided, so the reference-
  *    month ledger and derived tenant status regress with it
  */
@@ -16,7 +17,6 @@ import { logAudit } from "@/lib/services/audit-log";
 import { reverseAllocationsForReceipt } from "@/lib/services/allocation/service";
 import { pdfGenerator } from "@/lib/services/pdf-generator";
 import { documentService } from "@/lib/services/document-service";
-import { ptAtConnector } from "@/lib/tax/connectors/pt-at";
 import { ConflictError, ResourceNotFoundError } from "@/lib/utils/error-handling";
 import { evaluateTransition, type ReceiptLifecycleState } from "./lifecycle";
 
@@ -35,8 +35,15 @@ export interface TransitionOptions {
 export interface TransitionOutcome {
   lifecycle: ReceiptLifecycleState;
   archived: boolean;
-  connector?: { status: string; responseCode?: string; responseBody?: string };
 }
+
+/**
+ * States only a filing with Finanças may reach. The AT webservice (`lib/tax/at/`) is the one way a
+ * receipt will get there, and it reaches AT's test service only, where nothing counts. Until a
+ * production integration lands, a receipt that says "submitted" or "accepted" would claim a filing
+ * that never happened, so both are refused. The owner issues the recibo on the Portal das Finanças.
+ */
+const FILING_STATES: ReadonlySet<ReceiptLifecycleState> = new Set(["submitted", "accepted"]);
 
 function escapeHtml(value: string): string {
   return value
@@ -119,7 +126,7 @@ export async function findExistingArchive(
  *
  * Refusals are typed, so the route answers each with its own status and the screen can say which
  * rule refused: another owner's receipt, or none, is a 404; a move the state machine does not
- * allow, a missing filing and a refusal from the PT connector are each a 409 with a `reason`. The
+ * allow and a filing Situs cannot make are each a 409 with a `reason`. The
  * route used to catch everything as a 400 with the English message, which the screen could only
  * show as "the request was invalid".
  */
@@ -142,41 +149,11 @@ export async function transitionReceipt(
     );
   }
 
-  let connectorResult: TransitionOutcome["connector"];
-
-  if (to === "submitted" || to === "accepted") {
-    const filing = await prisma.rentReceipt.findFirst({
-      where: { receiptId: receipt.id, userId },
-    });
-
-    if (to === "submitted") {
-      if (!filing) {
-        throw new ConflictError(
-          "Link a PT rent receipt (Modelo 44) to this receipt before submitting",
-          "receipt_filing_missing",
-        );
-      }
-      const result = await ptAtConnector.submit(filing.id);
-      if (result.status === "error") {
-        throw new ConflictError(
-          result.responseBody ?? "AT submission failed",
-          "receipt_submission_refused",
-        );
-      }
-      connectorResult = result;
-    } else {
-      if (!filing) {
-        throw new ConflictError("No linked rent receipt to poll", "receipt_filing_missing");
-      }
-      const result = await ptAtConnector.poll(filing.id);
-      if (result.status === "error") {
-        throw new ConflictError(
-          result.responseBody ?? "AT poll failed",
-          "receipt_submission_refused",
-        );
-      }
-      connectorResult = result;
-    }
+  if (FILING_STATES.has(to)) {
+    throw new ConflictError(
+      "Situs does not file receipts with Finanças yet; issue this one on the Portal das Finanças",
+      "receipt_filing_unavailable",
+    );
   }
 
   let archived = false;
@@ -224,8 +201,8 @@ export async function transitionReceipt(
     action: AUDIT_ACTION_FOR_STATE[to] ?? "TRANSITION_RECEIPT_LIFECYCLE",
     resourceType: "receipt",
     resourceId: receipt.id,
-    details: { from, to, ...connectorResult },
+    details: { from, to },
   });
 
-  return { lifecycle: to, archived, connector: connectorResult };
+  return { lifecycle: to, archived };
 }

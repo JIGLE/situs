@@ -575,7 +575,6 @@
     "loopPaid": "Pagadas",
     "loopReconciled": "Conciliadas",
     "loopReceipts": "Recibos",
-    "loopFiled": "Finanças",
     "loopReceiptsDetail": "{issued, plural, one {# emitido} other {# emitidos}} · {toIssue} por emitir",
     "loopTotal": "{done} de {total} totalmente procesados",
     "loopEmpty": "No hay rentas este mes.",
@@ -802,8 +801,7 @@
       "serverError": "El servidor ha tenido un problema. Inténtelo de nuevo en unos momentos.",
       "securityTokenExpired": "Su token de seguridad ha caducado. Actualice la página e inténtelo de nuevo.",
       "receiptTransitionNotAllowed": "Este recibo ya no está en una fase que lo permita. Actualice la lista e inténtelo de nuevo.",
-      "receiptFilingMissing": "Asocie primero este recibo a su declaración en Finanças.",
-      "receiptSubmissionRefused": "Finanças ha rechazado este recibo."
+      "receiptFilingUnavailable": "Situs aún no comunica recibos a Finanças. Emita este en el Portal das Finanças."
     }
   },
   "payments": {
@@ -1832,7 +1830,6 @@
       "rentPeriods": "Periodos de alquiler",
       "bankMovements": "Movimientos bancarios",
       "receipts": "Recibos",
-      "taxLog": "Registro fiscal",
       "unavailable": "No se pudo cargar el historial de este inquilino."
     },
     "leaseExpiresInDays": "faltan {days}d",

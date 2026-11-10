@@ -62,12 +62,11 @@ Fields marked **encrypted** are AES-256-GCM at rest (`lib/utils/pii-encryption.t
 where the client is built (`lib/services/database/database.ts`), so the encryption is
 transparent rather than per-call-site:
 
-| Model         | Encrypted fields                   |
-| ------------- | ---------------------------------- |
-| `Owner`       | `taxIdentificationNumber`, `phone` |
-| `Tenant`      | `phone`, `taxId`, `idDocument`     |
-| `LeaseParty`  | `taxId`, `idDocument`              |
-| `RentReceipt` | `landlordNif`, `tenantNif`         |
+| Model        | Encrypted fields                   |
+| ------------ | ---------------------------------- |
+| `Owner`      | `taxIdentificationNumber`, `phone` |
+| `Tenant`     | `phone`, `taxId`, `idDocument`     |
+| `LeaseParty` | `taxId`, `idDocument`              |
 
 `LeaseParty` holds a lease's co-tenants and guarantors. The extension transforms only the fields
 of the model a query names: a nested `create` or `include` passes through it untouched. So a

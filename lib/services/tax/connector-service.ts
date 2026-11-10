@@ -25,7 +25,7 @@ export interface LogSubmissionInput {
    * whose id is `<contract>/<receipt>`; `receipt` for a Situs receipt's month sent to AT's test
    * service, whose id is `<receiptId>/<YYYY-MM>`.
    */
-  subjectType: "rent_receipt" | "connector" | "at_receipt" | "receipt";
+  subjectType: "connector" | "at_receipt" | "receipt";
   subjectId: string;
   action: "validate" | "submit" | "poll" | "cancel" | "check" | "fetch";
   mode: string;

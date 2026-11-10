@@ -15,7 +15,7 @@ const EPSILON = 0.005;
 
 /**
  * Situs tenant relationship map: a read-only cross-domain summary — lease →
- * rent periods → bank movements → receipts → tax submissions — for the
+ * rent periods → bank movements → receipts — for the
  * People tenant detail relationship-map strip. Mirrors the property activity
  * read model (GET /api/properties/[id]/activity): several small scoped
  * queries rather than one large join, matching that route's style.
@@ -83,23 +83,6 @@ async function handleGet(
       })
     : [];
 
-  const rentReceipts = await prisma.rentReceipt.findMany({
-    where: { tenantId, userId: scopeUserId },
-    select: { id: true },
-  });
-  const rentReceiptIds = rentReceipts.map((r) => r.id);
-  const lastSubmission = rentReceiptIds.length
-    ? await prisma.taxSubmissionLog.findFirst({
-        where: {
-          userId: scopeUserId,
-          subjectType: "rent_receipt",
-          subjectId: { in: rentReceiptIds },
-        },
-        orderBy: { createdAt: "desc" },
-        select: { action: true, status: true, createdAt: true },
-      })
-    : null;
-
   return createSuccessResponse({
     leases: {
       total: leases.length,
@@ -120,12 +103,6 @@ async function handleGet(
       total: receipts.length,
       lastLifecycle: lastReceipt?.lifecycle ?? null,
       lastAt: lastReceipt?.createdAt ?? null,
-    },
-    taxSubmissions: {
-      total: rentReceipts.length,
-      lastAction: lastSubmission?.action ?? null,
-      lastStatus: lastSubmission?.status ?? null,
-      lastAt: lastSubmission?.createdAt ?? null,
     },
   });
 }

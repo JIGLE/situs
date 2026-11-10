@@ -179,7 +179,6 @@ export function maskPII(value: string, visibleStart = 4, visibleEnd = 4): string
 export const PII_FIELDS: Record<string, string[]> = {
   Owner: ["taxIdentificationNumber", "phone"],
   Tenant: ["phone", "taxId", "idDocument"],
-  RentReceipt: ["landlordNif", "tenantNif"],
   LeaseParty: ["taxId", "idDocument"],
 };
 

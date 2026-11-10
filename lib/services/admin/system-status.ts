@@ -12,10 +12,9 @@
  * 1. It never reports a connection as live unless it is. That is a rule about derivation, not a
  *    standing claim about the product: this check must read the state, never assert it.
  *
- *    The tax side has no live integration in any country — every filing is simulated — and
- *    `severity` is derived from the same `SIMULATED_MODES` set the connectors themselves fail
- *    closed on, so widening that set for a real integration updates this page in the same move
- *    rather than leaving it lying.
+ *    The tax side has no live integration in any country — nothing is filed — and `severity` is
+ *    derived from the `SIMULATED_MODES` set the connector screens read, so a real integration
+ *    that changes the modes updates this page in the same move rather than leaving it lying.
  *
  *    The bank side IS live where the user has connected one (PSD2 account information, see
  *    `lib/services/bank/providers/`), and only simulated where they have not. This paragraph
@@ -238,7 +237,7 @@ async function taxChecks(userId: string): Promise<StatusCheck[]> {
           ? `${authority}. Mode "${row.mode}" — Situs checks credentials, fetches receipts and ` +
             `tests receipts at the ${authority}'s test service, where nothing counts; it files ` +
             `nothing.${lastCall}`
-          : `${authority}. Mode "${row.mode}" — filings are simulated and nothing is transmitted.` +
+          : `${authority}. Mode "${row.mode}" — nothing is filed and nothing is transmitted.` +
             lastCall,
     },
   ];

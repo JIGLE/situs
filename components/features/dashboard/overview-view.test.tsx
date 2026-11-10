@@ -60,7 +60,6 @@ function month(overrides: Partial<DashboardMonth> = {}): DashboardMonth {
       reconciled: 9,
       receiptsIssued: 11,
       receiptsToIssue: 1,
-      filed: 10,
       fullyProcessed: 10,
     },
     attention: {
@@ -178,7 +177,6 @@ describe("OverviewView — the loop", () => {
       paid: "/financials?tab=rent-matrix",
       reconciled: "/financials?tab=bank",
       receipts: "/financials?tab=receipts",
-      filed: "/financials?tab=tax",
     });
   });
 

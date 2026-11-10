@@ -46,6 +46,16 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // Phase 2 of the November 2026 audit: the AT webservice is the one fiscal-receipt path, so the
+    // Modelo 44 RentReceipt, its compliance route, the simulated submit/poll and their guard went.
+    pattern:
+      /\/api\/compliance\/rent-receipts|connectors\/mode-guard\.ts|the period has a `RentReceipt` filing|Sandbox and\s+review simulate/,
+    retired: "2026-11-11 (Modelo 44 path deleted)",
+    because:
+      "receipts reach Finanças only through AT's webservice (lib/tax/at/); no code files one in " +
+      "any mode, and a receipt cannot be marked submitted or accepted (CLAUDE.md › Receipt lifecycle)",
+  },
+  {
     // The November 2026 refresh: labels, tabs and states left mono capitals for the body face
     // in sentence case, and the 9px `text-tick` size went with them.
     pattern: /name in mono capitals|mono for labels, one accent|`text-tick` \(9px\)/,

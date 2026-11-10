@@ -144,8 +144,8 @@ function allocation(over: Row = {}): Row {
     rentPeriod: {
       tenant: { name: "Ana Silva" },
       property: { address: "Rua A 1", country: "PT" },
-      rentReceiptFilings: [],
     },
+    receipt: { lifecycle: "draft" },
     ...over,
   };
 }
@@ -265,7 +265,7 @@ describe("overdue notices (payment_overdue, D+1 and D+7)", () => {
 });
 
 describe("recibo de renda deadline (rent_receipt_due, PT only)", () => {
-  it("fires for money allocated four days ago with no filing yet", async () => {
+  it("fires for money allocated four days ago whose receipt is not issued yet", async () => {
     const { result, created } = await run({ allocations: [allocation()] });
 
     expect(result.receiptReminders).toBe(1);
@@ -292,20 +292,19 @@ describe("recibo de renda deadline (rent_receipt_due, PT only)", () => {
     expect(result.receiptReminders).toBe(0);
   });
 
-  it("stops once a recibo exists for that reference month", async () => {
-    const { result } = await run({
-      allocations: [
-        allocation({
-          rentPeriod: {
-            tenant: { name: "Ana Silva" },
-            property: { address: "Rua A 1", country: "PT" },
-            rentReceiptFilings: [{ id: "rr-1" }],
-          },
-        }),
-      ],
-    });
+  it.each(["emitted", "submitted", "accepted"])(
+    "stops once the payment's receipt is %s",
+    async (lifecycle) => {
+      const { result } = await run({ allocations: [allocation({ receipt: { lifecycle } })] });
 
-    expect(result.receiptReminders).toBe(0);
+      expect(result.receiptReminders).toBe(0);
+    },
+  );
+
+  it.each(["draft", "review"])("keeps chasing a receipt still in %s", async (lifecycle) => {
+    const { result } = await run({ allocations: [allocation({ receipt: { lifecycle } })] });
+
+    expect(result.receiptReminders).toBe(1);
   });
 });
 

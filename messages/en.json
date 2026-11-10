@@ -575,7 +575,6 @@
     "loopPaid": "Paid",
     "loopReconciled": "Reconciled",
     "loopReceipts": "Receipts",
-    "loopFiled": "Finanças",
     "loopReceiptsDetail": "{issued} issued · {toIssue} to issue",
     "loopTotal": "{done} of {total} fully processed",
     "loopEmpty": "No rent is due this month.",
@@ -802,8 +801,7 @@
       "serverError": "The server had a problem. Try again in a moment.",
       "securityTokenExpired": "Your security token expired. Refresh the page and try again.",
       "receiptTransitionNotAllowed": "This receipt is no longer at a stage that allows this. Refresh the list and try again.",
-      "receiptFilingMissing": "Link this receipt to its Finanças filing first.",
-      "receiptSubmissionRefused": "Finanças refused this receipt."
+      "receiptFilingUnavailable": "Situs can't file receipts with Finanças yet. Issue this one on the Portal das Finanças."
     }
   },
   "payments": {
@@ -1832,7 +1830,6 @@
       "rentPeriods": "Rent periods",
       "bankMovements": "Bank movements",
       "receipts": "Receipts",
-      "taxLog": "Tax log",
       "unavailable": "Couldn't load this tenant's history."
     },
     "leaseExpiresInDays": "{days}d left",
