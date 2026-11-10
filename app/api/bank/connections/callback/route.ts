@@ -4,6 +4,7 @@ import { handleOptions, requireOwnerAccess } from "@/lib/services/auth/auth-midd
 import { withErrorHandler } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { completeConsent, ConsentFlowError } from "@/lib/services/bank/consent";
+import { ConsentExpiredError } from "@/lib/services/bank/providers/types";
 import { logger } from "@/lib/utils/logger";
 
 export const runtime = "nodejs";
@@ -66,7 +67,12 @@ async function handleGet(request: NextRequest): Promise<Response> {
       error: error instanceof Error ? error.message : String(error),
       status: error instanceof ConsentFlowError ? error.status : 500,
     });
-    return seeOther("/settings?tab=integrations&bank=failed");
+    // One exception: what the BANK answered. It reaches the provider only after the reference
+    // was found, proved the caller's and spent, so it says nothing about a reference to anyone
+    // who guessed one, and it is the one thing the owner can act on: try the business login, or
+    // link the account in Enable Banking's Control Panel.
+    const reason = error instanceof ConsentExpiredError ? error.reason : undefined;
+    return seeOther(`/settings?tab=integrations&bank=failed${reason ? `&reason=${reason}` : ""}`);
   }
 }
 

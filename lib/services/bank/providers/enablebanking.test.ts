@@ -524,3 +524,198 @@ describe("revoking a consent", () => {
     );
   });
 });
+
+/**
+ * What a Portuguese bank needs that a first cut did not give it: the company login, a consent no
+ * longer than the bank grants, a lower bound on history, and an answer when it grants nothing.
+ */
+describe("connecting a bank with two logins", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function replies(...bodies: unknown[]) {
+    const spy = vi.spyOn(globalThis, "fetch");
+    for (const body of bodies) {
+      spy.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify(body),
+        json: async () => body,
+      } as Response);
+    }
+    return spy;
+  }
+
+  const bcp = {
+    name: "Millennium BCP",
+    country: "PT",
+    psu_types: ["personal", "business"],
+    maximum_consent_validity: 30 * 24 * 60 * 60,
+  };
+
+  it("offers the personal and the business login as two entries", async () => {
+    configure();
+    replies({ aspsps: [bcp, { name: "Banco BPI", country: "PT" }] });
+
+    const { institutions } = await enableBankingProvider.listInstitutions("PT");
+
+    expect(institutions.map((i) => [i.name, i.psuType])).toEqual([
+      ["Millennium BCP", "personal"],
+      ["Millennium BCP", "business"],
+      ["Banco BPI", undefined],
+    ]);
+    // The personal id is the id a connection made before stored, so its renewal still decodes.
+    expect(institutions[0].id).toBe("PT:Millennium BCP");
+    expect(decodeInstitutionId(institutions[1].id)).toEqual({
+      country: "PT",
+      name: "Millennium BCP",
+      psuType: "business",
+    });
+  });
+
+  it("asks for the business login, and no longer a consent than the bank grants", async () => {
+    configure();
+    const fetchSpy = replies({ aspsps: [bcp] }, { url: "https://bank.example/auth" });
+
+    const before = Date.now();
+    const link = await enableBankingProvider.createConsentLink({
+      institutionId: encodeInstitutionId("PT", "Millennium BCP", "business"),
+      redirectUrl: "https://situs.example/api/bank/connections/callback",
+      reference: "ref-1",
+      accessValidForDays: 90,
+    });
+
+    const [, init] = fetchSpy.mock.calls[1];
+    const sent = JSON.parse(String((init as RequestInit).body)) as {
+      psu_type: string;
+      aspsp: { name: string; country: string };
+      access: { valid_until: string };
+    };
+    expect(sent.psu_type).toBe("business");
+    expect(sent.aspsp).toEqual({ name: "Millennium BCP", country: "PT" });
+    const validFor = new Date(sent.access.valid_until).getTime() - before;
+    expect(validFor).toBeLessThanOrEqual(30 * 24 * 60 * 60 * 1000);
+    expect(validFor).toBeGreaterThan(29 * 24 * 60 * 60 * 1000);
+    expect(link.expiresAt?.toISOString()).toBe(sent.access.valid_until);
+  });
+
+  it("uses the only login a business-only bank has", async () => {
+    configure();
+    const fetchSpy = replies(
+      { aspsps: [{ name: "Empresa Bank", country: "PT", psu_types: ["business"] }] },
+      { url: "https://bank.example/auth" },
+    );
+
+    await enableBankingProvider.createConsentLink({
+      institutionId: encodeInstitutionId("PT", "Empresa Bank"),
+      redirectUrl: "https://situs.example/cb",
+      reference: "ref-1",
+    });
+
+    const sent = JSON.parse(String((fetchSpy.mock.calls[1][1] as RequestInit).body)) as {
+      psu_type: string;
+    };
+    expect(sent.psu_type).toBe("business");
+  });
+
+  it("names the bank's refusal, and an empty grant, so the owner can act on them", async () => {
+    configure();
+    await expect(
+      enableBankingProvider.completeConsent({
+        providerRef: null,
+        callbackParams: { error: "access_denied", error_description: "Cancelled by user" },
+      }),
+    ).rejects.toMatchObject({
+      reason: "bank_refused",
+      message: expect.stringContaining("access_denied: Cancelled by user"),
+    });
+
+    replies({ session_id: "sess-1", accounts: [] });
+    await expect(
+      enableBankingProvider.completeConsent({ providerRef: null, callbackParams: { code: "c" } }),
+    ).rejects.toMatchObject({ reason: "no_accounts" });
+  });
+});
+
+describe("fetching transactions", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function pages(...bodies: unknown[]) {
+    const spy = vi.spyOn(globalThis, "fetch");
+    for (const body of bodies) {
+      spy.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify(body),
+        json: async () => body,
+      } as Response);
+    }
+    return spy;
+  }
+
+  const booked = {
+    booking_date: "2026-11-02",
+    transaction_amount: { amount: "750.00", currency: "EUR" },
+    credit_debit_indicator: "CRDT",
+    status: "BOOK",
+  };
+
+  it("reads a first sync from 90 days back with the longest strategy", async () => {
+    configure();
+    const spy = pages({ transactions: [booked] });
+
+    const rows = await enableBankingProvider.fetchTransactions("acc-1");
+
+    const url = new URL(String(spy.mock.calls[0][0]));
+    expect(url.searchParams.get("strategy")).toBe("longest");
+    const from = new Date(`${url.searchParams.get("date_from")}T00:00:00Z`).getTime();
+    expect(Date.now() - from).toBeGreaterThan(89 * 24 * 60 * 60 * 1000);
+    expect(Date.now() - from).toBeLessThan(92 * 24 * 60 * 60 * 1000);
+    expect(rows).toHaveLength(1);
+  });
+
+  it("keeps paging through an empty page, and skips a pending movement", async () => {
+    configure();
+    const spy = pages(
+      { transactions: [], continuation_key: "k1" },
+      { transactions: [{ ...booked, status: "PDNG" }, booked], continuation_key: "k2" },
+      { transactions: [booked] },
+    );
+
+    const rows = await enableBankingProvider.fetchTransactions("acc-1", new Date("2026-11-01"));
+
+    expect(spy).toHaveBeenCalledTimes(3);
+    expect(new URL(String(spy.mock.calls[2][0])).searchParams.get("continuation_key")).toBe("k2");
+    expect(new URL(String(spy.mock.calls[2][0])).searchParams.get("date_from")).toBe("2026-11-01");
+    expect(rows).toHaveLength(2);
+  });
+
+  it("stops when the bank hands back a key it already gave", async () => {
+    configure();
+    const spy = pages(
+      { transactions: [booked], continuation_key: "same" },
+      { transactions: [], continuation_key: "same" },
+    );
+
+    await enableBankingProvider.fetchTransactions("acc-1", new Date("2026-11-01"));
+
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it("names the bank's error code when a read is refused", async () => {
+    configure();
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: false,
+      status: 422,
+      headers: new Headers({ "content-type": "application/json" }),
+      text: async () => JSON.stringify({ code: "WRONG_TRANSACTIONS_PERIOD", message: "x" }),
+    } as Response);
+
+    await expect(enableBankingProvider.fetchTransactions("acc-1")).rejects.toThrow(
+      "HTTP 422, WRONG_TRANSACTIONS_PERIOD",
+    );
+  });
+});

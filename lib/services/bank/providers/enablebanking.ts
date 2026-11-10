@@ -75,6 +75,24 @@ const ACCESS_VALID_DAYS = 90;
  */
 const DAILY_READ_BUDGET = 4;
 
+/** How far back the first sync of an account reads. PSD2 lets a bank limit history to 90 days
+ * once the authorisation is more than an hour old, so this is what every later sync can rely on. */
+const FIRST_SYNC_DAYS = 90;
+
+/** Pages of transactions read in one sync before giving up on a bank that never stops paging. */
+const MAX_PAGES = 50;
+
+/** One ASPSP as `GET /aspsps` lists it. */
+interface EbAspsp {
+  name?: string;
+  country?: string;
+  logo?: string;
+  /** Seconds. `valid_until` may not exceed now plus this. */
+  maximum_consent_validity?: number;
+  /** The logins the bank offers: "personal", "business", or both. */
+  psu_types?: string[];
+}
+
 interface EbAmount {
   amount?: string;
   currency?: string;
@@ -91,6 +109,8 @@ interface EbAccountRef {
 /** One transaction as Enable Banking returns it. Every field is optional — ASPSPs differ wildly. */
 export interface EnableBankingTransaction {
   entry_reference?: string;
+  /** `BOOK` once settled; `PDNG` while pending. Absent at some ASPSPs, which send only booked. */
+  status?: string;
   booking_date?: string;
   value_date?: string;
   transaction_amount?: EbAmount;
@@ -279,8 +299,13 @@ async function apiCall<T>(path: string, init?: RequestInit): Promise<T> {
     );
   }
   if (!response.ok) {
-    // Deliberately no body echo: an auth failure can quote the request back.
-    throw new Error(`Enable Banking request failed (HTTP ${response.status})`);
+    // Deliberately no body echo: an auth failure can quote the request back. The error CODE is
+    // kept, though: a bare "HTTP 422" left an operator whose bank refused the request with
+    // nothing to go on, while `WRONG_TRANSACTIONS_PERIOD` or `ASPSP_ERROR` names the cause.
+    const text = await response.text().catch(() => "");
+    throw new Error(
+      `Enable Banking request failed (HTTP ${response.status}${errorCodeOf(response, text)})`,
+    );
   }
 
   return (await response.json()) as T;
@@ -291,7 +316,7 @@ async function apiCall<T>(path: string, init?: RequestInit): Promise<T> {
  * request back. Only a short upper-case identifier is taken.
  */
 function errorCodeOf(response: Response, text: string): string {
-  if (!text || !response.headers.get("content-type")?.includes("json")) return "";
+  if (!text || !response.headers?.get("content-type")?.includes("json")) return "";
   try {
     const body = JSON.parse(text) as { code?: unknown; error?: unknown };
     const code = typeof body.code === "string" ? body.code : body.error;
@@ -307,16 +332,59 @@ function errorCodeOf(response: Response, text: string): string {
  * contain spaces and punctuation but not, in practice, a colon — and `ConsentRequest` carries no
  * country field to pass it in separately.
  */
-export function encodeInstitutionId(country: string, name: string): string {
-  return `${country.toUpperCase()}:${name}`;
+export type PsuType = "personal" | "business";
+
+/** The login a bank offers: private customers, companies, or both. */
+const PSU_TYPES: readonly PsuType[] = ["personal", "business"];
+
+function psuTypesOf(aspsp: { psu_types?: unknown }): PsuType[] {
+  const listed = Array.isArray(aspsp.psu_types)
+    ? PSU_TYPES.filter((type) => (aspsp.psu_types as unknown[]).includes(type))
+    : [];
+  // An ASPSP that does not say is treated as the personal login, which is what every consent
+  // asked for before the field was read.
+  return listed.length > 0 ? listed : ["personal"];
 }
 
-export function decodeInstitutionId(id: string): { country: string; name: string } {
-  const separator = id.indexOf(":");
+/**
+ * A business login is packed in front as `business@`: a country code is two letters, so the
+ * prefix cannot be mistaken for one, and an id written before business logins existed (stored on
+ * a connection for its renewal) still decodes, with no PSU type, to the bank's own default.
+ */
+export function encodeInstitutionId(country: string, name: string, psuType?: PsuType): string {
+  const prefix = psuType === "business" ? "business@" : "";
+  return `${prefix}${country.toUpperCase()}:${name}`;
+}
+
+export function decodeInstitutionId(id: string): {
+  country: string;
+  name: string;
+  psuType?: PsuType;
+} {
+  let rest = id;
+  let psuType: PsuType | undefined;
+  if (rest.startsWith("business@")) {
+    psuType = "business";
+    rest = rest.slice("business@".length);
+  }
+  const separator = rest.indexOf(":");
   if (separator < 1) {
     throw new Error("Institution id is not in the expected <COUNTRY>:<name> form");
   }
-  return { country: id.slice(0, separator).toUpperCase(), name: id.slice(separator + 1) };
+  return {
+    country: rest.slice(0, separator).toUpperCase(),
+    name: rest.slice(separator + 1),
+    ...(psuType ? { psuType } : {}),
+  };
+}
+
+/**
+ * Whether a transaction has settled. Enable Banking reports `status` (`BOOK` for booked, `PDNG`
+ * for pending, and others); a pending movement is skipped because it comes back later as a booked
+ * one, often with another date or reference, and would then be imported twice.
+ */
+function isBooked(tx: EnableBankingTransaction): boolean {
+  return !tx.status || tx.status.toUpperCase() === "BOOK";
 }
 
 /**
@@ -334,6 +402,8 @@ export function decodeInstitutionId(id: string): { country: string; name: string
  * with what it records.
  */
 export function mapTransaction(tx: EnableBankingTransaction): BankRow | null {
+  if (!isBooked(tx)) return null;
+
   const rawAmount = tx.transaction_amount?.amount;
   const parsed = rawAmount === undefined ? NaN : Number(rawAmount);
   const bookingDate = tx.booking_date ?? tx.value_date;
@@ -429,14 +499,7 @@ export const enableBankingProvider: BankDataProvider = {
 
   async listInstitutions(country: string): Promise<InstitutionListing> {
     const wanted = country.toUpperCase();
-    const body = await apiCall<{
-      aspsps?: {
-        name?: string;
-        country?: string;
-        logo?: string;
-        maximum_consent_validity?: number;
-      }[];
-    }>("/aspsps");
+    const body = await apiCall<{ aspsps?: EbAspsp[] }>("/aspsps");
 
     // Everything the application can reach, before the country filter. A sandbox application
     // returns the Mock ASPSPs its operator configured in the Enable Banking Control Panel — the
@@ -447,21 +510,57 @@ export const enableBankingProvider: BankDataProvider = {
 
     return {
       totalAvailable: all.length,
+      // One entry per login the bank offers. Millennium BCP, like most Portuguese banks, has a
+      // separate login for companies (Millennium Empresas); a company account authorised through
+      // the personal login is refused at the bank, or grants no accounts. The picker used to
+      // offer only the personal one.
       institutions: all
         .filter((a) => a.name && (a.country ?? "").toUpperCase() === wanted)
-        .map((a) => ({
-          id: encodeInstitutionId(wanted, a.name as string),
-          name: a.name as string,
-          country: wanted,
-          logoUrl: a.logo,
-        })),
+        .flatMap((a) => {
+          const types = psuTypesOf(a);
+          return types.map((psuType) => ({
+            id: encodeInstitutionId(wanted, a.name as string, psuType),
+            name: a.name as string,
+            country: wanted,
+            logoUrl: a.logo,
+            // Only said when the bank has both, so a bank with one login reads as before.
+            ...(types.length > 1 ? { psuType } : {}),
+          }));
+        }),
     };
   },
 
   async createConsentLink(request: ConsentRequest): Promise<ConsentLink> {
-    const { country, name } = decodeInstitutionId(request.institutionId);
+    const { country, name, psuType: chosen } = decodeInstitutionId(request.institutionId);
+
+    // The bank's own terms, read again rather than trusted from the picker: the longest consent
+    // it grants, and the logins it has. Enable Banking documents that `valid_until` "cannot
+    // exceed now + maximum_consent_validity"; asking for 90 days of a bank that grants less was
+    // refused before the owner ever reached their bank's page.
+    const listed = await apiCall<{ aspsps?: EbAspsp[] }>(
+      `/aspsps?country=${encodeURIComponent(country)}`,
+    ).catch(() => ({ aspsps: [] as EbAspsp[] }));
+    const aspsp = (listed.aspsps ?? []).find(
+      (a) => a.name === name && (a.country ?? country).toUpperCase() === country,
+    );
+
     const days = request.accessValidForDays ?? ACCESS_VALID_DAYS;
-    const validUntil = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+    let validForMs = days * 24 * 60 * 60 * 1000;
+    const maxSeconds = Number(aspsp?.maximum_consent_validity);
+    if (Number.isFinite(maxSeconds) && maxSeconds > 0) {
+      // A minute short of the limit, so the clock between here and Enable Banking cannot tip it
+      // over.
+      validForMs = Math.min(validForMs, Math.max(maxSeconds - 60, 60) * 1000);
+    }
+    const validUntil = new Date(Date.now() + validForMs);
+
+    const offered = aspsp ? psuTypesOf(aspsp) : PSU_TYPES;
+    const psuType: PsuType =
+      chosen && offered.includes(chosen)
+        ? chosen
+        : offered.includes("personal")
+          ? "personal"
+          : offered[0];
 
     const body = await apiCall<{ url?: string }>("/auth", {
       method: "POST",
@@ -474,7 +573,7 @@ export const enableBankingProvider: BankDataProvider = {
         // Must be one of the URLs registered for the application in their Control Panel; a
         // mismatch is rejected there rather than silently redirecting somewhere else.
         redirect_url: request.redirectUrl,
-        psu_type: "personal",
+        psu_type: psuType,
       }),
     });
 
@@ -490,7 +589,17 @@ export const enableBankingProvider: BankDataProvider = {
     if (!code) {
       // The user closed the bank's page, or the bank refused. Either way there is no session to
       // create, and the remedy is to start again — which is what ConsentExpiredError means here.
-      throw new ConsentExpiredError("The bank did not authorise the connection. Try again.");
+      // Enable Banking names what happened in `error` and `error_description` (for instance
+      // `access_denied`, "Cancelled by user"); both go into the log, cut short, since they are
+      // the only account of a refusal that happened on the bank's page.
+      const said = [callbackParams.error, callbackParams.error_description]
+        .filter((v): v is string => typeof v === "string" && v.length > 0)
+        .map((v) => v.replace(/[\p{Cc}]/gu, " ").slice(0, 200))
+        .join(": ");
+      throw new ConsentExpiredError(
+        `The bank did not authorise the connection${said ? ` (${said})` : ""}. Try again.`,
+        "bank_refused",
+      );
     }
 
     const session = await apiCall<{ session_id?: string; accounts?: EbSessionAccount[] }>(
@@ -500,7 +609,14 @@ export const enableBankingProvider: BankDataProvider = {
 
     const accounts = session.accounts ?? [];
     if (accounts.length === 0) {
-      throw new ConsentExpiredError("The bank granted no accounts. Try connecting again.");
+      // In restricted production — the free mode a self-hosted instance runs in — Enable Banking
+      // strips every account not linked to the application in its Control Panel and answers with
+      // an empty list. That is the usual cause, and the owner is told so.
+      throw new ConsentExpiredError(
+        "The bank granted no accounts. An Enable Banking application in restricted mode only " +
+          "returns accounts linked to it in the Control Panel.",
+        "no_accounts",
+      );
     }
 
     const granted = await Promise.all(
@@ -569,28 +685,39 @@ export const enableBankingProvider: BankDataProvider = {
 
   async fetchTransactions(accountRef: string, since?: Date): Promise<BankRow[]> {
     const rows: BankRow[] = [];
+    const seenKeys = new Set<string>();
     let continuationKey: string | undefined;
 
-    // Paging is not optional. Enable Banking returns a `continuation_key` whenever more remains,
-    // and stopping at the first page would silently truncate history — which on a first sync
-    // reads as "no movements" rather than as an error.
-    do {
+    // Always a lower bound, and always the `longest` strategy. With the default strategy a range
+    // the bank cannot serve is refused outright (`WRONG_TRANSACTIONS_PERIOD`), and with no
+    // `date_from` at all what comes back is up to the bank. `longest` treats `date_from` as a
+    // floor and returns whatever exists from there, so a first sync gets the last
+    // `FIRST_SYNC_DAYS` and a later one cannot fail for asking a day too far back.
+    const from = since ?? new Date(Date.now() - FIRST_SYNC_DAYS * 24 * 60 * 60 * 1000);
+
+    // Paging is not optional. Enable Banking returns a `continuation_key` whenever more remains —
+    // sometimes with an empty page, while the bank is still producing it — and stopping at the
+    // first page would silently truncate history, which on a first sync reads as "no movements".
+    // A key seen twice, or a page count no account reaches, stops the loop instead of spinning.
+    for (let page = 0; page < MAX_PAGES; page += 1) {
       const query = new URLSearchParams();
-      if (since) query.set("date_from", since.toISOString().slice(0, 10));
+      query.set("date_from", from.toISOString().slice(0, 10));
+      query.set("strategy", "longest");
       if (continuationKey) query.set("continuation_key", continuationKey);
-      const suffix = query.toString() ? `?${query}` : "";
 
       const body = await apiCall<{
         transactions?: EnableBankingTransaction[];
         continuation_key?: string;
-      }>(`/accounts/${encodeURIComponent(accountRef)}/transactions${suffix}`);
+      }>(`/accounts/${encodeURIComponent(accountRef)}/transactions?${query}`);
 
       for (const tx of body.transactions ?? []) {
         const row = mapTransaction(tx);
         if (row) rows.push(row);
       }
-      continuationKey = body.continuation_key;
-    } while (continuationKey);
+      continuationKey = body.continuation_key || undefined;
+      if (!continuationKey || seenKeys.has(continuationKey)) break;
+      seenKeys.add(continuationKey);
+    }
 
     return rows;
   },

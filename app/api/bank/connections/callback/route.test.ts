@@ -21,6 +21,7 @@ vi.mock("@/lib/utils/logger", () => ({
 }));
 
 import { ConsentFlowError } from "@/lib/services/bank/consent";
+import { ConsentExpiredError } from "@/lib/services/bank/providers/types";
 import { GET } from "./route";
 
 const back = (query = "?state=ref-1") =>
@@ -65,6 +66,18 @@ describe("GET /api/bank/connections/callback", () => {
 
     // The same for an unknown, a replayed and a foreign reference, so it cannot be an oracle.
     expect(res.headers.get("Location")).toBe("/settings?tab=integrations&bank=failed");
+  });
+
+  it("says what the bank answered, once the reference was the owner's", async () => {
+    completeMock.mockRejectedValue(new ConsentExpiredError("no accounts", "no_accounts"));
+    expect((await back()).headers.get("Location")).toBe(
+      "/settings?tab=integrations&bank=failed&reason=no_accounts",
+    );
+
+    completeMock.mockRejectedValue(new ConsentExpiredError("refused", "bank_refused"));
+    expect((await back()).headers.get("Location")).toBe(
+      "/settings?tab=integrations&bank=failed&reason=bank_refused",
+    );
   });
 
   it("hands on everything the redirect carried, scoped to the owner", async () => {
