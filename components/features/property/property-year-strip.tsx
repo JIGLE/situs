@@ -106,6 +106,10 @@ export function PropertyYearStrip({
   }, [year, defaultYear, propertyId, defaultYearStrip]);
 
   const isCurrentYear = year === defaultYear;
+  // Only the states this year actually shows. All six, under a year with no rent months, was a
+  // key to a chart that had nothing in it.
+  const present = new Set(Object.values(strip.months).map((cell) => cell?.status));
+  const legend = LEGEND_ORDER.filter((status) => present.has(status));
 
   return (
     <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
@@ -191,17 +195,19 @@ export function PropertyYearStrip({
         })}
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 border-t border-[var(--color-border)] pt-2">
-        {LEGEND_ORDER.map((status) => (
-          <span
-            key={status}
-            className="flex items-center gap-1.5 text-xs text-[var(--color-muted-foreground)]"
-          >
-            <span className={`inline-block h-2.5 w-2.5 border ${STATUS_SWATCH[status]}`} />
-            {statusLabel(status)}
-          </span>
-        ))}
-      </div>
+      {legend.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 border-t border-[var(--color-border)] pt-2">
+          {legend.map((status) => (
+            <span
+              key={status}
+              className="flex items-center gap-1.5 text-xs text-[var(--color-muted-foreground)]"
+            >
+              <span className={`inline-block h-2.5 w-2.5 border ${STATUS_SWATCH[status]}`} />
+              {statusLabel(status)}
+            </span>
+          ))}
+        </div>
+      )}
 
       {isCurrentYear && currentPeriod && (
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[var(--color-border)] pt-3 text-xs text-[var(--color-muted-foreground)]">

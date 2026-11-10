@@ -220,7 +220,8 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
       >
         {menuItems.map((group, groupIndex) => (
           <div key={group.group} role="group" className={cn("space-y-1", groupIndex > 0 && "mt-2")}>
-            {!collapsed && (
+            {/* The first group is the app itself and needs no title; only later groups are named. */}
+            {!collapsed && groupIndex > 0 && (
               <div className="px-3 pb-0.5 pt-2">
                 <h3 className="mono-label">
                   {t(group.groupLabelKey.replace("navigation.", "") as Parameters<typeof t>[0])}

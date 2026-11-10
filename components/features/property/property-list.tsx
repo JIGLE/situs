@@ -233,9 +233,7 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
           <LoadingState variant="cards" count={6} />
         ) : (
           <div className="space-y-6">
-            {showPageHeader && (
-              <PageHeader title={tNav("properties")} description={t("portfolio.subtitle")} />
-            )}
+            {showPageHeader && <PageHeader title={tNav("properties")} />}
             {/* Property create/edit form — shared component, own instance */}
             <PropertyFormDialog ref={formDialogRef} />
 

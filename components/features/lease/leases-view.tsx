@@ -622,7 +622,7 @@ export function LeasesView(): React.ReactElement {
   return (
     <>
       <div className="space-y-6">
-        <PageHeader title={tNav("contracts")} description={t("pageDescription")}>
+        <PageHeader title={tNav("contracts")}>
           <ExportButton
             data={sortedLeases}
             filename="leases"

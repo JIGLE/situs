@@ -84,7 +84,7 @@ export function PeopleView(): React.ReactElement {
       {/* Page header. Tenant/owner totals live on the tab count badges below,
           so no separate stat row is needed. Export only applies to the
           tenant/owner directories. */}
-      <PageHeader title={t("title")} description={t("subtitle")}>
+      <PageHeader title={t("title")}>
         {(activeTab === "tenants" || activeTab === "owners") && (
           <ExportButton
             data={exportConfig.data}

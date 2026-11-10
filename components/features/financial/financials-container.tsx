@@ -122,7 +122,9 @@ export function FinancialsContainer() {
     ? t("descTenantScope", { name: selectedTenant?.name ?? t("theSelectedTenant") })
     : propertyId
       ? t("descPropertyScope", { name: selectedProperty?.name ?? t("theSelectedProperty") })
-      : t("desc");
+      : // Unscoped, the heading and the tabs already say what the page is; the line under the
+        // title is kept for the one case that adds something, a tenant or property filter.
+        undefined;
 
   /** Tab set as data, so the bar and its mobile select can never drift apart. */
   const paymentTabs: {
@@ -169,8 +171,8 @@ export function FinancialsContainer() {
       </PageHeader>
 
       {/* Three across at every width. Two columns on a phone left the third tile alone on a
-          second row and pushed the tabs a full screen down; below sm the hints go, since the
-          label already says what the number is. */}
+          second row and pushed the tabs a full screen down; the hint under each figure
+          is gone, since the label already says what the number is. */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <button
           type="button"
@@ -192,9 +194,6 @@ export function FinancialsContainer() {
           >
             {formatCurrency(metrics.overdueAmount)}
           </p>
-          <p className="mt-2 text-meta leading-snug max-sm:hidden text-[var(--color-muted-foreground)]">
-            {t("overdueRentHint")}
-          </p>
         </button>
 
         <button
@@ -210,9 +209,6 @@ export function FinancialsContainer() {
           <p className="mt-2 text-base font-light tabular-nums text-[var(--color-foreground)] sm:text-2xl">
             {metrics.pendingReceipts}
           </p>
-          <p className="mt-2 text-meta leading-snug max-sm:hidden text-[var(--color-muted-foreground)]">
-            {t("pendingReceiptsHint")}
-          </p>
         </button>
 
         <button
@@ -223,9 +219,6 @@ export function FinancialsContainer() {
           <p className="mono-label">{t("collectedMonth")}</p>
           <p className="mt-2 text-base font-light tabular-nums text-[var(--semantic-success-readable)] sm:text-2xl">
             {formatCurrency(metrics.monthlyCollected)}
-          </p>
-          <p className="mt-2 text-meta leading-snug max-sm:hidden text-[var(--color-muted-foreground)]">
-            {t("collectedMonthHint")}
           </p>
         </button>
       </div>
