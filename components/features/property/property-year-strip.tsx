@@ -156,7 +156,9 @@ export function PropertyYearStrip({
           if (!onSelectMonth) {
             return (
               <div key={month} className={outline}>
-                <span className="mono-label block text-tick">{label}</span>
+                <span className="block text-xs capitalize text-[var(--color-muted-foreground)]">
+                  {label}
+                </span>
                 <span className={swatch} title={summary} />
               </div>
             );
@@ -180,7 +182,9 @@ export function PropertyYearStrip({
               aria-label={`${formatMonthYear(year, month, locale)} — ${summary}`}
               className={`${outline} py-1 transition-colors hover:bg-[var(--color-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] max-md:min-h-11`}
             >
-              <span className="mono-label block text-tick">{label}</span>
+              <span className="block text-xs capitalize text-[var(--color-muted-foreground)]">
+                {label}
+              </span>
               <span className={swatch} />
             </button>
           );
@@ -191,7 +195,7 @@ export function PropertyYearStrip({
         {LEGEND_ORDER.map((status) => (
           <span
             key={status}
-            className="mono-label flex items-center gap-1.5 text-tick text-[var(--color-muted-foreground)]"
+            className="flex items-center gap-1.5 text-xs text-[var(--color-muted-foreground)]"
           >
             <span className={`inline-block h-2.5 w-2.5 border ${STATUS_SWATCH[status]}`} />
             {statusLabel(status)}

@@ -34,21 +34,21 @@
   /* Situs primitives */
   --color-ink: #221d16;
   --color-bone: #fbfbfb;
-  --color-canvas: #f6f0e4;
+  --color-canvas: #f7f6f3;
 
   /* Base colors (shadcn interface) */
-  --color-background: #f6f0e4;
+  --color-background: #f7f6f3;
   --color-foreground: #221d16;
-  --color-card: rgba(0, 0, 0, 0.025);
+  --color-card: #ffffff;
   --color-card-foreground: #221d16;
-  --color-card-solid: #f1e8d8;
-  --color-popover: #f1e8d8;
+  --color-card-solid: #ffffff;
+  --color-popover: #ffffff;
   --color-popover-foreground: #221d16;
   --color-primary: #221d16;
   --color-primary-foreground: #fbfbfb;
   --color-secondary: rgba(0, 102, 0, 0.08);
   --color-secondary-foreground: #006600;
-  --color-muted: #f1e8d8;
+  --color-muted: #f2f1f1;
   /* Was #756e63, which measured 4.15–4.44:1 against the light surfaces (#f0eadf, #f6f0e4,
      #f1e8d8) — under the 4.5:1 WCAG AA floor on all three. axe reported it on every page as
      30–49 `color-contrast` nodes: the sidebar labels, `.mono-label`, and every muted caption.
@@ -59,9 +59,9 @@
   --color-accent-foreground: #221d16;
   --color-destructive: #b91c1c;
   --color-destructive-foreground: #fbfbfb;
-  --color-border: #ddd3c3;
+  --color-border: #e4e0d8;
   --color-border-hover: rgba(0, 0, 0, 0.24);
-  --color-input: #ddd3c3;
+  --color-input: #e4e0d8;
   --color-ring: #006600;
   --color-focus: #006600;
 
@@ -71,17 +71,17 @@
   --color-country-soft: rgba(0, 102, 0, 0.08);
 
   /* Surface layers — flat, no translucency games */
-  --color-surface: rgba(0, 0, 0, 0.025);
-  --color-surface-solid: #f1e8d8;
-  --color-surface-raised: #f1e8d8;
-  --color-surface-overlay: #f6f0e4;
-  --color-surface-elevated: #f1e8d8;
+  --color-surface: #ffffff;
+  --color-surface-solid: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-overlay: #ffffff;
+  --color-surface-elevated: #ffffff;
 
   /* Numbered elevation layers — S0 deepest, S3 highest */
-  --color-surface-0: #efe6d3;
+  --color-surface-0: #f1efea;
   --color-surface-1: rgba(0, 0, 0, 0.02);
   --color-surface-2: rgba(0, 0, 0, 0.035);
-  --color-surface-3: #f1e8d8;
+  --color-surface-3: #ffffff;
   --color-surface-hover: rgba(0, 0, 0, 0.055);
   --color-surface-pressed: rgba(0, 0, 0, 0.08);
   --color-hover: rgba(0, 0, 0, 0.055);
@@ -112,9 +112,9 @@
   --color-overlay: rgba(0, 0, 0, 0.45);
 
   /* Sidebar / nav rail — flat surface, 1px border */
-  --color-sidebar-bg: rgba(0, 0, 0, 0.025);
+  --color-sidebar-bg: #ffffff;
   --color-sidebar-foreground: #221d16;
-  --color-sidebar-border: #ddd3c3;
+  --color-sidebar-border: #e4e0d8;
   /* Same 4.5:1 correction as --color-muted-foreground above; this token names the nav item
      labels, which were the bulk of the reported nodes. */
   --color-sidebar-text: #6a6357;
@@ -123,7 +123,7 @@
   --color-sidebar-active: rgba(0, 102, 0, 0.08);
 
   /* Inner border system — collapses to the single 1px border language */
-  --color-inner-border: #ddd3c3;
+  --color-inner-border: #e4e0d8;
   --color-inner-border-hover: rgba(0, 0, 0, 0.24);
   --color-inner-border-active: #006600;
 
@@ -195,7 +195,7 @@
      Raw #ffff00 is invisible on this cream canvas; readableHighlight() darkens it. */
   --logo-accent-readable: #666600;
   --logo-neutral: #ffffff;
-  --logo-canvas: #f1e8d8;
+  --logo-canvas: #ffffff;
   --logo-keyline: rgba(0, 0, 0, 0.48);
 
   --semantic-success: #166534;
@@ -203,7 +203,7 @@
   --semantic-success-readable: #166534;
   --semantic-warning: #b45309;
   --semantic-warning-soft: rgba(180, 83, 9, 0.08);
-  --semantic-warning-readable: #9e4908;
+  --semantic-warning-readable: #b45309;
   --semantic-danger: #b91c1c;
   --semantic-danger-soft: rgba(185, 28, 28, 0.08);
   --semantic-danger-readable: #b91c1c;
@@ -400,40 +400,26 @@ body {
   box-shadow: var(--shadow-modal);
 }
 
-/* Mono micro-label — the system voice (labels, metadata, IDs, status codes) */
 /*
- * The uppercase mono micro-label is a deliberate Situs brand device and stays at its designed
- * size on desktop. On a phone it fell below the 12px legibility floor the mobile audit measures
- * — 232 nodes at 10px and, for `-xs`, the sign-in form's own field labels at 9px, which is the
- * first screen an installed user reads. Floor both below `md` rather than restyling per screen:
- * these two classes account for nearly all 746 sub-12px nodes in the report.
+ * The small label above a figure or a section. It was uppercase mono with wide tracking, at 10px
+ * on desktop; with one on every tile, tab, status and table head, a screen read as a wall of
+ * capitals and nothing stood out. It is now the body face in sentence case at 12px everywhere,
+ * so labels recede and the figures they name carry the screen. The class names are kept: the
+ * `-xs` variant is the same size, since nothing under 12px is legible enough to keep.
  */
-.mono-label {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--color-muted-foreground);
-}
-
-/* Below `md` this matches `.mono-label` exactly — the two sizes are a desktop refinement, and
-   the 12px legibility floor matters more on a phone than the 1px between them. */
+.mono-label,
 .mono-label-xs {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0;
   color: var(--color-muted-foreground);
 }
 
-@media (min-width: 768px) {
-  .mono-label {
-    font-size: 10px;
-  }
-
-  .mono-label-xs {
-    font-size: 9px;
-  }
+/* Labels written for capitals ("o mês, passo a passo") still open with one. */
+.mono-label::first-letter,
+.mono-label-xs::first-letter {
+  text-transform: uppercase;
 }
 
 /*
@@ -441,13 +427,11 @@ body {
  * `text-[Npx]` is refused (tests/design-language-contract.test.ts). `label` is the one that
  * changes with the screen: 12px on a phone, where 10px falls under the legibility floor the
  * mobile audit measures, and the designed 10px from `md` up. Font size only, like the arbitrary
- * values they replace, so each keeps the line height of the element around it.
+ * values they replace, so each keeps the line height of the element around it. (`label` was
+ * 10px from `md` up while labels were mono capitals; in sentence case that is too small to read.)
  */
 @utility text-label {
   font-size: 12px;
-  @media (min-width: 768px) {
-    font-size: 10px;
-  }
 }
 
 @utility text-badge {
@@ -464,10 +448,6 @@ body {
 
 @utility text-reading {
   font-size: 15px;
-}
-
-@utility text-tick {
-  font-size: 9px;
 }
 
 /* Status dots — 8px squares, semantic only */

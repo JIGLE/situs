@@ -166,7 +166,7 @@ export function SystemStatusView() {
 
             return (
               <section key={group} className="space-y-3">
-                <h2 className="text-xs font-semibold uppercase tracking-widest text-[var(--color-muted-foreground)]">
+                <h2 className="text-xs font-semibold text-[var(--color-muted-foreground)]">
                   {t(`group.${group}`)}
                 </h2>
 

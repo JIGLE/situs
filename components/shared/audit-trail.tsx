@@ -162,6 +162,6 @@ function ActionLabel({
   return key ? (
     <span className="text-xs font-medium">{label(key)}</span>
   ) : (
-    <span className="font-mono text-xs uppercase tracking-[0.04em]">{action}</span>
+    <span className="text-xs font-medium">{action}</span>
   );
 }

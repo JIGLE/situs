@@ -46,6 +46,15 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // The November 2026 refresh: labels, tabs and states left mono capitals for the body face
+    // in sentence case, and the 9px `text-tick` size went with them.
+    pattern: /name in mono capitals|mono for labels, one accent|`text-tick` \(9px\)/,
+    retired: "2026-11-10 (calmer interface)",
+    because:
+      "labels, tabs and StatusMark are sentence case in the body face, and the type scale has " +
+      "five named sizes (docs/DESIGN_LANGUAGE.md)",
+  },
+  {
     // AT's manual v1.6 was read in full on 14 October 2026: test credentials are the ones AT
     // creates for the tests, the certificate and key come from asi-cd@at.gov.pt, and the
     // production steps are in §3.1 and §6.4.
@@ -692,6 +701,8 @@ const CLAIM_ALLOWLIST = [
   /Keep MB WAY\/Bizum as documented placeholders/,
   // A dated Decisions Log row that cites the plan-limits module the own-use step removed.
   /Identity model stays single-account/,
+  // A dated Decisions Log row: what StatusMark looked like on the day it was introduced.
+  /A state is a square dot and its name: `StatusMark`/,
 ];
 
 const LINK = /\[[^\]]*\]\(([^)]+)\)/g;

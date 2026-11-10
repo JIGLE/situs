@@ -23,7 +23,7 @@
  * CSP nonce and does nothing that needs more than `script-src 'nonce-…'`.
  */
 export const DARK_THEME_COLOR = "#0b110d";
-export const LIGHT_THEME_COLOR = "#f6f0e4";
+export const LIGHT_THEME_COLOR = "#f7f6f3";
 
 export const THEME_BOOT_SCRIPT = `(function(){try{
 var d=document.documentElement;

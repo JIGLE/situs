@@ -112,7 +112,7 @@ export function PeopleView(): React.ReactElement {
               { value: "owners", label: t("owners"), badge: owners.length },
             ]}
           />
-          <TabsList className="flex w-full max-w-2xl justify-start overflow-x-auto max-md:hidden sm:grid sm:grid-cols-2">
+          <TabsList className="flex w-full justify-start overflow-x-auto max-md:hidden">
             <TabsTrigger value="tenants" className="flex shrink-0 items-center gap-2">
               <Users className="h-4 w-4 shrink-0" />
               <span>{t("tenants")}</span>

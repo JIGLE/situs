@@ -837,7 +837,7 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
                             </div>
 
                             {/* Lease end */}
-                            <div className="hidden w-[88px] shrink-0 flex-col items-end text-xs lg:flex">
+                            <div className="hidden w-32 shrink-0 flex-col items-end whitespace-nowrap text-xs lg:flex">
                               {activeLease ? (
                                 <>
                                   <span className="text-[var(--color-muted-foreground)]">

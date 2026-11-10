@@ -118,14 +118,12 @@ export function TaxConnectorDashboard(): React.ReactElement | null {
                   className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[var(--color-hover)]"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-xs uppercase tracking-[0.04em]">
-                      {connector.country}
-                    </span>
+                    <span className="text-xs font-medium">{connector.country}</span>
                     <span className="text-sm">{authorityName(connector.country)}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span
-                      className={`px-1.5 py-0.5 font-mono text-label uppercase tracking-[0.04em] ${connectorMode.badgeClass(
+                      className={`px-1.5 py-0.5 text-xs font-medium ${connectorMode.badgeClass(
                         connector.mode,
                       )}`}
                       title={connectorMode.help(connector.mode, connector.country)}
