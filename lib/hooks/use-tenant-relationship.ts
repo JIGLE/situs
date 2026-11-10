@@ -12,15 +12,9 @@ export interface TenantRelationshipData {
   };
   bankMovements: { matched: number; lastMatchedAt: string | null };
   receipts: { total: number; lastLifecycle: string | null; lastAt: string | null };
-  taxSubmissions: {
-    total: number;
-    lastAction: string | null;
-    lastStatus: string | null;
-    lastAt: string | null;
-  };
 }
 
-/** Situs tenant relationship map — lease → periods → bank → receipts → tax, one fetch. */
+/** Situs tenant relationship map — lease → periods → bank → receipts, one fetch. */
 export function useTenantRelationship(tenantId: string | undefined) {
   const apiError = useApiError();
   const [data, setData] = useState<TenantRelationshipData | null>(null);

@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockReceiptFindFirst = vi.fn();
 const mockReceiptUpdate = vi.fn();
-const mockRentReceiptFindFirst = vi.fn();
 const mockDocumentFindFirst = vi.fn();
 const mockTenantFindUnique = vi.fn();
 const mockPropertyFindUnique = vi.fn();
@@ -19,7 +18,6 @@ const mockTransaction = vi.fn(async (fn: (tx: typeof mockTxClient) => Promise<un
 vi.mock("@/lib/services/database/database", () => ({
   getPrismaClient: () => ({
     receipt: { findFirst: mockReceiptFindFirst, update: mockReceiptUpdate },
-    rentReceipt: { findFirst: mockRentReceiptFindFirst },
     document: { findFirst: mockDocumentFindFirst },
     tenant: { findUnique: mockTenantFindUnique },
     property: { findUnique: mockPropertyFindUnique },
@@ -49,15 +47,6 @@ vi.mock("@/lib/services/pdf-generator", () => ({
 const mockDocumentCreate = vi.fn().mockResolvedValue({ id: "doc_1" });
 vi.mock("@/lib/services/document-service", () => ({
   documentService: { create: (...args: unknown[]) => mockDocumentCreate(...args) },
-}));
-
-const mockConnectorSubmit = vi.fn();
-const mockConnectorPoll = vi.fn();
-vi.mock("@/lib/tax/connectors/pt-at", () => ({
-  ptAtConnector: {
-    submit: (...args: unknown[]) => mockConnectorSubmit(...args),
-    poll: (...args: unknown[]) => mockConnectorPoll(...args),
-  },
 }));
 
 import { transitionReceipt } from "./service";
@@ -131,33 +120,21 @@ describe("transitionReceipt", () => {
     expect(mockLogAudit.mock.calls.map((c) => c[0].action)).not.toContain("ARCHIVE_RECEIPT");
   });
 
-  it("submitting requires a linked PT rent receipt filing", async () => {
-    mockReceiptFindFirst.mockResolvedValue({ ...baseReceipt, lifecycle: "emitted" });
-    mockRentReceiptFindFirst.mockResolvedValue(null);
-    await expect(transitionReceipt("user_1", "receipt_1", "submitted")).rejects.toThrow(
-      /Link a PT rent receipt/,
-    );
-    expect(mockConnectorSubmit).not.toHaveBeenCalled();
-  });
+  it.each(["submitted", "accepted"] as const)(
+    "refuses %s: Situs files nothing with Finanças, so nothing may say it did",
+    async (to) => {
+      // From the state each move would otherwise be allowed from.
+      const from = to === "submitted" ? "emitted" : "submitted";
+      mockReceiptFindFirst.mockResolvedValue({ ...baseReceipt, lifecycle: from });
 
-  it("submits via the PT connector when a filing is linked", async () => {
-    mockReceiptFindFirst.mockResolvedValue({ ...baseReceipt, lifecycle: "emitted" });
-    mockRentReceiptFindFirst.mockResolvedValue({ id: "rr_1" });
-    mockConnectorSubmit.mockResolvedValue({ status: "success", responseCode: "202" });
-    const outcome = await transitionReceipt("user_1", "receipt_1", "submitted");
-    expect(mockConnectorSubmit).toHaveBeenCalledWith("rr_1");
-    expect(outcome.connector).toEqual({ status: "success", responseCode: "202" });
-  });
+      const error = await transitionReceipt("user_1", "receipt_1", to).catch((e) => e);
 
-  it("surfaces a connector error as a thrown error and does not update lifecycle", async () => {
-    mockReceiptFindFirst.mockResolvedValue({ ...baseReceipt, lifecycle: "emitted" });
-    mockRentReceiptFindFirst.mockResolvedValue({ id: "rr_1" });
-    mockConnectorSubmit.mockResolvedValue({ status: "error", responseBody: "Invalid NIF" });
-    await expect(transitionReceipt("user_1", "receipt_1", "submitted")).rejects.toThrow(
-      "Invalid NIF",
-    );
-    expect(mockReceiptUpdate).not.toHaveBeenCalled();
-  });
+      expect(error).toBeInstanceOf(ConflictError);
+      expect((error as ConflictError).reason).toBe("receipt_filing_unavailable");
+      expect(mockReceiptUpdate).not.toHaveBeenCalled();
+      expect(mockGenerateFromHTML).not.toHaveBeenCalled();
+    },
+  );
 
   it("voiding reverses live allocations and logs VOID_RECEIPT", async () => {
     mockReceiptFindFirst.mockResolvedValue({ ...baseReceipt, lifecycle: "draft" });
@@ -236,24 +213,5 @@ describe("transitionReceipt: refusals are typed", () => {
 
     expect(error).toBeInstanceOf(ConflictError);
     expect(reasonOf(error)).toBe("receipt_transition_not_allowed");
-  });
-
-  it("refuses to submit without a filing, naming the rule", async () => {
-    mockReceiptFindFirst.mockResolvedValue({ ...baseReceipt, lifecycle: "emitted" });
-    mockRentReceiptFindFirst.mockResolvedValue(null);
-
-    const error = await transitionReceipt("user_1", "receipt_1", "submitted").catch((e) => e);
-
-    expect(reasonOf(error)).toBe("receipt_filing_missing");
-  });
-
-  it("passes a refusal from the connector on as one", async () => {
-    mockReceiptFindFirst.mockResolvedValue({ ...baseReceipt, lifecycle: "emitted" });
-    mockRentReceiptFindFirst.mockResolvedValue({ id: "rr_1" });
-    mockConnectorSubmit.mockResolvedValue({ status: "error", responseBody: "Invalid NIF" });
-
-    const error = await transitionReceipt("user_1", "receipt_1", "submitted").catch((e) => e);
-
-    expect(reasonOf(error)).toBe("receipt_submission_refused");
   });
 });

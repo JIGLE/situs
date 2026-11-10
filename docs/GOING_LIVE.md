@@ -36,8 +36,8 @@ connection revokes the bank session.
 ## Finanças (AT) rent receipts
 
 Status in Situs: a **test mode** reaches AT's test service; production is deliberately not built,
-and every other mode fails closed (`lib/tax/connectors/mode-guard.ts`), so going live is a code
-change, not a setting.
+and no code files a receipt in any other mode, so going live is a code change, not a setting. A
+receipt cannot be marked submitted or accepted (`lib/services/receipts/service.ts`).
 
 The source is AT's _Manual de Integração de Software — Comunicação de contratos de arrendamento e
 emissão de recibos de renda à AT_, **version 1.6 of 29/07/2024**, read in full on 14 October 2026.

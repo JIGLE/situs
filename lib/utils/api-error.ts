@@ -67,8 +67,7 @@ const REASON_KEY = new Map<
   | "bankConnectionRenewalUnavailable"
   | "bankConnectionHasMovements"
   | "receiptTransitionNotAllowed"
-  | "receiptFilingMissing"
-  | "receiptSubmissionRefused"
+  | "receiptFilingUnavailable"
   | "lastAdmin"
   | "accountExists"
   | "accountChanged"
@@ -96,8 +95,7 @@ const REASON_KEY = new Map<
   ["bank_connection_renewal_unavailable", "bankConnectionRenewalUnavailable"],
   ["bank_connection_has_movements", "bankConnectionHasMovements"],
   ["receipt_transition_not_allowed", "receiptTransitionNotAllowed"],
-  ["receipt_filing_missing", "receiptFilingMissing"],
-  ["receipt_submission_refused", "receiptSubmissionRefused"],
+  ["receipt_filing_unavailable", "receiptFilingUnavailable"],
   ["last_admin", "lastAdmin"],
   ["account_exists", "accountExists"],
   ["account_changed", "accountChanged"],

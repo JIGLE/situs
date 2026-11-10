@@ -95,7 +95,6 @@ function encryptPII(plaintext, key) {
 const PII_FIELDS = {
   owner: ["taxIdentificationNumber", "phone"],
   tenant: ["phone", "taxId", "idDocument"],
-  rentReceipt: ["landlordNif", "tenantNif"],
   leaseParty: ["taxId", "idDocument"],
 };
 

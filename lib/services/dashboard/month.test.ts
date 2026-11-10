@@ -30,7 +30,6 @@ function period({
   paidAt = null as string | null,
   stored = "upcoming",
   receipts = [] as { lifecycle: string; movements?: string[] }[],
-  filings = [] as string[],
 } = {}) {
   return {
     status: stored,
@@ -44,7 +43,6 @@ function period({
         bankTransactions: (receipt.movements ?? []).map((status) => ({ status })),
       },
     })),
-    rentReceiptFilings: filings.map((status) => ({ status })),
   };
 }
 
@@ -112,15 +110,14 @@ describe("getDashboardMonth — the figures", () => {
 });
 
 describe("getDashboardMonth — the loop", () => {
-  it("follows each rent through payment, reconciliation, receipt and Finanças", async () => {
+  it("follows each rent through payment, reconciliation and receipt", async () => {
     monthPeriods = [
       // All the way through.
       period({
         ...PAID,
         receipts: [{ lifecycle: "accepted", movements: ["matched_confirmed"] }],
-        filings: ["accepted"],
       }),
-      // Matched by the engine and issued, not filed.
+      // Matched by the engine and issued: also all the way through.
       period({ ...PAID, receipts: [{ lifecycle: "emitted", movements: ["auto_matched"] }] }),
       // Paid by hand: issued, with no bank movement behind it.
       period({ ...PAID, receipts: [{ lifecycle: "emitted" }] }),
@@ -140,23 +137,16 @@ describe("getDashboardMonth — the loop", () => {
       reconciled: 3,
       receiptsIssued: 3,
       receiptsToIssue: 2,
-      filed: 1,
-      fullyProcessed: 1,
+      fullyProcessed: 2,
     });
   });
 
-  it("does not count a filing that never reached Finanças", async () => {
-    monthPeriods = [
-      period({
-        ...PAID,
-        receipts: [{ lifecycle: "emitted", movements: ["matched_confirmed"] }],
-        filings: ["draft", "rejected"],
-      }),
-    ];
+  it("leaves a paid, issued rent unprocessed until a bank movement reconciles it", async () => {
+    monthPeriods = [period({ ...PAID, receipts: [{ lifecycle: "emitted" }] })];
 
     const month = await getDashboardMonth("user-1", 2026, 8, NOW);
 
-    expect(month.loop.filed).toBe(0);
+    expect(month.loop.receiptsIssued).toBe(1);
     expect(month.loop.fullyProcessed).toBe(0);
   });
 });

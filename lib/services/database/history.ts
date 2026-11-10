@@ -5,10 +5,10 @@ import { ConflictError } from "@/lib/utils/error-handling";
  * A tenant, a property or a lease with money history is kept, and so is an owner who is still
  * a landlord.
  *
- * In `prisma/schema.prisma`, Lease, Receipt, RentPeriod and RentReceipt are all
- * `onDelete: Cascade` from Tenant and from Property. RentPeriod, and with it every
- * PaymentAllocation, cascades from Lease. So one delete took the receipts, the rent ledger and
- * the AT filing records with it, and a property took its expenses too. A tenancy stops by ending
+ * In `prisma/schema.prisma`, Lease, Receipt and RentPeriod are all `onDelete: Cascade` from
+ * Tenant and from Property. RentPeriod, and with it every PaymentAllocation, cascades from Lease.
+ * So one delete took the receipts and the rent ledger with it, and a property took its expenses
+ * too. A tenancy stops by ending
  * its lease, and the record stays for the owner's accounts and tax history.
  *
  * A record with nothing recorded against it can still go: a lease entered by mistake has rent
@@ -33,7 +33,7 @@ async function anyOf(counts: Promise<number>[]): Promise<boolean> {
   return (await Promise.all(counts)).some((count) => count > 0);
 }
 
-/** Its leases, receipts, rent months and AT filings. */
+/** Its leases, receipts and rent months. */
 export async function assertTenantHasNoHistory(userId: string, tenantId: string): Promise<void> {
   const prisma = getPrismaClient();
   const where = { userId, tenantId };
@@ -41,12 +41,11 @@ export async function assertTenantHasNoHistory(userId: string, tenantId: string)
     prisma.lease.count({ where }),
     prisma.receipt.count({ where }),
     prisma.rentPeriod.count({ where }),
-    prisma.rentReceipt.count({ where }),
   ]);
   if (kept) throw new HasHistoryError("tenant");
 }
 
-/** Its leases, receipts, rent months, AT filings and expenses. */
+/** Its leases, receipts, rent months and expenses. */
 export async function assertPropertyHasNoHistory(
   userId: string,
   propertyId: string,
@@ -57,15 +56,14 @@ export async function assertPropertyHasNoHistory(
     prisma.lease.count({ where }),
     prisma.receipt.count({ where }),
     prisma.rentPeriod.count({ where }),
-    prisma.rentReceipt.count({ where }),
     prisma.expense.count({ where }),
   ]);
   if (kept) throw new HasHistoryError("property");
 }
 
 /**
- * Money recorded against it: a receipt linked to it, a live allocation on one of its months, or
- * an AT filing. Its rent months alone are not history; they are generated from the lease.
+ * Money recorded against it: a receipt linked to it, or a live allocation on one of its months.
+ * Its rent months alone are not history; they are generated from the lease.
  */
 export async function assertLeaseHasNoHistory(userId: string, leaseId: string): Promise<void> {
   const prisma = getPrismaClient();
@@ -73,9 +71,6 @@ export async function assertLeaseHasNoHistory(userId: string, leaseId: string): 
     prisma.receipt.count({ where: { userId, leaseId } }),
     prisma.paymentAllocation.count({
       where: { userId, reversedAt: null, rentPeriod: { leaseId } },
-    }),
-    prisma.rentReceipt.count({
-      where: { userId, OR: [{ leaseId }, { rentPeriod: { leaseId } }] },
     }),
   ]);
   if (kept) throw new HasHistoryError("lease");

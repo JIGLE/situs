@@ -16,7 +16,6 @@ const { prismaMock, logAuditMock, emitirReciboMock, connection } = vi.hoisted(()
     owner: { findMany: vi.fn() },
     tenant: { findMany: vi.fn() },
     leaseParty: { findMany: vi.fn() },
-    rentReceipt: { create: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
   },
   logAuditMock: vi.fn(),
   emitirReciboMock: vi.fn(),
@@ -368,9 +367,6 @@ describe("testAtReceipts", () => {
 
     expect(prismaMock.receipt.update).not.toHaveBeenCalled();
     expect(prismaMock.receipt.updateMany).not.toHaveBeenCalled();
-    expect(prismaMock.rentReceipt.create).not.toHaveBeenCalled();
-    expect(prismaMock.rentReceipt.update).not.toHaveBeenCalled();
-    expect(prismaMock.rentReceipt.updateMany).not.toHaveBeenCalled();
   });
 
   it("sends nothing for a blocked month or a refused receipt, and says why", async () => {

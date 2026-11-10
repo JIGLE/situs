@@ -61,33 +61,31 @@ describe("piiEncryptionExtension — transform logic", () => {
   });
 
   it("round-trips: decryptResult recovers the original plaintext", () => {
-    // Was PaymentMethod's iban/accountHolder until the payment stack was cut. RentReceipt's
-    // NIFs exercise the same path — several declared fields on one model, encrypted on write
-    // and recovered on read.
-    const original = { landlordNif: "111222333", tenantNif: "444555666" };
-    const encrypted = encryptArgs({ data: original }, PII_FIELDS.RentReceipt) as {
+    // Several declared fields on one model, encrypted on write and recovered on read.
+    const original = { taxId: "111222333", idDocument: "CC 12345678" };
+    const encrypted = encryptArgs({ data: original }, PII_FIELDS.LeaseParty) as {
       data: typeof original;
     };
 
-    const decrypted = decryptResult(encrypted.data, PII_FIELDS.RentReceipt) as typeof original;
+    const decrypted = decryptResult(encrypted.data, PII_FIELDS.LeaseParty) as typeof original;
 
-    expect(decrypted.landlordNif).toBe(original.landlordNif);
-    expect(decrypted.tenantNif).toBe(original.tenantNif);
+    expect(decrypted.taxId).toBe(original.taxId);
+    expect(decrypted.idDocument).toBe(original.idDocument);
   });
 
   it("decrypts arrays of rows (findMany-shaped results)", () => {
     const rows = [
-      { id: "1", landlordNif: "111222333", tenantNif: "444555666" },
-      { id: "2", landlordNif: "777888999", tenantNif: "000111222" },
+      { id: "1", taxId: "111222333", idDocument: "CC 1" },
+      { id: "2", taxId: "777888999", idDocument: "CC 2" },
     ];
     const encrypted = rows.map(
-      (r) => encryptArgs({ data: r }, PII_FIELDS.RentReceipt).data as (typeof rows)[number],
+      (r) => encryptArgs({ data: r }, PII_FIELDS.LeaseParty).data as (typeof rows)[number],
     );
 
-    const decrypted = decryptResult(encrypted, PII_FIELDS.RentReceipt) as typeof rows;
+    const decrypted = decryptResult(encrypted, PII_FIELDS.LeaseParty) as typeof rows;
 
-    expect(decrypted[0].landlordNif).toBe("111222333");
-    expect(decrypted[1].tenantNif).toBe("000111222");
+    expect(decrypted[0].taxId).toBe("111222333");
+    expect(decrypted[1].idDocument).toBe("CC 2");
   });
 
   // A tenant or an owner read from Finanças has no phone. NULL is not a value to encrypt, and not

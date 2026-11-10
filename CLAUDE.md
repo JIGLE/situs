@@ -52,7 +52,7 @@ app/
 components/             # Shared React components
 lib/
   types.ts              # Core entity types; domain types sit beside their code
-                        #   (e.g. lib/services/allocation/types.ts, lib/tax/connectors/types.ts)
+                        #   (e.g. lib/services/allocation/types.ts)
   contexts/             # AppState (app-reducer.ts) and AppContext (app-context.tsx)
   services/
     database/database.ts  # getPrismaClient() — the Prisma singleton, PII extension applied
@@ -62,7 +62,7 @@ lib/
       providers/        # PSD2 provider contract + registry + Enable Banking adapter + test fake
     receipts/           # Receipt document-lifecycle state machine + orchestration
     tax/                # Tax connector find-or-create + submission-log service
-  tax/connectors/       # The Portuguese TaxConnector (pt-at.ts) and its mode guard
+  tax/connectors/       # The AT connector's key (pt-at.ts), its modes and how they are shown
   tax/at/               # AT's webservice client: WS-Security header, SOAP, mutual TLS, files
   design/country-themes.ts  # PT/EU theme table
 prisma/schema.prisma    # Database schema — source of truth
@@ -87,8 +87,8 @@ e2e/                    # Playwright E2E tests
   and a bare `request.json()` answers it 500. A handler that reads fields off the body before a
   schema sees it takes `readJsonObject`, since JSON `null` would crash it.
   `app/api/json-body-status.test.ts` refuses both mistakes.
-- **Compliance**: `/api/compliance/rent-receipts`, Portugal's rent receipts. Tax logic lives in
-  `lib/tax/` and `lib/services/tax/connector-service.ts`.
+- **Compliance**: Portugal's rent receipts reach Finanças through AT's webservice only (see Tax
+  connectors). Tax logic lives in `lib/tax/` and `lib/services/tax/`. There is no Modelo 44 path.
 - **PII encryption**: AES-256-GCM via `lib/utils/pii-encryption.ts`, keyed off
   `PII_ENCRYPTION_KEY`. `PII_FIELDS` lists the fields the Prisma extension (applied in
   `lib/services/database/database.ts`) encrypts on write and decrypts on read — **not** every
@@ -196,8 +196,10 @@ e2e/                    # Playwright E2E tests
   for a real bank and `manual`/`csv` otherwise — never offer a sync to the latter.
 - **Receipt lifecycle**: `Receipt.status` is the money state (paid|pending); `Receipt.lifecycle` is
   the document state machine (`lib/services/receipts/lifecycle.ts`, pure): draft → review →
-  emitted → submitted → accepted/rejected (rejected → review). Voiding is allowed from draft,
-  review and emitted only. Reaching emitted/accepted archives a PDF `Document`; voiding
+  emitted → submitted → accepted/rejected (rejected → review). Situs files nothing with Finanças
+  yet, so `transitionReceipt` refuses `submitted` and `accepted` (409 `receipt_filing_unavailable`):
+  the owner issues the recibo on the Portal and marks the receipt emitted. Voiding is allowed from
+  draft, review and emitted only. Reaching emitted/accepted archives a PDF `Document`; voiding
   soft-reverses live `PaymentAllocation` rows. Deleting a receipt reverses them too, in the delete's
   own transaction (`receiptService.delete`), because `PaymentAllocation.receipt` is `SetNull`; a
   `submitted` or `accepted` receipt cannot be deleted.
@@ -208,22 +210,22 @@ e2e/                    # Playwright E2E tests
   `GET /api/receipts/[id]/archive` exposes it; the Receipts dropdown serves that PDF before the
   client-side jsPDF copy.
 - **Tax connectors**: one `TaxAuthorityConnector` row per `[userId, connectorKey]`. Sandbox and
-  review simulate, transmitting nothing. `test` reaches AT's test service through `lib/tax/at/`
+  review transmit nothing. `test` reaches AT's test service through `lib/tax/at/`
   (mutual TLS with the certificate AT signed, a WS-Security header, SOAP). There it checks
   credentials, fetches a receipt, and tests receipts from Finance › Recibos: **Emitir** opens a
   review of each rent month a receipt pays (`lib/tax/at/receipt-request.ts` builds AT's
   `emitirRecibo` request, `lib/services/tax/at-receipts.ts` reads the records), and **Testar na
   AT** sends the ready months. A test records nothing on the receipt, since a receipt AT's test
-  service issues does not count; `lib/tax/connectors/mode-guard.ts` still refuses the recorded
-  filing in it. No production AT integration exists, and the guard makes every other mode, `live`
-  included, fail closed, so going live is a code change, not a row edit. The owner sets the mode
+  service issues does not count. No production AT integration exists and no code files a receipt in
+  any mode, `live` included, so going live is a code change, not a row edit. The owner sets the mode
   and the Portal sub-user in Settings › Integrations (`lib/services/tax/at-connection.ts`). Every
   call appends an immutable `TaxSubmissionLog` row (`GET /api/tax/connectors`, Finance › Tax
   Summary).
 - **Alert generation**: `lib/services/notifications/notification-automation.ts` reads the rent
   ledger. `payment_due` (D-5) and `payment_overdue` (D+1/D+7) come from `RentPeriod` and quote the
   OUTSTANDING balance, so a part-paid month is chased for its balance; `rent_receipt_due` comes
-  from a non-reversed `PaymentAllocation` and clears once the period has a `RentReceipt` filing.
+  from a non-reversed `PaymentAllocation` and clears once that payment's receipt is issued
+  (emitted or beyond).
   `paid`/`paid_late`/`waived` periods are never chased — `waived` is missing from the
   `RentPeriodStatus` union, so it is listed explicitly rather than derived from that type.
 - **What a receipt still needs from the owner**: `lib/services/attention/`. The rules (`rules.ts`,

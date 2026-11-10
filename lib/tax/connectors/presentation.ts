@@ -1,5 +1,5 @@
-// From ./modes, not ./mode-guard: this file is imported by "use client" components, and
-// mode-guard reaches Prisma and better-sqlite3 through connector-service.
+// From ./modes, a leaf with no imports: this file is imported by "use client" components, which
+// must not reach Prisma and better-sqlite3 (tests/client-server-boundary.test.ts).
 import { SIMULATED_MODES, TEST_MODES } from "./modes";
 
 /**

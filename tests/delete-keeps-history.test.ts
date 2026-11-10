@@ -1,9 +1,9 @@
 /**
  * A tenant, a property or a lease with money history is kept.
  *
- * Lease, Receipt, RentPeriod and RentReceipt are all `onDelete: Cascade` from Tenant and from
- * Property, and RentPeriod — with every allocation on it — from Lease. So deleting a tenant took
- * their leases, receipts, rent ledger and AT filing records; a property took the same plus its
+ * Lease, Receipt and RentPeriod are all `onDelete: Cascade` from Tenant and from Property, and
+ * RentPeriod — with every allocation on it — from Lease. So deleting a tenant took their leases,
+ * receipts and rent ledger; a property took the same plus its
  * expenses; and a lease took its rent months and the payments allocated to them. Each delete now
  * counts what it would take first, and refuses with a 409 whose `reason` the screen turns into a
  * sentence (`lib/utils/api-error.ts`).
@@ -53,7 +53,6 @@ const { prismaMock, counts } = vi.hoisted(() => {
       lease: { count: count("lease"), delete: vi.fn(async () => ({})) },
       receipt: { count: count("receipt") },
       rentPeriod: { count: count("rentPeriod") },
-      rentReceipt: { count: count("rentReceipt") },
       expense: { count: count("expense") },
       paymentAllocation: { count: count("paymentAllocation") },
     },
@@ -87,21 +86,21 @@ const cases = [
     handler: tenants.DELETE as Handler,
     id: "t-1",
     remove: prismaMock.tenant.delete,
-    history: ["lease", "receipt", "rentPeriod", "rentReceipt"],
+    history: ["lease", "receipt", "rentPeriod"],
   },
   {
     entity: "property",
     handler: properties.DELETE as Handler,
     id: "p-1",
     remove: prismaMock.property.delete,
-    history: ["lease", "receipt", "rentPeriod", "rentReceipt", "expense"],
+    history: ["lease", "receipt", "rentPeriod", "expense"],
   },
   {
     entity: "lease",
     handler: leases.DELETE as Handler,
     id: "l-1",
     remove: prismaMock.lease.delete,
-    history: ["receipt", "paymentAllocation", "rentReceipt"],
+    history: ["receipt", "paymentAllocation"],
   },
 ] as const;
 

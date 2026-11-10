@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Calendar, Landmark, Receipt as ReceiptIcon, ShieldCheck } from "lucide-react";
+import { FileText, Calendar, Landmark, Receipt as ReceiptIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useTenantRelationship } from "@/lib/hooks/use-tenant-relationship";
 import { formatDate as formatDateWithLocale } from "@/lib/utils/format-date";
@@ -11,7 +11,7 @@ interface TenantRelationshipMapProps {
 
 /**
  * Read-only cross-domain summary strip: lease -> rent periods -> bank
- * movements -> receipts -> tax submissions. Fed by GET
+ * movements -> receipts. Fed by GET
  * /api/tenants/[id]/relationship — no schema change, all data already
  * exists post the Situs bank/receipt/tax-connector migrations.
  */
@@ -76,19 +76,10 @@ export function TenantRelationshipMap({ tenantId }: TenantRelationshipMapProps) 
         ? data.receipts.lastLifecycle.replace(/_/g, " ")
         : "none yet",
     },
-    {
-      key: "tax",
-      icon: ShieldCheck,
-      label: t("relationship.taxLog"),
-      value: String(data.taxSubmissions.total),
-      detail: data.taxSubmissions.lastStatus
-        ? `${data.taxSubmissions.lastAction ?? "—"} · ${data.taxSubmissions.lastStatus}`
-        : "no submissions",
-    },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
       {stages.map((stage) => (
         <div
           key={stage.key}

@@ -24,8 +24,9 @@
  *     its non-reversed allocations;
  *   - money RECEIVED is a `PaymentAllocation` — written in the same transaction that
  *     moves the period's status, so `allocatedAt` is when the money landed;
- *   - the document the PT deadline is about is a `RentReceipt` (recibo de renda), the
- *     fiscal filing, not the internal `Receipt`.
+ *   - the PT deadline is met once the payment's `Receipt` is issued (emitted or beyond).
+ *     Situs files nothing with Finanças yet, so issuing it is the owner's word that the
+ *     recibo exists; the Modelo 44 filing this used to read was deleted.
  *
  * Had they simply been deleted with the payment stack, the bell would have kept
  * working while silently emitting only one of its four alert types.
@@ -37,6 +38,9 @@ import { getPrismaClient } from "@/lib/services/database/database";
 import { logger } from "@/lib/utils/logger";
 import { MONEY_EPSILON } from "@/lib/utils/money";
 import { sendReminderEmail, resetReminderEmailCache } from "./reminder-email";
+
+/** A receipt the owner has issued: it left draft and review, and was not voided. */
+const ISSUED_LIFECYCLES: ReadonlySet<string> = new Set(["emitted", "submitted", "accepted"]);
 
 const log = logger.child("notification-automation");
 
@@ -291,11 +295,11 @@ async function generateLeaseRenewalReminders(
  * soft-reverses its allocations — and chasing a receipt for money that was taken back
  * would be wrong.
  *
- * The document being chased is a `RentReceipt` (the fiscal recibo filed with the AT),
- * not the internal `Receipt` that tracks the money. Scoping the check to the allocation's
- * own reference month is narrower than the date-window match this replaces, which could
- * be satisfied by any filing for the same tenant and property that happened to land in
- * the same day's window.
+ * The reminder stops once the payment's own `Receipt` is issued: emitted, or further along.
+ * Situs files nothing with Finanças yet (the AT webservice reaches only its test service),
+ * so the owner issues the recibo on the Portal and marks the receipt emitted; that is the
+ * only signal there is. The Modelo 44 `RentReceipt` this used to read was deleted, since
+ * nothing ever reached Finanças through it.
  */
 async function generateReceiptDeadlineReminders(
   prisma: ReturnType<typeof getPrismaClient>,
@@ -312,9 +316,9 @@ async function generateReceiptDeadlineReminders(
         include: {
           tenant: true,
           property: true,
-          rentReceiptFilings: { select: { id: true } },
         },
       },
+      receipt: { select: { lifecycle: true } },
     },
   });
 
@@ -323,8 +327,8 @@ async function generateReceiptDeadlineReminders(
     const period = allocation.rentPeriod;
     if (!period?.property) continue;
 
-    // A recibo already filed for this reference month discharges the obligation.
-    if (period.rentReceiptFilings.length > 0) continue;
+    // A receipt the owner issued for this payment discharges the obligation.
+    if (allocation.receipt && ISSUED_LIFECYCLES.has(allocation.receipt.lifecycle)) continue;
 
     // Check if reminder already sent
     const existing = await prisma.notification.findFirst({

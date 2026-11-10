@@ -68,7 +68,6 @@ model User {
   emailLogs              EmailLog[]
   documents              Document[]
   notifications          Notification[]
-  rentReceipts           RentReceipt[]
   settings               UserSettings?
   bankConnections        BankConnection[]
   bankAccounts           BankAccount[]
@@ -266,7 +265,6 @@ model Property {
   leases              Lease[]
   documents           Document[]
   incomeDistributions IncomeDistribution[]
-  rentReceipts        RentReceipt[]
   rentPeriods         RentPeriod[]
 
   // Performance indexes
@@ -305,7 +303,6 @@ model Tenant {
   receipts      Receipt[]
   leases        Lease[]
   documents     Document[]
-  rentReceipts  RentReceipt[]
   rentPeriods   RentPeriod[]
   payerAccounts PayerAccount[]
 
@@ -342,13 +339,12 @@ model Receipt {
   updatedAt      DateTime      @updatedAt
 
   // Relations
-  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  property           Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  rentPeriod         RentPeriod?         @relation(fields: [rentPeriodId], references: [id], onDelete: SetNull)
-  allocations        PaymentAllocation[]
-  bankTransactions   BankTransaction[]
-  rentReceiptFilings RentReceipt[]
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant           Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property         Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  rentPeriod       RentPeriod?         @relation(fields: [rentPeriodId], references: [id], onDelete: SetNull)
+  allocations      PaymentAllocation[]
+  bankTransactions BankTransaction[]
 
   // Performance indexes for common queries
   @@index([userId])
@@ -382,13 +378,12 @@ model RentPeriod {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lease              Lease               @relation(fields: [leaseId], references: [id], onDelete: Cascade)
-  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  property           Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  receipts           Receipt[]
-  allocations        PaymentAllocation[]
-  rentReceiptFilings RentReceipt[]
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lease       Lease               @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  tenant      Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property    Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  receipts    Receipt[]
+  allocations PaymentAllocation[]
 
   @@unique([leaseId, year, month])
   @@index([userId, year, month])
@@ -972,66 +967,11 @@ enum DistributionFrequency {
   ANNUAL
 }
 
-// ========================================
-// Portugal: Recibos de Renda Eletrónicos
-// ========================================
-
-model RentReceipt {
-  id                String            @id @default(cuid())
-  userId            String
-  tenantId          String
-  propertyId        String
-  leaseId           String?
-  receiptNumber     String            @unique // Sequential: RR/YYYY/NNNNNN
-  landlordNif       String // NIF of landlord
-  tenantNif         String? // NIF of tenant (optional for non-residents)
-  propertyAddress   String // Full address of rented property
-  cadasterReference String? // Referência matricial / Artigo matricial
-  rentAmount        Float // Gross rent amount
-  withholdingAmount Float             @default(0) // IRS withholding (retenção na fonte)
-  netAmount         Float // Amount received after withholding
-  paymentDate       DateTime // Date rent was paid
-  receiptDate       DateTime // Date receipt is issued (must be within 5 days of payment)
-  periodStart       DateTime // Rental period start (e.g. 1st of month)
-  periodEnd         DateTime // Rental period end
-  isRendaAcessivel  Boolean           @default(false) // Programa Renda Acessível
-  taxRegime         String            @default("categoria_f") // "categoria_f" or "renda_acessivel"
-  status            RentReceiptStatus @default(draft)
-  atSubmissionId    String? // AT (Autoridade Tributária) submission ID
-  submittedAt       DateTime?
-  atResponseCode    String? // Response from AT webservice
-  pdfPath           String? // Path to generated PDF
-  xmlPayload        String? // Stored XML for AT submission
-  // Situs receipt lifecycle (Migration C) — links this fiscal document back
-  // to the reference-month ledger and to the lifecycle-managed Receipt that
-  // triggered its emission.
-  rentPeriodId      String?
-  receiptId         String?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-
-  // Relations
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  property   Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  rentPeriod RentPeriod? @relation(fields: [rentPeriodId], references: [id], onDelete: SetNull)
-  receipt    Receipt?    @relation(fields: [receiptId], references: [id], onDelete: SetNull)
-
-  @@index([userId])
-  @@index([tenantId])
-  @@index([propertyId])
-  @@index([status])
-  @@index([paymentDate])
-  @@index([rentPeriodId])
-  @@index([receiptId])
-  @@map("rent_receipts")
-}
-
 // ── Situs tax connector layer (Migration C) ────────────────────────────────
 // One row per (user, connector) — mode defaults to "review": every emission
 // routes through human review before anything reaches a tax authority. The
-// PT connector (lib/tax/connectors/pt-at.ts) wraps the existing
-// rent-receipts-pt.ts numbering/XML/5-day-rule logic unchanged.
+// PT row (key in lib/tax/connectors/pt-at.ts) holds the mode and the Portal
+// sub-user; receipts reach AT through its webservice (lib/tax/at/).
 // TaxSubmissionLog is the append-only record the
 // Intelligence Tax Connector dashboard (PR 10) reads.
 model TaxAuthorityConnector {
@@ -1058,7 +998,7 @@ model TaxSubmissionLog {
   id           String   @id @default(cuid())
   userId       String
   connectorId  String
-  subjectType  String // rent_receipt
+  subjectType  String // connector|at_receipt|receipt (rent_receipt on old rows)
   subjectId    String
   action       String // validate|submit|poll|cancel
   mode         String // sandbox|review|live — snapshot at call time
@@ -1074,12 +1014,4 @@ model TaxSubmissionLog {
   @@index([connectorId])
   @@index([subjectType, subjectId])
   @@map("tax_submission_logs")
-}
-
-enum RentReceiptStatus {
-  draft // Generated but not submitted
-  submitted // Sent to Portal das Finanças
-  accepted // Accepted by AT
-  rejected // Rejected by AT — needs correction
-  cancelled // Anulado
 }

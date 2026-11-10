@@ -25,8 +25,8 @@ function scriptTable(): Record<string, string[]> {
 
 describe("PII backfill contract", () => {
   it("encrypts exactly the fields the Prisma extension encrypts", () => {
-    // A Prisma delegate is the model name with its first letter lowercased: `RentReceipt` is
-    // `prisma.rentReceipt`.
+    // A Prisma delegate is the model name with its first letter lowercased: `LeaseParty` is
+    // `prisma.leaseParty`.
     const expected = Object.fromEntries(
       Object.entries(PII_FIELDS).map(([model, fields]) => [
         model[0].toLowerCase() + model.slice(1),

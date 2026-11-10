@@ -1,6 +1,7 @@
 /**
  * The dashboard's month, assembled on the server: what was due, what arrived, how far each rent
- * went through the loop (paid → reconciled → receipt → Finanças), and what waits for the owner.
+ * went through the loop (paid → reconciled → receipt), and what waits for the owner. Finanças is
+ * not a step yet: Situs files nothing with it, so a count of filings would always read 0.
  *
  * Every figure comes from the rent ledger, with each month's status worked out as of `now`
  * (`periodStatusAt`). Never from `Tenant.paymentStatus`, and never from a period's stored
@@ -19,8 +20,6 @@ import { MONEY_EPSILON, round2 } from "@/lib/utils/money";
 const ISSUED_LIFECYCLES = new Set(["emitted", "submitted", "accepted"]);
 /** A bank movement matched to the payment, by the engine or by the owner. */
 const MATCHED_MOVEMENTS = new Set(["auto_matched", "matched_confirmed"]);
-/** A filing that reached Finanças. */
-const FILED_STATUSES = new Set(["submitted", "accepted"]);
 /** Movements still waiting for the owner. */
 const MOVEMENTS_TO_REVIEW = new Set(["needs_review", "imported"]);
 
@@ -42,7 +41,6 @@ export interface DashboardMonth {
     receiptsIssued: number;
     /** Money arrived for the month, and no receipt is issued for it yet. */
     receiptsToIssue: number;
-    filed: number;
     fullyProcessed: number;
   };
   /** What waits for the owner now, whichever month is shown. Each is zero when nothing waits. */
@@ -124,7 +122,6 @@ export async function getDashboardMonth(
             },
           },
         },
-        rentReceiptFilings: { select: { status: true } },
       },
     }),
     // Every month still owed, whichever month is shown: due already, and not fully paid.
@@ -163,7 +160,6 @@ export async function getDashboardMonth(
     reconciled: 0,
     receiptsIssued: 0,
     receiptsToIssue: 0,
-    filed: 0,
     fullyProcessed: 0,
   };
   for (const period of periods) {
@@ -184,15 +180,13 @@ export async function getDashboardMonth(
         receipt.bankTransactions.some((movement) => MATCHED_MOVEMENTS.has(movement.status)),
       );
     const issued = receipts.some((receipt) => ISSUED_LIFECYCLES.has(receipt.lifecycle));
-    const filed = period.rentReceiptFilings.some((filing) => FILED_STATUSES.has(filing.status));
 
     loop.rents += 1;
     if (paid) loop.paid += 1;
     if (reconciled) loop.reconciled += 1;
     if (issued) loop.receiptsIssued += 1;
     else if (period.allocatedAmount > MONEY_EPSILON) loop.receiptsToIssue += 1;
-    if (filed) loop.filed += 1;
-    if (paid && reconciled && issued && filed) loop.fullyProcessed += 1;
+    if (paid && reconciled && issued) loop.fullyProcessed += 1;
   }
 
   const monthsOwed = { count: 0, amount: 0 };

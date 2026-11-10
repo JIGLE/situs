@@ -3,11 +3,11 @@
  *
  * WHY THIS FILE HAS NO IMPORTS, AND MUST KEEP NONE.
  *
- * This set is needed in two places that cannot share a module graph: the server-side guard
- * (`mode-guard.ts`, which writes a TaxSubmissionLog row and therefore reaches Prisma) and the
- * client-side presentation helper (`presentation.ts`, imported by two "use client" components).
+ * These sets are read on the server (`lib/services/tax/at-connection.ts`, which reaches Prisma)
+ * and in the browser (`presentation.ts` and the AT panels, "use client" components).
  *
- * It originally lived in `mode-guard.ts` and `presentation.ts` imported it from there. That was
+ * They originally lived in a server-side guard, since deleted, and `presentation.ts` imported
+ * them from there. That was
  * a deliberate choice — one list, so widening it for a real integration updates the UI in the
  * same move — but it built a chain from a browser bundle to a native binary:
  *
@@ -26,9 +26,8 @@
  */
 
 /**
- * Modes in which filing is simulated: nothing is transmitted. Every mode outside these and
- * `TEST_MODES` fails closed — see `mode-guard.ts` for the refusal, and `presentation.ts` for how
- * each kind of mode is shown to the operator.
+ * Modes in which nothing is transmitted. Situs files no receipt with Finanças in any mode; these
+ * are the resting state. See `presentation.ts` for how each kind of mode is shown to the operator.
  */
 export const SIMULATED_MODES: ReadonlySet<string> = new Set(["sandbox", "review"]);
 
