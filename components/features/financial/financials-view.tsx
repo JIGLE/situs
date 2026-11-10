@@ -38,6 +38,7 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
 import { useFormDialog } from "@/lib/hooks/use-form-dialog";
 import { expenseCategoryKey } from "@/lib/utils/expense-labels";
+import { incomeTotal } from "@/lib/utils/receipt-income";
 
 export function FinancialsView(): React.ReactElement {
   const { state, addExpense } = useApp();
@@ -117,12 +118,12 @@ export function FinancialsView(): React.ReactElement {
       previousExpenses = expenses.filter((e) => new Date(e.date).getFullYear() === currentYear - 1);
     }
 
-    const totalIncome = filteredReceipts.reduce((sum, receipt) => sum + receipt.amount, 0);
+    const totalIncome = incomeTotal(filteredReceipts);
     const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     const netProfit = totalIncome - totalExpenses;
 
     // Previous period totals
-    const prevIncome = previousReceipts.reduce((sum, receipt) => sum + receipt.amount, 0);
+    const prevIncome = incomeTotal(previousReceipts);
     const prevExpenses = previousExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     const prevNetProfit = prevIncome - prevExpenses;
 
@@ -156,7 +157,7 @@ export function FinancialsView(): React.ReactElement {
 
       monthlyRevenue.push({
         label: targetDate.toLocaleString("default", { month: "short" }),
-        value: monthReceipts.reduce((sum, r) => sum + r.amount, 0),
+        value: incomeTotal(monthReceipts),
       });
     }
 
@@ -214,7 +215,7 @@ export function FinancialsView(): React.ReactElement {
         month: "long",
         year: "numeric",
       }),
-      monthTotal: recs.filter((r) => r.status === "paid").reduce((s, r) => s + r.amount, 0),
+      monthTotal: incomeTotal(recs),
       receipts: recs,
     }));
   }, [metrics.filteredReceipts, receiptStatusFilter, locale]);

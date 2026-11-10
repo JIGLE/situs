@@ -66,6 +66,7 @@ import { joinContact } from "@/lib/utils/contact";
 import { formatMonthYear } from "@/lib/utils/format-date";
 import { StatusMark } from "@/components/ui/status-mark";
 import { propertyStatus } from "@/lib/utils/status-tone";
+import { incomeTotal } from "@/lib/utils/receipt-income";
 
 interface PropertyDetailViewProps {
   propertyId: string;
@@ -257,7 +258,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
     [propertyId, relatedTenants, relatedLeases, relatedReceipts, relatedExpenses],
   );
 
-  const totalRevenue = relatedReceipts.reduce((sum, r) => sum + r.amount, 0);
+  const totalRevenue = incomeTotal(relatedReceipts);
   const totalExpenses = relatedExpenses.reduce((sum, e) => sum + e.amount, 0);
   const netOperatingIncome = totalRevenue - totalExpenses;
   const activeLeasesList = relatedLeases.filter((l) => l.status === "active");
@@ -343,9 +344,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
         1;
       return sum + l.monthlyRent * Math.max(months, 0);
     }, 0);
-    const paidReceipts = relatedReceipts
-      .filter((r) => r.status === "paid")
-      .reduce((sum, r) => sum + r.amount, 0);
+    const paidReceipts = incomeTotal(relatedReceipts);
     const collectionRate = totalExpectedRent > 0 ? (paidReceipts / totalExpectedRent) * 100 : 0;
     return { totalExpectedRent, paidReceipts, collectionRate };
   }, [activeLeasesList, relatedReceipts]);
@@ -992,9 +991,8 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
               ) : (
                 <div className="space-y-2">
                   {propertyOwners.map(({ owner, assignment }) => {
-                    const ownerIncome = relatedReceipts
-                      .filter((r) => r.status === "paid")
-                      .reduce((s, r) => s + r.amount * (assignment.ownershipPercentage / 100), 0);
+                    const ownerIncome =
+                      incomeTotal(relatedReceipts) * (assignment.ownershipPercentage / 100);
                     return (
                       <div
                         key={owner.id}

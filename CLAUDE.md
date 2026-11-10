@@ -128,10 +128,18 @@ e2e/                    # Playwright E2E tests
 - **Reference-month rent ledger**: `RentPeriod` is one row per lease per reference month; its
   `status` is recomputed in the same transaction as every allocation write and never hand-set.
   Waterfall invariant: fill the oldest not-fully-allocated period first
-  (`lib/services/allocation/engine.ts`, pure). `Tenant.paymentStatus` is derived from the ledger —
-  never write it from an API route. The month sheet (`getRentMonth`) says where each payment came
-  from by reading the movement linked to its receipt (`BankTransaction.receiptId`), or "recorded by
-  hand" for a manual receipt with none; nothing about the origin is stored on the ledger.
+  (`lib/services/allocation/engine.ts`, pure). Only an `active` lease has months generated, and only
+  a `paid` receipt is allocated, inside the transaction that writes it. A lease edit runs
+  `syncLeasePeriods` in its own transaction: months outside the term go (waived if they carry
+  reversed history, kept if they carry live money), future unpaid months take the new rent, and a
+  lease with money allocated keeps its tenant and property (409 `lease_has_payments`). A receipt
+  whose money is allocated, or that was issued, keeps its amount, date, tenant, property, type and
+  status (409 `receipt_allocated`): a correction is a void and a new receipt. Screens that still sum
+  receipts count income through `lib/utils/receipt-income.ts` (not voided, not pending, not a
+  deposit). `Tenant.paymentStatus` is derived from the ledger — never write it from an API route.
+  The month sheet (`getRentMonth`) says where each payment came from by reading the movement linked
+  to its receipt (`BankTransaction.receiptId`), or "recorded by hand" for a manual receipt with
+  none; nothing about the origin is stored on the ledger.
 - **Deletes keep money history**: a tenant, property or lease with leases, receipts, rent months,
   live allocations, expenses or AT filings recorded against it is refused, since every one of those
   cascades from it in the schema (`lib/services/database/history.ts`). The refusal is a

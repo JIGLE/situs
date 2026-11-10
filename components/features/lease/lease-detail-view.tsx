@@ -32,6 +32,7 @@ import { joinContact } from "@/lib/utils/contact";
 import { downloadContract } from "./lease-contract";
 import { StatusMark } from "@/components/ui/status-mark";
 import { leaseEndStatus, leaseStatus, paymentStatus } from "@/lib/utils/status-tone";
+import { receivedTotal } from "@/lib/utils/receipt-income";
 
 interface LeaseDetailViewProps {
   leaseId: string;
@@ -86,9 +87,7 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
   const daysUntilExpiry = Math.ceil(
     (new Date(lease.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
   );
-  const totalPaid = relatedReceipts
-    .filter((r) => r.status === "paid")
-    .reduce((sum, r) => sum + r.amount, 0);
+  const totalPaid = receivedTotal(relatedReceipts);
 
   const handleEdit = () => {
     router.push(`/leases?action=edit&id=${lease.id}`);

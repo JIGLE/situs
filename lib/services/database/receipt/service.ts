@@ -3,13 +3,74 @@ import { assertOwnsRelations } from "../assert-owned";
 import { Receipt } from "@/lib/types";
 import { reverseAllocationsForReceipt } from "@/lib/services/allocation/service";
 import { isFiled } from "@/lib/services/receipts/lifecycle";
-import { ResourceNotFoundError, ValidationError } from "@/lib/utils/error-handling";
+import { ConflictError, ResourceNotFoundError, ValidationError } from "@/lib/utils/error-handling";
+import { MONEY_EPSILON } from "@/lib/utils/money";
 
 /** A receipt that went to Finanças stays: deleting it here would not void it at AT. */
 export class ReceiptFiledError extends Error {
   constructor() {
     super("A receipt submitted to Finanças cannot be deleted");
     this.name = "ReceiptFiledError";
+  }
+}
+
+/** The fields that say what money arrived, from whom, for what: the ledger was written from them. */
+type MoneyFields = Partial<
+  Pick<Receipt, "tenantId" | "propertyId" | "amount" | "date" | "type" | "status">
+>;
+
+/** A receipt the tenant holds: it left draft and review. */
+const ISSUED_LIFECYCLES = new Set(["emitted", "submitted", "accepted"]);
+
+/**
+ * Refuse a change to what a receipt says about money once that money is on the ledger.
+ *
+ * The rent months a receipt paid were written from its amount, date, tenant and property. Editing
+ * any of them afterwards changed the receipt and left its allocations as they were: the ledger then
+ * said one amount was paid and the receipt another, or a month named one tenant and the receipt
+ * paying it another. A correction is a void (which reverses the allocations) and a new receipt. A
+ * receipt already issued is the document the tenant holds, so it keeps its figures too. A
+ * description is not money and can always change. A field sent with its current value passes,
+ * since the edit form sends every field.
+ */
+async function assertMoneyUnchangedOnceAllocated(
+  userId: string,
+  id: string,
+  data: MoneyFields,
+): Promise<void> {
+  const prisma = getPrismaClient();
+  const current = await prisma.receipt.findFirst({
+    where: { id, userId },
+    select: {
+      tenantId: true,
+      propertyId: true,
+      amount: true,
+      date: true,
+      type: true,
+      status: true,
+      lifecycle: true,
+    },
+  });
+  if (!current) throw new ResourceNotFoundError("Receipt");
+
+  const changes =
+    (data.tenantId !== undefined && data.tenantId !== current.tenantId) ||
+    (data.propertyId !== undefined && data.propertyId !== current.propertyId) ||
+    (data.amount !== undefined && Math.abs(data.amount - current.amount) > MONEY_EPSILON) ||
+    (data.date !== undefined &&
+      new Date(data.date).toISOString().slice(0, 10) !== current.date.toISOString().slice(0, 10)) ||
+    (data.type !== undefined && data.type !== current.type) ||
+    (data.status !== undefined && data.status !== current.status);
+  if (!changes) return;
+
+  const allocated = await prisma.paymentAllocation.count({
+    where: { receiptId: id, reversedAt: null },
+  });
+  if (allocated > 0 || ISSUED_LIFECYCLES.has(current.lifecycle)) {
+    throw new ConflictError(
+      "This receipt's payment is recorded; void it and record a new one instead",
+      "receipt_allocated",
+    );
   }
 }
 
@@ -120,6 +181,7 @@ export const receiptService = {
       propertyId: data.propertyId,
     });
 
+    await assertMoneyUnchangedOnceAllocated(userId, id, data);
     const receipt = await getPrismaClient().receipt.update({
       where: { id, userId },
       data: {

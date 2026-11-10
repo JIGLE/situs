@@ -7,6 +7,7 @@ import { AlertTriangle, CalendarClock, CheckCircle2 } from "lucide-react";
 
 import { useApp } from "@/lib/contexts/app-context";
 import { useCurrency } from "@/lib/contexts/currency-context";
+import { countsAsIncome } from "@/lib/utils/receipt-income";
 
 /**
  * What the Portfolio workspace shows before an asset is chosen.
@@ -75,7 +76,7 @@ export function PortfolioSummary({
     const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
     return receipts
       .filter((r) => {
-        if (r.status !== "paid") return false;
+        if (!countsAsIncome(r)) return false;
         const d = new Date((r as unknown as { date?: string }).date ?? r.createdAt);
         return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
       })
