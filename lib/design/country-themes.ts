@@ -135,7 +135,10 @@ function makeTheme(
     ink,
     bone: dark ? "#0D1117" : "#FBFBFB",
     canvas,
-    surface: dark ? "rgba(255,255,255,0.035)" : "rgba(0,0,0,0.025)",
+    // Light panels are the solid surface: a white card on a quiet canvas. As a 2.5% black wash
+    // every nested box came out a shade darker than its parent, so a screen was beige on beige on
+    // beige and nothing read as the page.
+    surface: dark ? "rgba(255,255,255,0.035)" : surfaceSolid,
     surfaceSolid,
     border,
     accent,
@@ -156,7 +159,7 @@ export const COUNTRY_THEMES: Record<string, CountryTheme> = {
       neutral: "#FFFFFF",
       note: "European Union: arc blue, line blue, dot yellow.",
     },
-    normal: makeTheme("#0F172A", "#F5F7FB", "#EEF3FA", "#D8E0EC", "#003399", "#64748B"),
+    normal: makeTheme("#0F172A", "#F5F7FB", "#FFFFFF", "#DFE5EE", "#003399", "#64748B"),
     dark: makeTheme("#F8FAFC", "#0B1020", "#111936", "#273A66", "#FFCC00", "#BAC7DA"),
   },
   PT: {
@@ -168,7 +171,7 @@ export const COUNTRY_THEMES: Record<string, CountryTheme> = {
       neutral: "#FFFFFF",
       note: "Portugal: arc green, line red, dot yellow.",
     },
-    normal: makeTheme("#221D16", "#F6F0E4", "#F1E8D8", "#DDD3C3", "#006600", "#756E63"),
+    normal: makeTheme("#221D16", "#F7F6F3", "#FFFFFF", "#E4E0D8", "#006600", "#6A6357"),
     dark: makeTheme("#EEF7F0", "#0B110D", "#121B15", "#263428", "#FFFF00", "#A5B8A9"),
   },
 };
@@ -206,6 +209,9 @@ export function resolveThemeVars(country: CountryCode, mode: ThemeMode): Record<
     : theme.canvas;
   const highlight = readableHighlight(entry.roles.primary, highlightBackdrop);
   const textBackdrop = isDark(theme.canvas) ? mixWith(theme.canvas, "#FFFFFF", 0.05) : theme.canvas;
+  const mutedSurface = isDark(theme.canvas)
+    ? theme.surfaceSolid
+    : mixWith(theme.surfaceSolid, theme.ink, 0.06);
   const logoKeyline = isDark(theme.surfaceSolid) ? "rgba(255,255,255,0.68)" : "rgba(0,0,0,0.48)";
 
   // On a light theme the canvas is the backdrop; on a dark one text is light, so the lightest
@@ -236,11 +242,13 @@ export function resolveThemeVars(country: CountryCode, mode: ThemeMode): Record<
     // The surface belongs to `surfaceSolid`, which is what globals.css already defines
     // `--color-muted` as for the default country, and the text colour belongs to the
     // foreground token, which nothing was setting per country at all.
-    "--color-muted": theme.surfaceSolid,
+    // On a light theme the panel is white, so a muted surface (a skeleton, a count badge, a
+    // progress track) is a step darker than it or it would not show at all.
+    "--color-muted": mutedSurface,
     // Corrected against the muted SURFACE rather than the canvas: it is the tighter of the two
     // backgrounds this text lands on, and the table's raw values sit at 4.15–4.44:1 on the light
     // themes — below AA, and below the 4.89:1 the hand-tuned globals.css value already reached.
-    "--color-muted-foreground": readableHighlight(theme.muted, theme.surfaceSolid),
+    "--color-muted-foreground": readableHighlight(theme.muted, mutedSurface),
     "--color-border": theme.border,
     "--color-hover": theme.hover,
     "--ui-accent": theme.accent,

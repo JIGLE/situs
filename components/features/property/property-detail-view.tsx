@@ -880,7 +880,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                 Leases tabs in here (Overview absorbs them per the tab merge). */}
             <section className="space-y-3">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="text-sm font-semibold text-[var(--color-muted-foreground)] uppercase tracking-wider">
+                <h3 className="text-sm font-semibold text-[var(--color-muted-foreground)]">
                   {t("related")}
                 </h3>
                 {/* Opens in place — the property is already known, so there is nothing to pick
@@ -969,7 +969,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                 neighbour so the two read as a pair rather than a card stacked under a card. */}
             <section className="space-y-3">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[var(--color-muted-foreground)]">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-muted-foreground)]">
                   <Users className="h-4 w-4" />
                   {t("ownership.title")}
                 </h3>

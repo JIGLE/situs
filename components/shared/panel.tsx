@@ -61,7 +61,7 @@ export function Panel({
             TONES[tone],
           )}
         >
-          <h2 className="truncate text-xs font-semibold uppercase tracking-widest text-[var(--color-muted-foreground)]">
+          <h2 className="truncate text-xs font-semibold text-[var(--color-muted-foreground)]">
             {title}
           </h2>
           {action}

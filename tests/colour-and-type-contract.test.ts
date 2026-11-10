@@ -61,7 +61,7 @@ describe("colour and type", () => {
   it("defines every named size it allows, and uses each", () => {
     const css = readFileSync(join(root, "app/globals.css"), "utf8");
     const used = SOURCES.map((f) => readFileSync(f, "utf8")).join("\n");
-    for (const name of ["label", "badge", "caption", "meta", "reading", "tick"]) {
+    for (const name of ["label", "badge", "caption", "meta", "reading"]) {
       expect(css, `@utility text-${name}`).toContain(`@utility text-${name} {`);
       expect(used, `text-${name} unused`).toMatch(new RegExp(`\\btext-${name}\\b`));
     }

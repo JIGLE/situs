@@ -7,7 +7,7 @@ describe("StatusMark", () => {
   it("says the state in words, with the colour in a dot a screen reader skips", () => {
     render(<StatusMark tone="success">Ativo</StatusMark>);
 
-    const mark = screen.getByText("Ativo");
+    const mark = screen.getByText("Ativo").parentElement as HTMLElement;
     const dot = mark.querySelector("span");
     expect(dot?.getAttribute("aria-hidden")).toBe("true");
     expect(dot?.className).toContain("bg-[var(--semantic-success-readable)]");
@@ -21,6 +21,6 @@ describe("StatusMark", () => {
       </StatusMark>,
     );
 
-    expect(screen.getByText("Anulado").className).toContain("line-through");
+    expect(screen.getByText("Anulado").parentElement?.className).toContain("line-through");
   });
 });

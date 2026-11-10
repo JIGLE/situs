@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/utils";
 
 /**
- * The one way a state is drawn: a square dot in the state's colour and its name in mono capitals.
+ * The one way a state is drawn: a dot in the state's colour and its name in plain small type.
  *
  * Status was a solid `Badge`, an outlined mono `Badge`, a soft-washed pill built by hand in seven
  * places, a coloured word, and a bare dot; the same lease was grey in one list and red on its own
@@ -37,15 +37,17 @@ export function StatusMark({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 font-mono text-label uppercase tracking-[0.06em]",
+        "inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium",
         struck
           ? "text-[var(--color-muted-foreground)] line-through"
           : "text-[var(--color-foreground)]",
         className,
       )}
     >
-      <span aria-hidden className={cn("size-2 shrink-0", DOT[tone])} />
-      {children}
+      <span aria-hidden className={cn("size-2 shrink-0 rounded-full", DOT[tone])} />
+      {/* Its own box, because ::first-letter does not apply to a flex container. Labels written
+          for the old capitals ("faltam 51d") start with a capital without a catalogue sweep. */}
+      <span className="inline-block first-letter:uppercase">{children}</span>
     </span>
   );
 }

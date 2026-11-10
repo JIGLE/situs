@@ -162,7 +162,7 @@ import { leaseStatus } from "@/lib/utils/status-tone";
 <StatusMark {...leaseStatus(lease.status)}>{tLease(lease.status)}</StatusMark>;
 ```
 
-A state is a `StatusMark`: a square dot in the state's colour and its name in mono capitals. Which
+A state is a `StatusMark`: a dot in the state's colour and its name in plain small type. Which
 tone a stored value takes is decided in `lib/utils/status-tone.ts` and nowhere else; add a state
 there, not in a screen. `Badge` is for a label that is not a state (a count, a flag), and has no
 success, warning or danger variant (`tests/status-mark-contract.test.ts`).
@@ -246,9 +246,9 @@ and an icon with no meaning is `text-[var(--color-muted-foreground)]`. A raw hue
 the tokens already do, and `@custom-variant dark` in `app/globals.css` follows the app's own theme
 should one ever be.
 
-Type below the headings is six named sizes, defined as `@utility` in `app/globals.css`:
-`text-label` (12px on a phone, 10px from `md`), `text-badge` (10px), `text-caption` (11px),
-`text-meta` (13px), `text-reading` (15px) and `text-tick` (9px). An arbitrary `text-[Npx]` is
+Type below the headings is five named sizes, defined as `@utility` in `app/globals.css`:
+`text-label` (12px), `text-badge` (10px), `text-caption` (11px),
+`text-meta` (13px) and `text-reading` (15px). An arbitrary `text-[Npx]` is
 refused. `lib/utils/utils.ts` teaches `cn()` that they are sizes, so a later text colour does not
 drop them. `tests/colour-and-type-contract.test.ts` names the file and line.
 

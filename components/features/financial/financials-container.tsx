@@ -246,7 +246,7 @@ export function FinancialsContainer() {
             items={paymentTabs.map(({ value, label, badge }) => ({ value, label, badge }))}
             aria-label={t("title")}
           />
-          <TabsList className="flex w-full max-w-full justify-start gap-1 overflow-x-auto max-md:hidden">
+          <TabsList className="flex w-full max-w-full justify-start overflow-x-auto max-md:hidden">
             {paymentTabs.map(({ value, label, icon: Icon, badge }) => (
               <TabsTrigger key={value} value={value} className="flex shrink-0 items-center gap-2">
                 <Icon className="h-4 w-4 shrink-0" />

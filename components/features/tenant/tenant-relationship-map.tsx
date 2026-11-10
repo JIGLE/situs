@@ -94,7 +94,7 @@ export function TenantRelationshipMap({ tenantId }: TenantRelationshipMapProps) 
           key={stage.key}
           className="border border-[var(--color-border)] bg-[var(--color-card)] p-3"
         >
-          <div className="flex items-center gap-1.5 text-label uppercase tracking-wide text-[var(--color-muted-foreground)]">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-muted-foreground)]">
             <stage.icon className="h-3 w-3 shrink-0" />
             <span className="truncate">{stage.label}</span>
           </div>

@@ -23,10 +23,10 @@ describe("TabNav and TabLink", () => {
     expect(screen.getByRole("navigation", { name: "Secções" })).toBeDefined();
     const current = screen.getByRole("link", { name: "Visão geral" });
     expect(current.getAttribute("aria-current")).toBe("page");
-    expect(current.className).toContain("border-t-[var(--country-highlight-readable)]");
+    expect(current.className).toContain("border-b-[var(--country-highlight-readable)]");
 
     const other = screen.getByRole("link", { name: "Estado" });
     expect(other.getAttribute("aria-current")).toBeNull();
-    expect(other.className).not.toContain("border-t-[var(--country-highlight-readable)]");
+    expect(other.className).not.toContain("border-b-[var(--country-highlight-readable)]");
   });
 });
