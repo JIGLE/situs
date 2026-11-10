@@ -824,11 +824,8 @@
       "tax": "Riepilogo fiscale"
     },
     "overdueRent": "Canone scaduto",
-    "overdueRentHint": "Totale del canone atteso attualmente scaduto",
     "pendingReceipts": "Ricevute in sospeso",
-    "pendingReceiptsHint": "Record ancora in attesa di pagamento o ricevuta",
-    "collectedMonth": "Incassato questo mese",
-    "collectedMonthHint": "Canone già ricevuto questo mese"
+    "collectedMonth": "Incassato questo mese"
   },
   "leases": {
     "title": "Contratti",
@@ -855,7 +852,6 @@
     "newEndDate": "Nuova data di fine",
     "renewalNotes": "Note per l'inquilino",
     "pageTitle": "Gestione contratti",
-    "pageDescription": "Gestisci i contratti di locazione e i relativi documenti",
     "addLease": "Aggiungi contratto",
     "searchPlaceholder": "Cerca contratti per inquilino o immobile...",
     "pending": "In attesa",

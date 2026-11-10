@@ -64,7 +64,9 @@ const SheetContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed z-50 flex flex-col gap-0",
+        // The panel takes focus when it opens, and the global focus ring then drew a green box
+        // round the whole overlay. The ring belongs to controls, not to the surface they sit on.
+        "fixed z-50 flex flex-col gap-0 outline-none",
         "bg-[var(--color-card-solid)] border-[var(--color-border)]",
         "transition ease-in-out",
         "data-[state=open]:animate-in data-[state=closed]:animate-out",

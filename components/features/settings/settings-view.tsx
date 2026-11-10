@@ -173,7 +173,7 @@ export function SettingsView(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={tNav("settings")} description={t("subtitle")}>
+      <PageHeader title={tNav("settings")}>
         {hasChanges && (
           <Button onClick={saveSettings} disabled={saving}>
             <Save className="h-4 w-4 mr-2" />

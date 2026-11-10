@@ -824,11 +824,8 @@
       "tax": "Resumo fiscal"
     },
     "overdueRent": "Renda em atraso",
-    "overdueRentHint": "Total de renda esperada atualmente em atraso",
     "pendingReceipts": "Recibos pendentes",
-    "pendingReceiptsHint": "Registos que ainda aguardam pagamento ou emissão de recibo",
-    "collectedMonth": "Arrecadado este mês",
-    "collectedMonthHint": "Renda já recebida este mês"
+    "collectedMonth": "Arrecadado este mês"
   },
   "leases": {
     "title": "Contratos de Arrendamento",
@@ -855,7 +852,6 @@
     "newEndDate": "Nova Data de Fim",
     "renewalNotes": "Notas para o Inquilino",
     "pageTitle": "Gestão de Contratos",
-    "pageDescription": "Faça a gestão de contratos de arrendamento e documentos",
     "addLease": "Adicionar contrato",
     "searchPlaceholder": "Procurar contratos por inquilino ou imóvel...",
     "pending": "Pendente",

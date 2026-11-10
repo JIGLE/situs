@@ -824,11 +824,8 @@
       "tax": "Tax summary"
     },
     "overdueRent": "Overdue rent",
-    "overdueRentHint": "Total expected rent currently marked overdue",
     "pendingReceipts": "Pending receipts",
-    "pendingReceiptsHint": "Records that still need payment or receipt follow-up",
-    "collectedMonth": "Collected this month",
-    "collectedMonthHint": "Paid rent already received this month"
+    "collectedMonth": "Collected this month"
   },
   "leases": {
     "title": "Leases",
@@ -855,7 +852,6 @@
     "newEndDate": "New End Date",
     "renewalNotes": "Notes for Tenant",
     "pageTitle": "Lease Management",
-    "pageDescription": "Manage lease agreements and contract documents",
     "addLease": "Add Lease",
     "searchPlaceholder": "Search leases by tenant or property name...",
     "pending": "Pending",
