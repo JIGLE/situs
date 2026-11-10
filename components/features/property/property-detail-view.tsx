@@ -63,6 +63,7 @@ import { PropertyYearStrip, type YearStripSelection } from "./property-year-stri
 import { expenseCategoryKey } from "@/lib/utils/expense-labels";
 import { rentPeriodStatusKey } from "@/lib/utils/rent-period-labels";
 import { joinContact } from "@/lib/utils/contact";
+import { formatMonthYear } from "@/lib/utils/format-date";
 import { StatusMark } from "@/components/ui/status-mark";
 import { propertyStatus } from "@/lib/utils/status-tone";
 
@@ -81,6 +82,10 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
   const tTenants = useTranslations("tenants");
   const tTypes = useTranslations("properties.types");
   const tPeriod = useTranslations("rentPeriodStatus");
+  const tStatus = useTranslations("status");
+  const tLeases = useTranslations("leases");
+  const tActions = useTranslations("actions");
+  const tReceipts = useTranslations("financial.receipts");
   const periodLabel = (status?: string | null) => {
     const key = rentPeriodStatusKey(status);
     return key ? tPeriod(key) : status || "—";
@@ -398,7 +403,9 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                     <Bath className="h-3.5 w-3.5" /> {property.bathrooms}
                   </span>
                 )}
-                <span className="text-sm font-medium">{formatCurrency(property.rent)}/mo</span>
+                <span className="text-sm font-medium">
+                  {tLeases("perMonth", { amount: formatCurrency(property.rent) })}
+                </span>
               </div>
             </div>
           </div>
@@ -418,13 +425,15 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
             >
               <DialogContent className="sm:max-w-[440px]">
                 <DialogHeader>
-                  <DialogTitle>Record Expense</DialogTitle>
-                  <DialogDescription>Log a cost for {property.name}</DialogDescription>
+                  <DialogTitle>{t("expenseDialog.title")}</DialogTitle>
+                  <DialogDescription>
+                    {t("expenseDialog.description", { property: property.name })}
+                  </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={expenseDialog.handleSubmit} className="space-y-4 pt-1">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label htmlFor="exp-category">Category</Label>
+                      <Label htmlFor="exp-category">{t("expenseDialog.category")}</Label>
                       <Select
                         value={expenseDialog.formData.category}
                         onValueChange={(v) =>
@@ -434,19 +443,19 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                         }
                       >
                         <SelectTrigger id="exp-category">
-                          <SelectValue placeholder="Category" />
+                          <SelectValue placeholder={t("expenseDialog.category")} />
                         </SelectTrigger>
                         <SelectContent>
                           {EXPENSE_CATEGORIES.map((c) => (
                             <SelectItem key={c} value={c}>
-                              {c.replace(/_/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase())}
+                              {expenseCategoryLabel(c)}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="exp-amount">Amount</Label>
+                      <Label htmlFor="exp-amount">{t("dialog.amount")}</Label>
                       <Input
                         id="exp-amount"
                         type="number"
@@ -464,7 +473,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="exp-date">Date</Label>
+                    <Label htmlFor="exp-date">{t("dialog.date")}</Label>
                     <Input
                       id="exp-date"
                       type="date"
@@ -473,11 +482,11 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="exp-desc">Description (optional)</Label>
+                    <Label htmlFor="exp-desc">{t("expenseDialog.descriptionOptional")}</Label>
                     <Textarea
                       id="exp-desc"
                       rows={2}
-                      placeholder="Notes…"
+                      placeholder={t("expenseDialog.notesPlaceholder")}
                       value={expenseDialog.formData.description || ""}
                       onChange={(e) =>
                         expenseDialog.updateFormData({ description: e.target.value })
@@ -486,10 +495,10 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                   </div>
                   <div className="flex justify-end gap-2 pt-2">
                     <Button type="button" variant="outline" onClick={expenseDialog.closeDialog}>
-                      Cancel
+                      {tActions("cancel")}
                     </Button>
                     <Button type="submit" disabled={expenseDialog.isSubmitting}>
-                      Save Expense
+                      {t("expenseDialog.save")}
                     </Button>
                   </div>
                 </form>
@@ -503,14 +512,14 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
             >
               <DialogContent className="sm:max-w-[440px]">
                 <DialogHeader>
-                  <DialogTitle>Record Payment</DialogTitle>
+                  <DialogTitle>{t("paymentDialog.title")}</DialogTitle>
                   <DialogDescription>
-                    Log a rent or deposit payment for {property.name}
+                    {t("paymentDialog.description", { property: property.name })}
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={receiptDialog.handleSubmit} className="space-y-4 pt-1">
                   <div className="space-y-1.5">
-                    <Label htmlFor="rec-tenant">Tenant</Label>
+                    <Label htmlFor="rec-tenant">{tReceipts("tenant")}</Label>
                     <Select
                       value={receiptDialog.formData.tenantId}
                       onValueChange={(v) => receiptDialog.updateFormData({ tenantId: v })}
@@ -523,7 +532,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                             : ""
                         }
                       >
-                        <SelectValue placeholder="Select tenant" />
+                        <SelectValue placeholder={tReceipts("selectTenant")} />
                       </SelectTrigger>
                       <SelectContent>
                         {relatedTenants.map((ten) => (
@@ -548,7 +557,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label htmlFor="rec-amount">Amount</Label>
+                      <Label htmlFor="rec-amount">{t("dialog.amount")}</Label>
                       <Input
                         id="rec-amount"
                         type="number"
@@ -565,7 +574,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="rec-type">Type</Label>
+                      <Label htmlFor="rec-type">{tReceipts("paymentType")}</Label>
                       <Select
                         value={receiptDialog.formData.type}
                         onValueChange={(v) =>
@@ -576,17 +585,19 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="rent">Rent</SelectItem>
-                          <SelectItem value="deposit">Deposit</SelectItem>
-                          <SelectItem value="maintenance">Maintenance</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
+                          <SelectItem value="rent">{tReceipts("typeRent")}</SelectItem>
+                          <SelectItem value="deposit">{tReceipts("typeDeposit")}</SelectItem>
+                          <SelectItem value="maintenance">
+                            {tReceipts("typeMaintenance")}
+                          </SelectItem>
+                          <SelectItem value="other">{tReceipts("typeOther")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label htmlFor="rec-date">Date</Label>
+                      <Label htmlFor="rec-date">{t("dialog.date")}</Label>
                       <Input
                         id="rec-date"
                         type="date"
@@ -595,7 +606,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="rec-status">Status</Label>
+                      <Label htmlFor="rec-status">{t("month.status")}</Label>
                       <Select
                         value={receiptDialog.formData.status}
                         onValueChange={(v) =>
@@ -606,18 +617,18 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="paid">Paid</SelectItem>
-                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="paid">{tStatus("paid")}</SelectItem>
+                          <SelectItem value="pending">{tStatus("pending")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
                   <div className="flex justify-end gap-2 pt-2">
                     <Button type="button" variant="outline" onClick={receiptDialog.closeDialog}>
-                      Cancel
+                      {tActions("cancel")}
                     </Button>
                     <Button type="submit" disabled={receiptDialog.isSubmitting}>
-                      Save Payment
+                      {t("paymentDialog.save")}
                     </Button>
                   </div>
                 </form>
@@ -887,7 +898,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                   id={tenant.id}
                   title={tenant.name}
                   subtitle={joinContact(tenant.email, tenant.phone) || undefined}
-                  status={tenant.paymentStatus}
+                  status={tStatus(tenant.paymentStatus)}
                   statusVariant={
                     tenant.paymentStatus === "paid"
                       ? "success"
@@ -909,9 +920,9 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                     <EntityLink
                       type="lease"
                       id={lease.id}
-                      title={`${formatCurrency(lease.monthlyRent)}/mo`}
+                      title={tLeases("perMonth", { amount: formatCurrency(lease.monthlyRent) })}
                       subtitle={`${formatDay(lease.startDate)} — ${formatDay(lease.endDate)}`}
-                      status={lease.status}
+                      status={tLeases(lease.status)}
                       statusVariant={
                         lease.status === "active"
                           ? "success"
@@ -1194,7 +1205,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
           {activity && activity.timeline.length > 0 && (
             <div className="border border-[var(--color-border)] bg-[var(--color-surface)]">
               <div className="border-b border-[var(--color-border)] px-4 py-3">
-                <p className="mono-label">Payment timeline</p>
+                <p className="mono-label">{t("paymentTimeline")}</p>
               </div>
               <div className="divide-y divide-[var(--color-border)]">
                 {activity.timeline.map((entry) => (
@@ -1205,11 +1216,8 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 shrink-0 bg-[var(--ui-accent)]" />
                       <span>
-                        {entry.reversedAt ? "Reversed" : "Allocated"} ·{" "}
-                        {String(entry.period.month).padStart(2, "0")}/{entry.period.year}
-                        <span className="ml-1 text-xs text-[var(--color-muted-foreground)]">
-                          ({entry.type.replace(/_/g, " ")})
-                        </span>
+                        {entry.reversedAt ? t("timelineReversed") : t("month.allocated")} ·{" "}
+                        {formatMonthYear(entry.period.year, entry.period.month, locale)}
                       </span>
                     </div>
                     <span
@@ -1220,7 +1228,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                           : "text-[var(--color-foreground)]",
                       )}
                     >
-                      €{entry.amount.toFixed(2)}
+                      {formatCurrency(entry.amount)}
                     </span>
                   </div>
                 ))}

@@ -61,7 +61,14 @@
       "noPriorMonth": "Sem recibos no mês anterior",
       "vsLastMonth": "vs mês anterior"
     },
-    "toastBuildingCreated": "Edifício adicionado"
+    "toastBuildingCreated": "Edifício adicionado",
+    "buildingDialog": {
+      "title": "Adicionar edifício",
+      "description": "Agrupe imóveis relacionados num edifício.",
+      "name": "Nome do edifício *",
+      "namePlaceholder": "ex.: Edifício Ribeira",
+      "submit": "Criar edifício"
+    }
   },
   "settings": {
     "title": "Configurações",
@@ -1002,7 +1009,8 @@
       },
       "atContract": "Contrato na AT",
       "atContractVersion": "{number}, versão {version}",
-      "notRecorded": "Não registado"
+      "notRecorded": "Não registado",
+      "untitled": "Contrato"
     },
     "unknown": "Desconhecido",
     "parties": {
@@ -1101,7 +1109,13 @@
     "editOwner": "Editar proprietário",
     "deleteOwner": "Eliminar proprietário",
     "toastDeleted": "Proprietário eliminado com sucesso",
-    "deleteDescription": "Este proprietário será removido definitivamente. Esta ação não pode ser anulada."
+    "deleteDescription": "Este proprietário será removido definitivamente. Esta ação não pode ser anulada.",
+    "noneFound": "Nenhum proprietário encontrado",
+    "adjustFilters": "Ajuste a pesquisa ou os filtros",
+    "statement": "Extrato do proprietário",
+    "statementGenerating": "A gerar…",
+    "unknownProperty": "Imóvel desconhecido",
+    "ownershipShare": "{percent}% de propriedade"
   },
   "forms": {
     "fullName": "Nome Completo",
@@ -1568,6 +1582,32 @@
       "selectOwner": "Escolher proprietário…",
       "remove": "Remover proprietário",
       "reachesFull": "O total passa a ser exatamente 100% ✓"
+    },
+    "expenseDialog": {
+      "title": "Registar despesa",
+      "description": "Registe um custo de {property}",
+      "category": "Categoria",
+      "descriptionOptional": "Descrição (opcional)",
+      "notesPlaceholder": "Notas…",
+      "save": "Guardar despesa"
+    },
+    "paymentDialog": {
+      "title": "Registar pagamento",
+      "description": "Registe um pagamento de renda ou caução de {property}",
+      "save": "Guardar pagamento"
+    },
+    "dialog": {
+      "amount": "Montante",
+      "date": "Data"
+    },
+    "paymentTimeline": "Cronologia de pagamentos",
+    "timelineReversed": "Revertido",
+    "ledger": {
+      "title": "Livro de rendas · meses de referência",
+      "current": "Atual: {month}",
+      "allocated": "{allocated} de {due} imputados",
+      "receipt": "Recibo: {state}",
+      "noPeriod": "Sem mês de renda"
     }
   },
   "notificationCenter": {
@@ -1780,14 +1820,18 @@
       "contact": "Contacto",
       "activeLease": "Contrato ativo",
       "noPayments": "Sem registos de pagamento",
-      "editTenant": "Editar inquilino"
+      "editTenant": "Editar inquilino",
+      "overdueAction": "Este inquilino tem um pagamento em atraso. Registe-o agora.",
+      "expiringAction": "O contrato termina dentro de {days, plural, one {# dia} other {# dias}}. Renove-o antes que caduque.",
+      "noLeaseAction": "Sem contrato ativo. Crie um para acompanhar a renda."
     },
     "relationship": {
       "lease": "Contrato",
       "rentPeriods": "Períodos de renda",
       "bankMovements": "Movimentos bancários",
       "receipts": "Recibos",
-      "taxLog": "Registo fiscal"
+      "taxLog": "Registo fiscal",
+      "unavailable": "Não foi possível carregar o histórico deste inquilino."
     },
     "leaseExpiresInDays": "faltam {days}d",
     "payerAccounts": {
@@ -1849,7 +1893,9 @@
     "themeDark": "Escuro",
     "changeTheme": "Alterar tema",
     "taxConnectorsEmpty": "Ainda sem conectores fiscais — é criado automaticamente na primeira vez que emitir um recibo de renda através do fluxo fiscal de um país.",
-    "taxConnectorsLoadFailed": "Não foi possível carregar os conectores fiscais. Tente novamente."
+    "taxConnectorsLoadFailed": "Não foi possível carregar os conectores fiscais. Tente novamente.",
+    "newRelease": "Nova versão disponível: {name}",
+    "newReleaseBody": "Está disponível uma nova versão do Situs."
   },
   "rentPeriodStatus": {
     "upcoming": "Por vencer",

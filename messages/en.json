@@ -61,7 +61,14 @@
       "noPriorMonth": "No receipts last month",
       "vsLastMonth": "vs last month"
     },
-    "toastBuildingCreated": "Building added"
+    "toastBuildingCreated": "Building added",
+    "buildingDialog": {
+      "title": "Add building",
+      "description": "Group related properties under one building.",
+      "name": "Building name *",
+      "namePlaceholder": "e.g. Edifício Ribeira",
+      "submit": "Create building"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -1002,7 +1009,8 @@
       },
       "atContract": "AT contract",
       "atContractVersion": "{number}, version {version}",
-      "notRecorded": "Not recorded"
+      "notRecorded": "Not recorded",
+      "untitled": "Lease"
     },
     "unknown": "Unknown",
     "parties": {
@@ -1101,7 +1109,13 @@
     "editOwner": "Edit owner",
     "deleteOwner": "Delete owner",
     "toastDeleted": "Owner deleted successfully",
-    "deleteDescription": "This owner will be permanently removed. This action cannot be undone."
+    "deleteDescription": "This owner will be permanently removed. This action cannot be undone.",
+    "noneFound": "No owners found",
+    "adjustFilters": "Try adjusting your search or filters",
+    "statement": "Owner statement",
+    "statementGenerating": "Generating…",
+    "unknownProperty": "Unknown property",
+    "ownershipShare": "{percent}% ownership"
   },
   "forms": {
     "fullName": "Full Name",
@@ -1568,6 +1582,32 @@
       "selectOwner": "Select owner…",
       "remove": "Remove owner",
       "reachesFull": "Total will reach exactly 100% ✓"
+    },
+    "expenseDialog": {
+      "title": "Record expense",
+      "description": "Log a cost for {property}",
+      "category": "Category",
+      "descriptionOptional": "Description (optional)",
+      "notesPlaceholder": "Notes…",
+      "save": "Save expense"
+    },
+    "paymentDialog": {
+      "title": "Record payment",
+      "description": "Log a rent or deposit payment for {property}",
+      "save": "Save payment"
+    },
+    "dialog": {
+      "amount": "Amount",
+      "date": "Date"
+    },
+    "paymentTimeline": "Payment timeline",
+    "timelineReversed": "Reversed",
+    "ledger": {
+      "title": "Rent ledger · reference months",
+      "current": "Current: {month}",
+      "allocated": "{allocated} of {due} allocated",
+      "receipt": "Receipt: {state}",
+      "noPeriod": "No rent month"
     }
   },
   "notificationCenter": {
@@ -1780,14 +1820,18 @@
       "contact": "Contact",
       "activeLease": "Active lease",
       "noPayments": "No payment records",
-      "editTenant": "Edit tenant"
+      "editTenant": "Edit tenant",
+      "overdueAction": "This tenant has an overdue payment. Record it now.",
+      "expiringAction": "The lease ends in {days, plural, one {# day} other {# days}}. Renew it before it lapses.",
+      "noLeaseAction": "No active lease. Create one to track rent."
     },
     "relationship": {
       "lease": "Lease",
       "rentPeriods": "Rent periods",
       "bankMovements": "Bank movements",
       "receipts": "Receipts",
-      "taxLog": "Tax log"
+      "taxLog": "Tax log",
+      "unavailable": "Couldn't load this tenant's history."
     },
     "leaseExpiresInDays": "{days}d left",
     "payerAccounts": {
@@ -1849,7 +1893,9 @@
     "themeDark": "Dark",
     "changeTheme": "Change theme",
     "taxConnectorsEmpty": "No tax connectors yet — one is created automatically the first time you emit a rent receipt through a country's fiscal workflow.",
-    "taxConnectorsLoadFailed": "Couldn't load the tax connectors. Try again."
+    "taxConnectorsLoadFailed": "Couldn't load the tax connectors. Try again.",
+    "newRelease": "New release available: {name}",
+    "newReleaseBody": "A new version of Situs is available."
   },
   "rentPeriodStatus": {
     "upcoming": "Upcoming",

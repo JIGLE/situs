@@ -35,6 +35,8 @@ export function AssetsView(): React.ReactElement {
   const { properties } = state;
   const propertiesViewRef = useRef<PropertiesViewRef>(null);
   const t = useTranslations("portfolio");
+  const tForms = useTranslations("forms");
+  const tActions = useTranslations("actions");
   const { success } = useToast();
 
   // Onboarding checklist deep-links here with ?action=create-property
@@ -145,17 +147,15 @@ export function AssetsView(): React.ReactElement {
       <Dialog open={buildingDialogOpen} onOpenChange={setBuildingDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Building</DialogTitle>
-            <DialogDescription>
-              Create a building to group related properties together.
-            </DialogDescription>
+            <DialogTitle>{t("buildingDialog.title")}</DialogTitle>
+            <DialogDescription>{t("buildingDialog.description")}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAddBuilding} className="space-y-4 pt-2">
             <div className="space-y-2">
-              <Label htmlFor="building-name">Building Name *</Label>
+              <Label htmlFor="building-name">{t("buildingDialog.name")}</Label>
               <Input
                 id="building-name"
-                placeholder="e.g. Riverside Apartments"
+                placeholder={t("buildingDialog.namePlaceholder")}
                 value={buildingForm.name}
                 onChange={(e) => setBuildingForm((f) => ({ ...f, name: e.target.value }))}
                 required
@@ -163,7 +163,7 @@ export function AssetsView(): React.ReactElement {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="building-city">City</Label>
+                <Label htmlFor="building-city">{tForms("city")}</Label>
                 <Input
                   id="building-city"
                   value={buildingForm.city}
@@ -172,7 +172,7 @@ export function AssetsView(): React.ReactElement {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="building-address">Address</Label>
+              <Label htmlFor="building-address">{tForms("address")}</Label>
               <Input
                 id="building-address"
                 value={buildingForm.address}
@@ -186,14 +186,14 @@ export function AssetsView(): React.ReactElement {
                 onClick={() => setBuildingDialogOpen(false)}
                 disabled={buildingSubmitting}
               >
-                Cancel
+                {tActions("cancel")}
               </Button>
               <Button
                 type="submit"
                 loading={buildingSubmitting}
                 disabled={!buildingForm.name.trim()}
               >
-                Create Building
+                {t("buildingDialog.submit")}
               </Button>
             </div>
           </form>

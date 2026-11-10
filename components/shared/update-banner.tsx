@@ -77,9 +77,11 @@ export function UpdateBanner(): React.ReactElement | null {
     <div className="border border-[var(--semantic-warning)] bg-[var(--semantic-warning-soft)] text-[var(--color-foreground)] p-3 mb-4 mx-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <strong className="block">New release available: {latest.name || latest.tag_name}</strong>
+          <strong className="block">
+            {t("newRelease", { name: latest.name || latest.tag_name || latestTag })}
+          </strong>
           <p className="text-sm mt-1">
-            A new version of Situs is available.{" "}
+            {t("newReleaseBody")}{" "}
             <a className="underline" href={latest.html_url || "#"} target="_blank" rel="noreferrer">
               {t("viewReleaseNotes")}
             </a>

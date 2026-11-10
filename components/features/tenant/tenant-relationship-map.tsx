@@ -17,13 +17,14 @@ interface TenantRelationshipMapProps {
  */
 export function TenantRelationshipMap({ tenantId }: TenantRelationshipMapProps) {
   const t = useTranslations("tenants");
+  const tCommon = useTranslations("common");
   const locale = useLocale();
   const { data, loading, error } = useTenantRelationship(tenantId);
 
   if (loading) {
     return (
       <div className="border border-dashed border-[var(--color-border)] p-6 text-center">
-        <p className="text-sm text-[var(--color-muted-foreground)]">Loading relationship map…</p>
+        <p className="text-sm text-[var(--color-muted-foreground)]">{tCommon("loading")}</p>
       </div>
     );
   }
@@ -32,7 +33,8 @@ export function TenantRelationshipMap({ tenantId }: TenantRelationshipMapProps) 
     return (
       <div className="border border-dashed border-[var(--color-border)] p-6 text-center">
         <p className="text-sm text-[var(--color-muted-foreground)]">
-          {error || "No relationship data available"}
+          {/* The hook's error is the server's English; the screen says it in the owner's language. */}
+          {t("relationship.unavailable")}
         </p>
       </div>
     );

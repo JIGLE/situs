@@ -277,10 +277,10 @@ export function OwnerDetailModal({ ownerId, onClose }: OwnerDetailModalProps) {
                         className="flex items-center justify-between p-2 bg-[var(--color-card)]"
                       >
                         <span className="text-sm text-[var(--color-foreground)]">
-                          {po.property?.name || "Unknown Property"}
+                          {po.property?.name || t("unknownProperty")}
                         </span>
                         <span className="text-xs text-[var(--color-muted-foreground)]">
-                          {po.ownershipPercentage}% ownership
+                          {t("ownershipShare", { percent: po.ownershipPercentage })}
                         </span>
                       </div>
                     ))}
