@@ -57,7 +57,6 @@
     "summary": {
       "allClear": "Every asset is in order.",
       "leaseEnding": "Lease ends {date}",
-      "noActiveLease": "Occupied, no active lease",
       "noPriorMonth": "No receipts last month",
       "vsLastMonth": "vs last month"
     },
@@ -1153,7 +1152,7 @@
   },
   "properties": {
     "addNew": "Add New Property",
-    "statusOccupiedAddTenant": "Occupied — I'll add the tenant next",
+    "statusFromLeases": "From its leases (occupied or vacant)",
     "editProperty": "Edit Property",
     "updateDetails": "Update property details",
     "enterInfo": "Enter property information",

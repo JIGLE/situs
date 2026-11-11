@@ -125,12 +125,6 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
     const [searchQuery, setSearchQuery] = useState("");
     const [attentionOnly, setAttentionOnly] = useState(false);
 
-    const activeLeasePropertyIds = useMemo(() => {
-      return new Set(
-        leases.filter((lease) => lease.status === "active").map((lease) => lease.propertyId),
-      );
-    }, [leases]);
-
     const expiringLeasePropertyIds = useMemo(() => {
       const now = new Date();
       const inThirtyDays = new Date();
@@ -147,20 +141,9 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
       );
     }, [leases]);
 
-    const occupiedWithoutActiveLeaseIds = useMemo(() => {
-      return new Set(
-        properties
-          .filter(
-            (property) =>
-              property.status === "occupied" && !activeLeasePropertyIds.has(property.id),
-          )
-          .map((property) => property.id),
-      );
-    }, [activeLeasePropertyIds, properties]);
-
-    const needsAttentionPropertyIds = useMemo(() => {
-      return new Set([...expiringLeasePropertyIds, ...occupiedWithoutActiveLeaseIds]);
-    }, [expiringLeasePropertyIds, occupiedWithoutActiveLeaseIds]);
+    // Occupancy is read from the leases (lib/services/database/derived-state.ts), so "occupied
+    // with no active lease" can no longer happen; a lease about to lapse is what needs attention.
+    const needsAttentionPropertyIds = expiringLeasePropertyIds;
 
     // Expose dialog methods to parent via ref
     useImperativeHandle(ref, () => ({

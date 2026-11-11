@@ -1,55 +1,66 @@
-import { PropertyType } from "@prisma/client";
+import { type Prisma, PropertyType } from "@prisma/client";
 import { getPrismaClient } from "../database";
 import { assertOwnsRelations } from "../assert-owned";
 import { assertPropertyHasNoHistory } from "../history";
 import { Property } from "@/lib/types";
+import { derivePropertyStatuses } from "../derived-state";
+
+type PropertyRow = Prisma.PropertyGetPayload<{ include: { building: { select: { name: true } } } }>;
+
+/** Read with every property, so the building's name comes from the building itself. */
+const INCLUDE = { building: { select: { name: true } } } as const;
+
+/**
+ * A property as the app reads it. Occupied or vacant comes from its leases, the building's name
+ * from its building (`../derived-state.ts`); the stored copies are not read.
+ */
+function toProperty(row: PropertyRow, status: Property["status"] | undefined): Property {
+  const { building, ...p } = row;
+  return {
+    ...p,
+    status: status ?? (p.status as Property["status"]),
+    streetAddress: p.streetAddress || undefined,
+    city: p.city || undefined,
+    zipCode: p.zipCode || undefined,
+    country: p.country || undefined,
+    latitude: p.latitude || undefined,
+    longitude: p.longitude || undefined,
+    addressVerified: p.addressVerified || false,
+    buildingId: p.buildingId || undefined,
+    buildingName: building?.name || p.buildingName || undefined,
+    description: p.description || undefined,
+    image: p.image || undefined,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
+  };
+}
+
+async function withDerived(userId: string, row: PropertyRow): Promise<Property> {
+  const statuses = await derivePropertyStatuses(userId, [row]);
+  return toProperty(row, statuses.get(row.id));
+}
 
 export const propertyService = {
-  async getAll(userId: string): Promise<Property[]> {
+  /** Every property, or one page of them, newest first, when `page` is given. */
+  async getAll(userId: string, page?: { skip: number; take: number }): Promise<Property[]> {
     const properties = await getPrismaClient().property.findMany({
       where: { userId },
-      include: { tenants: true, receipts: true },
+      include: INCLUDE,
+      ...(page
+        ? { skip: page.skip, take: page.take, orderBy: { createdAt: "desc" as const } }
+        : {}),
     });
-    return properties.map((p) => ({
-      ...p,
-      streetAddress: p.streetAddress || undefined,
-      city: p.city || undefined,
-      zipCode: p.zipCode || undefined,
-      country: p.country || undefined,
-      latitude: p.latitude || undefined,
-      longitude: p.longitude || undefined,
-      addressVerified: p.addressVerified || false,
-      buildingId: p.buildingId || undefined,
-      buildingName: p.buildingName || undefined,
-      description: p.description || undefined,
-      image: p.image || undefined,
-      createdAt: p.createdAt.toISOString(),
-      updatedAt: p.updatedAt.toISOString(),
-    }));
+    const statuses = await derivePropertyStatuses(userId, properties);
+    return properties.map((p) => toProperty(p, statuses.get(p.id)));
   },
 
   async getById(userId: string, id: string): Promise<Property | null> {
     const property = await getPrismaClient().property.findUnique({
       where: { id, userId },
-      include: { tenants: true, receipts: true },
+      include: INCLUDE,
     });
     if (!property) return null;
-    return {
-      ...property,
-      streetAddress: property.streetAddress || undefined,
-      city: property.city || undefined,
-      zipCode: property.zipCode || undefined,
-      country: property.country || undefined,
-      latitude: property.latitude || undefined,
-      longitude: property.longitude || undefined,
-      addressVerified: property.addressVerified || false,
-      buildingId: property.buildingId || undefined,
-      buildingName: property.buildingName || undefined,
-      description: property.description || undefined,
-      image: property.image || undefined,
-      createdAt: property.createdAt.toISOString(),
-      updatedAt: property.updatedAt.toISOString(),
-    };
+    return withDerived(userId, property);
   },
 
   async create(
@@ -83,26 +94,12 @@ export const propertyService = {
         cadasterReference: data.cadasterReference,
         fraction: data.fraction,
       },
+      include: INCLUDE,
     });
     try {
       console.debug("[database] created property:", property);
     } catch {}
-    return {
-      ...property,
-      streetAddress: property.streetAddress || undefined,
-      city: property.city || undefined,
-      zipCode: property.zipCode || undefined,
-      country: property.country || undefined,
-      latitude: property.latitude || undefined,
-      longitude: property.longitude || undefined,
-      addressVerified: property.addressVerified || false,
-      buildingId: property.buildingId || undefined,
-      buildingName: property.buildingName || undefined,
-      description: property.description || undefined,
-      image: property.image || undefined,
-      createdAt: property.createdAt.toISOString(),
-      updatedAt: property.updatedAt.toISOString(),
-    };
+    return withDerived(userId, property);
   },
 
   async update(
@@ -135,23 +132,9 @@ export const propertyService = {
         cadasterReference: data.cadasterReference,
         fraction: data.fraction,
       },
+      include: INCLUDE,
     });
-    return {
-      ...property,
-      streetAddress: property.streetAddress || undefined,
-      city: property.city || undefined,
-      zipCode: property.zipCode || undefined,
-      country: property.country || undefined,
-      latitude: property.latitude || undefined,
-      longitude: property.longitude || undefined,
-      addressVerified: property.addressVerified || false,
-      buildingId: property.buildingId || undefined,
-      buildingName: property.buildingName || undefined,
-      description: property.description || undefined,
-      image: property.image || undefined,
-      createdAt: property.createdAt.toISOString(),
-      updatedAt: property.updatedAt.toISOString(),
-    };
+    return withDerived(userId, property);
   },
 
   /** Refused while the property has history (`lib/services/database/history.ts`). */

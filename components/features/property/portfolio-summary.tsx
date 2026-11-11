@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { formatDate } from "@/lib/utils/format-date";
-import { AlertTriangle, CalendarClock, CheckCircle2 } from "lucide-react";
+import { CalendarClock, CheckCircle2 } from "lucide-react";
 
 import { useApp } from "@/lib/contexts/app-context";
 import { useCurrency } from "@/lib/contexts/currency-context";
@@ -86,17 +86,14 @@ export function PortfolioSummary({
   /**
    * One entry per asset that needs a decision, worst reason first.
    *
-   * The three conditions are the ones the tree's "attention only" filter already counts, so the
-   * badge on the rail and this list can never disagree about what is wrong.
+   * A lease about to lapse is the one condition left. "Occupied with no active lease" went when
+   * occupancy came to be read from the leases themselves (`lib/services/database/derived-state.ts`):
+   * a property can no longer say it is occupied without one.
    */
   const attention = useMemo(() => {
     const now = new Date();
     const inThirtyDays = new Date();
     inThirtyDays.setDate(inThirtyDays.getDate() + 30);
-
-    const activeLeaseIds = new Set(
-      leases.filter((l) => l.status === "active").map((l) => l.propertyId),
-    );
 
     return properties
       .map((property) => {
@@ -106,19 +103,6 @@ export function PortfolioSummary({
           return end >= now && end <= inThirtyDays;
         });
 
-        const occupiedNoLease = property.status === "occupied" && !activeLeaseIds.has(property.id);
-
-        // Ordered by what costs most to ignore: a tenancy with no contract behind it, then
-        // a lease about to lapse.
-        if (occupiedNoLease) {
-          return {
-            id: property.id,
-            name: property.name,
-            severity: "danger" as Severity,
-            Icon: AlertTriangle,
-            reason: t("summary.noActiveLease"),
-          };
-        }
         if (expiring) {
           return {
             id: property.id,

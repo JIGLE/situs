@@ -50,9 +50,14 @@ const { prismaMock, counts } = vi.hoisted(() => {
         })),
         delete: vi.fn(async () => ({})),
       },
-      lease: { count: count("lease"), delete: vi.fn(async () => ({})) },
+      lease: {
+        count: count("lease"),
+        delete: vi.fn(async () => ({})),
+        // Read by derived-state when a record is loaded.
+        findMany: vi.fn(async () => []),
+      },
       receipt: { count: count("receipt") },
-      rentPeriod: { count: count("rentPeriod") },
+      rentPeriod: { count: count("rentPeriod"), findMany: vi.fn(async () => []) },
       expense: { count: count("expense") },
       paymentAllocation: { count: count("paymentAllocation") },
     },

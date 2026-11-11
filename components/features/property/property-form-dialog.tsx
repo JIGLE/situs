@@ -410,8 +410,10 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="status">{tForms("status")}</Label>
+                  {/* Occupied or vacant is read from the leases (derived-state.ts); the one thing the
+                      owner says here is whether the unit is out of use for maintenance. */}
                   <Select
-                    value={dialog.formData.status}
+                    value={dialog.formData.status === "maintenance" ? "maintenance" : "vacant"}
                     onValueChange={(value: PropertyFormData["status"]) =>
                       dialog.updateFormData({ status: value })
                     }
@@ -424,15 +426,8 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="vacant">{tStatus("vacant")}</SelectItem>
-                      <SelectItem value="occupied">
-                        {dialog.editingItem ? tStatus("occupied") : t("statusOccupiedAddTenant")}
-                      </SelectItem>
-                      {/* Was `useTranslations("maintenance")`, a namespace cut with the ticketing
-                          module, so this option read "maintenance.title". */}
-                      {dialog.editingItem && (
-                        <SelectItem value="maintenance">{tStatus("maintenance")}</SelectItem>
-                      )}
+                      <SelectItem value="vacant">{t("statusFromLeases")}</SelectItem>
+                      <SelectItem value="maintenance">{tStatus("maintenance")}</SelectItem>
                     </SelectContent>
                   </Select>
                   {dialog.formErrors.status && (
