@@ -104,7 +104,7 @@ the header is ignored entirely. Getting it wrong lets a caller pick their own ra
 ## Bank movements
 
 One way in: a live connection. Without one no bank movements arrive, and a payment can still be
-recorded by hand in Finance › Receipts. Every synced movement goes through fingerprint dedupe,
+recorded by hand with Finance › Record payment. Every synced movement goes through fingerprint dedupe,
 reconciliation rules, confidence scoring and the 0.85 auto-allocation threshold.
 
 **A live connection** uses [Enable Banking](https://enablebanking.com/docs/), who hold the AISP

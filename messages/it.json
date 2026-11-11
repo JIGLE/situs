@@ -803,10 +803,10 @@
     "colDate": "Data",
     "colStatus": "Stato",
     "tabs": {
-      "receipts": "Ricevute",
-      "rentMatrix": "Matrice canoni",
-      "bank": "Movimenti bancari",
-      "tax": "Riepilogo fiscale"
+      "ledger": "Canoni",
+      "movements": "Movimenti",
+      "expenses": "Spese",
+      "reports": "Report"
     }
   },
   "leases": {
@@ -1180,6 +1180,7 @@
     "recentTransactions": "Transazioni recenti",
     "recordExpense": "Registra spesa",
     "addExpenseDesc": "Aggiungi una nuova spesa immobiliare per monitorare i tuoi costi",
+    "addExpenseFor": "Registra un costo per {property}",
     "saveExpense": "Salva spesa",
     "totalIncome": "Entrate totali",
     "totalExpenses": "Spese totali",
@@ -1429,16 +1430,11 @@
       }
     },
     "timeRange": "Intervallo di tempo",
-    "filterReceiptStatus": "Filtra le ricevute per stato",
     "unknownProperty": "Immobile sconosciuto",
     "noFinancialData": "Ancora nessun dato finanziario",
     "noFinancialDataDesc": "Inizia aggiungendo ricevute o spese per monitorare il flusso di cassa",
-    "incomeAndReceipts": "Entrate e ricevute",
-    "incomeAndReceiptsDesc": "Canoni incassati",
-    "noIncomeRecords": "Nessuna entrata registrata",
-    "expensesHeading": "Spese",
-    "expensesDesc": "Ultimi costi registrati dell'immobile",
     "noExpenseRecords": "Nessuna spesa registrata",
+    "expensesSummary": "{count, plural, =0 {Nessuna spesa} one {# spesa} other {# spese}} · {total}",
     "expenseForm": {
       "property": "Immobile",
       "selectProperty": "Seleziona immobile",
@@ -1547,23 +1543,6 @@
       "selectOwner": "Scegli proprietario…",
       "remove": "Rimuovi proprietario",
       "reachesFull": "Il totale arriverà esattamente al 100% ✓"
-    },
-    "expenseDialog": {
-      "title": "Registra spesa",
-      "description": "Registra un costo per {property}",
-      "category": "Categoria",
-      "descriptionOptional": "Descrizione (facoltativa)",
-      "notesPlaceholder": "Note…",
-      "save": "Salva spesa"
-    },
-    "paymentDialog": {
-      "title": "Registra pagamento",
-      "description": "Registra un pagamento di affitto o deposito per {property}",
-      "save": "Salva pagamento"
-    },
-    "dialog": {
-      "amount": "Importo",
-      "date": "Data"
     },
     "paymentTimeline": "Cronologia dei pagamenti",
     "timelineReversed": "Stornato",

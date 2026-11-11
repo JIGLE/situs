@@ -36,33 +36,6 @@ vi.mock("@/lib/contexts/app-context", () => ({
   }),
 }));
 
-vi.mock("@/lib/hooks/use-form-dialog", () => ({
-  useFormDialog: () => ({
-    isOpen: false,
-    isSubmitting: false,
-    isValidating: false,
-    formData: {},
-    formErrors: {},
-    editingItem: null,
-    hasUnsavedChanges: false,
-    isSaving: false,
-    lastSaved: null,
-    hasPersistedData: false,
-    openDialog: vi.fn(),
-    closeDialog: vi.fn(),
-    openEditDialog: vi.fn(),
-    handleSubmit: vi.fn(),
-    updateFormData: vi.fn(),
-    setFormData: vi.fn(),
-    resetForm: vi.fn(),
-    validateField: vi.fn(),
-    validateForm: vi.fn(),
-    restoreForm: vi.fn(),
-    clearPersistedData: vi.fn(),
-    forceSave: vi.fn(),
-  }),
-}));
-
 describe("FinancialsView", () => {
   /**
    * Assertions read the catalogue rather than repeating its English.
@@ -112,6 +85,9 @@ describe("FinancialsView: a month with receipts", () => {
     expect(screen.getByText(enMessages.financial.totalIncome, { exact: false })).toHaveTextContent(
       `${enMessages.financial.totalIncome} $950.00`,
     );
-    expect(screen.getByRole("button", { name: enMessages.financial.addExpense })).toBeEnabled();
+    // Adding an expense is the Expenses tab's: this line only reports.
+    expect(
+      screen.queryByRole("button", { name: enMessages.financial.addExpense }),
+    ).not.toBeInTheDocument();
   });
 });

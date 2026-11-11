@@ -724,6 +724,15 @@ const RETIRED_CLAIMS = [
       "E2E_DISABLE_RATE_LIMIT=true switches two of the three limiters off, and " +
       "TRUSTED_PROXY_COUNT decides how all three find the client",
   },
+  {
+    // PR 4 of the UX simplification plan: Finance's tabs are Ledger, Movements, Expenses and
+    // Reports. The receipts register and the tax summary are both in Reports.
+    pattern: /Finance › (Recibos|Receipts|Tax\s+Summary|Rent matrix|Bank movements)/i,
+    retired: "2026-11-11 (Finance regrouped)",
+    because:
+      "Finance's tabs are Ledger, Movements, Expenses and Reports; the receipts register and the " +
+      "tax summary are in Reports (components/features/financial/financials-container.tsx)",
+  },
 ];
 
 /** Lines allowed to mention a retired claim, because they are the record of its retirement. */
@@ -747,6 +756,9 @@ const CLAIM_ALLOWLIST = [
   /Identity model stays single-account/,
   // A dated Decisions Log row: what StatusMark looked like on the day it was introduced.
   /A state is a square dot and its name: `StatusMark`/,
+  // Dated Decisions Log rows naming Finance's tabs as they were on the day.
+  /The property month sheet no longer shows two disabled/,
+  /Home is the month's work: the figures, one inbox, who is late/,
 ];
 
 const LINK = /\[[^\]]*\]\(([^)]+)\)/g;

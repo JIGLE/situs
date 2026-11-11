@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils/utils";
 
 /** Where each step's work is done. */
 const LINKS = {
-  rentMatrix: "/financials?tab=rent-matrix",
+  rentMatrix: "/financials?tab=ledger",
   leases: "/leases",
   integrations: "/settings?tab=integrations",
   complete: "/complete",

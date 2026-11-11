@@ -33,6 +33,7 @@ import { renderWithProviders, screen } from "@/tests/helpers/render-with-provide
 import { ExportButton } from "@/components/ui/export-button";
 import { AuditTrail } from "@/components/shared/audit-trail";
 import { FinancialsView } from "@/components/features/financial/financials-view";
+import { ExpensesView } from "@/components/features/financial/expenses-view";
 import { TaxConnectorDashboard } from "@/components/features/financial/tax-connector-dashboard";
 import { AuditTrail as AuditTrailForError } from "@/components/shared/audit-trail";
 import { BankMovementsInbox } from "@/components/features/financial/bank-movements-inbox";
@@ -137,18 +138,16 @@ describe("user-visible copy comes from the catalogue, not from literals", () => 
     // The section heading, and the inline stat line that replaced the three tiles.
     expect(screen.getByRole("heading", { name: "Financeiro" })).toBeInTheDocument();
     expect(screen.getByText(/Receita Total/)).toBeInTheDocument();
+  });
 
-    // The two card headings that used to read "Income & Receipts" and "Expenses".
-    expect(screen.getByText("Receitas e recibos")).toBeInTheDocument();
-    expect(screen.getByText("Despesas")).toBeInTheDocument();
+  it("renders the Finances expenses tab in Portuguese", () => {
+    // The expense list and its action moved here from the tax tab, where they had leaked English.
+    renderWithProviders(<ExpensesView />, { initialLocale: "pt" });
 
-    // The primary action. (The range control's options live inside a closed Radix Select and
-    // are not in the tree until it opens, so they are not asserted here.)
+    // The primary action.
     expect(screen.getByRole("button", { name: /Adicionar Despesa/ })).toBeInTheDocument();
-
-    // Row-level copy, which is where the leaks hid longest: the status pill printed the raw
-    // enum ("paid") and the category printed a de-underscored enum ("Condominium Fees").
-    expect(screen.getByText("Pago")).toBeInTheDocument();
+    // Row-level copy, which is where the leaks hid longest: the category printed a
+    // de-underscored enum ("Condominium Fees").
     expect(screen.getByText("Quotas de Condomínio")).toBeInTheDocument();
   });
 

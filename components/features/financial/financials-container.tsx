@@ -1,7 +1,7 @@
 "use client";
 
 import { PageHeader } from "@/components/shared/page-header";
-import { useEffect, useEffectEvent, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsMobileSelect, TabsTrigger } from "@/components/ui/tabs";
@@ -10,27 +10,42 @@ import { ExportButton } from "@/components/ui/export-button";
 import { useTabPersistence } from "@/lib/hooks/use-tab-persistence";
 import { useBankInboxSummary } from "@/lib/hooks/use-bank-inbox-summary";
 import { useApp } from "@/lib/contexts/app-context";
-import { isIssuable } from "@/lib/utils/receipt-months";
 import { ReceiptsView } from "./receipts-view";
+import { ExpensesView } from "./expenses-view";
 import { YearlyRentMatrix } from "./yearly-rent-matrix";
 import { BankMovementsInbox } from "./bank-movements-inbox";
 import { TaxConnectorDashboard } from "./tax-connector-dashboard";
 import { FinancialsView } from "./financials-view";
 import { RecordPaymentDialog } from "./record-payment-dialog";
-import { FileText, Grid3X3, Landmark, Plus, Receipt } from "lucide-react";
+import { BarChart3, Grid3X3, Landmark, Plus, Wallet } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-const PAYMENT_TABS = ["receipts", "rent-matrix", "bank", "tax"] as const;
+const PAYMENT_TABS = ["ledger", "movements", "expenses", "reports"] as const;
 type PaymentTab = (typeof PAYMENT_TABS)[number];
 
-function isPaymentTab(value: string | null): value is PaymentTab {
-  return (PAYMENT_TABS as readonly (string | null)[]).includes(value);
+/**
+ * The tabs Finance had before it was regrouped, and where each went, so a bookmark, a stored tab
+ * or a link written before still lands: Receipts and Tax summary are both in Reports.
+ */
+const FORMER_TABS: Record<string, PaymentTab> = {
+  "rent-matrix": "ledger",
+  bank: "movements",
+  receipts: "reports",
+  tax: "reports",
+  overview: "reports",
+};
+
+/** The tab a stored or linked value names, old names included; null for anything else. */
+function paymentTab(value: string | null): PaymentTab | null {
+  if (value === null) return null;
+  if ((PAYMENT_TABS as readonly string[]).includes(value)) return value as PaymentTab;
+  return FORMER_TABS[value] ?? null;
 }
 
 export function FinancialsContainer() {
   const t = useTranslations("payments");
   const tNav = useTranslations("navigation");
-  const [activeTab, setActiveTab] = useTabPersistence("payments", "rent-matrix");
+  const [activeTab, setActiveTab] = useTabPersistence("payments", "ledger");
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -47,11 +62,6 @@ export function FinancialsContainer() {
   const [recordingPayment, setRecordingPayment] = useState(() => recordPaymentLink);
   // Bumped when a payment is recorded here, so the rent matrix reads the ledger again.
   const [ledgerVersion, setLedgerVersion] = useState(0);
-  // Receipts still to issue, in any month: the Receipts tab's count of work waiting.
-  const toIssue = useMemo(
-    () => state.receipts.filter((receipt) => isIssuable(receipt.lifecycle)).length,
-    [state.receipts],
-  );
 
   // Links into Finance carry two one-shot parameters: `?tab=` picks a tab, and
   // `?action=record-payment` opens the payment form. A link is followed once, when it arrives,
@@ -60,9 +70,9 @@ export function FinancialsContainer() {
   // does: applied after every tab change, `?tab=` pulled the page back to its tab each time the
   // owner picked another one.
   const followLink = useEffectEvent(() => {
-    const target = tabParam === "overview" ? "tax" : tabParam;
+    const target = paymentTab(tabParam);
     // A `view` beside the `tab` means the owner picked a tab before the address caught up.
-    const apply = isPaymentTab(target) && searchParams.get("view") === null;
+    const apply = target !== null && searchParams.get("view") === null;
     if (apply) setActiveTab(target);
     const params = new URLSearchParams(searchParams.toString());
     params.delete("tab");
@@ -97,19 +107,19 @@ export function FinancialsContainer() {
     /** A count of work waiting there, shown only when there is some. */
     badge?: number;
   }[] = [
-    { value: "receipts", label: t("tabs.receipts"), icon: Receipt, badge: toIssue || undefined },
-    { value: "rent-matrix", label: t("tabs.rentMatrix"), icon: Grid3X3 },
+    { value: "ledger", label: t("tabs.ledger"), icon: Grid3X3 },
     {
-      value: "bank",
-      label: t("tabs.bank"),
+      value: "movements",
+      label: t("tabs.movements"),
       icon: Landmark,
       badge: bankSummary?.toReview || undefined,
     },
-    { value: "tax", label: t("tabs.tax"), icon: FileText },
+    { value: "expenses", label: t("tabs.expenses"), icon: Wallet },
+    { value: "reports", label: t("tabs.reports"), icon: BarChart3 },
   ];
-  // A tab stored before it was removed (localStorage, a `?view=` bookmark) would otherwise
-  // select no panel and leave the page blank below the stat cards.
-  const visibleTab: PaymentTab = isPaymentTab(activeTab) ? activeTab : "rent-matrix";
+  // A tab stored under an old name is read as the tab it became; one that names nothing would
+  // otherwise select no panel and leave the page blank.
+  const visibleTab: PaymentTab = paymentTab(activeTab) ?? "ledger";
 
   return (
     <div className="space-y-6">
@@ -134,7 +144,7 @@ export function FinancialsContainer() {
       </PageHeader>
 
       {/* No figure tiles here. Overdue rent, receipts to issue and the month's takings are on Home,
-          the ledger below says who owes what, and the Receipts tab carries its own count. */}
+          and the ledger below says who owes what. */}
       <Tabs
         value={visibleTab}
         onValueChange={(value) => setActiveTab(value as PaymentTab)}
@@ -166,21 +176,24 @@ export function FinancialsContainer() {
           </TabsList>
         </div>
 
-        <TabsContent value="receipts" className="mt-0">
-          <ReceiptsView tenantId={tenantId} propertyId={propertyId} />
-        </TabsContent>
-
-        <TabsContent value="rent-matrix" className="mt-0">
+        <TabsContent value="ledger" className="mt-0">
           <YearlyRentMatrix ledgerVersion={ledgerVersion} />
         </TabsContent>
 
-        <TabsContent value="bank" className="mt-0">
+        <TabsContent value="movements" className="mt-0">
           <BankMovementsInbox summary={bankSummary} onChanged={refreshBankSummary} />
         </TabsContent>
 
-        <TabsContent value="tax" className="mt-0 space-y-4">
-          <TaxConnectorDashboard />
+        <TabsContent value="expenses" className="mt-0">
+          <ExpensesView />
+        </TabsContent>
+
+        {/* What has happened, to read and to file: the period's figures, the receipts register
+            month by month, and what reached Finanças. Issuing a receipt is Home's work now. */}
+        <TabsContent value="reports" className="mt-0 space-y-6">
           <FinancialsView />
+          <ReceiptsView tenantId={tenantId} propertyId={propertyId} />
+          <TaxConnectorDashboard />
         </TabsContent>
       </Tabs>
 

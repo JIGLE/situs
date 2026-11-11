@@ -14,6 +14,9 @@ import { FinancialsContainer } from "./financials-container";
  * from localStorage without checking it still exists, so a returning owner's stored "queue"
  * selected no panel at all and left the page blank below the stat cards.
  *
+ * Finance was regrouped from Receipts, Rent matrix, Bank movements and Tax summary into Ledger,
+ * Movements, Expenses and Reports. An old tab name, stored or linked, opens the tab it became.
+ *
  * Links elsewhere open a tab with `?tab=`. The page used to apply it again after every tab change,
  * so once a link had opened Receipts, choosing any other tab snapped straight back to Receipts.
  */
@@ -30,7 +33,8 @@ vi.mock("./receipts-view", () => ({ ReceiptsView: () => <p>receipts panel</p> })
 vi.mock("./yearly-rent-matrix", () => ({ YearlyRentMatrix: () => <p>rent matrix panel</p> }));
 vi.mock("./bank-movements-inbox", () => ({ BankMovementsInbox: () => <p>bank panel</p> }));
 vi.mock("./tax-connector-dashboard", () => ({ TaxConnectorDashboard: () => null }));
-vi.mock("./financials-view", () => ({ FinancialsView: () => <p>tax panel</p> }));
+vi.mock("./financials-view", () => ({ FinancialsView: () => <p>figures panel</p> }));
+vi.mock("./expenses-view", () => ({ ExpensesView: () => <p>expenses panel</p> }));
 
 let address: ReturnType<typeof createFakeAddress>;
 
@@ -48,26 +52,19 @@ describe("FinancialsContainer", () => {
   });
   afterEach(() => localStorage.clear());
 
-  it("counts the receipts waiting to be issued on the Receipts tab", async () => {
-    appState.receipts = [
-      { id: "a", lifecycle: "draft" },
-      { id: "b", lifecycle: "review" },
-      { id: "c", lifecycle: "emitted" },
-    ];
-
-    render(<FinancialsContainer />);
-
-    expect(await screen.findByRole("tab", { name: /Receipts\s*2$/ })).toBeInTheDocument();
-    appState.receipts = [];
-  });
-
-  it("opens on the rent matrix", async () => {
+  it("has four tabs, and opens on the ledger", async () => {
     render(<FinancialsContainer />);
 
     expect(await screen.findByText("rent matrix panel")).toBeInTheDocument();
+    expect(screen.getAllByRole("tab").map((tab: HTMLElement) => tab.textContent)).toEqual([
+      "Ledger",
+      "Movements",
+      "Expenses",
+      "Reports",
+    ]);
   });
 
-  it("falls back to the rent matrix when the stored tab no longer exists", async () => {
+  it("falls back to the ledger when the stored tab no longer exists", async () => {
     localStorage.setItem("tab-payments", "queue");
 
     render(<FinancialsContainer />);
@@ -75,14 +72,26 @@ describe("FinancialsContainer", () => {
     expect(await screen.findByText("rent matrix panel")).toBeInTheDocument();
   });
 
-  it("opens the rent matrix for a stored tab that was folded into it", async () => {
-    // "Ocupação e renda" became the matrix's totals row; an owner who last left it open lands
-    // on the matrix rather than on a blank page.
-    localStorage.setItem("tab-payments", "rent-roll");
+  it.each([
+    ["rent-matrix", "rent matrix panel"],
+    ["bank", "bank panel"],
+    ["receipts", "receipts panel"],
+    ["tax", "receipts panel"],
+  ])("opens the tab a stored %s became", async (stored, panel) => {
+    localStorage.setItem("tab-payments", stored);
 
     render(<FinancialsContainer />);
 
-    expect(await screen.findByText("rent matrix panel")).toBeInTheDocument();
+    expect(await screen.findByText(panel)).toBeInTheDocument();
+  });
+
+  it("shows the figures, the receipts register and the filings together in Reports", async () => {
+    localStorage.setItem("tab-payments", "reports");
+
+    render(<FinancialsContainer />);
+
+    expect(await screen.findByText("figures panel")).toBeInTheDocument();
+    expect(screen.getByText("receipts panel")).toBeInTheDocument();
   });
 
   it("opens Record payment where the owner is, without changing tab", async () => {
@@ -96,76 +105,73 @@ describe("FinancialsContainer", () => {
     expect(screen.getByText("rent matrix panel")).toBeInTheDocument();
   });
 
-  it("still restores a stored tab that exists", async () => {
-    localStorage.setItem("tab-payments", "bank");
-
-    render(<FinancialsContainer />);
-
-    expect(await screen.findByText("bank panel")).toBeInTheDocument();
-    expect(screen.queryByText("rent matrix panel")).not.toBeInTheDocument();
-  });
-
   it("opens the tab a link names, then lets the owner choose another", async () => {
     const user = userEvent.setup();
-    install("tab=receipts&tenantId=t-1");
+    install("tab=expenses&tenantId=t-1");
 
     render(<FinancialsContainer />);
     act(() => address.flush());
 
-    expect(await screen.findByText("receipts panel")).toBeInTheDocument();
+    expect(await screen.findByText("expenses panel")).toBeInTheDocument();
     // The link's tab moves to `view`; the tenant filter stays.
     expect(new URLSearchParams(address.search).get("tab")).toBeNull();
-    expect(new URLSearchParams(address.search).get("view")).toBe("receipts");
+    expect(new URLSearchParams(address.search).get("view")).toBe("expenses");
     expect(new URLSearchParams(address.search).get("tenantId")).toBe("t-1");
 
-    await user.click(screen.getByRole("tab", { name: /bank movements/i }));
+    await user.click(screen.getByRole("tab", { name: /movements/i }));
     act(() => address.flush());
 
     expect(await screen.findByText("bank panel")).toBeInTheDocument();
-    expect(screen.queryByText("receipts panel")).not.toBeInTheDocument();
-    expect(new URLSearchParams(address.search).get("view")).toBe("bank");
+    expect(screen.queryByText("expenses panel")).not.toBeInTheDocument();
+    expect(new URLSearchParams(address.search).get("view")).toBe("movements");
   });
 
   it("shows the link's tab without waiting for the router", async () => {
-    install("tab=receipts");
+    install("tab=movements");
 
     render(<FinancialsContainer />);
 
-    // Nothing flushed: the address still reads `?tab=receipts`.
-    expect(await screen.findByText("receipts panel")).toBeInTheDocument();
+    // Nothing flushed: the address still reads `?tab=movements`.
+    expect(await screen.findByText("bank panel")).toBeInTheDocument();
   });
 
   it("keeps a tab picked before the address caught up with the link", async () => {
     const user = userEvent.setup();
-    install("tab=receipts");
+    install("tab=expenses");
 
     render(<FinancialsContainer />);
-    expect(await screen.findByText("receipts panel")).toBeInTheDocument();
+    expect(await screen.findByText("expenses panel")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("tab", { name: /bank movements/i }));
+    await user.click(screen.getByRole("tab", { name: /movements/i }));
     act(() => address.flush());
 
     expect(await screen.findByText("bank panel")).toBeInTheDocument();
-    expect(new URLSearchParams(address.search).get("view")).toBe("bank");
+    expect(new URLSearchParams(address.search).get("view")).toBe("movements");
   });
 
-  it("reads the old overview link as the tax summary", async () => {
-    install("tab=overview");
+  it.each([
+    ["bank", "movements", "bank panel"],
+    ["rent-matrix", "ledger", "rent matrix panel"],
+    ["receipts", "reports", "receipts panel"],
+    ["tax", "reports", "receipts panel"],
+    ["overview", "reports", "receipts panel"],
+  ])("reads an old %s link as %s", async (old, now, panel) => {
+    install(`tab=${old}`);
 
     render(<FinancialsContainer />);
     act(() => address.flush());
 
-    expect(await screen.findByText("tax panel")).toBeInTheDocument();
-    expect(address.search).toBe("view=tax");
+    expect(await screen.findByText(panel)).toBeInTheDocument();
+    expect(address.search).toBe(`view=${now}`);
   });
 
   it("drops the record-payment link once read, keeping the tab it names", async () => {
-    install("tab=receipts&action=record-payment");
+    install("tab=reports&action=record-payment");
 
     render(<FinancialsContainer />);
     act(() => address.flush());
 
     expect(await screen.findByText("receipts panel")).toBeInTheDocument();
-    expect(address.search).toBe("view=receipts");
+    expect(address.search).toBe("view=reports");
   });
 });

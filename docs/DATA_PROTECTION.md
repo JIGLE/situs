@@ -155,7 +155,7 @@ where nothing counts. There it does three things:
 
 - checks the Portal sub-user's login, sent encrypted as AT requires;
 - fetches a receipt the owner asks for by its contract and receipt numbers;
-- sends the rent months of the receipts the owner tests from Finance › Recibos, one request per
+- sends the rent months of the receipts the owner tests from Finance › Reports, one request per
   month (`lib/tax/at/receipt-request.ts`).
 
 A test request carries the lease's AT contract number, the issuer's NIF, every landlord's NIF, and

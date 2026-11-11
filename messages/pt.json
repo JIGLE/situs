@@ -803,10 +803,10 @@
     "colDate": "Data",
     "colStatus": "Estado",
     "tabs": {
-      "receipts": "Recibos",
-      "rentMatrix": "Mapa de rendas",
-      "bank": "Movimentos bancários",
-      "tax": "Resumo fiscal"
+      "ledger": "Rendas",
+      "movements": "Movimentos",
+      "expenses": "Despesas",
+      "reports": "Relatórios"
     }
   },
   "leases": {
@@ -1180,6 +1180,7 @@
     "recentTransactions": "Transações Recentes",
     "recordExpense": "Registar Despesa",
     "addExpenseDesc": "Adicionar uma nova despesa de propriedade",
+    "addExpenseFor": "Registe um custo de {property}",
     "saveExpense": "Guardar Despesa",
     "totalIncome": "Receita Total",
     "totalExpenses": "Despesas Totais",
@@ -1429,16 +1430,11 @@
       }
     },
     "timeRange": "Intervalo de tempo",
-    "filterReceiptStatus": "Filtrar recibos por estado",
     "unknownProperty": "Imóvel desconhecido",
     "noFinancialData": "Ainda sem dados financeiros",
     "noFinancialDataDesc": "Comece por adicionar recibos ou despesas para acompanhar o fluxo de caixa",
-    "incomeAndReceipts": "Receitas e recibos",
-    "incomeAndReceiptsDesc": "Rendas recebidas",
-    "noIncomeRecords": "Sem registos de receita",
-    "expensesHeading": "Despesas",
-    "expensesDesc": "Últimos custos registados do imóvel",
     "noExpenseRecords": "Sem registos de despesa",
+    "expensesSummary": "{count, plural, =0 {Sem despesas} one {# despesa} other {# despesas}} · {total}",
     "expenseForm": {
       "property": "Imóvel",
       "selectProperty": "Selecionar imóvel",
@@ -1547,23 +1543,6 @@
       "selectOwner": "Escolher proprietário…",
       "remove": "Remover proprietário",
       "reachesFull": "O total passa a ser exatamente 100% ✓"
-    },
-    "expenseDialog": {
-      "title": "Registar despesa",
-      "description": "Registe um custo de {property}",
-      "category": "Categoria",
-      "descriptionOptional": "Descrição (opcional)",
-      "notesPlaceholder": "Notas…",
-      "save": "Guardar despesa"
-    },
-    "paymentDialog": {
-      "title": "Registar pagamento",
-      "description": "Registe um pagamento de renda ou caução de {property}",
-      "save": "Guardar pagamento"
-    },
-    "dialog": {
-      "amount": "Montante",
-      "date": "Data"
     },
     "paymentTimeline": "Cronologia de pagamentos",
     "timelineReversed": "Revertido",
