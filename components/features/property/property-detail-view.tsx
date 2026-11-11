@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useRef } from "react";
 import {
   Building2,
   MapPin,
@@ -28,8 +28,6 @@ import { Tabs, TabsContent, TabsList, TabsMobileSelect, TabsTrigger } from "@/co
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -46,18 +44,16 @@ import {
 } from "@/components/ui/dialog";
 import { useApp } from "@/lib/contexts/app-context";
 import { useTabPersistence } from "@/lib/hooks/use-tab-persistence";
-import { useFormDialog } from "@/lib/hooks/use-form-dialog";
 import { EntityLink } from "@/components/shared/entity-link";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
-import {
-  expenseSchema,
-  EXPENSE_CATEGORIES,
-  type ExpenseFormData,
-} from "@/lib/schemas/expense.schema";
-import { receiptSchema, type ReceiptFormData } from "@/lib/schemas/receipt.schema";
 import { usePropertyActivity } from "@/lib/hooks/use-property-activity";
 import { AuditTrail } from "@/components/shared/audit-trail";
 import { TenancySheet } from "@/components/features/lease/tenancy-sheet";
+import { ExpenseDialog, useExpenseDialog } from "@/components/features/financial/expense-dialog";
+import {
+  RecordPaymentDialog,
+  type RecordPaymentPreset,
+} from "@/components/features/financial/record-payment-dialog";
 import { PropertyFormDialog, type PropertyFormDialogRef } from "./property-form-dialog";
 import { PropertyYearStrip, type YearStripSelection } from "./property-year-strip";
 import { expenseCategoryKey } from "@/lib/utils/expense-labels";
@@ -73,7 +69,7 @@ interface PropertyDetailViewProps {
 }
 
 export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
-  const { state, refreshData, addExpense, addReceipt } = useApp();
+  const { state, refreshData } = useApp();
   const { formatCurrency } = useCurrency();
   const router = useRouter();
   const locale = useLocale();
@@ -84,8 +80,6 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
   const tPeriod = useTranslations("rentPeriodStatus");
   const tStatus = useTranslations("status");
   const tLeases = useTranslations("leases");
-  const tActions = useTranslations("actions");
-  const tReceipts = useTranslations("financial.receipts");
   const periodLabel = (status?: string | null) => {
     const key = rentPeriodStatusKey(status);
     return key ? tPeriod(key) : status || "—";
@@ -126,67 +120,11 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
   // The reference month whose detail modal is open, set by clicking a year-strip cell.
   const [selectedMonth, setSelectedMonth] = useState<YearStripSelection | null>(null);
 
-  // Stable initialData and onSubmit for quick-add dialogs (prevents infinite re-render loop)
-  const expenseInitialData = useMemo<ExpenseFormData>(
-    () => ({
-      propertyId,
-      amount: 0,
-      date: new Date().toISOString().split("T")[0],
-      category: "other" as const,
-      description: "",
-      isDeductible: true,
-    }),
-    [propertyId],
-  );
-
-  const handleExpenseSubmit = useCallback(
-    async (data: ExpenseFormData) => {
-      await addExpense({ ...data, propertyId });
-    },
-    [addExpense, propertyId],
-  );
-
-  const receiptInitialData = useMemo<ReceiptFormData>(
-    () => ({
-      tenantId: "",
-      propertyId,
-      amount: 0,
-      date: new Date().toISOString().split("T")[0],
-      type: "rent",
-      status: "paid",
-      description: "",
-    }),
-    [propertyId],
-  );
-
-  const handleReceiptSubmit = useCallback(
-    async (data: ReceiptFormData) => {
-      await addReceipt({ ...data, propertyId });
-    },
-    [addReceipt, propertyId],
-  );
-
-  // Quick-add: Expense dialog (pre-filled with this property)
-  const expenseDialog = useFormDialog<ExpenseFormData>({
-    schema: expenseSchema,
-    initialData: expenseInitialData,
-    onSubmit: handleExpenseSubmit,
-    successMessage: {
-      create: tFin("expenseForm.toastCreated"),
-      update: tFin("expenseForm.toastUpdated"),
-    },
-  });
-
-  // Quick-add: Receipt / payment dialog (pre-filled with this property)
-  const receiptDialog = useFormDialog<ReceiptFormData>({
-    schema: receiptSchema,
-    initialData: receiptInitialData,
-    onSubmit: handleReceiptSubmit,
-    successMessage: {
-      create: tFin("receipts.toastCreated"),
-      update: tFin("receipts.toastUpdated"),
-    },
-  });
+  // Quick-add, with this property filled in: the same expense form as Finance › Expenses, and
+  // the same Record payment as Finance and the rent matrix. This page used to carry its own copy
+  // of each, and its payment form asked for a tenant rather than a lease.
+  const expenseDialog = useExpenseDialog(propertyId);
+  const [paymentPreset, setPaymentPreset] = useState<RecordPaymentPreset | null>(null);
 
   // New tenancy, in place: the property is filled in. This was an "Add tenant" dialog that
   // created a person and no lease, so the property stayed vacant and nothing was ever due.
@@ -381,231 +319,9 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
             </div>
           </div>
           {/* The header's five-button quick-action bar has gone. Each action now lives where
-              its subject does: Edit with the property's own details (Overview), Add Expense and
-              the expense/receipt dialogs in Money, Documents as its own tab, and Record Payment
-              behind a click on the reference month it applies to. Review Payments is gone
-              outright — the Money tab and the Finance section both already list receipts.
-              The dialogs stay mounted here so any tab can open them. */}
-          <>
-            {/* Both dialogs are state-controlled, so they render nothing until opened and need
-                no trigger element of their own — the buttons that open them now live in the
-                Money tab and the reference-month modal. */}
-            <Dialog
-              open={expenseDialog.isOpen}
-              onOpenChange={(open) => !open && expenseDialog.closeDialog()}
-            >
-              <DialogContent className="sm:max-w-[440px]">
-                <DialogHeader>
-                  <DialogTitle>{t("expenseDialog.title")}</DialogTitle>
-                  <DialogDescription>
-                    {t("expenseDialog.description", { property: property.name })}
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={expenseDialog.handleSubmit} className="space-y-4 pt-1">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="exp-category">{t("expenseDialog.category")}</Label>
-                      <Select
-                        value={expenseDialog.formData.category}
-                        onValueChange={(v) =>
-                          expenseDialog.updateFormData({
-                            category: v as ExpenseFormData["category"],
-                          })
-                        }
-                      >
-                        <SelectTrigger id="exp-category">
-                          <SelectValue placeholder={t("expenseDialog.category")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {EXPENSE_CATEGORIES.map((c) => (
-                            <SelectItem key={c} value={c}>
-                              {expenseCategoryLabel(c)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="exp-amount">{t("dialog.amount")}</Label>
-                      <Input
-                        id="exp-amount"
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        placeholder="0.00"
-                        value={expenseDialog.formData.amount || ""}
-                        onChange={(e) =>
-                          expenseDialog.updateFormData({ amount: parseFloat(e.target.value) || 0 })
-                        }
-                        className={
-                          expenseDialog.formErrors.amount ? "border-[var(--color-destructive)]" : ""
-                        }
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="exp-date">{t("dialog.date")}</Label>
-                    <Input
-                      id="exp-date"
-                      type="date"
-                      value={expenseDialog.formData.date}
-                      onChange={(e) => expenseDialog.updateFormData({ date: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="exp-desc">{t("expenseDialog.descriptionOptional")}</Label>
-                    <Textarea
-                      id="exp-desc"
-                      rows={2}
-                      placeholder={t("expenseDialog.notesPlaceholder")}
-                      value={expenseDialog.formData.description || ""}
-                      onChange={(e) =>
-                        expenseDialog.updateFormData({ description: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2 pt-2">
-                    <Button type="button" variant="outline" onClick={expenseDialog.closeDialog}>
-                      {tActions("cancel")}
-                    </Button>
-                    <Button type="submit" disabled={expenseDialog.isSubmitting}>
-                      {t("expenseDialog.save")}
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-
-            {/* Quick add: Receipt / payment */}
-            <Dialog
-              open={receiptDialog.isOpen}
-              onOpenChange={(open) => !open && receiptDialog.closeDialog()}
-            >
-              <DialogContent className="sm:max-w-[440px]">
-                <DialogHeader>
-                  <DialogTitle>{t("paymentDialog.title")}</DialogTitle>
-                  <DialogDescription>
-                    {t("paymentDialog.description", { property: property.name })}
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={receiptDialog.handleSubmit} className="space-y-4 pt-1">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="rec-tenant">{tReceipts("tenant")}</Label>
-                    <Select
-                      value={receiptDialog.formData.tenantId}
-                      onValueChange={(v) => receiptDialog.updateFormData({ tenantId: v })}
-                    >
-                      <SelectTrigger
-                        id="rec-tenant"
-                        className={
-                          receiptDialog.formErrors.tenantId
-                            ? "border-[var(--color-destructive)]"
-                            : ""
-                        }
-                      >
-                        <SelectValue placeholder={tReceipts("selectTenant")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {relatedTenants.map((ten) => (
-                          <SelectItem key={ten.id} value={ten.id}>
-                            {ten.name}
-                          </SelectItem>
-                        ))}
-                        {state.tenants
-                          .filter((ten) => !relatedTenants.some((rt) => rt.id === ten.id))
-                          .map((ten) => (
-                            <SelectItem key={ten.id} value={ten.id}>
-                              {ten.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    {receiptDialog.formErrors.tenantId && (
-                      <p className="text-xs text-[var(--color-destructive)]">
-                        {receiptDialog.formErrors.tenantId}
-                      </p>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="rec-amount">{t("dialog.amount")}</Label>
-                      <Input
-                        id="rec-amount"
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        placeholder="0.00"
-                        value={receiptDialog.formData.amount || ""}
-                        onChange={(e) =>
-                          receiptDialog.updateFormData({ amount: parseFloat(e.target.value) || 0 })
-                        }
-                        className={
-                          receiptDialog.formErrors.amount ? "border-[var(--color-destructive)]" : ""
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="rec-type">{tReceipts("paymentType")}</Label>
-                      <Select
-                        value={receiptDialog.formData.type}
-                        onValueChange={(v) =>
-                          receiptDialog.updateFormData({ type: v as ReceiptFormData["type"] })
-                        }
-                      >
-                        <SelectTrigger id="rec-type">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="rent">{tReceipts("typeRent")}</SelectItem>
-                          <SelectItem value="deposit">{tReceipts("typeDeposit")}</SelectItem>
-                          <SelectItem value="maintenance">
-                            {tReceipts("typeMaintenance")}
-                          </SelectItem>
-                          <SelectItem value="other">{tReceipts("typeOther")}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="rec-date">{t("dialog.date")}</Label>
-                      <Input
-                        id="rec-date"
-                        type="date"
-                        value={receiptDialog.formData.date}
-                        onChange={(e) => receiptDialog.updateFormData({ date: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="rec-status">{t("month.status")}</Label>
-                      <Select
-                        value={receiptDialog.formData.status}
-                        onValueChange={(v) =>
-                          receiptDialog.updateFormData({ status: v as ReceiptFormData["status"] })
-                        }
-                      >
-                        <SelectTrigger id="rec-status">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="paid">{tStatus("paid")}</SelectItem>
-                          <SelectItem value="pending">{tStatus("pending")}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2 pt-2">
-                    <Button type="button" variant="outline" onClick={receiptDialog.closeDialog}>
-                      {tActions("cancel")}
-                    </Button>
-                    <Button type="submit" disabled={receiptDialog.isSubmitting}>
-                      {t("paymentDialog.save")}
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </>
+              its subject does: Edit with the property's own details (Overview), Add Expense in
+              Money, Documents as its own tab, and Record Payment behind a click on the reference
+              month it applies to. */}
         </div>
       </div>
 
@@ -623,6 +339,13 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
       )}
 
       <TenancySheet open={tenancyOpen} onOpenChange={setTenancyOpen} prefill={{ propertyId }} />
+      <ExpenseDialog dialog={expenseDialog} propertyName={property.name} />
+      <RecordPaymentDialog
+        open={paymentPreset !== null}
+        onOpenChange={(open) => !open && setPaymentPreset(null)}
+        preset={paymentPreset ?? undefined}
+        onRecorded={() => void refreshData()}
+      />
 
       {/* Reference-month detail. Record Payment used to be a header button divorced from the
           month it applied to; it now opens from the month itself, with the ledger figures for
@@ -673,7 +396,14 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                   className="w-full"
                   onClick={() => {
                     setSelectedMonth(null);
-                    receiptDialog.openDialog();
+                    setPaymentPreset({
+                      propertyId,
+                      // The month's lease, when the property has one: the payment is for it.
+                      leaseId: activeLeasesList.length === 1 ? activeLeasesList[0].id : undefined,
+                      amount:
+                        Math.max(selectedMonth.dueAmount - selectedMonth.allocatedAmount, 0) ||
+                        undefined,
+                    });
                   }}
                 >
                   <Receipt className="mr-1.5 h-4 w-4" />

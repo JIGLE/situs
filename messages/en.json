@@ -803,10 +803,10 @@
     "colDate": "Date",
     "colStatus": "Status",
     "tabs": {
-      "receipts": "Receipts",
-      "rentMatrix": "Rent matrix",
-      "bank": "Bank movements",
-      "tax": "Tax summary"
+      "ledger": "Ledger",
+      "movements": "Movements",
+      "expenses": "Expenses",
+      "reports": "Reports"
     }
   },
   "leases": {
@@ -1180,6 +1180,7 @@
     "recentTransactions": "Recent Transactions",
     "recordExpense": "Record Expense",
     "addExpenseDesc": "Add a new property expense to track your spending",
+    "addExpenseFor": "Log a cost for {property}",
     "saveExpense": "Save Expense",
     "totalIncome": "Total Income",
     "totalExpenses": "Total Expenses",
@@ -1429,16 +1430,11 @@
       }
     },
     "timeRange": "Time range",
-    "filterReceiptStatus": "Filter receipts by status",
     "unknownProperty": "Unknown property",
     "noFinancialData": "No financial data yet",
     "noFinancialDataDesc": "Start by adding receipts or expenses to track your cash flow",
-    "incomeAndReceipts": "Income & Receipts",
-    "incomeAndReceiptsDesc": "Rent payments received",
-    "noIncomeRecords": "No income records found",
-    "expensesHeading": "Expenses",
-    "expensesDesc": "Latest tracked property costs",
     "noExpenseRecords": "No expense records found",
+    "expensesSummary": "{count, plural, =0 {No expenses} one {# expense} other {# expenses}} · {total}",
     "expenseForm": {
       "property": "Property",
       "selectProperty": "Select property",
@@ -1547,23 +1543,6 @@
       "selectOwner": "Select owner…",
       "remove": "Remove owner",
       "reachesFull": "Total will reach exactly 100% ✓"
-    },
-    "expenseDialog": {
-      "title": "Record expense",
-      "description": "Log a cost for {property}",
-      "category": "Category",
-      "descriptionOptional": "Description (optional)",
-      "notesPlaceholder": "Notes…",
-      "save": "Save expense"
-    },
-    "paymentDialog": {
-      "title": "Record payment",
-      "description": "Log a rent or deposit payment for {property}",
-      "save": "Save payment"
-    },
-    "dialog": {
-      "amount": "Amount",
-      "date": "Date"
     },
     "paymentTimeline": "Payment timeline",
     "timelineReversed": "Reversed",

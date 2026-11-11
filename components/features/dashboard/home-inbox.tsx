@@ -31,7 +31,7 @@ interface Movement {
   recordedPayments?: { id: string }[];
 }
 
-const BANK = "/financials?tab=bank";
+const BANK = "/financials?tab=movements";
 
 /**
  * The month's work, on Home: each payment that arrived waits as a card to confirm, and each paid

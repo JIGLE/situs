@@ -1,23 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Plus, Calendar as CalendarIcon, FileText } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useMemo, useState } from "react";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCurrency } from "@/lib/contexts/currency-context";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -26,210 +12,41 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useApp } from "@/lib/contexts/app-context";
-import {
-  expenseSchema,
-  EXPENSE_CATEGORIES,
-  RECURRENCE_RULES,
-  type ExpenseFormData,
-} from "@/lib/schemas/expense.schema";
 import { cn } from "@/lib/utils/utils";
-import { getExpenseCategoryColor } from "@/lib/design-tokens";
 import { LoadingState } from "@/components/ui/loading-state";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
-import { useFormDialog } from "@/lib/hooks/use-form-dialog";
-import { expenseCategoryKey } from "@/lib/utils/expense-labels";
 import { incomeTotal } from "@/lib/utils/receipt-income";
 
+type Range = "all" | "month" | "year";
+
+/** Whether a date falls in this month, this year, or at all. */
+function inRange(raw: string, range: Range, now: Date): boolean {
+  if (range === "all") return true;
+  const date = new Date(raw);
+  if (date.getFullYear() !== now.getFullYear()) return false;
+  return range === "year" || date.getMonth() === now.getMonth();
+}
+
+/**
+ * Finance › Reports' first line: income, expenses and what is left, for this month, this year or
+ * all time. It also listed every receipt by month and every expense, with its own Add expense;
+ * the receipts register below it and the Expenses tab now hold those.
+ */
 export function FinancialsView(): React.ReactElement {
-  const { state, addExpense } = useApp();
-  const { properties, receipts, expenses, loading } = state;
-  const { formatCurrency, currencySymbol } = useCurrency();
+  const { state } = useApp();
+  const { receipts, expenses, loading } = state;
+  const { formatCurrency } = useCurrency();
   const t = useTranslations("financial");
-  const tCategories = useTranslations("financial.categories");
-  const tStatus = useTranslations("status");
-  const tActions = useTranslations("actions");
-  const locale = useLocale();
+  const [timeRange, setTimeRange] = useState<Range>("month");
 
-  const [timeRange, setTimeRange] = useState("month"); // all, month, year
-  const [receiptStatusFilter, setReceiptStatusFilter] = useState<"all" | "paid" | "pending">("all");
-
-  const dialog = useFormDialog<ExpenseFormData>({
-    schema: expenseSchema,
-    initialData: {
-      propertyId: "",
-      amount: 0,
-      date: new Date().toISOString().split("T")[0],
-      category: "other" as const,
-      description: "",
-      isDeductible: true,
-      isRecurring: false,
-      recurrenceDay: 1,
-      recurrenceEnd: null,
-    },
-    onSubmit: async (data) => {
-      await addExpense(data);
-    },
-    successMessage: {
-      create: t("expenseForm.toastCreated"),
-      update: t("expenseForm.toastUpdated"),
-    },
-  });
-
-  // Enhanced Calculations with trends
   const metrics = useMemo(() => {
-    let filteredReceipts = receipts;
-    let filteredExpenses = expenses;
-    let previousReceipts = receipts;
-    let previousExpenses = expenses;
-
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    // Previous period for trend calculation
-    const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-    const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-
-    if (timeRange === "month") {
-      filteredReceipts = receipts.filter((r) => {
-        const date = new Date(r.date);
-        return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
-      });
-      filteredExpenses = expenses.filter((e) => {
-        const date = new Date(e.date);
-        return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
-      });
-
-      // Previous month for trend
-      previousReceipts = receipts.filter((r) => {
-        const date = new Date(r.date);
-        return date.getMonth() === previousMonth && date.getFullYear() === previousYear;
-      });
-      previousExpenses = expenses.filter((e) => {
-        const date = new Date(e.date);
-        return date.getMonth() === previousMonth && date.getFullYear() === previousYear;
-      });
-    } else if (timeRange === "year") {
-      filteredReceipts = receipts.filter((r) => new Date(r.date).getFullYear() === currentYear);
-      filteredExpenses = expenses.filter((e) => new Date(e.date).getFullYear() === currentYear);
-
-      // Previous year for trend
-      previousReceipts = receipts.filter((r) => new Date(r.date).getFullYear() === currentYear - 1);
-      previousExpenses = expenses.filter((e) => new Date(e.date).getFullYear() === currentYear - 1);
-    }
-
-    const totalIncome = incomeTotal(filteredReceipts);
-    const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-    const netProfit = totalIncome - totalExpenses;
-
-    // Previous period totals
-    const prevIncome = incomeTotal(previousReceipts);
-    const prevExpenses = previousExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-    const prevNetProfit = prevIncome - prevExpenses;
-
-    // Calculate trends
-    const incomeTrend = prevIncome > 0 ? ((totalIncome - prevIncome) / prevIncome) * 100 : 0;
-    const expensesTrend =
-      prevExpenses > 0 ? ((totalExpenses - prevExpenses) / prevExpenses) * 100 : 0;
-    const profitTrend =
-      prevNetProfit !== 0 ? ((netProfit - prevNetProfit) / Math.abs(prevNetProfit)) * 100 : 0;
-
-    // Group expenses by category
-    const expensesByCategory = filteredExpenses.reduce(
-      (acc, expense) => {
-        acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    // Monthly revenue trend (last 6 months)
-    const monthlyRevenue = [];
-    for (let i = 5; i >= 0; i--) {
-      const targetDate = new Date(currentYear, currentMonth - i, 1);
-      const monthReceipts = receipts.filter((r) => {
-        const receiptDate = new Date(r.date);
-        return (
-          receiptDate.getMonth() === targetDate.getMonth() &&
-          receiptDate.getFullYear() === targetDate.getFullYear()
-        );
-      });
-
-      monthlyRevenue.push({
-        label: targetDate.toLocaleString("default", { month: "short" }),
-        value: incomeTotal(monthReceipts),
-      });
-    }
-
-    return {
-      totalIncome,
-      totalExpenses,
-      netProfit,
-      profitMargin: totalIncome > 0 ? (netProfit / totalIncome) * 100 : 0,
-      incomeTrend,
-      expensesTrend,
-      profitTrend,
-      expensesByCategory,
-      monthlyRevenue,
-      totalProperties: properties.length,
-      avgRevenuePerProperty: properties.length > 0 ? totalIncome / properties.length : 0,
-      filteredReceipts,
-      filteredExpenses,
-    };
-  }, [receipts, expenses, properties, timeRange]);
-
-  const getCategoryColor = (category: string) => getExpenseCategoryColor(category);
-
-  /**
-   * Expense categories have had translated labels under `financial.categories` all along — this
-   * view was de-underscoring the enum value instead, so a Portuguese reader read "Condominium
-   * Fees". A category outside the current enum keeps the old title-case transform.
-   */
-  const formatCategoryLabel = (category: string) => {
-    const key = expenseCategoryKey(category);
-    return key
-      ? tCategories(key)
-      : category.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  };
-
-  // Group receipts by month for table display
-  const groupedReceipts = useMemo(() => {
-    const filtered =
-      receiptStatusFilter === "all"
-        ? metrics.filteredReceipts
-        : metrics.filteredReceipts.filter((r) => r.status === receiptStatusFilter);
-    const sorted = [...filtered].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-    );
-    const groups: Record<string, typeof sorted> = {};
-    sorted.forEach((r) => {
-      const key = r.date.substring(0, 7);
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(r);
-    });
-    return Object.entries(groups).map(([key, recs]) => ({
-      key,
-      // `locale`, not "default". "default" is the runtime's locale, which is the container's —
-      // so a Portuguese reader got "January 2026" as a section heading inside a translated page.
-      monthLabel: new Date(key + "-01").toLocaleString(locale, {
-        month: "long",
-        year: "numeric",
-      }),
-      monthTotal: incomeTotal(recs),
-      receipts: recs,
-    }));
-  }, [metrics.filteredReceipts, receiptStatusFilter, locale]);
-
-  // Prepare chart data
-  const _expenseCategoryData = Object.entries(metrics.expensesByCategory).map(
-    ([category, amount]) => ({
-      label: category.charAt(0).toUpperCase() + category.slice(1),
-      value: amount,
-      color: getCategoryColor(category),
-    }),
-  );
-
-  const categories = EXPENSE_CATEGORIES;
+    const totalIncome = incomeTotal(receipts.filter((r) => inRange(r.date, timeRange, now)));
+    const totalExpenses = expenses
+      .filter((e) => inRange(e.date, timeRange, now))
+      .reduce((sum, expense) => sum + expense.amount, 0);
+    return { totalIncome, totalExpenses, netProfit: totalIncome - totalExpenses };
+  }, [receipts, expenses, timeRange]);
 
   return (
     <>
@@ -246,18 +63,8 @@ export function FinancialsView(): React.ReactElement {
         </div>
       ) : (
         <div className="space-y-4">
-          {/* A section heading, not a page title.
-
-              This was a `PageHeader` reading "Accounts" — an untranslated `h2` at `text-3xl`,
-              sitting directly under the container's real page title "Pagamentos". Declutter rule
-              1 allows one heading per screen, and the tab label already names this one.
-
-              The three stat tiles that used to follow it are gone for rules 2 and 4. The tab
-              container renders four bordered tiles of its own immediately above; two stat rows on
-              one screen is exactly what rule 2 forbids, and these three counts are read, not
-              acted on, so rule 4 puts them in a subtitle line — the Portfolio pattern. They are
-              still all three there, still period-scoped by the range control, and the screen
-              starts ~180px higher. */}
+          {/* A section label and one line of figures: counts as text, not tiles (density
+              rules 2 and 4). */}
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
               <h2 className="mono-label">{t("title")}</h2>
@@ -286,7 +93,7 @@ export function FinancialsView(): React.ReactElement {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Select value={timeRange} onValueChange={setTimeRange}>
+              <Select value={timeRange} onValueChange={(value) => setTimeRange(value as Range)}>
                 {/* Content-sized with a floor. At a fixed 150px the value overflowed its own box
                   by 3px — enough for the audit to count it as an unreachable clip, and a sign
                   the width was guessed rather than measured. */}
@@ -300,359 +107,7 @@ export function FinancialsView(): React.ReactElement {
                   <SelectItem value="year">{t("thisYear")}</SelectItem>
                 </SelectContent>
               </Select>
-
-              <Dialog open={dialog.isOpen} onOpenChange={(open) => !open && dialog.closeDialog()}>
-                <DialogTrigger asChild>
-                  <Button onClick={dialog.openDialog} className="flex items-center gap-2">
-                    <Plus className="w-4 h-4" />
-                    {t("addExpense")}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-[var(--color-card-solid)] border-[var(--color-border)] sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>{t("recordExpense")}</DialogTitle>
-                    <DialogDescription>{t("addExpenseDesc")}</DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={dialog.handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="property">{t("expenseForm.property")}</Label>
-                        <Select
-                          value={dialog.formData.propertyId}
-                          onValueChange={(val) => dialog.updateFormData({ propertyId: val })}
-                        >
-                          <SelectTrigger
-                            id="property"
-                            className={
-                              dialog.formErrors.propertyId
-                                ? "border-[var(--color-destructive)]"
-                                : ""
-                            }
-                          >
-                            <SelectValue placeholder={t("expenseForm.selectProperty")} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {properties.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>
-                                {p.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {dialog.formErrors.propertyId && (
-                          <p className="text-sm text-destructive">{dialog.formErrors.propertyId}</p>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="category">{t("expenseForm.category")}</Label>
-                        <Select
-                          value={dialog.formData.category}
-                          onValueChange={(val) =>
-                            dialog.updateFormData({ category: val as ExpenseFormData["category"] })
-                          }
-                        >
-                          <SelectTrigger
-                            id="category"
-                            className={
-                              dialog.formErrors.category ? "border-[var(--color-destructive)]" : ""
-                            }
-                          >
-                            <SelectValue placeholder={t("expenseForm.selectCategory")} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((c) => (
-                              <SelectItem key={c} value={c}>
-                                {tCategories(c)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {dialog.formErrors.category && (
-                          <p className="text-sm text-destructive">{dialog.formErrors.category}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="amount">
-                          {t("expenseForm.amount", { symbol: currencySymbol })}
-                        </Label>
-                        <Input
-                          id="amount"
-                          type="number"
-                          step="0.01"
-                          value={dialog.formData.amount || ""}
-                          onChange={(e) =>
-                            dialog.updateFormData({
-                              amount: parseFloat(e.target.value),
-                            })
-                          }
-                          className={
-                            dialog.formErrors.amount ? "border-[var(--color-destructive)]" : ""
-                          }
-                        />
-                        {dialog.formErrors.amount && (
-                          <p className="text-sm text-destructive">{dialog.formErrors.amount}</p>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="date">{t("expenseForm.date")}</Label>
-                        <Input
-                          id="date"
-                          type="date"
-                          value={dialog.formData.date}
-                          onChange={(e) => dialog.updateFormData({ date: e.target.value })}
-                          className={
-                            dialog.formErrors.date ? "border-[var(--color-destructive)]" : ""
-                          }
-                        />
-                        {dialog.formErrors.date && (
-                          <p className="text-sm text-destructive">{dialog.formErrors.date}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="description">{t("expenseForm.description")}</Label>
-                      <Textarea
-                        id="description"
-                        value={dialog.formData.description || ""}
-                        onChange={(e) => dialog.updateFormData({ description: e.target.value })}
-                        placeholder={t("expenseForm.descriptionPlaceholder")}
-                      />
-                    </div>
-
-                    {/* Recurring expense toggle */}
-                    <div className="space-y-3 border-t border-[var(--color-border)] pt-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="isRecurring" className="text-sm font-medium">
-                            {t("isRecurring")}
-                          </Label>
-                          <p className="text-xs text-[var(--color-muted-foreground)]">
-                            {t("recurringToggleDesc")}
-                          </p>
-                        </div>
-                        <Switch
-                          id="isRecurring"
-                          checked={!!dialog.formData.isRecurring}
-                          onCheckedChange={(checked) =>
-                            dialog.updateFormData({
-                              isRecurring: checked,
-                              recurrenceRule: checked ? "monthly" : undefined,
-                              recurrenceDay: checked ? 1 : undefined,
-                              recurrenceEnd: null,
-                            })
-                          }
-                        />
-                      </div>
-
-                      {dialog.formData.isRecurring && (
-                        <div className="space-y-3 pl-1">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="recurrenceRule">{t("recurrenceRule")}</Label>
-                              <Select
-                                value={dialog.formData.recurrenceRule ?? "monthly"}
-                                onValueChange={(val) =>
-                                  dialog.updateFormData({
-                                    recurrenceRule: val as (typeof RECURRENCE_RULES)[number],
-                                  })
-                                }
-                              >
-                                <SelectTrigger id="recurrenceRule">
-                                  <SelectValue placeholder={t("expenseForm.selectFrequency")} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="monthly">{t("recurrenceMonthly")}</SelectItem>
-                                  <SelectItem value="quarterly">
-                                    {t("recurrenceQuarterly")}
-                                  </SelectItem>
-                                  <SelectItem value="annual">{t("recurrenceAnnual")}</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="recurrenceDay">{t("recurrenceDay")}</Label>
-                              <Input
-                                id="recurrenceDay"
-                                type="number"
-                                min={1}
-                                max={28}
-                                value={dialog.formData.recurrenceDay ?? 1}
-                                onChange={(e) =>
-                                  dialog.updateFormData({
-                                    recurrenceDay: parseInt(e.target.value, 10) || undefined,
-                                  })
-                                }
-                              />
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="recurrenceEnd">
-                              {t("recurrenceEnd")}{" "}
-                              <span className="text-[var(--color-muted-foreground)] font-normal">
-                                ({t("recurrenceEndPlaceholder")})
-                              </span>
-                            </Label>
-                            <Input
-                              id="recurrenceEnd"
-                              type="date"
-                              value={dialog.formData.recurrenceEnd ?? ""}
-                              onChange={(e) =>
-                                dialog.updateFormData({
-                                  recurrenceEnd: e.target.value || null,
-                                })
-                              }
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex justify-end gap-2 pt-4">
-                      <Button type="button" variant="outline" onClick={dialog.closeDialog}>
-                        {tActions("cancel")}
-                      </Button>
-                      <Button type="submit" loading={dialog.isSubmitting}>
-                        {t("expenseForm.submit")}
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
             </div>
-          </div>
-
-          <div className="space-y-4">
-            {/* Income & Receipts table */}
-            <Card className="bg-[var(--color-card-solid)] border-[var(--color-border)]">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>{t("incomeAndReceipts")}</CardTitle>
-                  <CardDescription>{t("incomeAndReceiptsDesc")}</CardDescription>
-                </div>
-                <Select
-                  value={receiptStatusFilter}
-                  onValueChange={(v) => setReceiptStatusFilter(v as "all" | "paid" | "pending")}
-                >
-                  <SelectTrigger
-                    className="min-w-[8rem] w-auto"
-                    aria-label={t("filterReceiptStatus")}
-                  >
-                    <SelectValue placeholder={t("filterReceiptStatus")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{tStatus("all")}</SelectItem>
-                    <SelectItem value="paid">{tStatus("paid")}</SelectItem>
-                    <SelectItem value="pending">{tStatus("pending")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </CardHeader>
-              <CardContent>
-                {groupedReceipts.length === 0 ? (
-                  <p className="text-sm text-[var(--color-muted-foreground)] text-center py-4">
-                    {t("noIncomeRecords")}
-                  </p>
-                ) : (
-                  groupedReceipts.map(({ key, monthLabel, monthTotal, receipts: monthRecs }) => (
-                    <div key={key} className="mb-5">
-                      <div className="flex items-center justify-between mb-2 pb-1 border-b border-[var(--color-border)]">
-                        <h4 className="text-sm font-semibold text-[var(--color-muted-foreground)]">
-                          {monthLabel}
-                        </h4>
-                        <span className="text-sm font-semibold text-[var(--color-success)] tabular-nums">
-                          {formatCurrency(monthTotal)}
-                        </span>
-                      </div>
-                      <div className="space-y-1">
-                        {monthRecs.map((receipt) => (
-                          <div
-                            key={receipt.id}
-                            className="flex items-center gap-3 text-sm py-1.5 border-b border-[var(--color-border)]/60 last:border-0"
-                          >
-                            <span className="text-[var(--color-muted-foreground)] text-xs font-mono w-28 shrink-0">
-                              {receipt.number ?? receipt.id.slice(0, 8)}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[var(--color-foreground)] truncate">
-                                {receipt.tenantName}
-                              </p>
-                              <p className="text-[var(--color-muted-foreground)] text-xs truncate">
-                                {receipt.propertyName}
-                              </p>
-                            </div>
-                            <span
-                              className={cn(
-                                "text-xs px-2 py-0.5 rounded-full font-medium shrink-0",
-                                receipt.status === "paid"
-                                  ? "bg-[var(--color-success-muted)] text-[var(--color-success)]"
-                                  : "bg-[var(--color-warning-muted)] text-[var(--color-warning)]",
-                              )}
-                            >
-                              {tStatus(receipt.status)}
-                            </span>
-                            <span
-                              className={cn(
-                                "font-semibold text-sm shrink-0 tabular-nums",
-                                receipt.status === "paid"
-                                  ? "text-[var(--color-success)]"
-                                  : "text-[var(--color-warning)]",
-                              )}
-                            >
-                              {formatCurrency(receipt.amount)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Expenses */}
-            <Card className="bg-[var(--color-card-solid)] border-[var(--color-border)]">
-              <CardHeader>
-                <CardTitle>{t("expensesHeading")}</CardTitle>
-                <CardDescription>{t("expensesDesc")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {metrics.filteredExpenses.length === 0 ? (
-                    <p className="text-sm text-[var(--color-muted-foreground)] text-center py-4">
-                      {t("noExpenseRecords")}
-                    </p>
-                  ) : (
-                    metrics.filteredExpenses
-                      .slice()
-                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                      .map((expense) => (
-                        <div key={expense.id} className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-[var(--color-error-muted)] rounded-full shrink-0">
-                              <FileText className="w-4 h-4 text-[var(--color-destructive)]" />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-[var(--color-foreground)]">
-                                {formatCategoryLabel(expense.category)}
-                              </p>
-                              <p className="text-xs text-[var(--color-muted-foreground)] truncate">
-                                {expense.propertyName ?? t("unknownProperty")} &bull;{" "}
-                                {new Date(expense.date).toLocaleDateString(locale)}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-sm font-bold text-[var(--color-destructive)] shrink-0 tabular-nums">
-                            -{formatCurrency(expense.amount)}
-                          </div>
-                        </div>
-                      ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       )}

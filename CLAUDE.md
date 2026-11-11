@@ -174,7 +174,7 @@ e2e/                    # Playwright E2E tests
   check → reconciliation rules → weighted confidence scoring (`lib/services/matching/engine.ts`,
   pure). ≥0.85 auto-allocates via a draft `Receipt` (`source: "automation"`), unless the lease has a
   payment the owner recorded by hand for the same amount (below); anything lower waits
-  in the Bank Movements inbox (Finance tab) for a human to confirm, reassign or ignore. **An account
+  in the Home inbox and Finance › Movements for a human to confirm, reassign or ignore. **An account
   the owner confirms is remembered for that tenant** (`PayerAccount`, `lib/services/bank/payer-accounts.ts`):
   a confirm, an assign or a link stores the IBAN's hash, its last four digits and the payer's name,
   never the IBAN, and nothing else teaches one (not an auto-match, an ignore, or a test connection).
@@ -230,15 +230,15 @@ e2e/                    # Playwright E2E tests
 - **Tax connectors**: one `TaxAuthorityConnector` row per `[userId, connectorKey]`. Sandbox and
   review transmit nothing. `test` reaches AT's test service through `lib/tax/at/`
   (mutual TLS with the certificate AT signed, a WS-Security header, SOAP). There it checks
-  credentials, fetches a receipt, and tests receipts from Finance › Recibos: **Emitir** opens a
+  credentials, fetches a receipt, and tests receipts from the receipts register in Finance › Reports: **Emitir** opens a
   review of each rent month a receipt pays (`lib/tax/at/receipt-request.ts` builds AT's
   `emitirRecibo` request, `lib/services/tax/at-receipts.ts` reads the records), and **Testar na
   AT** sends the ready months. A test records nothing on the receipt, since a receipt AT's test
   service issues does not count. No production AT integration exists and no code files a receipt in
   any mode, `live` included, so going live is a code change, not a row edit. The owner sets the mode
   and the Portal sub-user in Settings › Integrations (`lib/services/tax/at-connection.ts`). Every
-  call appends an immutable `TaxSubmissionLog` row (`GET /api/tax/connectors`, Finance › Tax
-  Summary).
+  call appends an immutable `TaxSubmissionLog` row (`GET /api/tax/connectors`, Finance ›
+  Reports).
 - **Alert generation**: `lib/services/notifications/notification-automation.ts` reads the rent
   ledger. `payment_due` (D-5) and `payment_overdue` (D+1/D+7) come from `RentPeriod` and quote the
   OUTSTANDING balance, so a part-paid month is chased for its balance; `rent_receipt_due` comes

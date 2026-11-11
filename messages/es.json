@@ -803,10 +803,10 @@
     "colDate": "Fecha",
     "colStatus": "Estado",
     "tabs": {
-      "receipts": "Recibos",
-      "rentMatrix": "Matriz de rentas",
-      "bank": "Movimientos bancarios",
-      "tax": "Resumen fiscal"
+      "ledger": "Rentas",
+      "movements": "Movimientos",
+      "expenses": "Gastos",
+      "reports": "Informes"
     }
   },
   "leases": {
@@ -1180,6 +1180,7 @@
     "recentTransactions": "Transacciones Recientes",
     "recordExpense": "Registrar Gasto",
     "addExpenseDesc": "Añadir un nuevo gasto de propiedad",
+    "addExpenseFor": "Registre un gasto de {property}",
     "saveExpense": "Guardar Gasto",
     "totalIncome": "Ingresos Totales",
     "totalExpenses": "Gastos Totales",
@@ -1429,16 +1430,11 @@
       }
     },
     "timeRange": "Intervalo de tiempo",
-    "filterReceiptStatus": "Filtrar recibos por estado",
     "unknownProperty": "Inmueble desconocido",
     "noFinancialData": "Aún no hay datos financieros",
     "noFinancialDataDesc": "Empieza añadiendo recibos o gastos para seguir tu flujo de caja",
-    "incomeAndReceipts": "Ingresos y recibos",
-    "incomeAndReceiptsDesc": "Rentas cobradas",
-    "noIncomeRecords": "Sin registros de ingresos",
-    "expensesHeading": "Gastos",
-    "expensesDesc": "Últimos costes registrados del inmueble",
     "noExpenseRecords": "Sin registros de gastos",
+    "expensesSummary": "{count, plural, =0 {Sin gastos} one {# gasto} other {# gastos}} · {total}",
     "expenseForm": {
       "property": "Inmueble",
       "selectProperty": "Seleccionar inmueble",
@@ -1547,23 +1543,6 @@
       "selectOwner": "Elegir propietario…",
       "remove": "Eliminar propietario",
       "reachesFull": "El total llegará exactamente al 100% ✓"
-    },
-    "expenseDialog": {
-      "title": "Registrar gasto",
-      "description": "Registre un gasto de {property}",
-      "category": "Categoría",
-      "descriptionOptional": "Descripción (opcional)",
-      "notesPlaceholder": "Notas…",
-      "save": "Guardar gasto"
-    },
-    "paymentDialog": {
-      "title": "Registrar pago",
-      "description": "Registre un pago de alquiler o fianza de {property}",
-      "save": "Guardar pago"
-    },
-    "dialog": {
-      "amount": "Importe",
-      "date": "Fecha"
     },
     "paymentTimeline": "Cronología de pagos",
     "timelineReversed": "Revertido",

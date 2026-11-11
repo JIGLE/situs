@@ -110,7 +110,7 @@ describe("HomeInbox", () => {
 
     const links = await screen.findAllByRole("link", { name: inbox.review });
     expect(links).toHaveLength(2);
-    for (const link of links) expect(link).toHaveAttribute("href", "/financials?tab=bank");
+    for (const link of links) expect(link).toHaveAttribute("href", "/financials?tab=movements");
     expect(screen.queryByRole("button", { name: bank.confirm })).not.toBeInTheDocument();
   });
 
