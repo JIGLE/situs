@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect } from "react";
+import {
+  defaultLeaseTerm,
+  onPropertyChosen,
+  onRentChanged,
+  onStartChanged,
+} from "@/lib/utils/lease-defaults";
 import {
   FileText,
   Plus,
@@ -9,8 +15,6 @@ import {
   DollarSign,
   FileCheck,
   Upload,
-  Calendar,
-  Building2,
   Edit,
   Trash2,
   Download,
@@ -20,7 +24,6 @@ import {
   Mail,
 } from "lucide-react";
 import { SortableHeader } from "@/components/ui/sortable-header";
-import { DataViewToggle, DataViewMode } from "@/components/ui/data-view-toggle";
 import { RenderTable } from "@/components/ui/table";
 import {
   DropdownMenu,
@@ -29,7 +32,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCurrency } from "@/lib/contexts/currency-context";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -56,7 +58,6 @@ import { EmptyStateIllustration } from "@/components/ui/empty-state-illustration
 import { SearchFilter } from "@/components/ui/search-filter";
 import { ExportButton } from "@/components/ui/export-button";
 import { useApp } from "@/lib/contexts/app-context";
-import { RelationshipBadge, daysUntil } from "@/components/shared/relationship-badge";
 import { Lease } from "@/lib/types";
 import { leaseSchema, type LeaseFormData } from "@/lib/schemas/lease.schema";
 import { useToast } from "@/lib/contexts/toast-context";
@@ -112,22 +113,11 @@ export function LeasesView(): React.ReactElement {
   const [bulkPct, setBulkPct] = useState("");
   const [bulkApplying, setBulkApplying] = useState(false);
 
-  // Data view mode state with localStorage persistence
-  const [dataViewMode, setDataViewMode] = useState<DataViewMode>("grid");
-  useEffect(() => {
-    const saved = localStorage.getItem("situs-leases-view-mode");
-    if (saved === "grid" || saved === "table") setDataViewMode(saved);
-  }, []);
-  const handleViewModeChange = useCallback((mode: DataViewMode) => {
-    setDataViewMode(mode);
-    localStorage.setItem("situs-leases-view-mode", mode);
-  }, []);
-
   const initialFormData: LeaseFormData = {
     propertyId: "",
     tenantId: "",
-    startDate: "",
-    endDate: "",
+    // The 1st of next month for a year; the rent and deposit come from the property once chosen.
+    ...defaultLeaseTerm(new Date()),
     monthlyRent: 0,
     deposit: 0,
     autoRenew: false,
@@ -400,7 +390,12 @@ export function LeasesView(): React.ReactElement {
     if (action === "create") {
       const tenant = tenants.find((t) => t.id === searchParams.get("tenantId"));
       setEditingLease(null);
-      wizard.updateFormData({ tenantId: tenant?.id ?? "", propertyId: tenant?.propertyId ?? "" });
+      const propertyId = tenant?.propertyId ?? "";
+      wizard.updateFormData({
+        tenantId: tenant?.id ?? "",
+        propertyId,
+        ...onPropertyChosen(wizard.formData, properties.find((p) => p.id === propertyId)?.rent),
+      });
       setContractFile(null);
       setWizardOpen(true);
     } else if (action === "edit" || action === "renew") {
@@ -473,6 +468,12 @@ export function LeasesView(): React.ReactElement {
           <Edit className="h-4 w-4 mr-2" />
           {t("editLease")}
         </DropdownMenuItem>
+        {lease.contractFileName ? (
+          <DropdownMenuItem onClick={() => void handleDownloadContract(lease)}>
+            <Download className="h-4 w-4 mr-2" />
+            {t("contractDownload")}
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(lease.id)}>
           <Trash2 className="h-4 w-4 mr-2" />
           {t("deleteLease")}
@@ -729,7 +730,15 @@ export function LeasesView(): React.ReactElement {
                       <Label htmlFor="propertyId">{t("propertyRequired")}</Label>
                       <Select
                         value={wizard.formData.propertyId}
-                        onValueChange={(value) => wizard.updateFormData({ propertyId: value })}
+                        onValueChange={(value) =>
+                          wizard.updateFormData({
+                            propertyId: value,
+                            ...onPropertyChosen(
+                              wizard.formData,
+                              properties.find((p) => p.id === value)?.rent,
+                            ),
+                          })
+                        }
                       >
                         <SelectTrigger
                           className={
@@ -858,9 +867,7 @@ export function LeasesView(): React.ReactElement {
                           type="date"
                           value={wizard.formData.startDate}
                           onChange={(e) =>
-                            wizard.updateFormData({
-                              startDate: e.target.value,
-                            })
+                            wizard.updateFormData(onStartChanged(wizard.formData, e.target.value))
                           }
                           className={
                             wizard.stepErrors.startDate ? "border-[var(--semantic-danger)]" : ""
@@ -900,9 +907,9 @@ export function LeasesView(): React.ReactElement {
                           step="0.01"
                           value={wizard.formData.monthlyRent}
                           onChange={(e) =>
-                            wizard.updateFormData({
-                              monthlyRent: parseFloat(e.target.value) || 0,
-                            })
+                            wizard.updateFormData(
+                              onRentChanged(wizard.formData, parseFloat(e.target.value) || 0),
+                            )
                           }
                           className={
                             wizard.stepErrors.monthlyRent ? "border-[var(--semantic-danger)]" : ""
@@ -1078,7 +1085,6 @@ export function LeasesView(): React.ReactElement {
               },
             ]}
           />
-          <DataViewToggle mode={dataViewMode} onChange={handleViewModeChange} />
         </div>
 
         {expiringSoon.length > 0 && (
@@ -1101,350 +1107,173 @@ export function LeasesView(): React.ReactElement {
           </div>
         )}
 
-        {dataViewMode === "table" ? (
-          /* Table View */
-          filteredLeases.length === 0 ? (
-            leases.length === 0 && (properties.length === 0 || tenants.length === 0) ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <FileText className="h-12 w-12 text-[var(--color-muted-foreground)] mb-4" />
-                <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-2">
-                  {t("emptyTitle")}
-                </h3>
-                <p className="text-sm text-[var(--color-muted-foreground)] mb-6 max-w-md">
-                  {t("emptyDescription")}
-                </p>
-                <div className="flex items-center gap-3">
-                  {properties.length === 0 && (
-                    <Button variant="outline" size="sm" onClick={() => router.push("/portfolio")}>
-                      <Plus className="w-4 h-4 mr-2" /> {t("createProperty")}
-                    </Button>
-                  )}
-                  {tenants.length === 0 && (
-                    <Button variant="outline" size="sm" onClick={() => router.push("/people")}>
-                      <Plus className="w-4 h-4 mr-2" /> {t("createPerson")}
-                    </Button>
-                  )}
-                </div>
+        {/* One list: a table from `md` up, the lease cards below it (`RenderTable` cardMode). A
+            grid/table switch used to sit beside the search, so the same leases had two layouts to
+            choose between and the bulk rent increase existed only in one of them. */}
+        {filteredLeases.length === 0 ? (
+          leases.length === 0 && (properties.length === 0 || tenants.length === 0) ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <FileText className="h-12 w-12 text-[var(--color-muted-foreground)] mb-4" />
+              <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-2">
+                {t("emptyTitle")}
+              </h3>
+              <p className="text-sm text-[var(--color-muted-foreground)] mb-6 max-w-md">
+                {t("emptyDescription")}
+              </p>
+              <div className="flex items-center gap-3">
+                {properties.length === 0 && (
+                  <Button variant="outline" size="sm" onClick={() => router.push("/portfolio")}>
+                    <Plus className="w-4 h-4 mr-2" /> {t("createProperty")}
+                  </Button>
+                )}
+                {tenants.length === 0 && (
+                  <Button variant="outline" size="sm" onClick={() => router.push("/people")}>
+                    <Plus className="w-4 h-4 mr-2" /> {t("createPerson")}
+                  </Button>
+                )}
               </div>
-            ) : (
-              <EmptyStateIllustration
-                type={leases.length === 0 ? "leases" : "generic"}
-                title={leases.length === 0 ? undefined : t("noneFound")}
-                description={leases.length === 0 ? undefined : t("adjustFilters")}
-                onAction={leases.length === 0 ? () => setWizardOpen(true) : undefined}
-                actionLabel={leases.length === 0 ? t("addFirst") : undefined}
-              />
-            )
+            </div>
           ) : (
-            <>
-              {/* Bulk actions bar */}
-              {selectedLeaseIds.size > 0 && (
-                <div className="flex items-center gap-3 px-4 py-2.5 bg-[var(--color-info-muted)] border border-[var(--color-info)]/30">
-                  <span className="text-sm font-medium text-[var(--color-info)]">
-                    {t("bulk.selected", { count: selectedLeaseIds.size })}
-                  </span>
-                  <div className="ml-auto flex items-center gap-2">
-                    <Dialog open={bulkIncreaseOpen} onOpenChange={setBulkIncreaseOpen}>
-                      <DialogTrigger asChild>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-[var(--color-info)]/40 text-[var(--color-info)]"
-                        >
-                          <TrendingUp className="h-4 w-4 mr-1.5" />
-                          {t("bulk.increaseRent")}
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-[380px]">
-                        <DialogHeader>
-                          <DialogTitle>{t("bulk.title")}</DialogTitle>
-                          <DialogDescription>
-                            {t("bulkDescription", { count: selectedLeaseIds.size })}
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4 pt-2">
-                          <div className="space-y-1.5">
-                            <Label htmlFor="bulk-pct">{t("bulk.percentLabel")}</Label>
-                            <div className="flex gap-2">
-                              <Input
-                                id="bulk-pct"
-                                type="number"
-                                min="0.1"
-                                max="100"
-                                step="0.1"
-                                placeholder={t("bulk.percentPlaceholder")}
-                                value={bulkPct}
-                                onChange={(e) => setBulkPct(e.target.value)}
-                                className="flex-1"
-                              />
-                              <span className="flex items-center text-sm text-[var(--color-muted-foreground)]">
-                                %
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Preview */}
-                          {bulkPct && !isNaN(parseFloat(bulkPct)) && parseFloat(bulkPct) > 0 && (
-                            <div className="bg-[var(--color-card)] border border-[var(--color-border)] divide-y divide-[var(--color-border)] text-sm max-h-48 overflow-y-auto">
-                              {[...selectedLeaseIds].map((id) => {
-                                const lease = leases.find((l) => l.id === id);
-                                if (!lease) return null;
-                                const tenant = tenants.find((t) => t.id === lease.tenantId);
-                                const newRent =
-                                  Math.round(
-                                    lease.monthlyRent * (1 + parseFloat(bulkPct) / 100) * 100,
-                                  ) / 100;
-                                return (
-                                  <div
-                                    key={id}
-                                    className="flex items-center justify-between px-3 py-2"
-                                  >
-                                    <span className="text-[var(--color-muted-foreground)] truncate max-w-[180px]">
-                                      {tenant?.name ?? id}
-                                    </span>
-                                    <span className="text-[var(--color-muted-foreground)] line-through mr-2">
-                                      {formatCurrency(lease.monthlyRent)}
-                                    </span>
-                                    <span className="text-[var(--semantic-success-readable)] font-medium">
-                                      {formatCurrency(newRent)}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={handleDownloadNotices}
-                              disabled={!bulkPct || isNaN(parseFloat(bulkPct))}
-                            >
-                              <Mail className="h-4 w-4 mr-1.5" />
-                              {t("bulk.downloadNotices")}
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={handleBulkRentIncrease}
-                              disabled={
-                                bulkApplying ||
-                                !bulkPct ||
-                                isNaN(parseFloat(bulkPct)) ||
-                                parseFloat(bulkPct) <= 0
-                              }
-                            >
-                              {bulkApplying ? t("bulk.applying") : t("bulk.apply")}
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
-                      onClick={() => setSelectedLeaseIds(new Set())}
-                    >
-                      {t("bulk.clear")}
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              <RenderTable
-                data={sortedLeases}
-                columns={leaseColumns}
-                rowKey={(lease) => lease.id}
-                cardMode
-                renderCard={renderLeaseCard}
-                onRowClick={(lease) => openLeaseOverlay(lease.id)}
-                rowClassName={(lease) =>
-                  cn(
-                    "border-[var(--color-border)] hover:bg-[var(--color-surface-hover)]",
-                    selectedLeaseIds.has(lease.id) && "bg-[var(--color-info-muted)]",
-                  )
-                }
-                className="border border-[var(--color-border)] bg-[var(--color-card)]"
-              />
-            </>
+            <EmptyStateIllustration
+              type={leases.length === 0 ? "leases" : "generic"}
+              title={leases.length === 0 ? undefined : t("noneFound")}
+              description={leases.length === 0 ? undefined : t("adjustFilters")}
+              onAction={leases.length === 0 ? () => setWizardOpen(true) : undefined}
+              actionLabel={leases.length === 0 ? t("addFirst") : undefined}
+            />
           )
         ) : (
           <>
-            {/* Sort controls. These sat in a table-header strip whose columns lined up with
-                nothing, since the list below is a grid of cards — and at 390px "Data de início"
-                wrapped onto three lines. A row of sort buttons says the same without the grid. */}
-            {filteredLeases.length > 0 && (
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border border-[var(--color-border)] bg-[var(--color-surface-hover)] px-4 py-1">
-                <SortableHeader
-                  sortKey="startDate"
-                  label={t("field.startDate")}
-                  currentSort={getSortDirection("startDate")}
-                  onSort={(key) => requestSort(key as keyof Lease)}
-                />
-                <SortableHeader
-                  sortKey="monthlyRent"
-                  label={t("field.rent")}
-                  currentSort={getSortDirection("monthlyRent")}
-                  onSort={(key) => requestSort(key as keyof Lease)}
-                />
-                <SortableHeader
-                  sortKey="status"
-                  label={t("field.status")}
-                  currentSort={getSortDirection("status")}
-                  onSort={(key) => requestSort(key as keyof Lease)}
-                />
+            {/* Bulk actions bar */}
+            {selectedLeaseIds.size > 0 && (
+              <div className="flex items-center gap-3 px-4 py-2.5 bg-[var(--color-info-muted)] border border-[var(--color-info)]/30">
+                <span className="text-sm font-medium text-[var(--color-info)]">
+                  {t("bulk.selected", { count: selectedLeaseIds.size })}
+                </span>
+                <div className="ml-auto flex items-center gap-2">
+                  <Dialog open={bulkIncreaseOpen} onOpenChange={setBulkIncreaseOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-[var(--color-info)]/40 text-[var(--color-info)]"
+                      >
+                        <TrendingUp className="h-4 w-4 mr-1.5" />
+                        {t("bulk.increaseRent")}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[380px]">
+                      <DialogHeader>
+                        <DialogTitle>{t("bulk.title")}</DialogTitle>
+                        <DialogDescription>
+                          {t("bulkDescription", { count: selectedLeaseIds.size })}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 pt-2">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="bulk-pct">{t("bulk.percentLabel")}</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="bulk-pct"
+                              type="number"
+                              min="0.1"
+                              max="100"
+                              step="0.1"
+                              placeholder={t("bulk.percentPlaceholder")}
+                              value={bulkPct}
+                              onChange={(e) => setBulkPct(e.target.value)}
+                              className="flex-1"
+                            />
+                            <span className="flex items-center text-sm text-[var(--color-muted-foreground)]">
+                              %
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Preview */}
+                        {bulkPct && !isNaN(parseFloat(bulkPct)) && parseFloat(bulkPct) > 0 && (
+                          <div className="bg-[var(--color-card)] border border-[var(--color-border)] divide-y divide-[var(--color-border)] text-sm max-h-48 overflow-y-auto">
+                            {[...selectedLeaseIds].map((id) => {
+                              const lease = leases.find((l) => l.id === id);
+                              if (!lease) return null;
+                              const tenant = tenants.find((t) => t.id === lease.tenantId);
+                              const newRent =
+                                Math.round(
+                                  lease.monthlyRent * (1 + parseFloat(bulkPct) / 100) * 100,
+                                ) / 100;
+                              return (
+                                <div
+                                  key={id}
+                                  className="flex items-center justify-between px-3 py-2"
+                                >
+                                  <span className="text-[var(--color-muted-foreground)] truncate max-w-[180px]">
+                                    {tenant?.name ?? id}
+                                  </span>
+                                  <span className="text-[var(--color-muted-foreground)] line-through mr-2">
+                                    {formatCurrency(lease.monthlyRent)}
+                                  </span>
+                                  <span className="text-[var(--semantic-success-readable)] font-medium">
+                                    {formatCurrency(newRent)}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleDownloadNotices}
+                            disabled={!bulkPct || isNaN(parseFloat(bulkPct))}
+                          >
+                            <Mail className="h-4 w-4 mr-1.5" />
+                            {t("bulk.downloadNotices")}
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={handleBulkRentIncrease}
+                            disabled={
+                              bulkApplying ||
+                              !bulkPct ||
+                              isNaN(parseFloat(bulkPct)) ||
+                              parseFloat(bulkPct) <= 0
+                            }
+                          >
+                            {bulkApplying ? t("bulk.applying") : t("bulk.apply")}
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+                    onClick={() => setSelectedLeaseIds(new Set())}
+                  >
+                    {t("bulk.clear")}
+                  </Button>
+                </div>
               </div>
             )}
 
-            {/* Leases List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredLeases.length === 0 ? (
-                <div className="col-span-full">
-                  {leases.length === 0 && (properties.length === 0 || tenants.length === 0) ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <FileText className="h-12 w-12 text-[var(--color-muted-foreground)] mb-4" />
-                      <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-2">
-                        {t("emptyTitle")}
-                      </h3>
-                      <p className="text-sm text-[var(--color-muted-foreground)] mb-6 max-w-md">
-                        {t("emptyDescription")}
-                      </p>
-                      <div className="flex items-center gap-3">
-                        {properties.length === 0 && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.push("/portfolio")}
-                          >
-                            <Plus className="w-4 h-4 mr-2" /> {t("createProperty")}
-                          </Button>
-                        )}
-                        {tenants.length === 0 && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.push("/people")}
-                          >
-                            <Plus className="w-4 h-4 mr-2" /> {t("createPerson")}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <EmptyStateIllustration
-                      type={leases.length === 0 ? "leases" : "generic"}
-                      title={leases.length === 0 ? undefined : t("noneFound")}
-                      description={leases.length === 0 ? undefined : t("adjustFilters")}
-                      onAction={leases.length === 0 ? () => setWizardOpen(true) : undefined}
-                      actionLabel={leases.length === 0 ? t("addFirst") : undefined}
-                    />
-                  )}
-                </div>
-              ) : (
-                sortedLeases.map((lease: Lease) => (
-                  <Card
-                    key={lease.id}
-                    className="overflow-hidden transition-all cursor-pointer"
-                    onClick={() => openLeaseOverlay(lease.id)}
-                  >
-                    <CardHeader>
-                      <div className="flex items-start justify-between gap-3">
-                        <CardTitle className="text-[var(--color-foreground)] flex min-w-0 items-center gap-2">
-                          <User className="h-4 w-4 shrink-0" />
-                          <span className="truncate">{lease.tenant?.name}</span>
-                        </CardTitle>
-                        {getStatusBadge(lease.status)}
-                      </div>
-                      <CardDescription className="flex items-start gap-1">
-                        <Building2 className="h-4 w-4 shrink-0 mt-0.5" />
-                        <span className="text-xs">{lease.property?.name}</span>
-                      </CardDescription>
-                      {/* Relationship badges */}
-                      <div className="flex flex-wrap gap-1 mt-1.5">
-                        {(() => {
-                          const days = lease.endDate ? daysUntil(lease.endDate) : null;
-                          if (days !== null && days <= 30 && days >= 0) {
-                            return (
-                              <RelationshipBadge
-                                variant="expiry"
-                                label={t("daysToExpiry", { days })}
-                              />
-                            );
-                          }
-                          // Past its end date, the status mark beside the name already says
-                          // "Expirado"; a second badge saying it again only added a line.
-                          if (days !== null && days < 0 && lease.status !== "expired") {
-                            return <RelationshipBadge variant="overdue" label={t("expired")} />;
-                          }
-                          return null;
-                        })()}
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-[var(--color-muted-foreground)]">
-                          {t("field.rent")}
-                        </span>
-                        <span className="font-semibold text-[var(--color-foreground)]">
-                          {t("perMonth", { amount: formatCurrency(lease.monthlyRent) })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-[var(--color-muted-foreground)]">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{new Date(lease.startDate).toLocaleDateString(locale)}</span>
-                        </div>
-                        <span>{t("dateTo")}</span>
-                        <span>{new Date(lease.endDate).toLocaleDateString(locale)}</span>
-                      </div>
-                      {lease.contractFileName && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-[var(--color-muted-foreground)]">
-                            {t("field.contract")}
-                          </span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDownloadContract(lease);
-                            }}
-                            className="flex items-center gap-1"
-                          >
-                            <Download className="w-3 h-3" />
-                            {t("download")}
-                          </Button>
-                        </div>
-                      )}
-                      <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="flex items-center gap-1">
-                              <MoreHorizontal className="w-4 h-4" />
-                              {t("field.actions")}
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEdit(lease)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              {t("editLease")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => handleDelete(lease.id)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              {t("deleteLease")}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
+            <RenderTable
+              data={sortedLeases}
+              columns={leaseColumns}
+              rowKey={(lease) => lease.id}
+              cardMode
+              renderCard={renderLeaseCard}
+              onRowClick={(lease) => openLeaseOverlay(lease.id)}
+              rowClassName={(lease) =>
+                cn(
+                  "border-[var(--color-border)] hover:bg-[var(--color-surface-hover)]",
+                  selectedLeaseIds.has(lease.id) && "bg-[var(--color-info-muted)]",
+                )
+              }
+              className="border border-[var(--color-border)] bg-[var(--color-card)]"
+            />
           </>
         )}
       </div>

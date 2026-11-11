@@ -27,13 +27,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { LoadingState } from "@/components/ui/loading-state";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
 import {
@@ -73,13 +66,7 @@ export type TenantsViewRef = {
   openDialog: (prefill?: Partial<TenantFormData>) => void;
 };
 
-function TenantForm({
-  dialog,
-  properties,
-}: {
-  dialog: UseFormDialogReturn<TenantFormData, Tenant>;
-  properties: Array<{ id: string; name: string }>;
-}) {
+function TenantForm({ dialog }: { dialog: UseFormDialogReturn<TenantFormData, Tenant> }) {
   const [showMore, setShowMore] = useState(!dialog.editingItem ? false : true);
   const isEdit = !!dialog.editingItem;
   const t = useTranslations("tenants");
@@ -123,6 +110,17 @@ function TenantForm({
         </div>
       </div>
 
+      {/* The NIF is what Finanças names a tenant by, so it sits with the name, not behind the fold.
+          The property, the rent and the lease dates are not asked here: since tenants read them from
+          their current lease (`derived-state.ts`), the lease is the one place they are entered. */}
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium">{tTaxIdentity("title")}</legend>
+        <TaxIdentityFields
+          idPrefix="tenant"
+          value={dialog.formData}
+          onChange={(update) => dialog.updateFormData(update)}
+        />
+      </fieldset>
       {/* Additional details — collapsible on create, always open on edit */}
       {!isEdit && (
         <button
@@ -140,113 +138,20 @@ function TenantForm({
 
       {(showMore || isEdit) && (
         <div className="space-y-4 border border-[var(--color-border)] p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">{tForms("phone")}</Label>
-              <Input
-                id="phone"
-                value={dialog.formData.phone ?? ""}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  dialog.updateFormData({ phone: e.target.value })
-                }
-                className={dialog.formErrors.phone ? "border-[var(--semantic-danger)]" : ""}
-              />
-              {dialog.formErrors.phone && (
-                <p className="text-sm text-destructive">{dialog.formErrors.phone}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="property">{tForms("property")}</Label>
-              <Select
-                value={dialog.formData.propertyId ?? ""}
-                onValueChange={(value: string) => dialog.updateFormData({ propertyId: value })}
-              >
-                <SelectTrigger
-                  className={dialog.formErrors.propertyId ? "border-[var(--semantic-danger)]" : ""}
-                >
-                  <SelectValue placeholder={tForms("selectProperty")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {properties.map((property) => (
-                    <SelectItem key={property.id} value={property.id}>
-                      {property.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {dialog.formErrors.propertyId && (
-                <p className="text-sm text-destructive">{dialog.formErrors.propertyId}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="rent">{t("monthlyRent")}</Label>
-              <Input
-                id="rent"
-                type="number"
-                min="0"
-                value={dialog.formData.rent ?? 0}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  dialog.updateFormData({ rent: parseInt(e.target.value) || 0 })
-                }
-                className={dialog.formErrors.rent ? "border-[var(--semantic-danger)]" : ""}
-              />
-              {dialog.formErrors.rent && (
-                <p className="text-sm text-destructive">{dialog.formErrors.rent}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="leaseStart">{tForms("leaseStart")}</Label>
-              <Input
-                id="leaseStart"
-                type="date"
-                value={dialog.formData.leaseStart ?? ""}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  dialog.updateFormData({ leaseStart: e.target.value })
-                }
-                className={dialog.formErrors.leaseStart ? "border-[var(--semantic-danger)]" : ""}
-              />
-              {dialog.formErrors.leaseStart && (
-                <p className="text-sm text-destructive">{dialog.formErrors.leaseStart}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="leaseEnd">{tForms("leaseEnd")}</Label>
-              <Input
-                id="leaseEnd"
-                type="date"
-                value={dialog.formData.leaseEnd ?? ""}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  dialog.updateFormData({ leaseEnd: e.target.value })
-                }
-                className={dialog.formErrors.leaseEnd ? "border-[var(--semantic-danger)]" : ""}
-              />
-              {dialog.formErrors.leaseEnd && (
-                <p className="text-sm text-destructive">{dialog.formErrors.leaseEnd}</p>
-              )}
-            </div>
-          </div>
-
-          <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">{tTaxIdentity("title")}</legend>
-            <TaxIdentityFields
-              idPrefix="tenant"
-              value={dialog.formData}
-              onChange={(update) => dialog.updateFormData(update)}
+          <div className="space-y-2">
+            <Label htmlFor="phone">{tForms("phone")}</Label>
+            <Input
+              id="phone"
+              value={dialog.formData.phone ?? ""}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                dialog.updateFormData({ phone: e.target.value })
+              }
+              className={dialog.formErrors.phone ? "border-[var(--semantic-danger)]" : ""}
             />
-          </fieldset>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>{t("paymentStatus")}</Label>
-              {/* Derived from the rent ledger in both modes: the API refuses it on create and on
-                  update, so offering a choice here would only be discarded. */}
-              <p className="text-sm text-muted-foreground">{t("paymentStatusDerived")}</p>
-            </div>
+            {dialog.formErrors.phone && (
+              <p className="text-sm text-destructive">{dialog.formErrors.phone}</p>
+            )}
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="notes">{tForms("notes")}</Label>
             <Textarea
@@ -340,10 +245,21 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
       schema: tenantSchema,
       initialData: initialFormData,
       onSubmit: async (data, isEdit) => {
+        // The form no longer asks for the property, the rent or the lease dates: a tenant reads
+        // them from their current lease. The schema still defaults them (rent 0, dates ""), so they
+        // are left out here rather than sent, which would overwrite the stored fallback columns.
+        const {
+          propertyId: _propertyId,
+          rent: _rent,
+          leaseStart: _leaseStart,
+          leaseEnd: _leaseEnd,
+          paymentStatus: _paymentStatus,
+          ...contact
+        } = data;
         if (isEdit && dialog.editingItem) {
-          await updateTenant(dialog.editingItem.id, data);
+          await updateTenant(dialog.editingItem.id, contact);
         } else {
-          await addTenant(data);
+          await addTenant(contact);
         }
       },
       successMessage: {
@@ -565,7 +481,7 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
                     {dialog.editingItem ? t("dialogEditDescription") : t("dialogCreateDescription")}
                   </DialogDescription>
                 </DialogHeader>
-                <TenantForm dialog={dialog} properties={properties} />
+                <TenantForm dialog={dialog} />
               </DialogContent>
             </Dialog>
 

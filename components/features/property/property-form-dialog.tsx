@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -72,7 +73,6 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
     const t = useTranslations("properties");
     const tForms = useTranslations("forms");
     const tActions = useTranslations("actions");
-    const tStatus = useTranslations("status");
 
     // Form UI state — collapsible sections
     const [showManualFields, setShowManualFields] = useState(false);
@@ -409,27 +409,22 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="status">{tForms("status")}</Label>
                   {/* Occupied or vacant is read from the leases (derived-state.ts); the one thing the
-                      owner says here is whether the unit is out of use for maintenance. */}
-                  <Select
-                    value={dialog.formData.status === "maintenance" ? "maintenance" : "vacant"}
-                    onValueChange={(value: PropertyFormData["status"]) =>
-                      dialog.updateFormData({ status: value })
-                    }
-                  >
-                    <SelectTrigger
-                      className={
-                        dialog.formErrors.status ? "border-[var(--color-destructive)]" : ""
+                      owner says here is whether the unit is out of use for maintenance, so it is a
+                      switch rather than a choice between a status and "whatever the leases say". */}
+                  <div className="flex min-h-11 items-center justify-between gap-3">
+                    <Label htmlFor="status">{t("underMaintenance")}</Label>
+                    <Switch
+                      id="status"
+                      checked={dialog.formData.status === "maintenance"}
+                      onCheckedChange={(checked) =>
+                        dialog.updateFormData({ status: checked ? "maintenance" : "vacant" })
                       }
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="vacant">{t("statusFromLeases")}</SelectItem>
-                      <SelectItem value="maintenance">{tStatus("maintenance")}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    />
+                  </div>
+                  <p className="text-xs text-[var(--color-muted-foreground)]">
+                    {t("maintenanceHint")}
+                  </p>
                   {dialog.formErrors.status && (
                     <p className="text-sm text-destructive">{dialog.formErrors.status}</p>
                   )}
