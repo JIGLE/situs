@@ -26,7 +26,8 @@ interface AppContextValue {
   addProperty: (data: Partial<Property>) => Promise<void>;
   updateProperty: (id: string, data: Partial<Property>) => Promise<void>;
   deleteProperty: (id: string) => Promise<void>;
-  addTenant: (data: Partial<Tenant>) => Promise<void>;
+  /** The tenant as saved: the New tenancy sheet writes the lease against its id. */
+  addTenant: (data: Partial<Tenant>) => Promise<Tenant>;
   updateTenant: (id: string, data: Partial<Tenant>) => Promise<void>;
   deleteTenant: (id: string) => Promise<void>;
   addReceipt: (data: Partial<Receipt>) => Promise<void>;
@@ -37,7 +38,7 @@ interface AppContextValue {
   deleteOwner: (id: string) => Promise<void>;
   addExpense: (data: Partial<Expense>) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
-  /** The lease as saved: the wizard uploads the contract to its id afterwards. */
+  /** The lease as saved: the New tenancy sheet uploads the contract to its id afterwards. */
   addLease: (data: Partial<Lease>) => Promise<Lease>;
   updateLease: (id: string, data: Partial<Lease>) => Promise<Lease>;
   deleteLease: (id: string) => Promise<void>;
@@ -89,7 +90,7 @@ export function AppProvider({ children }: { children: ReactNode }): React.ReactE
       addProperty: (d) => propertyActions.add(d) as unknown as Promise<void>,
       updateProperty: (id, d) => propertyActions.update(id, d) as unknown as Promise<void>,
       deleteProperty: (id) => propertyActions.remove(id),
-      addTenant: (d) => tenantActions.add(d) as unknown as Promise<void>,
+      addTenant: (d) => tenantActions.add(d),
       updateTenant: (id, d) => tenantActions.update(id, d) as unknown as Promise<void>,
       deleteTenant: (id) => tenantActions.remove(id),
       addReceipt: (d) => receiptActions.add(d) as unknown as Promise<void>,

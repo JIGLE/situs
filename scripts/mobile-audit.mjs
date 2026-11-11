@@ -232,6 +232,8 @@ const SURFACES = [
   },
   { id: "leases", path: "/leases" },
   { id: "detail-lease", path: "/leases?detail=lease:{leaseId}", overlay: true },
+  // The New tenancy sheet: a tenant and their lease on one form, opened by its link.
+  { id: "new-tenancy", path: "/leases?action=create", overlay: true },
   { id: "buildings", path: "/buildings" },
   { id: "contracts", path: "/contracts" },
   { id: "settings", path: "/settings" },

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { renderWithProviders, screen, waitFor } from "@/tests/helpers/render-with-providers";
+import { renderWithProviders, screen } from "@/tests/helpers/render-with-providers";
 import ptMessages from "@/messages/pt.json";
 import { LeasesView } from "./leases-view";
 
@@ -9,10 +9,7 @@ const { app, nav } = vi.hoisted(() => {
     search: "",
     params: new URLSearchParams(),
     push: vi.fn(),
-    // The real router clears the query, which is what stops the effect reopening the wizard.
-    replace: vi.fn(() => {
-      nav.search = "";
-    }),
+    replace: vi.fn(),
   };
   return {
     nav,
@@ -53,6 +50,7 @@ vi.mock("@/lib/contexts/app-context", () => ({
     addLease: app.addLease,
     updateLease: app.updateLease,
     deleteLease: app.deleteLease,
+    addTenant: vi.fn(),
     refreshData: app.refreshData,
   }),
 }));
@@ -69,19 +67,20 @@ describe("LeasesView: opened from a link", () => {
     localStorage.clear();
   });
 
-  it("starts a new lease for the tenant the link names, on their property", async () => {
+  it("starts a new tenancy for the tenant the link names, on their property", async () => {
     nav.search = "action=create&tenantId=tenant-1";
-    const user = userEvent.setup();
+    window.history.replaceState(null, "", `/leases?${nav.search}`);
     renderWithProviders(<LeasesView />, { initialLocale: "pt" });
 
     await screen.findByRole("dialog");
-    expect(screen.getByRole("combobox")).toHaveTextContent("Rua Augusta 12");
-    expect(nav.replace).toHaveBeenCalledWith("/leases");
-
-    // The wizard's own Continue, the last one: the prefilled form also raises the "draft found"
-    // banner above it, whose restore button shares the label.
-    const continues = screen.getAllByRole("button", { name: ptMessages.actions.continue });
-    await user.click(continues[continues.length - 1]);
-    await waitFor(() => expect(screen.getByRole("combobox")).toHaveTextContent("Ana Costa"));
+    const [property, tenant] = screen.getAllByRole("combobox");
+    expect(property).toHaveTextContent("Rua Augusta 12");
+    expect(tenant).toHaveTextContent("Ana Costa");
+    // The query stays while the sheet is open, so a screen that mounts afresh as the data loads
+    // opens it again; it goes on closing, through the History API rather than a navigation.
+    expect(window.location.search).toBe(`?${nav.search}`);
+    await userEvent.setup().click(screen.getByRole("button", { name: ptMessages.actions.cancel }));
+    expect(window.location.search).toBe("");
+    expect(nav.replace).not.toHaveBeenCalled();
   });
 });

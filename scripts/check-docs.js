@@ -46,6 +46,14 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // UX simplification, PR 2: a tenancy is one sheet, and the wizard machinery went with it.
+    pattern: /useMultiStepForm|use-multi-step-form|MultiStepFormContainer|Wizard Page/,
+    retired: "2026-11-11 (New tenancy sheet)",
+    because:
+      "the four-step lease wizard became one sheet (components/features/lease/tenancy-sheet.tsx) " +
+      "and the multi-step form hook and component, used by nothing else, were removed",
+  },
+  {
     // UX simplification, quick wins: the lease list has one layout per width, not a switch.
     pattern: /search, filter and view toggle are one row/,
     retired: "2026-11-11 (one lease list, no grid/table switch)",

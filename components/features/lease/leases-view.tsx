@@ -1,20 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import {
-  defaultLeaseTerm,
-  onPropertyChosen,
-  onRentChanged,
-  onStartChanged,
-} from "@/lib/utils/lease-defaults";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   FileText,
   Plus,
-  Home,
-  User,
-  DollarSign,
-  FileCheck,
-  Upload,
   Edit,
   Trash2,
   Download,
@@ -43,14 +32,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils/utils";
@@ -59,19 +40,10 @@ import { SearchFilter } from "@/components/ui/search-filter";
 import { ExportButton } from "@/components/ui/export-button";
 import { useApp } from "@/lib/contexts/app-context";
 import { Lease } from "@/lib/types";
-import { leaseSchema, type LeaseFormData } from "@/lib/schemas/lease.schema";
 import { useToast } from "@/lib/contexts/toast-context";
 import { wasReported } from "@/lib/utils/api-error";
-import { downloadContract, uploadContract } from "./lease-contract";
-import { MAX_CONTRACT_BYTES, MAX_CONTRACT_MB } from "@/lib/utils/contract-file";
-import { LeasePartiesEditor, leasePartiesInvalid } from "./lease-parties-editor";
-import { useMultiStepForm, StepConfig } from "@/lib/hooks/use-multi-step-form";
-import {
-  MultiStepFormContainer,
-  StepContent,
-  DraftBanner,
-  MultiStepFormStep,
-} from "@/components/ui/multi-step-form";
+import { downloadContract } from "./lease-contract";
+import { TenancySheet } from "./tenancy-sheet";
 import { useSortableData } from "@/lib/hooks/use-sortable-data";
 import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
@@ -85,10 +57,10 @@ import { withEntityDetail } from "@/lib/utils/entity-detail-url";
 export type LeasesViewProps = Record<string, never>;
 
 export function LeasesView(): React.ReactElement {
-  const { state, addLease, updateLease, deleteLease, refreshData } = useApp();
+  const { state, updateLease, deleteLease } = useApp();
   const { properties, tenants, leases, loading } = state;
   const { success, error } = useToast();
-  const { formatCurrency, currencySymbol } = useCurrency();
+  const { formatCurrency } = useCurrency();
   const confirmDialog = useConfirmDialog();
   const router = useRouter();
   const pathname = usePathname();
@@ -99,8 +71,9 @@ export function LeasesView(): React.ReactElement {
   const openLeaseOverlay = (leaseId: string) => {
     router.push(withEntityDetail(pathname, searchParams.toString(), "lease", leaseId));
   };
-  const [contractFile, setContractFile] = useState<File | null>(null);
-  const [wizardOpen, setWizardOpen] = useState(false);
+  // The New tenancy sheet: creates a tenancy, or edits the lease in `editingLease`.
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [prefill, setPrefill] = useState<{ propertyId?: string; tenantId?: string }>({});
   const [editingLease, setEditingLease] = useState<Lease | null>(null);
 
   // Search and filter state
@@ -112,111 +85,6 @@ export function LeasesView(): React.ReactElement {
   const [bulkIncreaseOpen, setBulkIncreaseOpen] = useState(false);
   const [bulkPct, setBulkPct] = useState("");
   const [bulkApplying, setBulkApplying] = useState(false);
-
-  const initialFormData: LeaseFormData = {
-    propertyId: "",
-    tenantId: "",
-    // The 1st of next month for a year; the rent and deposit come from the property once chosen.
-    ...defaultLeaseTerm(new Date()),
-    monthlyRent: 0,
-    deposit: 0,
-    autoRenew: false,
-    renewalNoticeDays: 60,
-    status: "draft" as const,
-    notes: "",
-    atContractNumber: "",
-    parties: [],
-  };
-
-  // Multi-step form configuration
-  const steps: StepConfig<LeaseFormData>[] = [
-    {
-      id: "property",
-      title: t("step.propertyTitle"),
-      description: t("step.propertyDescription"),
-      fields: ["propertyId"],
-    },
-    {
-      id: "tenant",
-      title: t("step.tenantTitle"),
-      description: t("step.tenantDescription"),
-      fields: ["tenantId", "parties"],
-      // Checked here, not only by the schema at the end, so "Continue" can say what is wrong in
-      // the user's language.
-      validate: (data) =>
-        leasePartiesInvalid(data.parties) ? { parties: t("parties.invalid") } : null,
-    },
-    {
-      id: "terms",
-      title: t("step.termsTitle"),
-      description: t("step.termsDescription"),
-      fields: ["startDate", "endDate", "monthlyRent", "deposit", "autoRenew", "renewalNoticeDays"],
-    },
-    {
-      id: "notes",
-      title: t("step.notesTitle"),
-      description: t("step.notesDescription"),
-      fields: ["notes", "atContractNumber", "atContractVersion"],
-      validate: (data) =>
-        /^\d*$/.test(data.atContractNumber ?? "")
-          ? null
-          : { atContractNumber: t("atContract.invalid") },
-    },
-  ];
-
-  const wizardSteps: MultiStepFormStep[] = [
-    { id: "property", title: t("step.shortProperty"), icon: <Home className="h-4 w-4" /> },
-    { id: "tenant", title: t("step.shortTenant"), icon: <User className="h-4 w-4" /> },
-    { id: "terms", title: t("step.shortTerms"), icon: <DollarSign className="h-4 w-4" /> },
-    {
-      id: "notes",
-      title: t("step.shortNotes"),
-      icon: <FileCheck className="h-4 w-4" />,
-    },
-  ];
-
-  const wizard = useMultiStepForm<LeaseFormData>({
-    steps,
-    schema: leaseSchema,
-    initialData: initialFormData,
-    onComplete: async (data) => {
-      // Only a new lease starts active. An edit sends no status, so the lease keeps its own:
-      // stamping "active" on every save brought an ended lease back to life whenever anyone
-      // corrected a date or a note on it. (Renewing reaches this as an edit of an active lease.)
-      const { status: _formStatus, ...terms } = data;
-
-      let saved: Lease;
-      if (editingLease) {
-        saved = await updateLease(editingLease.id, terms);
-        success(t("toast.updated"));
-      } else {
-        saved = await addLease({ ...terms, status: "active" as const });
-        success(t("toast.created"));
-      }
-
-      // The PDF goes to the contract's own route once the lease exists, as the file itself.
-      if (contractFile) {
-        try {
-          await uploadContract(saved.id, contractFile);
-          await refreshData();
-        } catch {
-          error(t("toast.contractUploadFailed"));
-        }
-      }
-
-      setWizardOpen(false);
-      setEditingLease(null);
-      setContractFile(null);
-      wizard.resetForm();
-    },
-    persistence: {
-      key: "lease-wizard-draft",
-      ttl: 24 * 60 * 60 * 1000, // 24 hours
-      // Co-tenants' and guarantors' NIFs and documents: encrypted on the server, so not left
-      // in clear in the browser.
-      omit: ["parties"],
-    },
-  });
 
   const statusLabel = (status: string) => {
     switch (status) {
@@ -236,47 +104,15 @@ export function LeasesView(): React.ReactElement {
     <StatusMark {...leaseStatus(status)}>{statusLabel(status)}</StatusMark>
   );
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // The contract route's limit, so the form refuses what the server would.
-      if (file.size > MAX_CONTRACT_BYTES) {
-        error(t("toast.fileTooLarge", { size: MAX_CONTRACT_MB }));
-        return;
-      }
-      // Validate file type
-      if (file.type !== "application/pdf") {
-        error(t("toast.pdfOnly"));
-        return;
-      }
-      setContractFile(file);
-    }
+  const openNewTenancy = () => {
+    setEditingLease(null);
+    setPrefill({});
+    setSheetOpen(true);
   };
 
   const handleEdit = (lease: Lease) => {
     setEditingLease(lease);
-    wizard.updateFormData({
-      propertyId: lease.propertyId,
-      tenantId: lease.tenantId,
-      startDate: lease.startDate.split("T")[0],
-      endDate: lease.endDate.split("T")[0],
-      monthlyRent: lease.monthlyRent,
-      deposit: lease.deposit,
-      autoRenew: lease.autoRenew,
-      renewalNoticeDays: lease.renewalNoticeDays,
-      notes: lease.notes || "",
-      atContractNumber: lease.atContractNumber ?? "",
-      atContractVersion: lease.atContractVersion ?? null,
-      parties: (lease.parties ?? []).map((party) => ({
-        role: party.role,
-        name: party.name,
-        taxId: party.taxId ?? "",
-        taxCountry: party.taxCountry ?? "PT",
-        idDocument: party.idDocument ?? "",
-      })),
-    });
-    setContractFile(null);
-    setWizardOpen(true);
+    setSheetOpen(true);
   };
 
   const handleDelete = (id: string) => {
@@ -379,25 +215,21 @@ export function LeasesView(): React.ReactElement {
     URL.revokeObjectURL(url);
   };
 
-  // Open the wizard from a link elsewhere:
+  // Open the sheet from a link elsewhere:
   // - `?action=edit|renew&id=X` (lease detail, tenant modal) edits lease X;
-  // - `?action=create&tenantId=Y` is the tenant modal's "Add lease". It starts a new lease with
+  // - `?action=create&tenantId=Y` is the tenant modal's "Add lease". It starts a new tenancy with
   //   that tenant chosen, and their property when they have one. This case was never handled, so
   //   the button landed on the list and did nothing.
+  const handledQuery = useRef<string | null>(null);
   useEffect(() => {
     const action = searchParams.get("action");
     if (!action || loading) return;
+    const query = searchParams.toString();
+    if (handledQuery.current === query) return;
     if (action === "create") {
-      const tenant = tenants.find((t) => t.id === searchParams.get("tenantId"));
       setEditingLease(null);
-      const propertyId = tenant?.propertyId ?? "";
-      wizard.updateFormData({
-        tenantId: tenant?.id ?? "",
-        propertyId,
-        ...onPropertyChosen(wizard.formData, properties.find((p) => p.id === propertyId)?.rent),
-      });
-      setContractFile(null);
-      setWizardOpen(true);
+      setPrefill({ tenantId: searchParams.get("tenantId") ?? undefined });
+      setSheetOpen(true);
     } else if (action === "edit" || action === "renew") {
       const target = leases.find((l) => l.id === searchParams.get("id"));
       if (!target) return;
@@ -405,9 +237,10 @@ export function LeasesView(): React.ReactElement {
     } else {
       return;
     }
-    // Clear the query params after opening
-    router.replace("/leases");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // The query stays until the sheet closes. It was cleared on opening, and the screen can
+    // mount afresh while the app's data first loads, which lost the open sheet with the query
+    // that would have reopened it: the link opened nothing.
+    handledQuery.current = query;
   }, [searchParams, leases, tenants, loading]);
 
   const handleDownloadContract = async (lease: Lease) => {
@@ -662,403 +495,10 @@ export function LeasesView(): React.ReactElement {
             ]}
           />
 
-          {/* Multi-Step Wizard Dialog */}
-          <Dialog
-            open={wizardOpen}
-            onOpenChange={(open) => {
-              setWizardOpen(open);
-              if (!open) {
-                setEditingLease(null);
-                setContractFile(null);
-                wizard.resetForm();
-              }
-            }}
-          >
-            <DialogTrigger asChild>
-              <Button onClick={() => setWizardOpen(true)} className="flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                {t("addLease")}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-[var(--color-foreground)]">
-                  {editingLease ? t("dialogEditTitle") : t("dialogCreateTitle")}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingLease ? t("dialogEditDescription") : t("dialogCreateDescription")}
-                </DialogDescription>
-              </DialogHeader>
-
-              {/* Draft recovery banner */}
-              {wizard.hasDraft && !editingLease && (
-                <DraftBanner
-                  onRestore={() => {
-                    // Data is auto-loaded in hook
-                  }}
-                  onDiscard={() => {
-                    wizard.clearDraft();
-                    wizard.resetForm();
-                  }}
-                />
-              )}
-
-              {/* Multi-step form */}
-              <MultiStepFormContainer
-                steps={wizardSteps}
-                currentStep={wizard.currentStep}
-                completedSteps={wizard.visitedSteps}
-                visitedSteps={wizard.visitedSteps}
-                progress={wizard.progress}
-                isSubmitting={wizard.isSubmitting}
-                isFirstStep={wizard.isFirstStep}
-                isLastStep={wizard.isLastStep}
-                onPrevStep={wizard.prevStep}
-                onNextStep={wizard.nextStep}
-                onSubmit={wizard.handleSubmit}
-                onGoToStep={wizard.goToStep}
-                indicatorVariant="pills"
-                submitText={editingLease ? t("submitUpdate") : t("submitCreate")}
-              >
-                {/* Step 1: Property Selection */}
-                {wizard.currentStep === 0 && (
-                  <StepContent
-                    title={t("selectProperty.title")}
-                    description={t("selectProperty.description")}
-                  >
-                    <div className="space-y-2">
-                      <Label htmlFor="propertyId">{t("propertyRequired")}</Label>
-                      <Select
-                        value={wizard.formData.propertyId}
-                        onValueChange={(value) =>
-                          wizard.updateFormData({
-                            propertyId: value,
-                            ...onPropertyChosen(
-                              wizard.formData,
-                              properties.find((p) => p.id === value)?.rent,
-                            ),
-                          })
-                        }
-                      >
-                        <SelectTrigger
-                          className={
-                            wizard.stepErrors.propertyId ? "border-[var(--semantic-danger)]" : ""
-                          }
-                        >
-                          <SelectValue placeholder={t("selectProperty.placeholder")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {properties.length === 0 ? (
-                            <div className="p-4 text-center text-sm text-[var(--color-muted-foreground)]">
-                              {t("selectProperty.noneAvailable")}
-                            </div>
-                          ) : (
-                            properties.map((property) => (
-                              <SelectItem key={property.id} value={property.id}>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{property.name}</span>
-                                  <span className="text-xs text-[var(--color-muted-foreground)]">
-                                    {property.address}
-                                  </span>
-                                </div>
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                      {properties.length === 0 && (
-                        <div className="border border-[var(--color-border)] bg-[var(--color-surface-hover)] p-4 text-center">
-                          <p className="text-sm text-[var(--color-muted-foreground)] mb-2">
-                            {t("selectProperty.noneFound")}
-                          </p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.push("/portfolio")}
-                          >
-                            <Plus className="w-4 h-4 mr-2" /> {t("goToPortfolio")}
-                          </Button>
-                        </div>
-                      )}
-                      {wizard.stepErrors.propertyId && (
-                        <p className="text-sm text-destructive">{wizard.stepErrors.propertyId}</p>
-                      )}
-                    </div>
-                  </StepContent>
-                )}
-
-                {/* Step 2: Tenant Selection */}
-                {wizard.currentStep === 1 && (
-                  <StepContent
-                    title={t("selectTenant.title")}
-                    description={t("selectTenant.description")}
-                  >
-                    <div className="space-y-2">
-                      <Label htmlFor="tenantId">{t("tenantRequired")}</Label>
-                      <Select
-                        value={wizard.formData.tenantId}
-                        onValueChange={(value) => wizard.updateFormData({ tenantId: value })}
-                      >
-                        <SelectTrigger
-                          className={
-                            wizard.stepErrors.tenantId ? "border-[var(--semantic-danger)]" : ""
-                          }
-                        >
-                          <SelectValue placeholder={t("selectTenant.placeholder")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {tenants.length === 0 ? (
-                            <div className="p-4 text-center text-sm text-[var(--color-muted-foreground)]">
-                              {t("selectTenant.noneAvailable")}
-                            </div>
-                          ) : (
-                            tenants.map((tenant) => (
-                              <SelectItem key={tenant.id} value={tenant.id}>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{tenant.name}</span>
-                                  {tenant.email && (
-                                    <span className="text-xs text-[var(--color-muted-foreground)]">
-                                      {tenant.email}
-                                    </span>
-                                  )}
-                                </div>
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                      {tenants.length === 0 && (
-                        <div className="border border-[var(--color-border)] bg-[var(--color-surface-hover)] p-4 text-center">
-                          <p className="text-sm text-[var(--color-muted-foreground)] mb-2">
-                            {t("selectTenant.noneFound")}
-                          </p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.push("/people")}
-                          >
-                            <Plus className="w-4 h-4 mr-2" /> {t("goToPeople")}
-                          </Button>
-                        </div>
-                      )}
-                      {wizard.stepErrors.tenantId && (
-                        <p className="text-sm text-destructive">{wizard.stepErrors.tenantId}</p>
-                      )}
-                    </div>
-
-                    <LeasePartiesEditor
-                      parties={wizard.formData.parties ?? []}
-                      onChange={(parties) => wizard.updateFormData({ parties })}
-                      // The step's own check says this in the user's language; the schema's
-                      // English, which the final submit would add, is never shown.
-                      error={wizard.stepErrors.parties ? t("parties.invalid") : undefined}
-                    />
-                  </StepContent>
-                )}
-
-                {/* Step 3: Lease Terms */}
-                {wizard.currentStep === 2 && (
-                  <StepContent title={t("step.termsTitle")} description={t("termsStepDescription")}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="startDate">{t("startDateRequired")}</Label>
-                        <Input
-                          id="startDate"
-                          type="date"
-                          value={wizard.formData.startDate}
-                          onChange={(e) =>
-                            wizard.updateFormData(onStartChanged(wizard.formData, e.target.value))
-                          }
-                          className={
-                            wizard.stepErrors.startDate ? "border-[var(--semantic-danger)]" : ""
-                          }
-                        />
-                        {wizard.stepErrors.startDate && (
-                          <p className="text-sm text-destructive">{wizard.stepErrors.startDate}</p>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="endDate">{t("endDateRequired")}</Label>
-                        <Input
-                          id="endDate"
-                          type="date"
-                          value={wizard.formData.endDate}
-                          onChange={(e) => wizard.updateFormData({ endDate: e.target.value })}
-                          className={
-                            wizard.stepErrors.endDate ? "border-[var(--semantic-danger)]" : ""
-                          }
-                        />
-                        {wizard.stepErrors.endDate && (
-                          <p className="text-sm text-destructive">{wizard.stepErrors.endDate}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="monthlyRent">
-                          {t("monthlyRentRequired", { symbol: currencySymbol })}
-                        </Label>
-                        <Input
-                          id="monthlyRent"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={wizard.formData.monthlyRent}
-                          onChange={(e) =>
-                            wizard.updateFormData(
-                              onRentChanged(wizard.formData, parseFloat(e.target.value) || 0),
-                            )
-                          }
-                          className={
-                            wizard.stepErrors.monthlyRent ? "border-[var(--semantic-danger)]" : ""
-                          }
-                        />
-                        {wizard.stepErrors.monthlyRent && (
-                          <p className="text-sm text-destructive">
-                            {wizard.stepErrors.monthlyRent}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="deposit">
-                          {t("depositRequired", { symbol: currencySymbol })}
-                        </Label>
-                        <Input
-                          id="deposit"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={wizard.formData.deposit}
-                          onChange={(e) =>
-                            wizard.updateFormData({
-                              deposit: parseFloat(e.target.value) || 0,
-                            })
-                          }
-                          className={
-                            wizard.stepErrors.deposit ? "border-[var(--semantic-danger)]" : ""
-                          }
-                        />
-                        {wizard.stepErrors.deposit && (
-                          <p className="text-sm text-destructive">{wizard.stepErrors.deposit}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="renewalNoticeDays">{t("field.renewalNoticeDays")}</Label>
-                        <Input
-                          id="renewalNoticeDays"
-                          type="number"
-                          min="0"
-                          value={wizard.formData.renewalNoticeDays}
-                          onChange={(e) =>
-                            wizard.updateFormData({
-                              renewalNoticeDays: parseInt(e.target.value) || 60,
-                            })
-                          }
-                        />
-                      </div>
-                    </div>
-                  </StepContent>
-                )}
-
-                {/* Step 4: Documents & Notes */}
-                {wizard.currentStep === 3 && (
-                  <StepContent title={t("docsStepTitle")} description={t("docsStepDescription")}>
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="atContractNumber">{t("atContract.number")}</Label>
-                          <Input
-                            id="atContractNumber"
-                            inputMode="numeric"
-                            maxLength={20}
-                            value={wizard.formData.atContractNumber ?? ""}
-                            onChange={(e) =>
-                              wizard.updateFormData({ atContractNumber: e.target.value.trim() })
-                            }
-                            aria-invalid={!!wizard.stepErrors.atContractNumber}
-                            className={
-                              wizard.stepErrors.atContractNumber ? "border-destructive" : ""
-                            }
-                          />
-                          {wizard.stepErrors.atContractNumber && (
-                            <p className="text-sm text-destructive">{t("atContract.invalid")}</p>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="atContractVersion">{t("atContract.version")}</Label>
-                          <Input
-                            id="atContractVersion"
-                            type="number"
-                            min="1"
-                            max="999"
-                            value={wizard.formData.atContractVersion ?? ""}
-                            onChange={(e) => {
-                              const version = parseInt(e.target.value, 10);
-                              wizard.updateFormData({
-                                atContractVersion: Number.isNaN(version) ? null : version,
-                              });
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <p className="text-xs text-[var(--color-muted-foreground)]">
-                        {t("atContract.hint")}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="contractFile">{t("contractPdf")}</Label>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          id="contractFile"
-                          type="file"
-                          accept=".pdf"
-                          onChange={handleFileUpload}
-                          className="hidden"
-                        />
-                        <Label
-                          htmlFor="contractFile"
-                          className="flex items-center gap-2 px-4 py-2 bg-[var(--color-secondary)] border border-[var(--color-border)] cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors"
-                        >
-                          <Upload className="w-4 h-4" />
-                          {contractFile ? contractFile.name : t("choosePdf")}
-                        </Label>
-                        {contractFile && (
-                          <span className="text-sm text-[var(--color-muted-foreground)]">
-                            {(contractFile.size / 1024 / 1024).toFixed(2)} MB
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-[var(--color-muted-foreground)]">
-                        {t("maxFileSize", { size: MAX_CONTRACT_MB })}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="notes">{t("additionalNotes")}</Label>
-                      <Textarea
-                        id="notes"
-                        value={wizard.formData.notes}
-                        onChange={(e) => wizard.updateFormData({ notes: e.target.value })}
-                        placeholder={t("notesPlaceholder")}
-                        rows={6}
-                        className={wizard.stepErrors.notes ? "border-[var(--semantic-danger)]" : ""}
-                      />
-                      {wizard.stepErrors.notes && (
-                        <p className="text-sm text-destructive">{wizard.stepErrors.notes}</p>
-                      )}
-                    </div>
-                  </StepContent>
-                )}
-              </MultiStepFormContainer>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={openNewTenancy} className="flex items-center gap-2">
+            <Plus className="w-4 h-4" />
+            {t("sheet.title")}
+          </Button>
         </PageHeader>
 
         {/* One toolbar row: search, filter and the view toggle */}
@@ -1111,7 +551,7 @@ export function LeasesView(): React.ReactElement {
             grid/table switch used to sit beside the search, so the same leases had two layouts to
             choose between and the bulk rent increase existed only in one of them. */}
         {filteredLeases.length === 0 ? (
-          leases.length === 0 && (properties.length === 0 || tenants.length === 0) ? (
+          leases.length === 0 && properties.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <FileText className="h-12 w-12 text-[var(--color-muted-foreground)] mb-4" />
               <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-2">
@@ -1120,25 +560,16 @@ export function LeasesView(): React.ReactElement {
               <p className="text-sm text-[var(--color-muted-foreground)] mb-6 max-w-md">
                 {t("emptyDescription")}
               </p>
-              <div className="flex items-center gap-3">
-                {properties.length === 0 && (
-                  <Button variant="outline" size="sm" onClick={() => router.push("/portfolio")}>
-                    <Plus className="w-4 h-4 mr-2" /> {t("createProperty")}
-                  </Button>
-                )}
-                {tenants.length === 0 && (
-                  <Button variant="outline" size="sm" onClick={() => router.push("/people")}>
-                    <Plus className="w-4 h-4 mr-2" /> {t("createPerson")}
-                  </Button>
-                )}
-              </div>
+              <Button variant="outline" size="sm" onClick={() => router.push("/portfolio")}>
+                <Plus className="w-4 h-4 mr-2" /> {t("createProperty")}
+              </Button>
             </div>
           ) : (
             <EmptyStateIllustration
               type={leases.length === 0 ? "leases" : "generic"}
               title={leases.length === 0 ? undefined : t("noneFound")}
               description={leases.length === 0 ? undefined : t("adjustFilters")}
-              onAction={leases.length === 0 ? () => setWizardOpen(true) : undefined}
+              onAction={leases.length === 0 ? openNewTenancy : undefined}
               actionLabel={leases.length === 0 ? t("addFirst") : undefined}
             />
           )
@@ -1277,6 +708,20 @@ export function LeasesView(): React.ReactElement {
           </>
         )}
       </div>
+      <TenancySheet
+        open={sheetOpen}
+        onOpenChange={(open) => {
+          setSheetOpen(open);
+          if (!open) {
+            setEditingLease(null);
+            // Drop the link's query, through the History API: `router.replace` is a navigation,
+            // and the page's segment is keyed by its query, so it would mount the screen afresh.
+            if (searchParams.get("action")) window.history.replaceState(null, "", pathname);
+          }
+        }}
+        lease={editingLease}
+        prefill={prefill}
+      />
       <ConfirmationDialog dialog={confirmDialog} />
     </>
   );

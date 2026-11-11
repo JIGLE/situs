@@ -55,9 +55,9 @@ import {
   type ExpenseFormData,
 } from "@/lib/schemas/expense.schema";
 import { receiptSchema, type ReceiptFormData } from "@/lib/schemas/receipt.schema";
-import { tenantSchema, type TenantFormData } from "@/lib/schemas/tenant.schema";
 import { usePropertyActivity } from "@/lib/hooks/use-property-activity";
 import { AuditTrail } from "@/components/shared/audit-trail";
+import { TenancySheet } from "@/components/features/lease/tenancy-sheet";
 import { PropertyFormDialog, type PropertyFormDialogRef } from "./property-form-dialog";
 import { PropertyYearStrip, type YearStripSelection } from "./property-year-strip";
 import { expenseCategoryKey } from "@/lib/utils/expense-labels";
@@ -73,14 +73,13 @@ interface PropertyDetailViewProps {
 }
 
 export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
-  const { state, refreshData, addExpense, addReceipt, addTenant } = useApp();
+  const { state, refreshData, addExpense, addReceipt } = useApp();
   const { formatCurrency } = useCurrency();
   const router = useRouter();
   const locale = useLocale();
   const [activeTab, setActiveTab] = useTabPersistence("property-detail", "overview");
   const t = useTranslations("propertyDetail");
   const tFin = useTranslations("financial");
-  const tTenants = useTranslations("tenants");
   const tTypes = useTranslations("properties.types");
   const tPeriod = useTranslations("rentPeriodStatus");
   const tStatus = useTranslations("status");
@@ -189,36 +188,9 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
     },
   });
 
-  // Add tenant, in place. This used to deep-link to /people, which meant leaving the property
-  // you were working on and landing on a different page with a modal already open over it —
-  // disorienting, and it lost the context you started from. Its own dialog keeps you here.
-  const tenantInitialData = useMemo<TenantFormData>(
-    () => ({
-      name: "",
-      email: "",
-      phone: "",
-      propertyId,
-      rent: 0,
-      leaseStart: "",
-      leaseEnd: "",
-      paymentStatus: "pending" as const,
-    }),
-    [propertyId],
-  );
-
-  const handleTenantSubmit = useCallback(
-    async (data: TenantFormData) => {
-      await addTenant({ ...data, propertyId });
-    },
-    [addTenant, propertyId],
-  );
-
-  const tenantDialog = useFormDialog<TenantFormData>({
-    schema: tenantSchema,
-    initialData: tenantInitialData,
-    onSubmit: handleTenantSubmit,
-    successMessage: { create: tTenants("toastCreated"), update: tTenants("toastUpdated") },
-  });
+  // New tenancy, in place: the property is filled in. This was an "Add tenant" dialog that
+  // created a person and no lease, so the property stayed vacant and nothing was ever due.
+  const [tenancyOpen, setTenancyOpen] = useState(false);
 
   // Edit property: own instance of the same form/schema/updateProperty path
   // PropertiesView uses for create — see property-form-dialog.tsx.
@@ -650,80 +622,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
         />
       )}
 
-      {/* Add tenant — scoped to this property, so the form asks only for the person. */}
-      <Dialog
-        open={tenantDialog.isOpen}
-        onOpenChange={(open) => !open && tenantDialog.closeDialog()}
-      >
-        <DialogContent className="sm:max-w-[440px]">
-          <DialogHeader>
-            <DialogTitle>{t("addTenant")}</DialogTitle>
-            <DialogDescription>
-              {t("month.subtitle", { property: property.name })}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={tenantDialog.handleSubmit} className="space-y-4 pt-1">
-            <div className="space-y-1.5">
-              <Label htmlFor="ten-name">{t("tenantName")}</Label>
-              <Input
-                id="ten-name"
-                value={tenantDialog.formData.name}
-                onChange={(e) => tenantDialog.updateFormData({ name: e.target.value })}
-                className={tenantDialog.formErrors.name ? "border-[var(--color-destructive)]" : ""}
-              />
-              {tenantDialog.formErrors.name && (
-                <p className="text-xs text-[var(--color-destructive)]">
-                  {tenantDialog.formErrors.name}
-                </p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ten-email">{t("email")}</Label>
-              <Input
-                id="ten-email"
-                type="email"
-                value={tenantDialog.formData.email ?? ""}
-                onChange={(e) => tenantDialog.updateFormData({ email: e.target.value })}
-                className={tenantDialog.formErrors.email ? "border-[var(--color-destructive)]" : ""}
-              />
-              {tenantDialog.formErrors.email && (
-                <p className="text-xs text-[var(--color-destructive)]">
-                  {tenantDialog.formErrors.email}
-                </p>
-              )}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="ten-phone">{t("phone")}</Label>
-                <Input
-                  id="ten-phone"
-                  value={tenantDialog.formData.phone ?? ""}
-                  onChange={(e) => tenantDialog.updateFormData({ phone: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="ten-rent">{t("monthlyRent")}</Label>
-                <Input
-                  id="ten-rent"
-                  type="number"
-                  value={tenantDialog.formData.rent || ""}
-                  onChange={(e) =>
-                    tenantDialog.updateFormData({ rent: Number(e.target.value) || 0 })
-                  }
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={tenantDialog.closeDialog}>
-                {t("actions.cancel")}
-              </Button>
-              <Button type="submit" disabled={tenantDialog.isSubmitting}>
-                {t("addTenant")}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <TenancySheet open={tenancyOpen} onOpenChange={setTenancyOpen} prefill={{ propertyId }} />
 
       {/* Reference-month detail. Record Payment used to be a header button divorced from the
           month it applied to; it now opens from the month itself, with the ledger figures for
@@ -882,12 +781,12 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                 <h3 className="text-sm font-semibold text-[var(--color-muted-foreground)]">
                   {t("related")}
                 </h3>
-                {/* Opens in place — the property is already known, so there is nothing to pick
-                    and no reason to leave. Tenants below open the shared `?detail=tenant:<id>`
-                    overlay on click (EntityLink), which is the edit path. */}
-                <Button size="sm" variant="outline" onClick={tenantDialog.openDialog}>
+                {/* Opens in place, with this property filled in: the tenant and the lease are
+                    made together. Tenants below open the shared `?detail=tenant:<id>` overlay on
+                    click (EntityLink), which is the edit path. */}
+                <Button size="sm" variant="outline" onClick={() => setTenancyOpen(true)}>
                   <Plus className="mr-1.5 h-3.5 w-3.5" />
-                  {t("addTenant")}
+                  {tLeases("sheet.title")}
                 </Button>
               </div>
               {relatedTenants.map((tenant) => (
@@ -940,7 +839,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                           size="sm"
                           variant="ghost"
                           className="h-5 px-2 text-xs text-[var(--color-warning)] hover:bg-[var(--color-warning-muted)] hover:text-[var(--color-warning)]"
-                          onClick={() => router.push("/leases")}
+                          onClick={() => router.push(`/leases?action=renew&id=${lease.id}`)}
                         >
                           {t("renew")}
                         </Button>
@@ -955,9 +854,9 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                     {property.status === "vacant" ? t("vacantNotice") : t("noRelatedEntities")}
                   </p>
                   {property.status === "vacant" && (
-                    <Button size="sm" variant="outline" onClick={() => router.push("/leases")}>
+                    <Button size="sm" variant="outline" onClick={() => setTenancyOpen(true)}>
                       <FileText className="h-3.5 w-3.5 mr-1.5" />
-                      {t("createLease")}
+                      {tLeases("sheet.title")}
                     </Button>
                   )}
                 </div>
