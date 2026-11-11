@@ -230,10 +230,11 @@ const SURFACES = [
     path: "/financials?tab=ledger&month={leaseId}:{thisMonth}",
     overlay: true,
   },
-  { id: "leases", path: "/leases" },
-  { id: "detail-lease", path: "/leases?detail=lease:{leaseId}", overlay: true },
+  // Leases is Portfolio's Leases tab.
+  { id: "leases", path: "/portfolio?tab=leases" },
+  { id: "detail-lease", path: "/portfolio?tab=leases&detail=lease:{leaseId}", overlay: true },
   // The New tenancy sheet: a tenant and their lease on one form, opened by its link.
-  { id: "new-tenancy", path: "/leases?action=create", overlay: true },
+  { id: "new-tenancy", path: "/portfolio?tab=leases&action=create", overlay: true },
   { id: "buildings", path: "/buildings" },
   { id: "contracts", path: "/contracts" },
   { id: "settings", path: "/settings" },

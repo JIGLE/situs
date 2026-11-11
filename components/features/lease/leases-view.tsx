@@ -54,9 +54,15 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { withEntityDetail } from "@/lib/utils/entity-detail-url";
 
-export type LeasesViewProps = Record<string, never>;
+export interface LeasesViewProps {
+  /**
+   * Shown as Portfolio's Leases tab. The tab is the heading there, so the view draws its actions
+   * without a page title of its own.
+   */
+  embedded?: boolean;
+}
 
-export function LeasesView(): React.ReactElement {
+export function LeasesView({ embedded = false }: LeasesViewProps = {}): React.ReactElement {
   const { state, updateLease, deleteLease } = useApp();
   const { properties, tenants, leases, loading } = state;
   const { success, error } = useToast();
@@ -453,53 +459,61 @@ export function LeasesView(): React.ReactElement {
     return <LoadingState variant="cards" count={6} />;
   }
 
+  const actions = (
+    <>
+      <ExportButton
+        data={sortedLeases}
+        filename="leases"
+        columns={[
+          {
+            key: "tenantId",
+            label: t("field.tenant"),
+            format: (value) => tenants.find((tn) => tn.id === value)?.name || t("unknown"),
+          },
+          {
+            key: "propertyId",
+            label: t("field.property"),
+            format: (value) => properties.find((p) => p.id === value)?.name || t("unknown"),
+          },
+          {
+            key: "startDate",
+            label: t("field.startDate"),
+            format: (value) => new Date(value as string).toLocaleDateString(locale),
+          },
+          {
+            key: "endDate",
+            label: t("field.endDate"),
+            format: (value) => new Date(value as string).toLocaleDateString(locale),
+          },
+          {
+            key: "monthlyRent",
+            label: t("field.monthlyRent"),
+            format: (value) => formatCurrency(value as number),
+          },
+          {
+            key: "deposit",
+            label: t("field.deposit"),
+            format: (value) => formatCurrency(value as number),
+          },
+          { key: "status", label: t("field.status") },
+        ]}
+      />
+
+      <Button onClick={openNewTenancy} className="flex items-center gap-2">
+        <Plus className="w-4 h-4" />
+        {t("sheet.title")}
+      </Button>
+    </>
+  );
+
   return (
     <>
       <div className="space-y-6">
-        <PageHeader title={tNav("contracts")}>
-          <ExportButton
-            data={sortedLeases}
-            filename="leases"
-            columns={[
-              {
-                key: "tenantId",
-                label: t("field.tenant"),
-                format: (value) => tenants.find((tn) => tn.id === value)?.name || t("unknown"),
-              },
-              {
-                key: "propertyId",
-                label: t("field.property"),
-                format: (value) => properties.find((p) => p.id === value)?.name || t("unknown"),
-              },
-              {
-                key: "startDate",
-                label: t("field.startDate"),
-                format: (value) => new Date(value as string).toLocaleDateString(locale),
-              },
-              {
-                key: "endDate",
-                label: t("field.endDate"),
-                format: (value) => new Date(value as string).toLocaleDateString(locale),
-              },
-              {
-                key: "monthlyRent",
-                label: t("field.monthlyRent"),
-                format: (value) => formatCurrency(value as number),
-              },
-              {
-                key: "deposit",
-                label: t("field.deposit"),
-                format: (value) => formatCurrency(value as number),
-              },
-              { key: "status", label: t("field.status") },
-            ]}
-          />
-
-          <Button onClick={openNewTenancy} className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            {t("sheet.title")}
-          </Button>
-        </PageHeader>
+        {embedded ? (
+          <div className="flex flex-wrap items-center justify-end gap-2">{actions}</div>
+        ) : (
+          <PageHeader title={tNav("contracts")}>{actions}</PageHeader>
+        )}
 
         {/* One toolbar row: search, filter and the view toggle */}
         <div className="flex items-start gap-3">
@@ -716,7 +730,12 @@ export function LeasesView(): React.ReactElement {
             setEditingLease(null);
             // Drop the link's query, through the History API: `router.replace` is a navigation,
             // and the page's segment is keyed by its query, so it would mount the screen afresh.
-            if (searchParams.get("action")) window.history.replaceState(null, "", pathname);
+            if (searchParams.get("action")) {
+              const params = new URLSearchParams(searchParams.toString());
+              for (const key of ["action", "id", "tenantId"]) params.delete(key);
+              const query = params.toString();
+              window.history.replaceState(null, "", query ? `${pathname}?${query}` : pathname);
+            }
           }
         }}
         lease={editingLease}

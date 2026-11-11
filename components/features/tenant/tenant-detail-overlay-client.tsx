@@ -16,7 +16,6 @@ export function TenantDetailOverlayClient({ id }: { id: string }) {
     <EntityDetailOverlay
       title={t("tenant.title")}
       description={t("tenant.description", { name: tenant?.name ?? id })}
-      fullPageHref={`/people/${id}`}
     >
       <TenantDetailModal tenantId={id} onClose={handleClose} />
     </EntityDetailOverlay>

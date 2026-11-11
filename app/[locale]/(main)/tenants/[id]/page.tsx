@@ -6,5 +6,5 @@ export default async function TenantDetailRedirectPage({
   params: Promise<{ locale: string; id: string }>;
 }) {
   const { id } = await params;
-  redirect(`/people/${id}`);
+  redirect(`/people?detail=tenant:${encodeURIComponent(id)}`);
 }

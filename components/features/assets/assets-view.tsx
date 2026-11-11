@@ -2,10 +2,12 @@
 
 import { PageHeader } from "@/components/shared/page-header";
 import { useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Building2, Home, Plus } from "lucide-react";
 import { PropertiesView, PropertiesViewRef } from "@/components/features/property/property-list";
+import { LeasesView } from "@/components/features/lease/leases-view";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PortfolioSummary } from "@/components/features/property/portfolio-summary";
 import { ExportButton, ExportColumn } from "@/components/ui/export-button";
 import { useApp } from "@/lib/contexts/app-context";
@@ -28,10 +30,32 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+type PortfolioTab = "properties" | "leases";
+
+const tabOf = (value: string | null): PortfolioTab =>
+  value === "leases" ? "leases" : "properties";
+
 export function AssetsView(): React.ReactElement {
   const { state, addBuilding } = useApp();
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  // Leases is a tab here, not a menu entry of its own: a lease is a property's tenancy.
+  // `?tab=leases` opens it, which is where `/leases` and its links (`?action=create`, …) land.
+  const tabParam = searchParams.get("tab");
+  const [tab, setTab] = useState<PortfolioTab>(() => tabOf(tabParam));
+  useEffect(() => setTab(tabOf(tabParam)), [tabParam]);
+  const selectTab = (next: string) => {
+    const value = tabOf(next);
+    setTab(value);
+    // Kept in the address, so a reload or a shared link opens the same tab. Through the History
+    // API: `router.replace` would mount the screen afresh.
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === "leases") params.set("tab", "leases");
+    else params.delete("tab");
+    const query = params.toString();
+    window.history.replaceState(null, "", query ? `${pathname}?${query}` : pathname);
+  };
   const { properties } = state;
   const propertiesViewRef = useRef<PropertiesViewRef>(null);
   const t = useTranslations("portfolio");
@@ -102,49 +126,62 @@ export function AssetsView(): React.ReactElement {
           tapped (it read "Pagamentos" under "Finanças", "Gestão de Contratos" under "Contratos"). */}
       <PageHeader title={tNav("portfolio")} />
 
-      {/* Portfolio inventory — tree + workspace (table available via the toggle). Create and
+      <Tabs value={tab} onValueChange={selectTab} className="space-y-5">
+        <TabsList>
+          <TabsTrigger value="properties">{t("tabs.portfolioList")}</TabsTrigger>
+          <TabsTrigger value="leases">{tNav("leases")}</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="properties" className="mt-0">
+          {/* Portfolio inventory — tree + workspace (table available via the toggle). Create and
           export are handed down as tree actions so they sit with the asset list rather than
           floating in the page header above it. */}
-      <PropertiesView
-        ref={propertiesViewRef}
-        density="compact"
-        showPageHeader={false}
-        workspaceDefault={<PortfolioSummary />}
-        treeActions={
-          <>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" className="h-8 flex-1 gap-1.5">
-                  <Plus className="h-3.5 w-3.5" />
-                  {t("newAsset")}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-52">
-                <DropdownMenuItem onClick={() => propertiesViewRef.current?.openDialog()}>
-                  <Home className="mr-2 h-3.5 w-3.5" />
-                  {t("newProperty")}
-                  <span className="ml-auto text-caption text-[var(--color-muted-foreground)]">
-                    {t("newPropertyHint")}
-                  </span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setBuildingDialogOpen(true)}>
-                  <Building2 className="mr-2 h-3.5 w-3.5" />
-                  {t("newBuilding")}
-                  <span className="ml-auto text-caption text-[var(--color-muted-foreground)]">
-                    {t("newBuildingHint")}
-                  </span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <ExportButton
-              data={properties}
-              filename="properties-export"
-              columns={propertyColumns}
-            />
-          </>
-        }
-      />
+          <PropertiesView
+            ref={propertiesViewRef}
+            density="compact"
+            showPageHeader={false}
+            workspaceDefault={<PortfolioSummary />}
+            treeActions={
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" className="h-8 flex-1 gap-1.5">
+                      <Plus className="h-3.5 w-3.5" />
+                      {t("newAsset")}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-52">
+                    <DropdownMenuItem onClick={() => propertiesViewRef.current?.openDialog()}>
+                      <Home className="mr-2 h-3.5 w-3.5" />
+                      {t("newProperty")}
+                      <span className="ml-auto text-caption text-[var(--color-muted-foreground)]">
+                        {t("newPropertyHint")}
+                      </span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setBuildingDialogOpen(true)}>
+                      <Building2 className="mr-2 h-3.5 w-3.5" />
+                      {t("newBuilding")}
+                      <span className="ml-auto text-caption text-[var(--color-muted-foreground)]">
+                        {t("newBuildingHint")}
+                      </span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <ExportButton
+                  data={properties}
+                  filename="properties-export"
+                  columns={propertyColumns}
+                />
+              </>
+            }
+          />
+        </TabsContent>
+
+        <TabsContent value="leases" className="mt-0">
+          <LeasesView embedded />
+        </TabsContent>
+      </Tabs>
 
       {/* Add Building dialog */}
       <Dialog open={buildingDialogOpen} onOpenChange={setBuildingDialogOpen}>

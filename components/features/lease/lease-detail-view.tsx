@@ -76,7 +76,7 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
         <p className="text-[var(--color-muted-foreground)]">{t("notFound")}</p>
-        <Button variant="outline" onClick={() => router.push("/leases")}>
+        <Button variant="outline" onClick={() => router.push("/portfolio?tab=leases")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           {t("backToLeases")}
         </Button>
@@ -90,7 +90,7 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
   const totalPaid = receivedTotal(relatedReceipts);
 
   const handleEdit = () => {
-    router.push(`/leases?action=edit&id=${lease.id}`);
+    router.push(`/portfolio?tab=leases&action=edit&id=${lease.id}`);
   };
 
   const handleRenew = () => setRenewalOpen(true);
@@ -151,7 +151,7 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
         try {
           await updateLease(lease.id, { status: "terminated" });
           success(t("toastTerminated"));
-          router.push("/leases");
+          router.push("/portfolio?tab=leases");
         } catch (err) {
           // `updateLease` reports its own failures; saying so again would be a second toast.
           if (!wasReported(err)) error(t("toastTerminateFailed"));

@@ -37,7 +37,6 @@ const H1_ALLOWED: Record<string, string> = {
   "app/[locale]/privacy/page.tsx": "a legal page, outside the app shell",
   "app/[locale]/terms/page.tsx": "a legal page, outside the app shell",
   "components/features/property/property-detail-view.tsx": "a record's own name",
-  "components/features/tenant/tenant-detail-view.tsx": "a record's own name",
   "components/features/lease/lease-detail-view.tsx": "a record's own name",
 };
 

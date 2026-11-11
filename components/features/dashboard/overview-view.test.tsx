@@ -177,7 +177,7 @@ describe("OverviewView — the inbox and who is late", () => {
     const row = within(list).getByRole("link", { name: /Ana Martínez/ });
     expect(row).toHaveTextContent("Rua Augusta 12 · 2 meses em dívida");
     expect(row).toHaveTextContent("1500 €");
-    expect(row).toHaveAttribute("href", "/leases?detail=lease:lease-1");
+    expect(row).toHaveAttribute("href", "/portfolio?tab=leases&detail=lease:lease-1");
   });
 
   it("shows no late list when nobody owes", async () => {
@@ -196,7 +196,7 @@ describe("OverviewView — what waits", () => {
     expect(within(list).getByText(d.attentionTitle)).toBeInTheDocument();
     expect(within(list).getByRole("link", { name: /1 contrato/ })).toHaveAttribute(
       "href",
-      "/leases",
+      "/portfolio?tab=leases",
     );
     // What a receipt still needs from the owner opens the guided list, one field at a time.
     expect(

@@ -306,12 +306,14 @@ export async function proxy(request: NextRequest) {
   const tab = searchParams.get("tab");
   // A canonical tab is not a legacy alias — it must not be rewritten by the map below, and it
   // must not return `next()` either, for the same reason the CSRF seed above no longer does.
-  if (tab && !(isFinancialsPath && canonicalFinancialTabs.has(tab))) {
+  // Portfolio's Leases tab is a live tab too, not the legacy `leases` alias below.
+  const isPortfolioLeases = appPath === "/portfolio" && tab === "leases";
+  if (tab && !(isFinancialsPath && canonicalFinancialTabs.has(tab)) && !isPortfolioLeases) {
     const tabRouteMap: Record<string, string | { path: string; financialTab?: string }> = {
       overview: "/dashboard",
       properties: "/portfolio",
       tenants: "/people",
-      leases: "/leases",
+      leases: { path: "/portfolio", financialTab: "leases" },
       financials: "/financials",
       receipts: { path: "/financials", financialTab: "reports" },
       expenses: { path: "/financials", financialTab: "expenses" },
@@ -342,6 +344,18 @@ export async function proxy(request: NextRequest) {
       applySecurityHeaders(response, nonce);
       return response;
     }
+  }
+
+  // Leases is Portfolio's Leases tab. `/leases` (and `/contracts`, its older name) answer here,
+  // before anything renders, keeping their query: `?action=create` and `?detail=lease:<id>` open
+  // the same thing there. `/leases/<id>`, a lease's own page, stays.
+  if (appPath === "/leases" || appPath === "/contracts") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/portfolio";
+    url.searchParams.set("tab", "leases");
+    const response = NextResponse.redirect(url, 307);
+    applySecurityHeaders(response, nonce);
+    return response;
   }
 
   // Handle old subtab-based URLs for financials

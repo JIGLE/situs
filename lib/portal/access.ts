@@ -66,22 +66,12 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         mobilePrimary: true,
       },
       {
-        // In the rail, but not the phone's bottom bar: Leases holds that place, and Portfolio is
-        // one tap away under "More".
+        // Properties and their leases: Leases is a tab here, not an entry of its own.
         key: "properties",
         href: "/portfolio",
         label: "Portfolio",
         labelKey: "navigation.portfolio",
         icon: Building2,
-      },
-      {
-        // Hidden until 25 September, "reached from" pages that no longer linked to it, so the
-        // screen where leases are created and edited had no way in.
-        key: "leases",
-        href: "/leases",
-        label: "Leases",
-        labelKey: "navigation.leases",
-        icon: FileText,
         mobilePrimary: true,
       },
       {
@@ -126,6 +116,8 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "System status",
         labelKey: "navigation.admin",
         icon: ShieldCheck,
+        // Reached from Settings › Administration, which only an administrator sees.
+        hidden: true,
       },
     ],
   },
@@ -134,6 +126,16 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
     group: "Hidden",
     groupLabelKey: "navigation.systemGroup",
     items: [
+      {
+        // A tab of Portfolio now (`/portfolio?tab=leases`); `/leases` redirects there. Kept so
+        // `canAccessPortalPath` still permits the old URL and `/leases/[id]`.
+        key: "leases",
+        href: "/leases",
+        label: "Leases",
+        labelKey: "navigation.leases",
+        icon: FileText,
+        hidden: true,
+      },
       {
         // Folded into Settings as its Account section; `/account` redirects there. Kept here
         // so `canAccessPortalPath` still permits the old URL.
