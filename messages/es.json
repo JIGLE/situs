@@ -67,7 +67,9 @@
       "name": "Nombre del edificio *",
       "namePlaceholder": "p. ej. Edificio Ribera",
       "submit": "Crear edificio"
-    }
+    },
+    "importFinancas": "Importar de Finanças",
+    "importFinancasHint": "PDF de cadernetas"
   },
   "settings": {
     "title": "Configuración",
@@ -2021,5 +2023,56 @@
     "revokeInvitation": "Invitación retirada",
     "signUpSettingChange": "Ajuste de registro cambiado",
     "changeAccountRole": "Rol de la cuenta cambiado"
+  },
+  "financasImport": {
+    "title": "Importar de Finanças",
+    "description": "Inmuebles leídos de sus cadernetas prediales. Revise cada uno antes de crearlo.",
+    "where": "En el Portal das Finanças, abra Património Predial y descargue la caderneta predial de cada inmueble en PDF. Puede elegir varias a la vez.",
+    "choose": "Elegir PDF de cadernetas",
+    "addMore": "Añadir más PDF",
+    "reading": "Leyendo…",
+    "include": "Crear {name}",
+    "name": "Nombre",
+    "typeLabel": "Tipo",
+    "type": {
+      "apartment": "Apartamento",
+      "house": "Casa",
+      "commercial": "Comercial",
+      "other": "Otro"
+    },
+    "article": "Artículo {article}",
+    "fraction": "Fracción {fraction}",
+    "area": "{area} m²",
+    "alreadyHave": "Ya está en su cartera como {name}.",
+    "next": "La renta y los inquilinos vienen después: en Nuevo arrendamiento, rellénelo desde el comprobante del contrato en Finanças.",
+    "create": "{count, plural, =0 {Crear inmuebles} one {Crear # inmueble} other {Crear # inmuebles}}",
+    "created": "{count, plural, one {# inmueble creado} other {# inmuebles creados}}",
+    "partial": "{created} creados. {failed} no se pudieron guardar: inténtelo de nuevo.",
+    "failure": {
+      "notPdf": "no es un PDF.",
+      "tooLarge": "el archivo es demasiado grande.",
+      "noText": "no se pudo leer texto. Una copia escaneada no sirve: descargue el PDF del Portal.",
+      "notCaderneta": "no parece una caderneta predial urbana.",
+      "rustica": "aún no se pueden importar fincas rústicas (caderneta rústica).",
+      "failed": "no se pudo leer el archivo. Inténtelo de nuevo.",
+      "saveFailed": "No se pudo guardar. Inténtelo de nuevo."
+    },
+    "tenancy": {
+      "fill": "Rellenar desde Finanças",
+      "hint": "El PDF del comprobante del contrato, en Arrendamento › Contratos del Portal",
+      "reading": "Leyendo el contrato…",
+      "failed": "No se pudo leer este PDF como comprobante de contrato. Rellénelo a mano.",
+      "filled": "Rellenado desde el contrato {number}. Revise cada campo antes de guardar.",
+      "filledNoNumber": "Rellenado desde el comprobante del contrato. Revise cada campo antes de guardar.",
+      "warning": {
+        "property_not_found": "Ningún inmueble tiene el artículo {article}, fracción {fraction}. Elíjalo abajo o importe antes su caderneta.",
+        "property_ambiguous": "Hay más de un inmueble con el artículo {article}, fracción {fraction}. Elija el correcto abajo.",
+        "no_tenant": "No se encontró ningún inquilino en el PDF. Indíquelo abajo.",
+        "no_rent": "No se encontró la renta. Indíquela abajo.",
+        "rent_not_monthly": "Finanças indica esta renta para menos de un mes. Indique el importe mensual.",
+        "no_start": "No se encontró la fecha de inicio. Revise el plazo abajo.",
+        "term_passed": "El plazo en Finanças terminó el {date}. Si el contrato se renovó, indique la fecha de fin actual."
+      }
+    }
   }
 }
