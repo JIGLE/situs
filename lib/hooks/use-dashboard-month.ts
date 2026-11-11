@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import type { DashboardMonth } from "@/lib/services/dashboard/month";
 import { apiFetch } from "@/lib/utils/api-client";
@@ -8,10 +8,13 @@ import { apiFetch } from "@/lib/utils/api-client";
 /**
  * The dashboard's month, from `GET /api/dashboard/month`. Changing the month keeps the last
  * answer on screen until the new one arrives, so the page does not flash empty between months.
+ * `reload` reads the month again, after the Home inbox has changed what it counts.
  */
 export function useDashboardMonth(year: number, month: number) {
   const [data, setData] = useState<DashboardMonth | null>(null);
   const [error, setError] = useState<unknown>(null);
+  const [version, setVersion] = useState(0);
+  const reload = useCallback(() => setVersion((v) => v + 1), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -26,7 +29,7 @@ export function useDashboardMonth(year: number, month: number) {
     return () => {
       cancelled = true;
     };
-  }, [year, month]);
+  }, [year, month, version]);
 
-  return { data, error };
+  return { data, error, reload };
 }

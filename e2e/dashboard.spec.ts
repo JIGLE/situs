@@ -32,9 +32,8 @@ test.describe("Dashboard", () => {
     await page.goto("/dashboard?month=2026-08");
     await settle(page);
 
-    // Assembled on the server: the status line and the portfolio line arrive with the month.
-    await expect(page.getByTestId("dashboard-status")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByTestId("dashboard-portfolio")).toBeVisible();
+    // The inbox renders once the month has arrived from the server.
+    await expect(page.getByTestId("home-inbox")).toBeVisible({ timeout: 10000 });
     await expect(page.getByTestId("dashboard-month")).toHaveText(/august 2026|agosto de 2026/i);
 
     // In whichever language the suite runs.
@@ -43,7 +42,7 @@ test.describe("Dashboard", () => {
 
     await expect(page).toHaveURL(/month=2026-07/);
     await expect(page.getByTestId("dashboard-month")).toHaveText(/july 2026|julho de 2026/i);
-    await expect(page.getByTestId("dashboard-status")).toBeVisible();
+    await expect(page.getByTestId("home-inbox")).toBeVisible();
   });
 
   test("should navigate to Portfolio section", async ({ page }) => {
