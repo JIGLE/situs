@@ -1,7 +1,6 @@
 import { test, expect } from "@playwright/test";
 import en from "../messages/en.json";
 import pt from "../messages/pt.json";
-import { revealPortfolioLink } from "./helpers/nav";
 import { settle } from "./helpers/wait";
 
 test.use({ storageState: "playwright/.auth/user.json" });
@@ -49,7 +48,6 @@ test.describe("Dashboard", () => {
     await page.goto("/dashboard");
     await settle(page);
 
-    await revealPortfolioLink(page);
     const portfolioLink = page.getByRole("link", { name: /portfolio/i }).first();
     await expect(portfolioLink).toBeVisible();
     await portfolioLink.click();

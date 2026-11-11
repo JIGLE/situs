@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { revealPortfolioLink } from "./helpers/nav";
 import { settle } from "./helpers/wait";
 
 /**
@@ -51,7 +50,6 @@ test.describe("No Native confirm() Calls", () => {
     await page.goto("/dashboard");
     await settle(page);
 
-    await revealPortfolioLink(page);
     const navLink = page.getByRole("link", { name: /portfolio/i }).first();
     await expect(navLink).toBeVisible();
     await navLink.click();
@@ -116,7 +114,6 @@ test.describe("Page Skeletons", () => {
     await page.goto("/dashboard");
     await settle(page);
 
-    await revealPortfolioLink(page);
     const navLink = page.getByRole("link", { name: /portfolio/i }).first();
     await expect(navLink).toBeVisible();
     await navLink.click();
