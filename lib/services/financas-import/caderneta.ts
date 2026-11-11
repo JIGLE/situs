@@ -147,7 +147,7 @@ function unitFrom(block: string, fraction: string | null): CadernetaUnit {
   const { street, doorNumber } = addressOf(block);
   return {
     fraction,
-    use: use ? use.replace(/ /g, " ") : null,
+    use,
     layout,
     bedrooms: bedroomsOf(layout),
     area,

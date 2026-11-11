@@ -126,7 +126,7 @@ function withExtras(
   const countryAfter = /Pa[íi]s ?:? ?([A-Za-zÀ-ú]{2,20})/i.exec(own);
   return {
     taxId,
-    name: name.replace(/ /g, " ").trim(),
+    name: name.trim(),
     country: (country ?? countryAfter?.[1] ?? null)?.toUpperCase() ?? null,
     share: share ? share[1].replace(/\s/g, "") : null,
   };
