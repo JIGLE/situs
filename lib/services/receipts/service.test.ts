@@ -60,6 +60,7 @@ const baseReceipt = {
   amount: 850,
   date: new Date("2026-07-01T00:00:00.000Z"),
   referenceMonth: "2026-07",
+  status: "paid",
   lifecycle: "draft",
 };
 
@@ -135,6 +136,17 @@ describe("transitionReceipt", () => {
       expect(mockGenerateFromHTML).not.toHaveBeenCalled();
     },
   );
+
+  it("refuses to issue a receipt for rent still expected", async () => {
+    mockReceiptFindFirst.mockResolvedValue({ ...baseReceipt, status: "pending" });
+
+    const error = await transitionReceipt("user_1", "receipt_1", "emitted").catch((e) => e);
+
+    expect(error).toBeInstanceOf(ConflictError);
+    expect((error as ConflictError).reason).toBe("receipt_not_paid");
+    expect(mockReceiptUpdate).not.toHaveBeenCalled();
+    expect(mockGenerateFromHTML).not.toHaveBeenCalled();
+  });
 
   it("voiding reverses live allocations and logs VOID_RECEIPT", async () => {
     mockReceiptFindFirst.mockResolvedValue({ ...baseReceipt, lifecycle: "draft" });

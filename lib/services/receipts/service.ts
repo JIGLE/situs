@@ -156,6 +156,15 @@ export async function transitionReceipt(
     );
   }
 
+  // `Receipt.status` is the money: "paid" means the rent arrived and is on the ledger. Issuing is
+  // the owner saying so to Finanças, so a receipt for money still expected stays unissued.
+  if (to === "emitted" && receipt.status !== "paid") {
+    throw new ConflictError(
+      "A rent receipt says the rent was received; mark this one paid before issuing it",
+      "receipt_not_paid",
+    );
+  }
+
   let archived = false;
   let archiveDocumentId: string | null = null;
   if (evaluation.archiveTriggered) {

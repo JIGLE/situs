@@ -10,6 +10,7 @@
 import { getPrismaClient } from "@/lib/services/database/database";
 import { MONEY_EPSILON, round2 } from "@/lib/utils/money";
 import { derivePeriodStatus } from "./engine";
+import type { RentPeriodStatus } from "./types";
 
 interface PeriodFigures {
   status: string;
@@ -20,7 +21,7 @@ interface PeriodFigures {
 }
 
 /** A period's status as of `now`. `waived` is a decision rather than a date, so it stays. */
-export function periodStatusAt(period: PeriodFigures, now: Date): string {
+export function periodStatusAt(period: PeriodFigures, now: Date): RentPeriodStatus {
   if (period.status === "waived") return "waived";
   return derivePeriodStatus(
     {

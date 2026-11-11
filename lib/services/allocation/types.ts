@@ -71,8 +71,14 @@ export interface PlanAllocationInput {
   futureDueAmount?: number;
 }
 
-/** Persisted-derived rent period status (recomputed on every allocation write). */
+/**
+ * A rent month's status. Read it through `periodStatusAt` (`rent-matrix.ts`), never off the stored
+ * column: the column is rewritten only when money moves, so it does not know a due date passed.
+ * `waived` is the one stored decision (`syncLeasePeriods` writes it for a month taken out of the
+ * term that carries reversed history); every other status is worked out from the figures and the
+ * date.
+ */
 export type RentPeriodStatus =
-  "upcoming" | "due" | "overdue" | "partially_paid" | "paid" | "paid_late";
+  "upcoming" | "due" | "overdue" | "partially_paid" | "paid" | "paid_late" | "waived";
 
 export type TenantPaymentStatus = "paid" | "overdue" | "pending";

@@ -8,6 +8,7 @@ import {
 } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { getPrismaClient } from "@/lib/services/database/database";
+import { periodStatusAt } from "@/lib/services/allocation/rent-matrix";
 
 export const runtime = "nodejs";
 
@@ -60,12 +61,18 @@ async function handleGet(
       year: true,
       month: true,
       status: true,
+      dueDate: true,
       dueAmount: true,
       allocatedAmount: true,
+      paidAt: true,
     },
   });
+  // A month's status as of now: the stored column does not know a due date passed.
+  const now = new Date();
   const openPeriod =
-    periods.find((p) => p.allocatedAmount < p.dueAmount - EPSILON) ?? periods.at(-1) ?? null;
+    periods.find((p) => p.status !== "waived" && p.allocatedAmount < p.dueAmount - EPSILON) ??
+    periods.at(-1) ??
+    null;
 
   // Year strip: the requested year's 12 reference months, keyed by month (1-12).
   // Derived from the same `periods` fetch above — no extra query. If a property
@@ -76,7 +83,7 @@ async function handleGet(
   for (const p of periods) {
     if (p.year !== year) continue;
     yearMonths[p.month] = {
-      status: p.status,
+      status: periodStatusAt(p, now),
       dueAmount: p.dueAmount,
       allocatedAmount: p.allocatedAmount,
     };
@@ -112,7 +119,7 @@ async function handleGet(
       ? {
           year: openPeriod.year,
           month: openPeriod.month,
-          status: openPeriod.status,
+          status: periodStatusAt(openPeriod, now),
           dueAmount: openPeriod.dueAmount,
           allocatedAmount: openPeriod.allocatedAmount,
         }

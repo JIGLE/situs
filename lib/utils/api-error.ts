@@ -68,6 +68,7 @@ const REASON_KEY = new Map<
   | "bankConnectionHasMovements"
   | "receiptTransitionNotAllowed"
   | "receiptFilingUnavailable"
+  | "receiptNotPaid"
   | "lastAdmin"
   | "accountExists"
   | "accountChanged"
@@ -96,6 +97,7 @@ const REASON_KEY = new Map<
   ["bank_connection_has_movements", "bankConnectionHasMovements"],
   ["receipt_transition_not_allowed", "receiptTransitionNotAllowed"],
   ["receipt_filing_unavailable", "receiptFilingUnavailable"],
+  ["receipt_not_paid", "receiptNotPaid"],
   ["last_admin", "lastAdmin"],
   ["account_exists", "accountExists"],
   ["account_changed", "accountChanged"],
