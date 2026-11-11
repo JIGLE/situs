@@ -87,7 +87,7 @@ groups and the redirects from retired paths.
 
 - **Dialog:** <8 fields, quick action
 - **Page:** 8-15 fields, needs context
-- **Wizard:** >15 fields OR multiple entity relationships
+- **Sheet:** a form that makes more than one record, or has more than 8 fields
 
 **Required:**
 
@@ -96,21 +96,22 @@ groups and the redirects from retired paths.
 - ✅ Loading state on submit
 - ✅ Cancel button that returns to origin
 
-### 5. Wizard Page
+### 5. Sheet Form
 
-**Purpose:** Multi-step complex data entry
+**Purpose:** One job that touches several records, on one screen. The New tenancy sheet
+(`components/features/lease/tenancy-sheet.tsx`) makes the tenant and the lease together.
 
 **Required:**
 
-- ✅ Step indicator (1 of N)
-- ✅ Back/Next buttons
-- ✅ Draft persistence (24h TTL)
-- ✅ "Resume Draft" banner
+- ✅ Every field on one scrolling body; the header and the submit stay in view
+- ✅ What can wait (documents, numbers a later step asks for, notes) behind one fold
+- ✅ Smart defaults the owner checks instead of types
+- ✅ Errors in the user's language beside the field, and a fold that holds one opens
 
 **Rules:**
 
-- ❌ Max 6 steps
-- ❌ Max 10 fields per step
+- ❌ No steps: a Next button only hides fields the owner has to come back for
+- ❌ No draft persistence: a sheet short enough to finish needs none
 
 ---
 
@@ -195,20 +196,10 @@ const dialog = useFormDialog<FormData>({
 });
 ```
 
-### Multi-Step Wizard (Complex Forms)
+### Sheet Form (Several Records)
 
-```tsx
-import { useMultiStepForm } from "@/lib/hooks/use-multi-step-form";
-
-const wizard = useMultiStepForm<FormData>({
-  steps: stepConfig,
-  schema: zodSchema,
-  onComplete: async (data) => {
-    /* save */
-  },
-  persistence: { key: "draft-key", ttl: 24 * 60 * 60 * 1000 },
-});
-```
+`components/ui/sheet.tsx` with `side="center"`: full-screen below `md`, a centred panel above.
+The form owns its state and checks it on submit; see `tenancy-sheet.tsx`.
 
 ---
 
@@ -297,7 +288,7 @@ Before submitting any UI PR:
 - [ ] **Sidebar Limit:** No new top-level item without removal
 - [ ] **Navigation Depth:** Does not exceed 3 levels
 - [ ] **Page Type:** Matches one of 5 canonical types
-- [ ] **Form Pattern:** Uses `useFormDialog` or `useMultiStepForm`
+- [ ] **Form Pattern:** Uses `useFormDialog`, or a sheet form for several records
 - [ ] **Context Preservation:** Implements `returnTo` for cross-section links
 - [ ] **Mobile Responsive:** Includes `md:` and `lg:` breakpoints
 - [ ] **Empty State:** Defined with helpful message + action

@@ -27,6 +27,7 @@ vi.mock("@/lib/contexts/app-context", () => ({
     addLease: app.addLease,
     updateLease: app.updateLease,
     deleteLease: app.deleteLease,
+    addTenant: vi.fn(),
     refreshData: app.refreshData,
   }),
 }));
@@ -55,11 +56,11 @@ const ended = {
 };
 
 /**
- * The wizard saved every lease as `active`, new or edited, so correcting a note on a terminated
- * lease brought it back to life. Only a new lease starts active now; an edit sends no status, and
- * the update route leaves the stored one alone.
+ * The old wizard saved every lease as `active`, new or edited, so correcting a note on a
+ * terminated lease brought it back to life. Only a new lease starts active now; an edit sends no
+ * status, and the update route leaves the stored one alone.
  */
-describe("LeasesView: saving the lease wizard", () => {
+describe("LeasesView: editing a lease", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
@@ -73,9 +74,6 @@ describe("LeasesView: saving the lease wizard", () => {
     // The row menu (one per rendering: the table row and its phone card).
     await user.click(screen.getAllByRole("button", { name: pt.leaseOptions })[0]);
     await user.click(await screen.findByRole("menuitem", { name: pt.editLease }));
-    for (let step = 0; step < 3; step++) {
-      await user.click(await screen.findByRole("button", { name: ptMessages.actions.continue }));
-    }
     await user.click(await screen.findByRole("button", { name: pt.submitUpdate }));
 
     await waitFor(() => expect(app.updateLease).toHaveBeenCalledTimes(1));

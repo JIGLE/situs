@@ -849,26 +849,11 @@
     "newEndDate": "Nueva Fecha de Fin",
     "renewalNotes": "Notas para el Inquilino",
     "pageTitle": "Gestión de contratos",
-    "addLease": "Añadir contrato",
     "searchPlaceholder": "Buscar contratos por inquilino o inmueble...",
     "pending": "Pendiente",
     "draft": "Borrador",
     "emptyTitle": "Empieza por los contratos",
     "expiringSoon": "{count, plural, one {# contrato vence en 60 días} other {# contratos vencen en 60 días}}",
-    "step": {
-      "propertyTitle": "Selección del inmueble",
-      "propertyDescription": "Elige el inmueble de este contrato",
-      "tenantTitle": "Datos del inquilino",
-      "tenantDescription": "Selecciona el inquilino",
-      "termsTitle": "Condiciones del contrato",
-      "termsDescription": "Define las condiciones del alquiler",
-      "notesTitle": "Información adicional",
-      "notesDescription": "Añade notas y documentos del contrato",
-      "shortProperty": "Inmueble",
-      "shortTenant": "Inquilino",
-      "shortTerms": "Condiciones",
-      "shortNotes": "Documentos"
-    },
     "toast": {
       "created": "Contrato creado correctamente",
       "updated": "Contrato actualizado correctamente",
@@ -902,22 +887,12 @@
       "renewalNoticeDays": "Preaviso de renovación (días)"
     },
     "selectProperty": {
-      "title": "Seleccionar inmueble",
-      "description": "Elige el inmueble de este contrato de alquiler",
       "placeholder": "Selecciona un inmueble...",
-      "noneAvailable": "No hay inmuebles disponibles. Crea uno primero.",
       "noneFound": "No se han encontrado inmuebles. Crea uno primero."
     },
     "selectTenant": {
-      "title": "Seleccionar inquilino",
-      "description": "Elige el inquilino de este contrato",
-      "placeholder": "Selecciona un inquilino...",
-      "noneAvailable": "No hay inquilinos disponibles. Crea uno primero.",
-      "noneFound": "No se han encontrado inquilinos. Crea uno primero."
+      "placeholder": "Selecciona un inquilino..."
     },
-    "termsStepDescription": "Define los importes del alquiler y la duración del contrato",
-    "docsStepTitle": "Documentos y notas",
-    "docsStepDescription": "Sube el contrato y añade información adicional",
     "contractPdf": "Contrato de alquiler (PDF)",
     "maxFileSize": "Tamaño máximo: {size} MB. Solo formato PDF.",
     "additionalNotes": "Notas adicionales",
@@ -943,23 +918,12 @@
     "deleteLease": "Eliminar contrato",
     "download": "Descargar",
     "dialogEditTitle": "Editar contrato",
-    "dialogCreateTitle": "Crear contrato",
     "dialogEditDescription": "Actualiza los datos del contrato de alquiler",
-    "dialogCreateDescription": "Sigue los pasos para crear un contrato de alquiler completo",
     "submitUpdate": "Actualizar contrato",
-    "submitCreate": "Crear contrato",
-    "propertyRequired": "Inmueble *",
-    "tenantRequired": "Inquilino *",
-    "startDateRequired": "Fecha de inicio *",
-    "endDateRequired": "Fecha de fin *",
-    "monthlyRentRequired": "Alquiler mensual ({symbol}) *",
-    "depositRequired": "Fianza ({symbol}) *",
     "goToPortfolio": "Ir a la cartera",
-    "goToPeople": "Ir a personas",
     "choosePdf": "Elegir archivo PDF",
-    "emptyDescription": "Para crear tu primer contrato necesitas al menos un inmueble y un inquilino.",
+    "emptyDescription": "Para empezar un arrendamiento, añada primero un inmueble.",
     "createProperty": "Crear inmueble en la cartera",
-    "createPerson": "Crear persona",
     "noneFound": "No se han encontrado contratos",
     "adjustFilters": "Prueba a ajustar la búsqueda o los filtros",
     "addFirst": "Añadir primer contrato",
@@ -1026,6 +990,31 @@
       "version": "Versión del contrato",
       "hint": "Figura en el Portal das Finanças o en el justificante de registro. Todos los recibos emitidos en Finanças lo indican.",
       "invalid": "Solo dígitos."
+    },
+    "sheet": {
+      "title": "Nuevo arrendamiento",
+      "description": "Quién alquila qué inmueble, desde cuándo y por cuánto.",
+      "pickExisting": "Elegir un inquilino existente",
+      "typeNew": "Añadir un nuevo inquilino",
+      "namePlaceholder": "Nombre completo",
+      "email": "Email (opcional)",
+      "terms": "Renta y plazo",
+      "termsHint": "Rellenado: un año desde el día 1 del próximo mes, con una mensualidad de fianza. Cambie lo que sea distinto.",
+      "rent": "Renta mensual ({symbol})",
+      "deposit": "Fianza ({symbol})",
+      "more": "Detalles del contrato",
+      "moreHint": "Coinquilinos, número de contrato en la AT, PDF, preaviso y notas. Opcional: ahora o más tarde.",
+      "submit": "Crear arrendamiento",
+      "created": "Arrendamiento creado",
+      "error": {
+        "property": "Elija un inmueble.",
+        "tenant": "Elija un inquilino.",
+        "name": "Indique el nombre del inquilino.",
+        "email": "Indique un email válido o déjelo en blanco.",
+        "rent": "Indique la renta mensual.",
+        "endDate": "La fecha de fin debe ser posterior a la de inicio.",
+        "saveFailed": "No se pudo guardar el arrendamiento. Inténtelo de nuevo."
+      }
     }
   },
   "notifications": {
@@ -1134,8 +1123,7 @@
     "allProperties": "Todas las Propiedades",
     "saving": "Guardando...",
     "selectProperty": "Seleccionar Propiedad",
-    "selectTenant": "Seleccionar Inquilino",
-    "draftFound": "Tienes un borrador sin guardar. ¿Quieres continuar?"
+    "selectTenant": "Seleccionar Inquilino"
   },
   "status": {
     "active": "Activo",
@@ -1544,14 +1532,12 @@
     },
     "related": "Personas y contratos",
     "propertyDetails": "Detalles del Inmueble",
-    "monthlyRent": "Alquiler Mensual",
     "type": "Tipo",
     "bedrooms": "Habitaciones",
     "bathrooms": "Baños",
     "description": "Descripción",
     "vacantNotice": "La propiedad está libre",
     "noRelatedEntities": "Sin entidades relacionadas",
-    "createLease": "Crear contrato",
     "expiresIn": "Vence en {days} día(s)",
     "renew": "Renovar →",
     "finance": {
@@ -1561,16 +1547,12 @@
       "collectionRate": "Tasa de Cobro",
       "noData": "Aún no hay datos financieros para esta propiedad."
     },
-    "addTenant": "Añadir inquilino",
     "month": {
       "subtitle": "Mes de referencia de {property}",
       "status": "Estado",
       "due": "Debido",
       "allocated": "Imputado"
     },
-    "tenantName": "Nombre del inquilino",
-    "email": "Correo electrónico",
-    "phone": "Teléfono",
     "city": "Ciudad",
     "ownership": {
       "title": "Propiedad",

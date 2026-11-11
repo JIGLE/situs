@@ -35,7 +35,6 @@ import { AuditTrail } from "@/components/shared/audit-trail";
 import { FinancialsView } from "@/components/features/financial/financials-view";
 import { TaxConnectorDashboard } from "@/components/features/financial/tax-connector-dashboard";
 import { AuditTrail as AuditTrailForError } from "@/components/shared/audit-trail";
-import { DraftBanner } from "@/components/ui/multi-step-form";
 import { BankMovementsInbox } from "@/components/features/financial/bank-movements-inbox";
 import { YearlyRentMatrix } from "@/components/features/financial/yearly-rent-matrix";
 import { ReceiptsView } from "@/components/features/financial/receipts-view";
@@ -328,16 +327,5 @@ describe("user-visible copy comes from the catalogue, not from literals", () => 
     expect(screen.getByText(/^1 recibo · 0 por emitir/)).toBeInTheDocument();
     expect(screen.getAllByText("Sem mês de renda").length).toBeGreaterThan(0);
     expect(screen.queryByText(/Receipt #|^Rent$/)).not.toBeInTheDocument();
-  });
-
-  it("offers to restore a form draft in Portuguese", () => {
-    // Every multi-step wizard shows this banner, and it was English in every language.
-    renderWithProviders(<DraftBanner onRestore={vi.fn()} onDiscard={vi.fn()} />, {
-      initialLocale: "pt",
-    });
-
-    expect(screen.getByText("Tem um rascunho por guardar. Quer continuar?")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Descartar" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Continuar" })).toBeInTheDocument();
   });
 });

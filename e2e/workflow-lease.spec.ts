@@ -43,127 +43,84 @@ test.describe("Critical Path: Lease management", () => {
   });
 
   /**
-   * Lease creation is a four-step wizard (Property → Tenant → Terms → Documents), not the flat
-   * form these tests were written against. `MultiStepFormContainer` renders Back / Continue, and
-   * only the last step shows the submit button (`submitText` = "Create Lease"). There is no
-   * Cancel in the footer at all.
-   *
-   * The property and tenant pickers are Radix `Select`s: their triggers expose role=combobox and
-   * are not associated with their `<Label>` via `htmlFor`, so `getByLabel` cannot reach them.
+   * A tenancy is one sheet: property, tenant (typed in, or chosen from the list), rent and term,
+   * with the contract details behind a fold. The property and tenant pickers are Radix `Select`s,
+   * whose triggers expose role=combobox; the property's is the first in the sheet.
    */
-  const openWizard = async (page: import("@playwright/test").Page) => {
-    await page.goto("/leases?view=leases");
+  const openSheet = async (page: import("@playwright/test").Page) => {
+    await page.goto("/leases");
     await expect(page).toHaveURL(/\/leases/);
     await page
-      .getByRole("button", { name: /add lease/i })
+      .getByRole("button", { name: /new tenancy/i })
       .first()
       .click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-
-    // The wizard persists a draft, so a previous run leaves a recovery banner reading "You have
-    // an unsaved draft" — with its own **Continue** button sitting above the footer's. That made
-    // the suite flaky by history: the first run had no draft and advanced, later runs clicked the
-    // banner's Continue, restored the draft and never left step 0. Always start clean.
-    const discardDraft = dialog.getByRole("button", { name: /^discard$/i });
-    if (await discardDraft.count()) {
-      await discardDraft.click();
-      await expect(discardDraft).toHaveCount(0);
-    }
     return dialog;
   };
 
-  /**
-   * Wait for a step to be the only one mounted.
-   *
-   * The wizard animates transitions with AnimatePresence, so immediately after Continue the
-   * outgoing step is still in the DOM. Acting on `.first()` during that window silently targets
-   * the *previous* step — which is how the tenant step ended up re-opening the property picker
-   * and the run never reached Lease Terms. Gate on the step's own heading instead.
-   */
-  const atStep = async (dialog: Locator, title: RegExp) =>
-    expect(dialog.getByText(title).first()).toBeVisible();
-
-  const pickFirstOption = async (page: import("@playwright/test").Page, dialog: Locator) => {
-    // Exactly one Select means the previous step has finished unmounting.
-    await expect(dialog.getByRole("combobox")).toHaveCount(1);
-    const combo = dialog.getByRole("combobox").first();
-    await expect(combo).toBeVisible();
+  const pickOption = async (
+    page: import("@playwright/test").Page,
+    combo: Locator,
+    name?: RegExp,
+  ) => {
     await combo.click();
-    const option = page.getByRole("option").first();
-    await expect(option).toBeVisible();
-    await option.click();
+    const option = name ? page.getByRole("option", { name }) : page.getByRole("option").first();
+    await expect(option.first()).toBeVisible();
+    await option.first().click();
   };
 
-  // `.last()`, not `.first()`: during a transition two footers are briefly mounted, and the draft
-  // banner (if it ever reappears) puts its own Continue *above* the footer. The footer's is
-  // always the last one in DOM order.
-  const continueStep = async (dialog: Locator) =>
-    dialog
-      .getByRole("button", { name: /^continue$/i })
-      .last()
-      .click();
-
-  test("should create a new lease and show it in the list", async ({ page }) => {
+  test("should create a tenant and their lease from one sheet", async ({ page }) => {
     page.on("console", (msg) => {
       if (msg.type() === "error") console.error("Browser error:", msg.text());
     });
 
-    const dialog = await openWizard(page);
-
-    // Step 0 — Property
-    await atStep(dialog, /select property/i);
-    await pickFirstOption(page, dialog);
-    await continueStep(dialog);
-
-    // Step 1 — Tenant
-    await atStep(dialog, /select tenant/i);
-    await pickFirstOption(page, dialog);
-    await continueStep(dialog);
-
-    // Step 2 — Terms
-    await atStep(dialog, /lease terms/i);
-    const today = new Date();
-    const startDate = today.toISOString().split("T")[0];
-    const endDate = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate())
-      .toISOString()
-      .split("T")[0];
-    await dialog.getByLabel(/start date/i).fill(startDate);
-    await dialog.getByLabel(/end date/i).fill(endDate);
+    const dialog = await openSheet(page);
+    await pickOption(page, dialog.getByRole("combobox").first());
+    await dialog.getByPlaceholder(/full name/i).fill(`Sheet Tenant ${Date.now()}`);
     await dialog.getByLabel(/monthly rent/i).fill("1200");
-    await continueStep(dialog);
 
-    // Step 3 — Documents; nothing is required here, so submit.
-    const responsePromise = page.waitForResponse(
+    const tenantPost = page.waitForResponse(
+      (res) => res.url().includes("/api/tenants") && res.request().method() === "POST",
+    );
+    const leasePost = page.waitForResponse(
       (res) => res.url().includes("/api/leases") && res.request().method() === "POST",
     );
-    await dialog.getByRole("button", { name: /create lease/i }).click();
-    const response = await responsePromise;
+    await dialog.getByRole("button", { name: /create tenancy/i }).click();
 
-    expect([200, 201]).toContain(response.status());
+    expect([200, 201]).toContain((await tenantPost).status());
+    expect([200, 201]).toContain((await leasePost).status());
     await expect(dialog).toBeHidden({ timeout: 10000 });
   });
 
-  test("should not advance past the first step without a property", async ({ page }) => {
-    const dialog = await openWizard(page);
+  test("should start a lease for a tenant already on file", async ({ page }) => {
+    test.skip(!tenantId, "the seed tenant was not created");
+    const dialog = await openSheet(page);
+    await pickOption(page, dialog.getByRole("combobox").first());
+    await dialog.getByRole("button", { name: /choose an existing tenant/i }).click();
+    await pickOption(page, dialog.getByRole("combobox").nth(1), /lease seed tenant/i);
+    await dialog.getByLabel(/monthly rent/i).fill("1200");
 
-    // The old test clicked a submit button that only exists on the last step. Step 0 validates
-    // on Continue: with no property chosen the wizard must stay put. Assert on the combobox
-    // rather than `getByLabel` — the Radix trigger carries no `htmlFor` association.
-    await expect(dialog.getByRole("combobox").first()).toBeVisible();
-    await continueStep(dialog);
-
-    // Still on step 0 — the Property picker is still the visible field, and Continue has not
-    // become the submit button.
-    await expect(dialog.getByRole("button", { name: /^continue$/i })).toBeVisible();
-    await expect(dialog.getByRole("button", { name: /create lease/i })).toHaveCount(0);
+    const leasePost = page.waitForResponse(
+      (res) => res.url().includes("/api/leases") && res.request().method() === "POST",
+    );
+    await dialog.getByRole("button", { name: /create tenancy/i }).click();
+    expect([200, 201]).toContain((await leasePost).status());
+    await expect(dialog).toBeHidden({ timeout: 10000 });
   });
 
-  test("should close the wizard without creating a lease", async ({ page }) => {
-    const dialog = await openWizard(page);
+  test("should say what is missing and save nothing", async ({ page }) => {
+    const dialog = await openSheet(page);
+    await dialog.getByRole("button", { name: /create tenancy/i }).click();
 
-    // The wizard footer has Back/Continue only — no Cancel. Close via the dialog's own control.
-    await dialog.getByRole("button", { name: /close/i }).click();
+    await expect(dialog.getByText("Choose a property.")).toBeVisible();
+    await expect(dialog.getByText("Enter the tenant's name.")).toBeVisible();
+    await expect(dialog).toBeVisible();
+  });
+
+  test("should close the sheet without creating a lease", async ({ page }) => {
+    const dialog = await openSheet(page);
+    await dialog.getByRole("button", { name: /^cancel$/i }).click();
     await expect(dialog).toBeHidden({ timeout: 5000 });
   });
 });

@@ -849,26 +849,11 @@
     "newEndDate": "New End Date",
     "renewalNotes": "Notes for Tenant",
     "pageTitle": "Lease Management",
-    "addLease": "Add Lease",
     "searchPlaceholder": "Search leases by tenant or property name...",
     "pending": "Pending",
     "draft": "Draft",
     "emptyTitle": "Get started with leases",
     "expiringSoon": "{count, plural, one {# lease expiring within 60 days} other {# leases expiring within 60 days}}",
-    "step": {
-      "propertyTitle": "Property Selection",
-      "propertyDescription": "Choose the property for this lease",
-      "tenantTitle": "Tenant Details",
-      "tenantDescription": "Select the tenant",
-      "termsTitle": "Lease Terms",
-      "termsDescription": "Set rental terms and conditions",
-      "notesTitle": "Additional Info",
-      "notesDescription": "Add notes and contract documents",
-      "shortProperty": "Property",
-      "shortTenant": "Tenant",
-      "shortTerms": "Terms",
-      "shortNotes": "Documents"
-    },
     "toast": {
       "created": "Lease created successfully",
       "updated": "Lease updated successfully",
@@ -902,22 +887,12 @@
       "renewalNoticeDays": "Renewal Notice (Days)"
     },
     "selectProperty": {
-      "title": "Select Property",
-      "description": "Choose the property for this lease agreement",
       "placeholder": "Select a property...",
-      "noneAvailable": "No properties available. Create a property first.",
       "noneFound": "No properties found. Create a property first."
     },
     "selectTenant": {
-      "title": "Select Tenant",
-      "description": "Choose the tenant for this lease",
-      "placeholder": "Select a tenant...",
-      "noneAvailable": "No tenants available. Create a tenant first.",
-      "noneFound": "No tenants found. Create a tenant first."
+      "placeholder": "Select a tenant..."
     },
-    "termsStepDescription": "Set rental amounts and lease duration",
-    "docsStepTitle": "Documents & Notes",
-    "docsStepDescription": "Upload contract and add additional information",
     "contractPdf": "Lease Contract (PDF)",
     "maxFileSize": "Maximum file size: {size} MB. PDF format only.",
     "additionalNotes": "Additional Notes",
@@ -943,23 +918,12 @@
     "deleteLease": "Delete Lease",
     "download": "Download",
     "dialogEditTitle": "Edit Lease",
-    "dialogCreateTitle": "Create New Lease",
     "dialogEditDescription": "Update lease agreement details",
-    "dialogCreateDescription": "Follow the steps to create a comprehensive lease agreement",
     "submitUpdate": "Update Lease",
-    "submitCreate": "Create Lease",
-    "propertyRequired": "Property *",
-    "tenantRequired": "Tenant *",
-    "startDateRequired": "Start Date *",
-    "endDateRequired": "End Date *",
-    "monthlyRentRequired": "Monthly Rent ({symbol}) *",
-    "depositRequired": "Security Deposit ({symbol}) *",
     "goToPortfolio": "Go to Portfolio",
-    "goToPeople": "Go to People",
     "choosePdf": "Choose PDF file",
-    "emptyDescription": "To create your first lease, you'll need at least one property and one tenant.",
+    "emptyDescription": "To start a tenancy, add a property first.",
     "createProperty": "Create Portfolio Property",
-    "createPerson": "Create Person",
     "noneFound": "No leases found",
     "adjustFilters": "Try adjusting your search or filters",
     "addFirst": "Add First Lease",
@@ -1026,6 +990,31 @@
       "version": "Contract version",
       "hint": "From the Portal das Finanças or the registration proof. Every receipt issued in Finanças names it.",
       "invalid": "Digits only."
+    },
+    "sheet": {
+      "title": "New tenancy",
+      "description": "Who rents which property, from when, and for how much.",
+      "pickExisting": "Choose an existing tenant",
+      "typeNew": "Add a new tenant instead",
+      "namePlaceholder": "Full name",
+      "email": "Email (optional)",
+      "terms": "Rent and term",
+      "termsHint": "Pre-filled: one year from the 1st of next month, with one month's rent as the deposit. Change anything that differs.",
+      "rent": "Monthly rent ({symbol})",
+      "deposit": "Deposit ({symbol})",
+      "more": "Contract details",
+      "moreHint": "Co-tenants, AT contract number, PDF, notice period and notes. Optional: add them now or later.",
+      "submit": "Create tenancy",
+      "created": "Tenancy created",
+      "error": {
+        "property": "Choose a property.",
+        "tenant": "Choose a tenant.",
+        "name": "Enter the tenant's name.",
+        "email": "Enter a valid email, or leave it blank.",
+        "rent": "Enter the monthly rent.",
+        "endDate": "The end date must be after the start date.",
+        "saveFailed": "The tenancy could not be saved. Try again."
+      }
     }
   },
   "notifications": {
@@ -1134,8 +1123,7 @@
     "allProperties": "All Properties",
     "saving": "Saving...",
     "selectProperty": "Select Property",
-    "selectTenant": "Select Tenant",
-    "draftFound": "You have an unsaved draft. Would you like to continue?"
+    "selectTenant": "Select Tenant"
   },
   "status": {
     "active": "Active",
@@ -1544,14 +1532,12 @@
     },
     "related": "People & contracts",
     "propertyDetails": "Property Details",
-    "monthlyRent": "Monthly Rent",
     "type": "Type",
     "bedrooms": "Bedrooms",
     "bathrooms": "Bathrooms",
     "description": "Description",
     "vacantNotice": "Property is vacant",
     "noRelatedEntities": "No related entities",
-    "createLease": "Create lease",
     "expiresIn": "Expires in {days} day(s)",
     "renew": "Renew →",
     "finance": {
@@ -1561,16 +1547,12 @@
       "collectionRate": "Collection Rate",
       "noData": "No financial data available for this property yet."
     },
-    "addTenant": "Add tenant",
     "month": {
       "subtitle": "Reference month for {property}",
       "status": "Status",
       "due": "Due",
       "allocated": "Allocated"
     },
-    "tenantName": "Tenant name",
-    "email": "Email",
-    "phone": "Phone",
     "city": "City",
     "ownership": {
       "title": "Ownership",
