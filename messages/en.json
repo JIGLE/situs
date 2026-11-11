@@ -67,7 +67,9 @@
       "name": "Building name *",
       "namePlaceholder": "e.g. Edifício Ribeira",
       "submit": "Create building"
-    }
+    },
+    "importFinancas": "Import from Finanças",
+    "importFinancasHint": "caderneta PDFs"
   },
   "settings": {
     "title": "Settings",
@@ -2045,5 +2047,56 @@
     "revokeInvitation": "Invitation withdrawn",
     "signUpSettingChange": "Sign-up setting changed",
     "changeAccountRole": "Account role changed"
+  },
+  "financasImport": {
+    "title": "Import from Finanças",
+    "description": "Properties read from their cadernetas prediais. Check each one before it is created.",
+    "where": "On the Portal das Finanças, open Património Predial, then download each property's caderneta predial as a PDF. You can choose several at once.",
+    "choose": "Choose caderneta PDFs",
+    "addMore": "Add more PDFs",
+    "reading": "Reading…",
+    "include": "Create {name}",
+    "name": "Name",
+    "typeLabel": "Type",
+    "type": {
+      "apartment": "Apartment",
+      "house": "House",
+      "commercial": "Commercial",
+      "other": "Other"
+    },
+    "article": "Article {article}",
+    "fraction": "Fraction {fraction}",
+    "area": "{area} m²",
+    "alreadyHave": "Already in your portfolio as {name}.",
+    "next": "Rent and tenants come next: in New tenancy, fill the sheet in from the contract proof in Finanças.",
+    "create": "{count, plural, =0 {Create properties} one {Create # property} other {Create # properties}}",
+    "created": "{count, plural, one {# property created} other {# properties created}}",
+    "partial": "{created} created. {failed} could not be saved: try again.",
+    "failure": {
+      "notPdf": "this is not a PDF.",
+      "tooLarge": "the file is too large.",
+      "noText": "no text could be read. A scanned copy doesn't work: download the PDF from the Portal.",
+      "notCaderneta": "this doesn't look like a caderneta predial urbana.",
+      "rustica": "rural properties (caderneta rústica) can't be imported yet.",
+      "failed": "the file could not be read. Try again.",
+      "saveFailed": "Could not be saved. Try again."
+    },
+    "tenancy": {
+      "fill": "Fill in from Finanças",
+      "hint": "The contract proof PDF from Arrendamento › Contratos on the Portal",
+      "reading": "Reading the contract…",
+      "failed": "This PDF could not be read as a contract proof. Fill in the sheet by hand.",
+      "filled": "Filled in from contract {number}. Check each field before saving.",
+      "filledNoNumber": "Filled in from the contract proof. Check each field before saving.",
+      "warning": {
+        "property_not_found": "No property has article {article}, fraction {fraction}. Choose it below, or import its caderneta first.",
+        "property_ambiguous": "More than one property has article {article}, fraction {fraction}. Choose the right one below.",
+        "no_tenant": "No tenant was found in the PDF. Enter them below.",
+        "no_rent": "The rent wasn't found. Enter it below.",
+        "rent_not_monthly": "Finanças lists this rent for less than a month. Enter the monthly amount.",
+        "no_start": "The start date wasn't found. Check the term below.",
+        "term_passed": "The term in Finanças ended on {date}. If the contract renewed, set the current end date."
+      }
+    }
   }
 }
