@@ -776,7 +776,7 @@
       "leaseHasHistory": "Hay pagos registrados en este contrato, así que Situs lo conserva en sus registros. Finalice el contrato en lugar de eliminarlo.",
       "leaseHasPayments": "Hay pagos asignados a este contrato, así que el inquilino y el inmueble no pueden cambiar. Finalícelo y cree un contrato nuevo.",
       "receiptAllocated": "El pago de este recibo ya está registrado, así que el importe, la fecha, el inquilino y el tipo no pueden cambiar. Anúlelo y registre el pago de nuevo.",
-      "ownerHasHistory": "Este propietario está vinculado a una propiedad o a distribuciones de ingresos, así que Situs lo conserva en sus registros. Quítelo primero de la propiedad.",
+      "ownerHasHistory": "Este propietario es o ha sido dueño de una propiedad, o tiene distribuciones de ingresos, así que Situs lo conserva: los recibos de esos meses lo nombran.",
       "emailInUse": "Ya tiene un registro con esa dirección de correo. Use otra, o déjela vacía.",
       "lastAdmin": "La instancia necesita un administrador. Convierta primero en administrador a otra persona.",
       "accountExists": "Ese correo ya tiene una cuenta. Cambie su rol en Cuentas.",

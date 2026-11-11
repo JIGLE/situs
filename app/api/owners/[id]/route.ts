@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { handleOptions, requireOwnerAccess } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
+import { CURRENT_SHARES } from "@/lib/services/database/ownership";
 import { assertOwnerHasNoHistory } from "@/lib/services/database/history";
 import { refuseDuplicateEmail } from "@/lib/services/database/unique-email";
 import { blankToNull, normalizeTaxId } from "@/lib/schemas/tax-identity";
@@ -32,7 +33,9 @@ async function idOf(context?: Context): Promise<string> {
 }
 
 // What GET /api/owners returns, so a save answers with the record the list holds.
-const ownerInclude = { properties: { include: { property: true } } } as const;
+const ownerInclude = {
+  properties: { where: CURRENT_SHARES, include: { property: true } },
+} as const;
 
 async function handlePut(request: NextRequest, context?: Context): Promise<Response> {
   const authResult = await requireOwnerAccess(request);

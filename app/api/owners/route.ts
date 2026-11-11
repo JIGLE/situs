@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireOwnerAccess, handleOptions } from "@/lib/services/auth/auth-middleware";
 import { getPrismaClient } from "@/lib/services/database/database";
+import { CURRENT_SHARES } from "@/lib/services/database/ownership";
 import { ownerSchema } from "@/lib/schemas/owner.schema";
 import { blankToNull, normalizeTaxId } from "@/lib/schemas/tax-identity";
 import { refuseDuplicateEmail } from "@/lib/services/database/unique-email";
@@ -22,11 +23,8 @@ async function handleGet(request: NextRequest): Promise<Response> {
     where: { userId: scopeUserId },
     orderBy: { createdAt: "desc" },
     include: {
-      properties: {
-        include: {
-          property: true,
-        },
-      },
+      // The shares in force now; closed ones are history, read by the receipts that name them.
+      properties: { where: CURRENT_SHARES, include: { property: true } },
     },
   });
 

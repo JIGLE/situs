@@ -90,7 +90,7 @@ beforeEach(() => {
     },
   ]);
   prismaMock.propertyOwner.findMany.mockResolvedValue([
-    { propertyId: "property-1", ownerId: "owner-a" },
+    { propertyId: "property-1", ownerId: "owner-a", validFrom: null, validTo: null },
   ]);
   prismaMock.owner.findMany.mockResolvedValue([
     { id: "owner-a", name: "Ana Senhoria", taxIdentificationNumber: "123456789" },
@@ -170,6 +170,39 @@ describe("previewAtReceipts", () => {
         },
       ],
     });
+  });
+
+  it("names the landlords whose shares held on the first day of each month it pays", async () => {
+    // Ana sold to Bruno on 15 September: September's receipt still names Ana, October's Bruno.
+    prismaMock.paymentAllocation.findMany.mockResolvedValue([
+      allocation("rcpt-1", "period-9", 9, 750),
+      allocation("rcpt-1", "period-10", 10, 750),
+    ]);
+    prismaMock.propertyOwner.findMany.mockResolvedValue([
+      {
+        propertyId: "property-1",
+        ownerId: "owner-a",
+        validFrom: null,
+        validTo: new Date("2026-09-15T00:00:00.000Z"),
+      },
+      {
+        propertyId: "property-1",
+        ownerId: "owner-b",
+        validFrom: new Date("2026-09-15T00:00:00.000Z"),
+        validTo: null,
+      },
+    ]);
+    prismaMock.owner.findMany.mockResolvedValue([
+      { id: "owner-a", name: "Ana Senhoria", taxIdentificationNumber: "123456789" },
+      { id: "owner-b", name: "Bruno Comprador", taxIdentificationNumber: "234567891" },
+    ]);
+
+    const { receipts } = await previewAtReceipts(USER, ["rcpt-1"], NOW);
+
+    expect(receipts[0].months.map((month) => month.landlords.map((l) => l.name))).toEqual([
+      ["Ana Senhoria"],
+      ["Bruno Comprador"],
+    ]);
   });
 
   it("reads only the owner's own records, and the people through their own models", async () => {

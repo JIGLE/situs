@@ -16,6 +16,7 @@ import {
   ResourceNotFoundError,
 } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
+import { dayOf, lastChangeOf, type ShareSpan } from "@/lib/services/database/ownership";
 
 /**
  * Assign and unassign owners on a property.
@@ -26,10 +27,30 @@ import { withRateLimit } from "@/lib/utils/rate-limit";
  * looked like a data problem. A cross-reference of all 87 client API calls against the 139
  * implemented routes found this as the only such gap in the app.
  *
+ * Shares are dated (`lib/services/database/ownership.ts`): assigning a different share closes the
+ * owner's current row and opens a new one, and removing an owner closes their row on the day they
+ * stopped owning the property, so who owned it before stays on record.
  */
 
 /** Percentages are floats, so compare with a tolerance rather than exactly — matches the UI. */
 const TOTAL_TOLERANCE = 0.001;
+
+/**
+ * A change takes effect no later than today, and no earlier than the property's last change:
+ * shares are a timeline appended at its end, so the shares in force on any day stay one set.
+ */
+function refuseOutOfOrder(rows: ShareSpan[], day: Date, field: string): void {
+  if (day > dayOf(new Date())) {
+    throw new ValidationError("A change of ownership cannot take effect in the future", field);
+  }
+  const last = lastChangeOf(rows);
+  if (last && day < last) {
+    throw new ValidationError(
+      `This property's ownership last changed on ${last.toISOString().slice(0, 10)}; a new change cannot take effect before it`,
+      field,
+    );
+  }
+}
 
 async function handlePost(request: NextRequest): Promise<Response> {
   if (isMockMode) {
@@ -42,7 +63,7 @@ async function handlePost(request: NextRequest): Promise<Response> {
   const { userId } = authResult;
   const prisma = getPrismaClient();
 
-  const { propertyId, ownerId, ownershipPercentage, role } = await parseJsonBody(
+  const { propertyId, ownerId, ownershipPercentage, role, effectiveFrom } = await parseJsonBody(
     request,
     propertyOwnerSchema,
   );
@@ -57,30 +78,61 @@ async function handlePost(request: NextRequest): Promise<Response> {
   if (!property) throw new ResourceNotFoundError("Property not found");
   if (!owner) throw new ResourceNotFoundError("Owner not found");
 
-  // The client checks this too (property-detail-view.tsx:346), but a client-side check is a
-  // convenience, not a constraint — the sum has to hold regardless of who is calling.
-  // Re-assigning an existing owner replaces their share rather than adding to it, so their
-  // current row is excluded from the total.
-  const existing = await prisma.propertyOwner.findMany({
-    where: { propertyId, ownerId: { not: ownerId } },
-    select: { ownershipPercentage: true },
-  });
-  const othersTotal = existing.reduce((sum, row) => sum + row.ownershipPercentage, 0);
+  const day = dayOf(effectiveFrom ?? new Date());
+  const { assignment, othersTotal } = await prisma.$transaction(async (tx) => {
+    const rows = await tx.propertyOwner.findMany({
+      where: { propertyId },
+      select: {
+        id: true,
+        ownerId: true,
+        ownershipPercentage: true,
+        validFrom: true,
+        validTo: true,
+      },
+    });
+    refuseOutOfOrder(rows, day, "effectiveFrom");
 
-  if (othersTotal + ownershipPercentage > 100 + TOTAL_TOLERANCE) {
-    throw new ValidationError(
-      `Total ownership would be ${(othersTotal + ownershipPercentage).toFixed(1)}%, which exceeds 100%. ` +
-        `${othersTotal.toFixed(1)}% is already assigned.`,
-      "ownershipPercentage",
-    );
-  }
+    // The client checks this too, but a client-side check is a convenience, not a constraint: the
+    // shares in force from `day` have to add up regardless of who is calling. Re-assigning an
+    // owner replaces their share rather than adding to it, so their own row is left out.
+    const current = rows.filter((row) => row.validTo === null);
+    const othersTotal = current
+      .filter((row) => row.ownerId !== ownerId)
+      .reduce((sum, row) => sum + row.ownershipPercentage, 0);
+    if (othersTotal + ownershipPercentage > 100 + TOTAL_TOLERANCE) {
+      throw new ValidationError(
+        `Total ownership would be ${(othersTotal + ownershipPercentage).toFixed(1)}%, which exceeds 100%. ` +
+          `${othersTotal.toFixed(1)}% is already assigned.`,
+        "ownershipPercentage",
+      );
+    }
 
-  // @@unique([propertyId, ownerId]) makes this idempotent: assigning an owner who is already on
-  // the property updates their share instead of failing on the constraint.
-  const assignment = await prisma.propertyOwner.upsert({
-    where: { propertyId_ownerId: { propertyId, ownerId } },
-    create: { propertyId, ownerId, ownershipPercentage, ...(role ? { role } : {}) },
-    update: { ownershipPercentage, ...(role ? { role } : {}) },
+    const mine = current.find((row) => row.ownerId === ownerId);
+    // The same share, or a share that starts on the same day: a correction, made in place.
+    if (
+      mine &&
+      (Math.abs(mine.ownershipPercentage - ownershipPercentage) < TOTAL_TOLERANCE ||
+        (mine.validFrom !== null && mine.validFrom.getTime() === day.getTime()))
+    ) {
+      const assignment = await tx.propertyOwner.update({
+        where: { id: mine.id },
+        data: { ownershipPercentage, ...(role ? { role } : {}) },
+      });
+      return { assignment, othersTotal };
+    }
+    // A new share: the old one, if any, ends the day this one starts.
+    if (mine) await tx.propertyOwner.update({ where: { id: mine.id }, data: { validTo: day } });
+    const assignment = await tx.propertyOwner.create({
+      data: {
+        propertyId,
+        ownerId,
+        ownershipPercentage,
+        // An owner's first share on a property, given no date, holds from the beginning.
+        validFrom: mine || effectiveFrom ? day : null,
+        ...(role ? { role } : {}),
+      },
+    });
+    return { assignment, othersTotal };
   });
 
   await logAudit({
@@ -94,6 +146,7 @@ async function handlePost(request: NextRequest): Promise<Response> {
       ownerName: owner.name,
       ownershipPercentage,
       totalAfter: othersTotal + ownershipPercentage,
+      effectiveFrom: assignment.validFrom?.toISOString().slice(0, 10) ?? null,
     },
   });
 
@@ -112,10 +165,11 @@ async function handleDelete(request: NextRequest): Promise<Response> {
   const prisma = getPrismaClient();
 
   const url = new URL(request.url);
-  const { propertyId, ownerId } = parseBody(
+  const { propertyId, ownerId, effectiveTo } = parseBody(
     {
       propertyId: url.searchParams.get("propertyId") ?? undefined,
       ownerId: url.searchParams.get("ownerId") ?? undefined,
+      effectiveTo: url.searchParams.get("effectiveTo") ?? undefined,
     },
     propertyOwnerDeleteSchema,
   );
@@ -126,23 +180,56 @@ async function handleDelete(request: NextRequest): Promise<Response> {
   });
   if (!property) throw new ResourceNotFoundError("Property not found");
 
-  const assignment = await prisma.propertyOwner.findUnique({
-    where: { propertyId_ownerId: { propertyId, ownerId } },
-    select: { id: true, ownershipPercentage: true },
-  });
-  if (!assignment) throw new ResourceNotFoundError("That owner is not assigned to this property");
+  const day = dayOf(effectiveTo ?? new Date());
+  const { assignment, removed } = await prisma.$transaction(async (tx) => {
+    const rows = await tx.propertyOwner.findMany({
+      where: { propertyId },
+      select: {
+        id: true,
+        ownerId: true,
+        ownershipPercentage: true,
+        validFrom: true,
+        validTo: true,
+        createdAt: true,
+      },
+    });
+    const assignment = rows.find((row) => row.ownerId === ownerId && row.validTo === null);
+    if (!assignment) {
+      throw new ResourceNotFoundError("That owner is not assigned to this property");
+    }
+    refuseOutOfOrder(rows, day, "effectiveTo");
 
-  await prisma.propertyOwner.delete({ where: { id: assignment.id } });
+    // A share that would end the day it began never held: it goes, and so does one entered today
+    // and taken off today, a mistake rather than history. Any other ends on `day`, and stays as
+    // the record of who owned the property until then.
+    const began = assignment.validFrom ?? dayOf(assignment.createdAt);
+    if (began.getTime() === day.getTime()) {
+      await tx.propertyOwner.delete({ where: { id: assignment.id } });
+      return { assignment, removed: true };
+    }
+    await tx.propertyOwner.update({ where: { id: assignment.id }, data: { validTo: day } });
+    return { assignment, removed: false };
+  });
 
   await logAudit({
     userId,
     action: "REMOVE_PROPERTY_OWNER",
     resourceType: "PropertyOwner",
     resourceId: assignment.id,
-    details: { propertyId, ownerId, ownershipPercentage: assignment.ownershipPercentage },
+    details: {
+      propertyId,
+      ownerId,
+      ownershipPercentage: assignment.ownershipPercentage,
+      endedOn: removed ? null : day.toISOString().slice(0, 10),
+    },
   });
 
-  return createSuccessResponse({ propertyId, ownerId, removed: true });
+  return createSuccessResponse({
+    propertyId,
+    ownerId,
+    removed: true,
+    endedOn: removed ? null : day.toISOString().slice(0, 10),
+  });
 }
 
 export const POST = withErrorHandler(withRateLimit(handlePost));

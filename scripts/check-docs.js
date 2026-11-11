@@ -46,6 +46,15 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // Phase 2 of the November 2026 audit: ownership shares are dated, so an owner taken off a
+    // property keeps a closed share, and the receipts for the months they owned still name them.
+    pattern: /detach them from the property first/,
+    retired: "2026-11-11 (dated ownership shares)",
+    because:
+      "removing an owner from a property closes their share instead of deleting it, so an owner " +
+      "who ever held one is kept (CLAUDE.md › Ownership shares are dated)",
+  },
+  {
     // Phase 2 of the November 2026 audit: the AT webservice is the one fiscal-receipt path, so the
     // Modelo 44 RentReceipt, its compliance route, the simulated submit/poll and their guard went.
     pattern:

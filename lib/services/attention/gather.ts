@@ -11,6 +11,7 @@
  */
 
 import { getPrismaClient } from "@/lib/services/database/database";
+import { CURRENT_SHARES } from "@/lib/services/database/ownership";
 import { readablePII } from "@/lib/utils/pii-encryption";
 import { attentionCounts, attentionItems, type Attention, type AttentionLease } from "./rules";
 
@@ -33,7 +34,7 @@ export async function loadAttentionLeases(userId: string): Promise<AttentionLeas
       select: { id: true, name: true },
     }),
     prisma.propertyOwner.findMany({
-      where: { propertyId: { in: propertyIds }, property: { userId } },
+      where: { propertyId: { in: propertyIds }, property: { userId }, ...CURRENT_SHARES },
       select: { propertyId: true, ownerId: true },
       orderBy: { createdAt: "asc" },
     }),
