@@ -800,7 +800,8 @@
       "serverError": "O servidor teve um problema. Tente novamente dentro de momentos.",
       "securityTokenExpired": "O seu token de segurança expirou. Atualize a página e tente novamente.",
       "receiptTransitionNotAllowed": "Este recibo já não está numa fase que o permita. Atualize a lista e tente de novo.",
-      "receiptFilingUnavailable": "O Situs ainda não comunica recibos às Finanças. Emita este no Portal das Finanças."
+      "receiptFilingUnavailable": "O Situs ainda não comunica recibos às Finanças. Emita este no Portal das Finanças.",
+      "receiptNotPaid": "Um recibo de renda declara que a renda foi recebida. Marque este como pago antes de o emitir."
     }
   },
   "payments": {

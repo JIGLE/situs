@@ -127,6 +127,9 @@ e2e/                    # Playwright E2E tests
   themselves (`app/api/auth/csrf-check.test.ts` names a state-changing handler there that does not).
 - **Reference-month rent ledger**: `RentPeriod` is one row per lease per reference month; its
   `status` is recomputed in the same transaction as every allocation write and never hand-set.
+  The column is not a clock (a month nobody paid keeps `upcoming` past its due date), so a month's
+  status is read through `periodStatusAt` (`lib/services/allocation/rent-matrix.ts`), never off the
+  column; `waived` is the one stored decision and is in the `RentPeriodStatus` union.
   Waterfall invariant: fill the oldest not-fully-allocated period first
   (`lib/services/allocation/engine.ts`, pure). Only an `active` lease has months generated, and only
   a `paid` receipt is allocated, inside the transaction that writes it. A lease edit runs
@@ -207,9 +210,11 @@ e2e/                    # Playwright E2E tests
   marks a connection `expired` on `ConsentExpiredError`, conditionally, so it cannot overwrite a
   disconnect or a renewal. `BankConnection.provider` is `psd2_<key>`
   for a real bank and `manual`/`csv` otherwise — never offer a sync to the latter.
-- **Receipt lifecycle**: `Receipt.status` is the money state (paid|pending); `Receipt.lifecycle` is
-  the document state machine (`lib/services/receipts/lifecycle.ts`, pure): draft → review →
-  emitted → submitted → accepted/rejected (rejected → review). Situs files nothing with Finanças
+- **Receipt lifecycle**: `Receipt.status` is the money state: `paid` means the rent arrived and is
+  on the ledger, `pending` that it is still expected. A receipt marked paid after it was created is
+  allocated then (`PUT /api/receipts/[id]`), as one created paid is, and a pending receipt cannot
+  be issued (409 `receipt_not_paid`). `Receipt.lifecycle` is the document state machine
+  (`lib/services/receipts/lifecycle.ts`, pure): draft → review → emitted → submitted → accepted/rejected (rejected → review). Situs files nothing with Finanças
   yet, so `transitionReceipt` refuses `submitted` and `accepted` (409 `receipt_filing_unavailable`):
   the owner issues the recibo on the Portal and marks the receipt emitted. Voiding is allowed from
   draft, review and emitted only. Reaching emitted/accepted archives a PDF `Document`; voiding
@@ -239,8 +244,8 @@ e2e/                    # Playwright E2E tests
   OUTSTANDING balance, so a part-paid month is chased for its balance; `rent_receipt_due` comes
   from a non-reversed `PaymentAllocation` and clears once that payment's receipt is issued
   (emitted or beyond).
-  `paid`/`paid_late`/`waived` periods are never chased — `waived` is missing from the
-  `RentPeriodStatus` union, so it is listed explicitly rather than derived from that type.
+  `paid`/`paid_late`/`waived` periods are never chased: those are what the stored column gets
+  right, and the queries take the date from `dueDate`.
 - **What a receipt still needs from the owner**: `lib/services/attention/`. The rules (`rules.ts`,
   pure) ask `receiptBlockers`' own checks, exported from `lib/tax/at/receipt-request.ts`, so the
   list and the receipt review cannot disagree about what is valid. `gather.ts` reads the active

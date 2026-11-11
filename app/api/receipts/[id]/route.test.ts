@@ -22,7 +22,7 @@ const { prismaMock, allocation } = vi.hoisted(() => ({
     property: { findFirst: vi.fn() },
     $transaction: vi.fn(),
   },
-  allocation: { reverseAllocationsForReceipt: vi.fn() },
+  allocation: { reverseAllocationsForReceipt: vi.fn(), allocateReceipt: vi.fn() },
 }));
 
 vi.mock("@/lib/services/auth/auth-middleware", () => ({
@@ -105,6 +105,22 @@ describe("PUT /api/receipts/[id]", () => {
 
     expect(res.status).toBe(200);
     expect(prismaMock.receipt.update.mock.calls[0][0].data.status).toBeUndefined();
+  });
+
+  // "paid" means the money is on the ledger. A receipt created pending and marked paid later read
+  // "paid" while the months it paid read unpaid: only creation ran the waterfall.
+  it("allocates a pending receipt once it is marked paid, and only then", async () => {
+    expect((await put({ status: "paid" })).status).toBe(200);
+    expect(allocation.allocateReceipt).toHaveBeenCalledWith("rec-1");
+
+    allocation.allocateReceipt.mockClear();
+    await put({ description: "Renda de março" });
+    expect(allocation.allocateReceipt).not.toHaveBeenCalled();
+  });
+
+  it("keeps the edit when the allocation fails, as creation does", async () => {
+    allocation.allocateReceipt.mockRejectedValue(new Error("no single lease"));
+    expect((await put({ status: "paid" })).status).toBe(200);
   });
 
   // The months a receipt paid were written from its amount, date, tenant and property. Editing

@@ -161,13 +161,21 @@ export async function buildLeaseCandidates(userId: string): Promise<LeaseCandida
     ibansByLease.get(leaseId)!.add(txn.counterpartyIbanHash);
   }
 
+  // A month part paid, by its figures: the stored status read "partially_paid" only when the part
+  // payment landed before the due date, and "overdue" when it landed after, which hid the balance.
   const partials = await prisma.rentPeriod.findMany({
-    where: { userId, status: "partially_paid", leaseId: { in: leases.map((l) => l.id) } },
+    where: {
+      userId,
+      status: { not: "waived" },
+      allocatedAmount: { gt: EPSILON },
+      leaseId: { in: leases.map((l) => l.id) },
+    },
     orderBy: [{ year: "asc" }, { month: "asc" }],
     select: { leaseId: true, dueAmount: true, allocatedAmount: true },
   });
   const remainderByLease = new Map<string, number>();
   for (const p of partials) {
+    if (p.allocatedAmount >= p.dueAmount - EPSILON) continue;
     if (!remainderByLease.has(p.leaseId)) {
       remainderByLease.set(p.leaseId, Math.round((p.dueAmount - p.allocatedAmount) * 100) / 100);
     }

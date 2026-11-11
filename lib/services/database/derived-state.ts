@@ -14,7 +14,7 @@
 
 import { deriveTenantStatus } from "@/lib/services/allocation/engine";
 import { periodStatusAt } from "@/lib/services/allocation/rent-matrix";
-import type { RentPeriodStatus, TenantPaymentStatus } from "@/lib/services/allocation/types";
+import type { TenantPaymentStatus } from "@/lib/services/allocation/types";
 import { getPrismaClient } from "./database";
 
 export interface LeaseFacts {
@@ -56,9 +56,7 @@ export function currentLeaseOf(leases: LeaseFacts[]): LeaseFacts | undefined {
 /** A tenant's payment status from their rent months as of `now`; null when they have none. */
 export function paymentStatusAt(periods: PeriodFacts[], now: Date): TenantPaymentStatus | null {
   if (periods.length === 0) return null;
-  return deriveTenantStatus(
-    periods.map((period) => periodStatusAt(period, now) as RentPeriodStatus),
-  );
+  return deriveTenantStatus(periods.map((period) => periodStatusAt(period, now)));
 }
 
 /** A property is occupied while an active lease on it has started. */

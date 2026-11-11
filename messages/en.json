@@ -800,7 +800,8 @@
       "serverError": "The server had a problem. Try again in a moment.",
       "securityTokenExpired": "Your security token expired. Refresh the page and try again.",
       "receiptTransitionNotAllowed": "This receipt is no longer at a stage that allows this. Refresh the list and try again.",
-      "receiptFilingUnavailable": "Situs can't file receipts with Finanças yet. Issue this one on the Portal das Finanças."
+      "receiptFilingUnavailable": "Situs can't file receipts with Finanças yet. Issue this one on the Portal das Finanças.",
+      "receiptNotPaid": "A rent receipt says the rent was received. Mark this one paid before you issue it."
     }
   },
   "payments": {
