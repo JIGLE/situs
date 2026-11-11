@@ -46,6 +46,15 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // Phase 2 of the November 2026 audit: `waived` joined the RentPeriodStatus union, and every
+    // reader takes a month's status from periodStatusAt rather than the stored column.
+    pattern: /`waived` is missing from the|missing from the\s+`RentPeriodStatus` union/,
+    retired: "2026-11-11 (one meaning for rent-month status)",
+    because:
+      "`waived` is in the RentPeriodStatus union (lib/services/allocation/types.ts), and a month's " +
+      "status is read through periodStatusAt (CLAUDE.md › Reference-month rent ledger)",
+  },
+  {
     // Phase 2 of the November 2026 audit: ownership shares are dated, so an owner taken off a
     // property keeps a closed share, and the receipts for the months they owned still name them.
     pattern: /detach them from the property first/,

@@ -800,7 +800,8 @@
       "serverError": "El servidor ha tenido un problema. Inténtelo de nuevo en unos momentos.",
       "securityTokenExpired": "Su token de seguridad ha caducado. Actualice la página e inténtelo de nuevo.",
       "receiptTransitionNotAllowed": "Este recibo ya no está en una fase que lo permita. Actualice la lista e inténtelo de nuevo.",
-      "receiptFilingUnavailable": "Situs aún no comunica recibos a Finanças. Emita este en el Portal das Finanças."
+      "receiptFilingUnavailable": "Situs aún no comunica recibos a Finanças. Emita este en el Portal das Finanças.",
+      "receiptNotPaid": "Un recibo de renta declara que la renta se ha cobrado. Márquelo como pagado antes de emitirlo."
     }
   },
   "payments": {

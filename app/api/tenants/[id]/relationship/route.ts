@@ -8,6 +8,7 @@ import {
 } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { getPrismaClient } from "@/lib/services/database/database";
+import { periodStatusAt } from "@/lib/services/allocation/rent-matrix";
 
 export const runtime = "nodejs";
 
@@ -57,15 +58,22 @@ async function handleGet(
       year: true,
       month: true,
       status: true,
+      dueDate: true,
       dueAmount: true,
       allocatedAmount: true,
+      paidAt: true,
     },
   });
+  // A month's status as of now: the stored column does not know a due date passed.
+  const now = new Date();
   const currentPeriod =
-    periods.find((p) => p.allocatedAmount < p.dueAmount - EPSILON) ?? periods.at(-1) ?? null;
-  const overdueCount = periods.filter(
-    (p) => p.status === "overdue" || p.status === "paid_late",
-  ).length;
+    periods.find((p) => p.status !== "waived" && p.allocatedAmount < p.dueAmount - EPSILON) ??
+    periods.at(-1) ??
+    null;
+  const overdueCount = periods.filter((p) => {
+    const status = periodStatusAt(p, now);
+    return status === "overdue" || status === "paid_late";
+  }).length;
 
   const receipts = await prisma.receipt.findMany({
     where: { tenantId, userId: scopeUserId },
@@ -92,7 +100,11 @@ async function handleGet(
       total: periods.length,
       overdue: overdueCount,
       current: currentPeriod
-        ? { year: currentPeriod.year, month: currentPeriod.month, status: currentPeriod.status }
+        ? {
+            year: currentPeriod.year,
+            month: currentPeriod.month,
+            status: periodStatusAt(currentPeriod, now),
+          }
         : null,
     },
     bankMovements: {

@@ -35,6 +35,7 @@
  */
 
 import { getPrismaClient } from "@/lib/services/database/database";
+import type { RentPeriodStatus } from "@/lib/services/allocation/types";
 import { logger } from "@/lib/utils/logger";
 import { MONEY_EPSILON } from "@/lib/utils/money";
 import { sendReminderEmail, resetReminderEmailCache } from "./reminder-email";
@@ -45,15 +46,12 @@ const ISSUED_LIFECYCLES: ReadonlySet<string> = new Set(["emitted", "submitted", 
 const log = logger.child("notification-automation");
 
 /**
- * RentPeriod statuses meaning nothing more is owed, so no payment alert applies.
- *
- * `waived` is in the schema's status comment and rendered by the rent matrix and the
- * property year strip, but missing from the `RentPeriodStatus` union in
- * lib/services/allocation/types.ts. Leaving it out here would chase a landlord for rent
- * they had deliberately written off, so it is listed explicitly rather than derived
- * from that type.
+ * RentPeriod statuses meaning nothing more is owed, so no payment alert applies. These are the
+ * statuses the stored column gets right: it is rewritten whenever money is allocated or reversed,
+ * and `waived` is a decision. What it cannot know is the date, so the queries below take the
+ * due date from `dueDate` and never from the column.
  */
-const SETTLED_PERIOD_STATUSES = ["paid", "paid_late", "waived"];
+const SETTLED_PERIOD_STATUSES: RentPeriodStatus[] = ["paid", "paid_late", "waived"];
 
 /** Outstanding balance on a period, guarding against float drift on exact payments. */
 function outstanding(period: { dueAmount: number; allocatedAmount: number }): number {

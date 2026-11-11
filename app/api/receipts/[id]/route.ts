@@ -10,6 +10,8 @@ import { ReceiptFiledError, receiptService } from "@/lib/services/database/recei
 import { sanitizeForDatabase, sanitizeNumber } from "@/lib/utils/sanitize";
 import { z } from "zod";
 import { updateReceiptSchema } from "@/lib/schemas/receipt.schema";
+import { allocateReceipt } from "@/lib/services/allocation/service";
+import { logger } from "@/lib/utils/logger";
 
 // GET /api/receipts/[id] - Get a specific receipt
 async function handleGet(
@@ -80,6 +82,17 @@ async function handlePut(
     const validatedData = updateReceiptSchema.parse(sanitizedBody);
 
     const receipt = await receiptService.update(userId, id, validatedData);
+
+    // "paid" means the money arrived and is in the ledger. A receipt recorded as expected and
+    // marked paid later is allocated now, as one created paid is; before, it read "paid" while
+    // the months it paid still read unpaid. Best effort, as at creation, and idempotent.
+    if (existingReceipt.status !== "paid" && receipt.status === "paid") {
+      try {
+        await allocateReceipt(receipt.id);
+      } catch (allocErr) {
+        logger.error("Receipt allocation failed", allocErr, { receiptId: receipt.id });
+      }
+    }
     return createSuccessResponse(receipt);
   } catch (error) {
     if (error instanceof z.ZodError) {
