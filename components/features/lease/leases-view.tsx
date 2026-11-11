@@ -591,7 +591,7 @@ export function LeasesView(): React.ReactElement {
         />
         <button
           type="button"
-          className="min-w-0 flex-1 text-left"
+          className="min-h-11 min-w-0 flex-1 text-left"
           onClick={() => openLeaseOverlay(lease.id)}
         >
           <p className="truncate text-sm font-medium text-[var(--color-foreground)]">
