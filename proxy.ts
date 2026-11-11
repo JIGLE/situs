@@ -286,9 +286,21 @@ export async function proxy(request: NextRequest) {
     seedCsrfCookie = !request.cookies.get("csrf-token")?.value;
   }
 
-  // Preserve canonical financial tab routes used by the current UI.
+  // Preserve the Finance tabs the page reads: its four (Ledger, Movements, Expenses, Reports) and
+  // the four names they replaced, which the page itself reads as the tab each became
+  // (`financials-container.tsx`). `expenses` was a legacy alias for the tax tab until Expenses
+  // became a tab of its own; mapped here, it sent every Expenses link to Reports.
   const isFinancialsPath = appPath === "/financials";
-  const canonicalFinancialTabs = new Set(["receipts", "rent-matrix", "bank", "tax"]);
+  const canonicalFinancialTabs = new Set([
+    "ledger",
+    "movements",
+    "expenses",
+    "reports",
+    "receipts",
+    "rent-matrix",
+    "bank",
+    "tax",
+  ]);
 
   // Handle old tab-based URL redirects (backward compatibility)
   const tab = searchParams.get("tab");
@@ -301,14 +313,14 @@ export async function proxy(request: NextRequest) {
       tenants: "/people",
       leases: "/leases",
       financials: "/financials",
-      receipts: { path: "/financials", financialTab: "receipts" },
-      expenses: { path: "/financials", financialTab: "tax" },
-      invoices: { path: "/financials", financialTab: "receipts" },
-      "payment-matrix": { path: "/financials", financialTab: "receipts" },
+      receipts: { path: "/financials", financialTab: "reports" },
+      expenses: { path: "/financials", financialTab: "expenses" },
+      invoices: { path: "/financials", financialTab: "reports" },
+      "payment-matrix": { path: "/financials", financialTab: "reports" },
       // The receipt-based "Due & overdue" tab, replaced by the ledger's rent matrix.
-      queue: { path: "/financials", financialTab: "rent-matrix" },
+      queue: { path: "/financials", financialTab: "ledger" },
       // "Ocupação e renda", folded into the rent matrix.
-      "rent-roll": { path: "/financials", financialTab: "rent-matrix" },
+      "rent-roll": { path: "/financials", financialTab: "ledger" },
       owners: "/owners",
       settings: "/settings",
       profile: "/settings/profile",
@@ -336,10 +348,10 @@ export async function proxy(request: NextRequest) {
   const subtab = searchParams.get("subtab");
   if (subtab && appPath.startsWith("/financials")) {
     const subtabRouteMap: Record<string, string> = {
-      receipts: "receipts",
-      expenses: "tax",
-      invoices: "receipts",
-      "payment-matrix": "receipts",
+      receipts: "reports",
+      expenses: "expenses",
+      invoices: "reports",
+      "payment-matrix": "reports",
     };
 
     const financialTab = subtabRouteMap[subtab];

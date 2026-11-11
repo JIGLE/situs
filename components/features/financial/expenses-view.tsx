@@ -97,8 +97,10 @@ export function ExpensesView() {
           {shown.map((expense) => (
             <li key={expense.id} className="flex items-center justify-between gap-3 px-4 py-3">
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{categoryLabel(expense.category)}</p>
-                <p className="truncate text-xs text-[var(--color-muted-foreground)]">
+                {/* Wraps rather than truncates: at phone width the property, date and note do not
+                    fit on one line, and an ellipsis hides the part that tells two costs apart. */}
+                <p className="text-sm font-medium break-words">{categoryLabel(expense.category)}</p>
+                <p className="text-xs break-words text-[var(--color-muted-foreground)]">
                   {expense.propertyName ?? t("unknownProperty")} ·{" "}
                   {formatDate(expense.date, locale)}
                   {expense.description ? ` · ${expense.description}` : ""}

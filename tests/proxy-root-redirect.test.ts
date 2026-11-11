@@ -54,7 +54,7 @@ describe("proxy: the root", { timeout: 30_000 }, () => {
 
     expect(res.status).toBe(301);
     expect(location(res).pathname).toBe("/financials");
-    expect(location(res).searchParams.get("tab")).toBe("receipts");
+    expect(location(res).searchParams.get("tab")).toBe("reports");
   });
 
   // `/pt` is the root in Portuguese. It keeps the 308 that writes its language to the cookie,

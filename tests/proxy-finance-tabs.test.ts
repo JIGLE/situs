@@ -3,6 +3,9 @@
  * A Finance tab that was removed or folded into another keeps its links working: the proxy sends
  * each to the tab that holds its content now, and lets the live tabs through untouched.
  *
+ * Finance was regrouped into Ledger, Movements, Expenses and Reports. `expenses` had been an alias
+ * for the old tax tab, so the proxy sent every link to the new Expenses tab on to Reports.
+ *
  * "Ocupação e renda" (`?tab=rent-roll`) was folded into the rent matrix. Listed as a live tab, it
  * passed through, and the page showed the matrix under an address naming a tab that no longer
  * exists.
@@ -38,13 +41,17 @@ describe("proxy: Finance tabs", { timeout: 30_000 }, () => {
 
     expect(res.status).toBe(301);
     expect(location(res).pathname).toBe("/financials");
-    expect(location(res).searchParams.get("tab")).toBe("rent-matrix");
+    expect(location(res).searchParams.get("tab")).toBe("ledger");
     expect(location(res).searchParams.get("month")).toBe("lease-1:2026-08");
   });
 
-  it.each(["receipts", "rent-matrix", "bank", "tax"])("lets the %s tab through", async (tab) => {
-    const res = await run(`/financials?tab=${tab}`, await signedInHeaders());
+  // Finance's four tabs, and the four names they replaced, which the page reads itself.
+  it.each(["ledger", "movements", "expenses", "reports", "receipts", "rent-matrix", "bank", "tax"])(
+    "lets the %s tab through",
+    async (tab) => {
+      const res = await run(`/financials?tab=${tab}`, await signedInHeaders());
 
-    expect(res.headers.get("location")).toBeNull();
-  });
+      expect(res.headers.get("location")).toBeNull();
+    },
+  );
 });

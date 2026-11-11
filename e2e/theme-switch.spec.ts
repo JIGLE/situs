@@ -1,4 +1,5 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
+import { DARK_THEME_COLOR, LIGHT_THEME_COLOR } from "../lib/theme/boot-script";
 
 /**
  * The theme a device chose is drawn by the server, and a signed-out person can change it.
@@ -7,8 +8,9 @@ import { test, expect, type BrowserContext, type Page } from "@playwright/test";
  * (Settings is behind the sign-in, and the provider was not even mounted there), and the page's
  * colour depended on an inline script alone. Each test here is one way that failed.
  */
-const DARK = "#0b110d";
-const LIGHT = "#f6f0e4";
+// Read from where the app draws them: a literal here went stale when the light canvas changed.
+const DARK = DARK_THEME_COLOR;
+const LIGHT = LIGHT_THEME_COLOR;
 
 const base = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000";
 const setCookie = (context: BrowserContext, value: string) =>
