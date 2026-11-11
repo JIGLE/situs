@@ -21,7 +21,7 @@ export class HasHistoryError extends ConflictError {
   constructor(entity: HistoryEntity) {
     super(
       entity === "owner"
-        ? "This owner is a landlord of a property or has income shares, so it is kept"
+        ? "This owner is or was a landlord of a property or has income shares, so it is kept"
         : `This ${entity} has lease or payment history, so it is kept`,
       `${entity}_has_history`,
     );
@@ -77,10 +77,11 @@ export async function assertLeaseHasNoHistory(userId: string, leaseId: string): 
 }
 
 /**
- * The properties it is a landlord of, and the income distributions it has a share in. Both are
- * `onDelete: Cascade` from Owner, so deleting it would take the landlord off every receipt for
- * those properties and its share out of every distribution already made. Detaching it from its
- * properties first is the way to remove one.
+ * The properties it is or was a landlord of, and the income distributions it has a share in. Both
+ * are `onDelete: Cascade` from Owner, so deleting it would take the landlord off every receipt for
+ * those properties, the months it owned them included, and its share out of every distribution
+ * already made. A share ended is history too (`ownership.ts`); only one entered by mistake and
+ * removed the same day leaves no row, and so leaves the owner free to go.
  */
 export async function assertOwnerHasNoHistory(userId: string, ownerId: string): Promise<void> {
   const prisma = getPrismaClient();

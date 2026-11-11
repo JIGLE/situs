@@ -13,6 +13,7 @@
  */
 
 import { getPrismaClient } from "@/lib/services/database/database";
+import { isInForceOn } from "@/lib/services/database/ownership";
 import { partiesByLease } from "@/lib/services/database/lease-parties";
 import { logAudit } from "@/lib/services/audit-log";
 import { emitirRecibo } from "@/lib/tax/at/client";
@@ -115,7 +116,7 @@ async function gather(
   const propertyIds = unique(leases.map((lease) => lease.propertyId));
   const shares = await prisma.propertyOwner.findMany({
     where: { propertyId: { in: propertyIds }, property: { userId } },
-    select: { propertyId: true, ownerId: true },
+    select: { propertyId: true, ownerId: true, validFrom: true, validTo: true },
     orderBy: { createdAt: "asc" },
   });
   const [owners, tenants, parties] = await Promise.all([
@@ -134,9 +135,15 @@ async function gather(
   const ownerById = new Map(owners.map((owner) => [owner.id, owner]));
   const tenantById = new Map(tenants.map((tenant) => [tenant.id, tenant]));
 
-  const landlordsOf = (propertyId: string): AtLandlord[] =>
+  // A month's receipt names the landlords whose shares were in force on its first day, so a sale
+  // in June leaves March's receipt naming March's owners.
+  const landlordsOf = (propertyId: string, year: number, month: number): AtLandlord[] =>
     shares
-      .filter((share) => share.propertyId === propertyId)
+      .filter(
+        (share) =>
+          share.propertyId === propertyId &&
+          isInForceOn(share, new Date(Date.UTC(year, month - 1, 1))),
+      )
       .flatMap((share) => {
         const owner = ownerById.get(share.ownerId);
         return owner ? [{ name: owner.name, nif: readablePII(owner.taxIdentificationNumber) }] : [];
@@ -189,7 +196,7 @@ async function gather(
         const input: AtReceiptInput = {
           contractNumber: lease?.atContractNumber ?? null,
           contractVersion: lease?.atContractVersion ?? null,
-          landlords: lease ? landlordsOf(lease.propertyId) : [],
+          landlords: lease ? landlordsOf(lease.propertyId, period.year, period.month) : [],
           tenants: lease ? tenantsOf(lease) : [],
           year: period.year,
           month: period.month,

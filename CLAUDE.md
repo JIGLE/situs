@@ -151,8 +151,15 @@ e2e/                    # Playwright E2E tests
   cascades from it in the schema (`lib/services/database/history.ts`). The refusal is a
   `ConflictError`: a 409 whose `reason` `apiFetch` keeps and `useApiError` turns into a sentence. A
   lease with nothing paid against it can still be deleted; a tenancy otherwise stops by ending its
-  lease. An owner who is still a landlord of a property, or has income shares, is kept the same
-  way (`owner_has_history`): detach them from the property first.
+  lease. An owner who is or was a landlord of a property, or has income shares, is kept the same
+  way (`owner_has_history`), since a receipt for a month they owned names them.
+- **Ownership shares are dated** (`lib/services/database/ownership.ts`): a `PropertyOwner` row holds
+  from `validFrom` (NULL: from the beginning) up to, not including, `validTo` (NULL: still in force).
+  `/api/property-owners` appends to the end of a property's timeline, never in the future nor
+  before its last change, so the rows with `validTo` NULL are today's shares and the 100% check
+  adds them up. A new share closes the old row and opens one; removing an owner closes their row.
+  A same-day change corrects the row in place. Screens read the current rows (`CURRENT_SHARES`);
+  an AT receipt names the landlords in force on the first day of the month it pays (`isInForceOn`).
 - **Optional contacts**: `Tenant.email` and `phone`, `Owner.email`, `Property.bedrooms` and
   `bathrooms` are nullable, since Finanças names a person by NIF and name and gives a property no
   rooms. A blank is NULL, never `""` (`blankToNull`, `lib/schemas/tax-identity.ts`; undefined leaves a

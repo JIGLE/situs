@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a date like 2026-03-01");
+
 /**
  * Ownership links between a Property and an Owner (the `PropertyOwner` join model).
  *
@@ -15,12 +17,18 @@ export const propertyOwnerSchema = z.object({
     .gt(0, "Ownership percentage must be greater than 0")
     .lte(100, "Ownership percentage cannot exceed 100"),
   role: z.enum(["MANAGING", "REGULAR"]).optional(),
+  /** The day the share takes effect (YYYY-MM-DD); today when left out. */
+  effectiveFrom: isoDay.optional(),
 });
 
-/** DELETE identifies the row by its natural key, both arriving as query parameters. */
+/**
+ * DELETE names the owner and property, both arriving as query parameters, and optionally the day
+ * the owner stopped owning it (today when left out).
+ */
 export const propertyOwnerDeleteSchema = z.object({
   propertyId: z.string().min(1, "Property is required"),
   ownerId: z.string().min(1, "Owner is required"),
+  effectiveTo: isoDay.optional(),
 });
 
 export type PropertyOwnerInput = z.infer<typeof propertyOwnerSchema>;

@@ -138,6 +138,11 @@ model PropertyOwner {
   ownerId             String
   ownershipPercentage Float
   role                OwnerRole @default(REGULAR) // Property-specific role override
+  // The share holds from validFrom (NULL: from the beginning) up to, not including, validTo
+  // (NULL: still in force). A change closes the rows it replaces and opens new ones, so an owner
+  // can have several rows on one property over time (lib/services/database/ownership.ts).
+  validFrom           DateTime?
+  validTo             DateTime?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
@@ -145,7 +150,8 @@ model PropertyOwner {
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   owner    Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
-  @@unique([propertyId, ownerId])
+  @@index([propertyId, ownerId])
+  @@index([propertyId, validTo])
   @@map("property_owners")
 }
 

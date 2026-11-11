@@ -776,7 +776,7 @@
       "leaseHasHistory": "Payments are recorded against this lease, so Situs keeps it for your records. End the lease instead.",
       "leaseHasPayments": "Payments are allocated to this lease, so its tenant and property stay as they are. End it and create a new lease instead.",
       "receiptAllocated": "This receipt's payment is already recorded, so its amount, date, tenant and type stay as they are. Void it and record the payment again instead.",
-      "ownerHasHistory": "This owner is linked to a property or to income distributions, so Situs keeps them for your records. Remove them from the property first.",
+      "ownerHasHistory": "This owner owns or has owned a property, or has income distributions, so Situs keeps them: the receipts for those months name them.",
       "emailInUse": "You already have a record with that email address. Use a different one, or leave it empty.",
       "lastAdmin": "The instance needs an administrator. Make someone else an administrator first.",
       "accountExists": "That email already has an account. Change its role under Accounts instead.",
