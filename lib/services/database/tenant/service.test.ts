@@ -8,6 +8,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
+    // Read by derived-state: no lease and no rent month, so the stored values stand.
+    lease: { findMany: vi.fn(async () => []) },
+    rentPeriod: { findMany: vi.fn(async () => []) },
     tenant: { create: vi.fn(), update: vi.fn() },
     property: { findFirst: vi.fn() },
   },

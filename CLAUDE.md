@@ -136,12 +136,18 @@ e2e/                    # Playwright E2E tests
   whose money is allocated, or that was issued, keeps its amount, date, tenant, property, type and
   status (409 `receipt_allocated`): a correction is a void and a new receipt. Screens that still sum
   receipts count income through `lib/utils/receipt-income.ts` (not voided, not pending, not a
-  deposit). `Tenant.paymentStatus` is derived from the ledger — never write it from an API route.
+  deposit). **A tenant's and a property's state is read, not stored**
+  (`lib/services/database/derived-state.ts`): the tenant and property services return a tenant's
+  property, rent and lease dates from its current lease, its `paymentStatus` from its rent months as
+  of now, a property's occupied or vacant from its active leases, and `buildingName` from its
+  building. The stored columns are only a fallback for a record no lease names, and `maintenance`
+  is the one property status the owner sets. A screen or route that shows that state reads it
+  through those services, never off a bare `findMany`; never write `paymentStatus` from an API route.
   The month sheet (`getRentMonth`) says where each payment came from by reading the movement linked
   to its receipt (`BankTransaction.receiptId`), or "recorded by hand" for a manual receipt with
   none; nothing about the origin is stored on the ledger.
 - **Deletes keep money history**: a tenant, property or lease with leases, receipts, rent months,
-  live allocations, expenses or AT filings recorded against it is refused, since every one of those
+  live allocations or expenses recorded against it is refused, since every one of those
   cascades from it in the schema (`lib/services/database/history.ts`). The refusal is a
   `ConflictError`: a 409 whose `reason` `apiFetch` keeps and `useApiError` turns into a sentence. A
   lease with nothing paid against it can still be deleted; a tenancy otherwise stops by ending its

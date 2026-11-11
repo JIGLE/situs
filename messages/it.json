@@ -57,7 +57,6 @@
     "summary": {
       "allClear": "Tutti gli immobili sono in regola.",
       "leaseEnding": "Il contratto termina il {date}",
-      "noActiveLease": "Occupato, nessun contratto attivo",
       "noPriorMonth": "Nessuna ricevuta il mese scorso",
       "vsLastMonth": "vs mese precedente"
     },
@@ -1153,7 +1152,7 @@
   },
   "properties": {
     "addNew": "Aggiungi nuovo immobile",
-    "statusOccupiedAddTenant": "Occupato — aggiungerò l'inquilino dopo",
+    "statusFromLeases": "Dai contratti (occupato o libero)",
     "editProperty": "Modifica immobile",
     "updateDetails": "Aggiorna i dettagli dell'immobile",
     "enterInfo": "Inserisci le informazioni sull'immobile",

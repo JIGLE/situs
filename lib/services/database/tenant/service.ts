@@ -1,46 +1,66 @@
+import type { Prisma } from "@prisma/client";
 import { getPrismaClient } from "../database";
 import { Tenant } from "@/lib/types";
 import { assertOwnsRelations } from "../assert-owned";
 import { assertTenantHasNoHistory } from "../history";
 import { refuseDuplicateEmail } from "../unique-email";
 import { blankToNull } from "@/lib/schemas/tax-identity";
+import { deriveTenants, type DerivedTenant } from "../derived-state";
+
+type TenantRow = Prisma.TenantGetPayload<{ include: { property: true } }>;
+
+const day = (date: Date) => date.toISOString().split("T")[0];
+
+/**
+ * A tenant as the app reads it. Its lease fields and payment status come from its leases and the
+ * rent ledger (`../derived-state.ts`); the stored copies stand only for a tenant no lease names.
+ */
+function toTenant(row: TenantRow, derived: DerivedTenant | undefined): Tenant {
+  const { property, ...tenant } = row;
+  return {
+    ...tenant,
+    propertyId: (derived ? derived.propertyId : tenant.propertyId) || undefined,
+    propertyName: (derived ? derived.propertyName : property?.name) ?? undefined,
+    rent: derived?.rent ?? tenant.rent,
+    leaseStart: day(derived?.leaseStart ?? tenant.leaseStart),
+    leaseEnd: day(derived?.leaseEnd ?? tenant.leaseEnd),
+    paymentStatus: derived?.paymentStatus ?? tenant.paymentStatus,
+    lastPayment: tenant.lastPayment?.toISOString(),
+    notes: tenant.notes || undefined,
+    createdAt: tenant.createdAt.toISOString(),
+    updatedAt: tenant.updatedAt.toISOString(),
+  };
+}
+
+async function withDerived(userId: string, row: TenantRow): Promise<Tenant> {
+  const derived = await deriveTenants(userId, [row.id]);
+  return toTenant(row, derived.get(row.id));
+}
 
 export const tenantService = {
-  async getAll(userId: string): Promise<Tenant[]> {
+  /** Every tenant, or one page of them, newest first, when `page` is given. */
+  async getAll(userId: string, page?: { skip: number; take: number }): Promise<Tenant[]> {
     const tenants = await getPrismaClient().tenant.findMany({
       where: { userId },
-      include: { property: true, receipts: true },
+      include: { property: true },
+      ...(page
+        ? { skip: page.skip, take: page.take, orderBy: { createdAt: "desc" as const } }
+        : {}),
     });
-    return tenants.map((t) => ({
-      ...t,
-      leaseStart: t.leaseStart.toISOString().split("T")[0],
-      leaseEnd: t.leaseEnd.toISOString().split("T")[0],
-      propertyId: t.propertyId || undefined,
-      lastPayment: t.lastPayment?.toISOString(),
-      notes: t.notes || undefined,
-      propertyName: t.property?.name,
-      createdAt: t.createdAt.toISOString(),
-      updatedAt: t.updatedAt.toISOString(),
-    }));
+    const derived = await deriveTenants(
+      userId,
+      tenants.map((t) => t.id),
+    );
+    return tenants.map((t) => toTenant(t, derived.get(t.id)));
   },
 
   async getById(userId: string, id: string): Promise<Tenant | null> {
     const tenant = await getPrismaClient().tenant.findFirst({
       where: { id, userId },
-      include: { property: true, receipts: true },
+      include: { property: true },
     });
     if (!tenant) return null;
-    return {
-      ...tenant,
-      propertyId: tenant.propertyId || undefined,
-      leaseStart: tenant.leaseStart.toISOString().split("T")[0],
-      leaseEnd: tenant.leaseEnd.toISOString().split("T")[0],
-      lastPayment: tenant.lastPayment?.toISOString(),
-      notes: tenant.notes || undefined,
-      propertyName: tenant.property?.name,
-      createdAt: tenant.createdAt.toISOString(),
-      updatedAt: tenant.updatedAt.toISOString(),
-    };
+    return withDerived(userId, tenant);
   },
 
   async create(
@@ -88,17 +108,7 @@ export const tenantService = {
         include: { property: true },
       }),
     );
-    return {
-      ...tenant,
-      propertyId: tenant.propertyId || undefined,
-      leaseStart: tenant.leaseStart.toISOString().split("T")[0],
-      leaseEnd: tenant.leaseEnd.toISOString().split("T")[0],
-      lastPayment: tenant.lastPayment?.toISOString(),
-      notes: tenant.notes || undefined,
-      propertyName: tenant.property?.name,
-      createdAt: tenant.createdAt.toISOString(),
-      updatedAt: tenant.updatedAt.toISOString(),
-    };
+    return withDerived(userId, tenant);
   },
 
   async update(
@@ -134,17 +144,7 @@ export const tenantService = {
         include: { property: true },
       }),
     );
-    return {
-      ...tenant,
-      propertyId: tenant.propertyId || undefined,
-      leaseStart: tenant.leaseStart.toISOString().split("T")[0],
-      leaseEnd: tenant.leaseEnd.toISOString().split("T")[0],
-      lastPayment: tenant.lastPayment?.toISOString(),
-      notes: tenant.notes || undefined,
-      propertyName: tenant.property?.name,
-      createdAt: tenant.createdAt.toISOString(),
-      updatedAt: tenant.updatedAt.toISOString(),
-    };
+    return withDerived(userId, tenant);
   },
 
   /** Refused while the tenant has history (`lib/services/database/history.ts`). */

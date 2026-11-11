@@ -36,12 +36,8 @@ async function handleGet(request: NextRequest): Promise<Response> {
       const prisma = getPrismaClient();
 
       const [properties, total] = await Promise.all([
-        prisma.property.findMany({
-          where: { userId: scopeUserId },
-          skip: pagination.skip,
-          take: pagination.limit,
-          orderBy: { createdAt: "desc" },
-        }),
+        // Through the service, so each page reads occupancy as derived from the leases.
+        propertyService.getAll(scopeUserId, { skip: pagination.skip, take: pagination.limit }),
         prisma.property.count({
           where: { userId: scopeUserId },
         }),

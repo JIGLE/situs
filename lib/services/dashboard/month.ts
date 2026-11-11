@@ -12,6 +12,7 @@
 import { getPrismaClient } from "@/lib/services/database/database";
 import { getAttention } from "@/lib/services/attention/gather";
 import { getAtConnection } from "@/lib/services/tax/at-connection";
+import { countOccupied } from "@/lib/services/database/derived-state";
 import { periodStatusAt } from "@/lib/services/allocation/rent-matrix";
 import { PSD2_PREFIX } from "@/lib/services/bank/providers/registry";
 import { MONEY_EPSILON, round2 } from "@/lib/utils/money";
@@ -138,7 +139,7 @@ export async function getDashboardMonth(
       where: { userId, status: "active", endDate: { gt: now, lte: endingBy } },
     }),
     prisma.property.count({ where: { userId } }),
-    prisma.property.count({ where: { userId, status: "occupied" } }),
+    countOccupied(userId, now),
     prisma.bankConnection.findMany({
       where: { userId, provider: { startsWith: PSD2_PREFIX }, status: { not: "revoked" } },
       select: { status: true, lastSyncAt: true, consentExpiresAt: true },
