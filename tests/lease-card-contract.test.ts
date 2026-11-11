@@ -5,7 +5,7 @@ import { join } from "node:path";
 /**
  * The lease card shows the lease, not a picture of a document. It once opened with a 16:9 grey
  * block holding a `FileText` icon (a placeholder that carried only the status), and the list had a
- * toolbar of two rows: search above, the view toggle alone beneath. This reads the source and names
+ * toolbar of two rows: search above, a grid/table toggle alone beneath, and the toggle has since gone. This reads the source and names
  * the line.
  */
 const file = "components/features/lease/leases-view.tsx";
@@ -19,12 +19,9 @@ describe("lease card", () => {
     expect(find(/aspect-video/)).toEqual([]);
   });
 
-  it("puts the view toggle in the search row", () => {
-    const toggle = lines.findIndex((l) => l.includes("<DataViewToggle"));
-    const search = lines.findIndex((l) => l.includes("<SearchFilter"));
-    expect(toggle).toBeGreaterThan(search);
-    // Nothing but the filter's own props sits between them, so no second row opens.
-    const between = lines.slice(search, toggle).join("\n");
-    expect(between).not.toMatch(/justify-end/);
+  // One layout per width, not a switch: the table from `md` up, the cards below it. The switch
+  // offered the same leases twice and kept the bulk rent increase in one of the two.
+  it("has no grid/table switch", () => {
+    expect(find(/DataViewToggle|situs-leases-view-mode/)).toEqual([]);
   });
 });

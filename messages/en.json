@@ -822,10 +822,7 @@
       "rentMatrix": "Rent matrix",
       "bank": "Bank movements",
       "tax": "Tax summary"
-    },
-    "overdueRent": "Overdue rent",
-    "pendingReceipts": "Pending receipts",
-    "collectedMonth": "Collected this month"
+    }
   },
   "leases": {
     "title": "Leases",
@@ -1153,7 +1150,8 @@
   },
   "properties": {
     "addNew": "Add New Property",
-    "statusFromLeases": "From its leases (occupied or vacant)",
+    "underMaintenance": "Under maintenance",
+    "maintenanceHint": "Occupied or vacant is read from its leases.",
     "editProperty": "Edit Property",
     "updateDetails": "Update property details",
     "enterInfo": "Enter property information",
@@ -1778,8 +1776,8 @@
     "dialogEditDescription": "Update tenant information",
     "submitCreate": "Create Tenant",
     "submitUpdate": "Update Tenant",
-    "moreDetailsShow": "Add lease & contact details",
-    "moreDetailsHide": "Hide lease & contact details",
+    "moreDetailsShow": "Add phone and notes",
+    "moreDetailsHide": "Hide phone and notes",
     "monthlyRent": "Monthly Rent",
     "paymentStatus": "Payment Status",
     "paymentStatusDerived": "Derived from the rent ledger — record a payment to change it.",

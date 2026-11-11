@@ -8,7 +8,7 @@
  * the old string hardcoded.
  */
 import { act, createRef } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders, screen, waitFor } from "@/tests/helpers/render-with-providers";
 import ptMessages from "@/messages/pt.json";
@@ -18,6 +18,17 @@ const { app, toast } = vi.hoisted(() => ({
   app: { addProperty: vi.fn(), updateProperty: vi.fn() },
   toast: { success: vi.fn(), error: vi.fn() },
 }));
+
+beforeAll(() => {
+  // The maintenance switch (Radix) measures itself, which jsdom does not implement.
+  if (typeof globalThis.ResizeObserver !== "function") {
+    globalThis.ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+  }
+});
 
 vi.mock("@/lib/contexts/app-context", () => ({ useApp: () => app }));
 vi.mock("@/lib/contexts/toast-context", () => ({ useToast: () => toast }));

@@ -822,10 +822,7 @@
       "rentMatrix": "Matriz de rentas",
       "bank": "Movimientos bancarios",
       "tax": "Resumen fiscal"
-    },
-    "overdueRent": "Renta vencida",
-    "pendingReceipts": "Recibos pendientes",
-    "collectedMonth": "Cobrado este mes"
+    }
   },
   "leases": {
     "title": "Contratos de Arrendamiento",
@@ -1153,7 +1150,8 @@
   },
   "properties": {
     "addNew": "Añadir Nueva Propiedad",
-    "statusFromLeases": "Según sus contratos (ocupado o vacío)",
+    "underMaintenance": "En mantenimiento",
+    "maintenanceHint": "Ocupado o vacío se lee de sus contratos.",
     "editProperty": "Editar Propiedad",
     "updateDetails": "Actualizar detalles de la propiedad",
     "enterInfo": "Introducir información de la propiedad",
@@ -1778,8 +1776,8 @@
     "dialogEditDescription": "Actualiza los datos del inquilino",
     "submitCreate": "Crear inquilino",
     "submitUpdate": "Actualizar inquilino",
-    "moreDetailsShow": "Añadir contrato y contacto",
-    "moreDetailsHide": "Ocultar contrato y contacto",
+    "moreDetailsShow": "Añadir teléfono y notas",
+    "moreDetailsHide": "Ocultar teléfono y notas",
     "monthlyRent": "Alquiler mensual",
     "paymentStatus": "Estado del pago",
     "paymentStatusDerived": "Derivado del libro de alquileres — registra un pago para cambiarlo.",

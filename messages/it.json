@@ -822,10 +822,7 @@
       "rentMatrix": "Matrice canoni",
       "bank": "Movimenti bancari",
       "tax": "Riepilogo fiscale"
-    },
-    "overdueRent": "Canone scaduto",
-    "pendingReceipts": "Ricevute in sospeso",
-    "collectedMonth": "Incassato questo mese"
+    }
   },
   "leases": {
     "title": "Contratti",
@@ -1153,7 +1150,8 @@
   },
   "properties": {
     "addNew": "Aggiungi nuovo immobile",
-    "statusFromLeases": "Dai contratti (occupato o libero)",
+    "underMaintenance": "In manutenzione",
+    "maintenanceHint": "Occupato o libero si ricava dai contratti.",
     "editProperty": "Modifica immobile",
     "updateDetails": "Aggiorna i dettagli dell'immobile",
     "enterInfo": "Inserisci le informazioni sull'immobile",
@@ -1778,8 +1776,8 @@
     "dialogEditDescription": "Aggiorna i dati dell'inquilino",
     "submitCreate": "Crea inquilino",
     "submitUpdate": "Aggiorna inquilino",
-    "moreDetailsShow": "Aggiungi contratto e contatti",
-    "moreDetailsHide": "Nascondi contratto e contatti",
+    "moreDetailsShow": "Aggiungi telefono e note",
+    "moreDetailsHide": "Nascondi telefono e note",
     "monthlyRent": "Canone mensile",
     "paymentStatus": "Stato del pagamento",
     "paymentStatusDerived": "Derivato dal registro dei canoni — registra un pagamento per cambiarlo.",

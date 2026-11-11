@@ -46,6 +46,14 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // UX simplification, quick wins: the lease list has one layout per width, not a switch.
+    pattern: /search, filter and view toggle are one row/,
+    retired: "2026-11-11 (one lease list, no grid/table switch)",
+    because:
+      "the leases screen shows a table from md up and cards below it; the view toggle is gone " +
+      "(tests/lease-card-contract.test.ts)",
+  },
+  {
     // Phase 2 of the November 2026 audit: `waived` joined the RentPeriodStatus union, and every
     // reader takes a month's status from periodStatusAt rather than the stored column.
     pattern: /`waived` is missing from the|missing from the\s+`RentPeriodStatus` union/,

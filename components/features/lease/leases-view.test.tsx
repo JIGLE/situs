@@ -70,7 +70,8 @@ describe("LeasesView: saving the lease wizard", () => {
     const user = userEvent.setup();
     renderWithProviders(<LeasesView />, { initialLocale: "pt" });
 
-    await user.click(screen.getByRole("button", { name: pt.field.actions }));
+    // The row menu (one per rendering: the table row and its phone card).
+    await user.click(screen.getAllByRole("button", { name: pt.leaseOptions })[0]);
     await user.click(await screen.findByRole("menuitem", { name: pt.editLease }));
     for (let step = 0; step < 3; step++) {
       await user.click(await screen.findByRole("button", { name: ptMessages.actions.continue }));

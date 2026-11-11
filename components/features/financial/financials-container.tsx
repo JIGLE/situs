@@ -10,10 +10,7 @@ import { ExportButton } from "@/components/ui/export-button";
 import { useTabPersistence } from "@/lib/hooks/use-tab-persistence";
 import { useBankInboxSummary } from "@/lib/hooks/use-bank-inbox-summary";
 import { useApp } from "@/lib/contexts/app-context";
-import { useCurrency } from "@/lib/contexts/currency-context";
-import { getActiveLease } from "@/lib/utils/lease-helpers";
 import { isIssuable } from "@/lib/utils/receipt-months";
-import { cn } from "@/lib/utils/utils";
 import { ReceiptsView } from "./receipts-view";
 import { YearlyRentMatrix } from "./yearly-rent-matrix";
 import { BankMovementsInbox } from "./bank-movements-inbox";
@@ -22,7 +19,6 @@ import { FinancialsView } from "./financials-view";
 import { RecordPaymentDialog } from "./record-payment-dialog";
 import { FileText, Grid3X3, Landmark, Plus, Receipt } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { countsAsIncome } from "@/lib/utils/receipt-income";
 
 const PAYMENT_TABS = ["receipts", "rent-matrix", "bank", "tax"] as const;
 type PaymentTab = (typeof PAYMENT_TABS)[number];
@@ -43,7 +39,6 @@ export function FinancialsContainer() {
   const tabParam = searchParams.get("tab");
   const recordPaymentLink = searchParams.get("action") === "record-payment";
   const { state } = useApp();
-  const { formatCurrency } = useCurrency();
   // Held here rather than in the inbox: Radix unmounts an inactive tab, and the Bank tab's count
   // has to show while another tab is open.
   const { summary: bankSummary, refresh: refreshBankSummary } = useBankInboxSummary();
@@ -79,39 +74,6 @@ export function FinancialsContainer() {
   useEffect(() => {
     if (tabParam !== null || recordPaymentLink) followLink();
   }, [tabParam, recordPaymentLink]);
-
-  const metrics = useMemo(() => {
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-
-    const monthlyCollected = state.receipts
-      .filter((receipt) => {
-        const receiptDate = new Date(receipt.date);
-        return (
-          countsAsIncome(receipt) &&
-          receipt.type === "rent" &&
-          receiptDate >= monthStart &&
-          receiptDate <= monthEnd
-        );
-      })
-      .reduce((sum, receipt) => sum + receipt.amount, 0);
-
-    const overdueAmount = state.tenants
-      .filter((tenant) => tenant.paymentStatus === "overdue")
-      .reduce((sum, tenant) => {
-        const activeLease = getActiveLease(tenant.id, state.leases);
-        return sum + (activeLease?.monthlyRent ?? tenant.rent ?? 0);
-      }, 0);
-
-    const pendingReceipts = state.receipts.filter((receipt) => receipt.status === "pending").length;
-
-    return {
-      monthlyCollected,
-      overdueAmount,
-      pendingReceipts,
-    };
-  }, [state.leases, state.receipts, state.tenants]);
 
   const selectedTenant = tenantId
     ? state.tenants.find((tenant) => tenant.id === tenantId)
@@ -171,59 +133,8 @@ export function FinancialsContainer() {
         </Button>
       </PageHeader>
 
-      {/* Three across at every width. Two columns on a phone left the third tile alone on a
-          second row and pushed the tabs a full screen down; the hint under each figure
-          is gone, since the label already says what the number is. */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        <button
-          type="button"
-          onClick={() => setActiveTab("rent-matrix")}
-          className={cn(
-            "panel p-3 text-left sm:p-4 transition-colors hover:border-[var(--color-border-hover)]",
-            metrics.overdueAmount > 0 &&
-              "border-l-[3px] border-l-[var(--semantic-danger)] bg-[var(--semantic-danger-soft)]",
-          )}
-        >
-          <p className="mono-label">{t("overdueRent")}</p>
-          <p
-            className={cn(
-              "mt-2 text-base font-light tabular-nums sm:text-2xl",
-              metrics.overdueAmount > 0
-                ? "text-[var(--semantic-danger-readable)]"
-                : "text-[var(--color-foreground)]",
-            )}
-          >
-            {formatCurrency(metrics.overdueAmount)}
-          </p>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("receipts")}
-          className={cn(
-            "panel p-3 text-left sm:p-4 transition-colors hover:border-[var(--color-border-hover)]",
-            metrics.pendingReceipts > 0 &&
-              "border-l-[3px] border-l-[var(--country-highlight-readable)] bg-[var(--country-highlight-soft)]",
-          )}
-        >
-          <p className="mono-label">{t("pendingReceipts")}</p>
-          <p className="mt-2 text-base font-light tabular-nums text-[var(--color-foreground)] sm:text-2xl">
-            {metrics.pendingReceipts}
-          </p>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("receipts")}
-          className="panel p-3 text-left sm:p-4 transition-colors hover:border-[var(--color-border-hover)]"
-        >
-          <p className="mono-label">{t("collectedMonth")}</p>
-          <p className="mt-2 text-base font-light tabular-nums text-[var(--semantic-success-readable)] sm:text-2xl">
-            {formatCurrency(metrics.monthlyCollected)}
-          </p>
-        </button>
-      </div>
-
+      {/* No figure tiles here. Overdue rent, receipts to issue and the month's takings are on Home,
+          the ledger below says who owes what, and the Receipts tab carries its own count. */}
       <Tabs
         value={visibleTab}
         onValueChange={(value) => setActiveTab(value as PaymentTab)}

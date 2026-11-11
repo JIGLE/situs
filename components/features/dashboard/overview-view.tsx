@@ -132,7 +132,7 @@ export function OverviewView({
     onAddProperty?.() ?? navigate("/portfolio?action=create-property");
   const handleAddTenant = () =>
     onAddTenant?.() ?? navigate("/people?view=tenants&action=create-tenant");
-  const handleAddLease = () => onAddLease?.() ?? navigate("/leases");
+  const handleAddLease = () => onAddLease?.() ?? navigate("/leases?action=create");
   const handleRecordPayment = () =>
     onRecordPayment?.() ?? navigate("/financials?tab=receipts&action=record-payment");
 
