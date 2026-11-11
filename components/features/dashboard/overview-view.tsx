@@ -12,6 +12,7 @@ import {
   ChevronRight,
   FileText,
   Home,
+  Landmark,
   UserRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,13 +23,11 @@ import {
 } from "@/components/ui/onboarding-checklist";
 import {
   AttentionList,
-  LoopStrip,
+  LateList,
   MonthFigures,
-  PortfolioLine,
-  RecentActivity,
-  RecentMoney,
   StatusLine,
 } from "@/components/features/dashboard/month-glance";
+import { HomeInbox } from "@/components/features/dashboard/home-inbox";
 import { useApp } from "@/lib/contexts/app-context";
 import { useDashboardMonth } from "@/lib/hooks/use-dashboard-month";
 import { useApiError } from "@/lib/utils/api-error";
@@ -36,9 +35,8 @@ import { formatMonthYear } from "@/lib/utils/format-date";
 
 export interface OverviewViewProps {
   onAddProperty?: () => void;
-  onAddTenant?: () => void;
   onAddLease?: () => void;
-  onRecordPayment?: () => void;
+  onConnectBank?: () => void;
 }
 
 interface MonthRef {
@@ -96,9 +94,8 @@ function FeatureHighlightCard({
 
 export function OverviewView({
   onAddProperty,
-  onAddTenant,
   onAddLease,
-  onRecordPayment,
+  onConnectBank,
 }: OverviewViewProps = {}): ReactElement {
   const { state } = useApp();
   const { data: session } = useSession();
@@ -108,12 +105,12 @@ export function OverviewView({
   const t = useTranslations("dashboard");
   const apiError = useApiError();
 
-  const { properties = [], tenants = [], leases = [], receipts = [], loading } = state;
+  const { properties = [], leases = [], receipts = [], loading } = state;
 
   const [selected, setSelected] = useState<MonthRef>(
     () => parseMonth(searchParams.get("month")) ?? currentMonth(),
   );
-  const { data: month, error } = useDashboardMonth(selected.year, selected.month);
+  const { data: month, error, reload } = useDashboardMonth(selected.year, selected.month);
 
   // Read on the owner's clock after mount, so the server's hour never decides the greeting.
   const [hour, setHour] = useState<number | null>(null);
@@ -130,12 +127,11 @@ export function OverviewView({
   const navigate = (href: string) => router.push(href);
   const handleAddProperty = () =>
     onAddProperty?.() ?? navigate("/portfolio?action=create-property");
-  const handleAddTenant = () =>
-    onAddTenant?.() ?? navigate("/people?view=tenants&action=create-tenant");
   const handleAddLease = () => onAddLease?.() ?? navigate("/leases?action=create");
-  const handleRecordPayment = () =>
-    onRecordPayment?.() ?? navigate("/financials?tab=receipts&action=record-payment");
+  const handleConnectBank = () => onConnectBank?.() ?? navigate("/settings?tab=integrations");
 
+  // Add a property, start a tenancy, connect the bank. Recording a payment by hand was a step;
+  // the bank brings payments in, so it now only completes the bank's step where there is none.
   const onboardingSteps: OnboardingChecklistStep[] = [
     {
       id: "property",
@@ -147,31 +143,22 @@ export function OverviewView({
       actionLabel: t("addPropertyAction"),
     },
     {
-      id: "tenant",
-      label: t("addTenantLabel"),
-      description: t("addTenantDesc"),
-      completed: tenants.length > 0,
-      icon: UserRound,
-      action: handleAddTenant,
-      actionLabel: t("addTenantAction"),
-    },
-    {
-      id: "lease",
-      label: t("createLeaseLabel"),
-      description: t("createLeaseDesc"),
+      id: "tenancy",
+      label: t("startTenancyLabel"),
+      description: t("startTenancyDesc"),
       completed: leases.length > 0,
       icon: FileText,
       action: handleAddLease,
-      actionLabel: t("createLeaseAction"),
+      actionLabel: t("startTenancyAction"),
     },
     {
-      id: "payment",
-      label: t("recordPaymentLabel"),
-      description: t("recordPaymentDesc"),
-      completed: receipts.length > 0,
-      icon: BadgeEuro,
-      action: handleRecordPayment,
-      actionLabel: t("recordPaymentAction"),
+      id: "bank",
+      label: t("connectBankLabel"),
+      description: t("connectBankDesc"),
+      completed: Boolean(month?.status.bank) || receipts.length > 0,
+      icon: Landmark,
+      action: handleConnectBank,
+      actionLabel: t("connectBankAction"),
     },
   ];
   const showChecklist = !onboardingSteps.every((step) => step.completed);
@@ -264,11 +251,9 @@ export function OverviewView({
         <>
           <StatusLine status={month.status} />
           <MonthFigures figures={month.figures} />
-          <LoopStrip loop={month.loop} />
+          <HomeInbox onChanged={reload} />
+          <LateList late={month.late} />
           <AttentionList attention={month.attention} />
-          <RecentMoney recent={month.recent} />
-          <PortfolioLine portfolio={month.portfolio} />
-          <RecentActivity activity={month.activity} />
         </>
       ) : error ? null : (
         <div className="h-40 animate-pulse bg-[var(--color-muted)]/30" />

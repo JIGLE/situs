@@ -7,19 +7,15 @@ import { ChevronRight } from "lucide-react";
 
 import type { DashboardMonth } from "@/lib/services/dashboard/month";
 import { useCurrency } from "@/lib/contexts/currency-context";
-import { SIMULATED_MODES, TEST_MODES } from "@/lib/tax/connectors/modes";
-import { auditActionKey } from "@/lib/utils/audit-labels";
 import { CONSENT_WARNING_DAYS, daysUntil } from "@/lib/utils/bank-inbox";
-import { formatDate, formatDateTime } from "@/lib/utils/format-date";
+import { formatDate } from "@/lib/utils/format-date";
 import { cn } from "@/lib/utils/utils";
 
 /** Where each step's work is done. */
 const LINKS = {
   rentMatrix: "/financials?tab=rent-matrix",
-  bank: "/financials?tab=bank",
-  receipts: "/financials?tab=receipts",
   leases: "/leases",
-  activity: "/settings?tab=account",
+  integrations: "/settings?tab=integrations",
   complete: "/complete",
 } as const;
 
@@ -45,56 +41,39 @@ function SeeAll({ href, children }: { href: string; children: ReactNode }) {
 }
 
 /**
- * The bank and Finanças, in one line, worked out from what the server just read. Plain text: a
- * link one line tall is too small a target on a phone, and the attention list below links to
- * everything that needs doing.
+ * The bank, in one line, only when something is wrong with it: its consent has ended, or ends
+ * soon. A bank that works and Finanças' mode are not news, so they are no longer said on every
+ * visit; Settings › Integrations shows both.
  */
 export function StatusLine({ status }: { status: DashboardMonth["status"] }) {
   const t = useTranslations("dashboard");
   const locale = useLocale();
-  const { bank, taxMode } = status;
+  const { bank } = status;
+  if (!bank) return null;
 
-  let bankText: ReactNode;
-  if (!bank) {
-    bankText = t("statusNoBank");
-  } else if (bank.expired) {
-    bankText = (
-      <span className="text-[var(--semantic-danger-readable)]">{t("statusConsentEnded")}</span>
-    );
-  } else {
-    const synced = bank.lastSyncAt
-      ? t("statusBankSynced", { date: formatDate(bank.lastSyncAt, locale) })
-      : t("statusBankNeverSynced");
-    const ending =
-      bank.consentEndsAt && daysUntil(bank.consentEndsAt) <= CONSENT_WARNING_DAYS
-        ? t("statusConsentEnding", { date: formatDate(bank.consentEndsAt, locale) })
-        : null;
-    bankText = (
-      <>
-        {synced}
-        {ending ? (
-          <>
-            {" · "}
-            <span className="text-[var(--semantic-warning-readable)]">{ending}</span>
-          </>
-        ) : null}
-      </>
+  if (bank.expired) {
+    return (
+      <Link
+        href={LINKS.integrations}
+        className="block text-sm text-[var(--semantic-danger-readable)] hover:underline max-md:min-h-11"
+        data-testid="dashboard-status"
+      >
+        {t("statusConsentEnded")}
+      </Link>
     );
   }
-
-  const taxText = SIMULATED_MODES.has(taxMode)
-    ? t("statusTaxSimulated")
-    : TEST_MODES.has(taxMode)
-      ? t("statusTaxTest")
-      : t("statusTaxLive");
-
-  return (
-    <p className="text-sm text-[var(--color-muted-foreground)]" data-testid="dashboard-status">
-      {bankText}
-      {" · "}
-      {taxText}
-    </p>
-  );
+  if (bank.consentEndsAt && daysUntil(bank.consentEndsAt) <= CONSENT_WARNING_DAYS) {
+    return (
+      <Link
+        href={LINKS.integrations}
+        className="block text-sm text-[var(--semantic-warning-readable)] hover:underline max-md:min-h-11"
+        data-testid="dashboard-status"
+      >
+        {t("statusConsentEndsOn", { date: formatDate(bank.consentEndsAt, locale) })}
+      </Link>
+    );
+  }
+  return null;
 }
 
 /** Esperado, Recebido, Em falta: one stat row. */
@@ -139,90 +118,14 @@ export function MonthFigures({ figures }: { figures: DashboardMonth["figures"] }
 }
 
 /**
- * Rendas → pagas → conciliadas → recibos, each count opening where its work is. Finanças joins the
- * strip when Situs files with it; until then a count of filings would always read 0.
+ * "Requer a sua atenção": what waits besides the inbox and who is late, shown only when something
+ * does. The months owed, the movements and the receipts used to be counted here too, each a link
+ * to another tab; the Home inbox and the late list now show them in place.
  */
-export function LoopStrip({ loop }: { loop: DashboardMonth["loop"] }) {
-  const t = useTranslations("dashboard");
-
-  const steps = [
-    { key: "rents", label: t("loopRents"), count: loop.rents, href: LINKS.rentMatrix },
-    { key: "paid", label: t("loopPaid"), count: loop.paid, href: LINKS.rentMatrix },
-    { key: "reconciled", label: t("loopReconciled"), count: loop.reconciled, href: LINKS.bank },
-    {
-      key: "receipts",
-      label: t("loopReceipts"),
-      count: loop.receiptsIssued,
-      href: LINKS.receipts,
-      detail: t("loopReceiptsDetail", {
-        issued: loop.receiptsIssued,
-        toIssue: loop.receiptsToIssue,
-      }),
-    },
-  ];
-
-  return (
-    <div className="panel">
-      <SectionLabel>{t("loopTitle")}</SectionLabel>
-      {loop.rents === 0 ? (
-        <p className="px-4 py-3 text-sm text-[var(--color-muted-foreground)]">{t("loopEmpty")}</p>
-      ) : (
-        <>
-          <ol className="grid grid-cols-2 gap-px bg-[var(--color-border)] sm:grid-cols-4">
-            {steps.map((step) => (
-              <li key={step.key} className="bg-[var(--color-card)]">
-                <Link
-                  href={step.href}
-                  className="flex h-full min-h-11 flex-col gap-1 px-4 py-3 hover:bg-[var(--color-muted)]"
-                  data-step={step.key}
-                >
-                  <span className="text-xs text-[var(--color-muted-foreground)]">{step.label}</span>
-                  <span className="text-lg font-light tabular-nums">{step.count}</span>
-                  {step.detail ? (
-                    <span className="text-xs text-[var(--color-muted-foreground)]">
-                      {step.detail}
-                    </span>
-                  ) : null}
-                </Link>
-              </li>
-            ))}
-          </ol>
-          <p className="border-t border-[var(--color-border)] px-4 py-3 text-sm">
-            {t("loopTotal", { done: loop.fullyProcessed, total: loop.rents })}
-          </p>
-        </>
-      )}
-    </div>
-  );
-}
-
-/** "Requer a sua atenção": shown only when something waits. */
 export function AttentionList({ attention }: { attention: DashboardMonth["attention"] }) {
   const t = useTranslations("dashboard");
-  const { formatCurrency } = useCurrency();
 
   const items = [
-    attention.monthsOwed.count > 0 && {
-      key: "owed",
-      text: t("attentionOwed", {
-        count: attention.monthsOwed.count,
-        amount: formatCurrency(attention.monthsOwed.amount),
-      }),
-      href: LINKS.rentMatrix,
-      tone: "danger" as const,
-    },
-    attention.movementsToReview > 0 && {
-      key: "movements",
-      text: t("attentionMovements", { count: attention.movementsToReview }),
-      href: LINKS.bank,
-      tone: "warning" as const,
-    },
-    attention.receiptsInDraft > 0 && {
-      key: "receipts",
-      text: t("attentionReceipts", { count: attention.receiptsInDraft }),
-      href: LINKS.receipts,
-      tone: "warning" as const,
-    },
     attention.leasesEnding > 0 && {
       key: "leases",
       text: t("attentionLeases", { count: attention.leasesEnding }),
@@ -250,10 +153,7 @@ export function AttentionList({ attention }: { attention: DashboardMonth["attent
               className="flex min-h-11 items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-[var(--color-muted)]"
             >
               <span
-                className={cn(
-                  item.tone === "danger" && "text-[var(--semantic-danger-readable)]",
-                  item.tone === "warning" && "text-[var(--semantic-warning-readable)]",
-                )}
+                className={cn(item.tone === "warning" && "text-[var(--semantic-warning-readable)]")}
               >
                 {item.text}
               </span>
@@ -266,122 +166,40 @@ export function AttentionList({ attention }: { attention: DashboardMonth["attent
   );
 }
 
-/** The last bank movements, marked Processado or Rever; without a bank, the last payments. */
-export function RecentMoney({ recent }: { recent: DashboardMonth["recent"] }) {
+/**
+ * Who is late, and by how much: one line per tenancy with a month still owed, most owed first,
+ * each opening the lease. Shown only when someone owes.
+ */
+export function LateList({ late }: { late: DashboardMonth["late"] }) {
   const t = useTranslations("dashboard");
-  const locale = useLocale();
   const { formatCurrency } = useCurrency();
-  const bank = recent.source === "bank";
+  if (late.length === 0) return null;
 
   return (
-    <div className="panel">
-      <SectionLabel
-        action={<SeeAll href={bank ? LINKS.bank : LINKS.receipts}>{t("seeAll")}</SeeAll>}
-      >
-        {bank ? t("recentMovements") : t("recentPayments")}
+    <div className="panel" data-testid="dashboard-late">
+      <SectionLabel action={<SeeAll href={LINKS.rentMatrix}>{t("lateSeeAll")}</SeeAll>}>
+        {t("lateTitle")}
       </SectionLabel>
-      {recent.items.length === 0 ? (
-        <p className="px-4 py-3 text-sm text-[var(--color-muted-foreground)]">
-          {bank ? t("recentMovementsEmpty") : t("recentPaymentsEmpty")}
-        </p>
-      ) : (
-        <ul className="divide-y divide-[var(--color-border)]">
-          {recent.source === "bank"
-            ? recent.items.map((movement) => (
-                <li key={movement.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">
-                      {movement.counterparty ?? t("unknownCounterparty")}
-                    </p>
-                    <p className="text-xs text-[var(--color-muted-foreground)]">
-                      {formatDate(movement.date, locale)}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 flex-col items-end gap-1">
-                    <span className="text-sm font-medium tabular-nums">
-                      {formatCurrency(movement.amount)}
-                    </span>
-                    {movement.state === "processed" ? (
-                      <span className="text-xs text-[var(--semantic-success-readable)]">
-                        {t("movementProcessed")}
-                      </span>
-                    ) : movement.state === "review" ? (
-                      <span className="text-xs text-[var(--semantic-warning-readable)]">
-                        {t("movementToReview")}
-                      </span>
-                    ) : null}
-                  </div>
-                </li>
-              ))
-            : recent.items.map((payment) => (
-                <li key={payment.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{payment.tenantName}</p>
-                    <p className="text-xs text-[var(--color-muted-foreground)]">
-                      {formatDate(payment.date, locale)}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-sm font-medium tabular-nums">
-                    {formatCurrency(payment.amount)}
-                  </span>
-                </li>
-              ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-/** The portfolio as one line of text, not a panel of boxes. */
-export function PortfolioLine({ portfolio }: { portfolio: DashboardMonth["portfolio"] }) {
-  const t = useTranslations("dashboard");
-  const percent =
-    portfolio.properties > 0 ? Math.round((portfolio.occupied / portfolio.properties) * 100) : 0;
-
-  return (
-    <p className="text-sm text-[var(--color-muted-foreground)]" data-testid="dashboard-portfolio">
-      {t("portfolioLine", {
-        properties: portfolio.properties,
-        occupied: portfolio.occupied,
-        percent,
-        ending: portfolio.leasesEnding,
-      })}
-    </p>
-  );
-}
-
-/** The last five audit entries, and the way to the whole trail. */
-export function RecentActivity({ activity }: { activity: DashboardMonth["activity"] }) {
-  const t = useTranslations("dashboard");
-  const tAction = useTranslations("auditActions");
-  const locale = useLocale();
-
-  return (
-    <div className="panel">
-      <SectionLabel action={<SeeAll href={LINKS.activity}>{t("activitySeeAll")}</SeeAll>}>
-        {t("activityTitle")}
-      </SectionLabel>
-      {activity.length === 0 ? (
-        <p className="px-4 py-3 text-sm text-[var(--color-muted-foreground)]">
-          {t("activityEmpty")}
-        </p>
-      ) : (
-        <ul className="divide-y divide-[var(--color-border)]">
-          {activity.map((entry) => {
-            const key = auditActionKey(entry.action);
-            return (
-              <li key={entry.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                <span className="min-w-0 truncate text-sm">
-                  {key ? tAction(key) : entry.action}
+      <ul className="divide-y divide-[var(--color-border)]">
+        {late.map((entry) => (
+          <li key={entry.leaseId}>
+            <Link
+              href={`/leases?detail=lease:${entry.leaseId}`}
+              className="flex min-h-11 items-center justify-between gap-3 px-4 py-3 hover:bg-[var(--color-muted)]"
+            >
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-medium">{entry.tenantName}</span>
+                <span className="block truncate text-xs text-[var(--color-muted-foreground)]">
+                  {entry.propertyName} · {t("lateMonths", { count: entry.months })}
                 </span>
-                <span className="shrink-0 text-xs text-[var(--color-muted-foreground)]">
-                  {formatDateTime(entry.createdAt, locale)}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+              </span>
+              <span className="shrink-0 text-sm font-medium tabular-nums text-[var(--semantic-danger-readable)]">
+                {formatCurrency(entry.amount)}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

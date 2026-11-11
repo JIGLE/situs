@@ -3,12 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { prismaMock, atMock, attentionMock } = vi.hoisted(() => ({
   prismaMock: {
     rentPeriod: { findMany: vi.fn() },
-    bankTransaction: { count: vi.fn(), findMany: vi.fn() },
-    receipt: { count: vi.fn(), findMany: vi.fn() },
     lease: { count: vi.fn() },
-    property: { count: vi.fn() },
     bankConnection: { findMany: vi.fn() },
-    auditLog: { findMany: vi.fn() },
   },
   atMock: vi.fn(),
   attentionMock: vi.fn(),
@@ -29,7 +25,6 @@ function period({
   dueDate = "2026-08-01T00:00:00.000Z",
   paidAt = null as string | null,
   stored = "upcoming",
-  receipts = [] as { lifecycle: string; movements?: string[] }[],
 } = {}) {
   return {
     status: stored,
@@ -37,19 +32,27 @@ function period({
     dueAmount: due,
     allocatedAmount: allocated,
     paidAt: paidAt ? new Date(paidAt) : null,
-    allocations: receipts.map((receipt) => ({
-      receipt: {
-        lifecycle: receipt.lifecycle,
-        bankTransactions: (receipt.movements ?? []).map((status) => ({ status })),
-      },
-    })),
+  };
+}
+
+/** A month still owed, with the tenancy it belongs to. */
+function owedMonth(dueAmount: number, allocatedAmount: number, lease = "lease-1") {
+  const names: Record<string, [string, string]> = {
+    "lease-1": ["Ana Martínez", "Rua Augusta 12"],
+    "lease-2": ["Carlos Gómez", "Rua do Ouro 3"],
+  };
+  const [tenant, property] = names[lease];
+  return {
+    dueAmount,
+    allocatedAmount,
+    lease: { id: lease, tenant: { name: tenant }, property: { name: property } },
   };
 }
 
 const PAID = { allocated: 750, paidAt: "2026-08-02T00:00:00.000Z", stored: "paid" };
 
 let monthPeriods: ReturnType<typeof period>[];
-let owedPeriods: { dueAmount: number; allocatedAmount: number }[];
+let owedPeriods: ReturnType<typeof owedMonth>[];
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -59,16 +62,8 @@ beforeEach(() => {
   prismaMock.rentPeriod.findMany.mockImplementation(async (args: { where: { year?: number } }) =>
     args.where.year === undefined ? owedPeriods : monthPeriods,
   );
-  prismaMock.bankTransaction.count.mockResolvedValue(0);
-  prismaMock.bankTransaction.findMany.mockResolvedValue([]);
-  prismaMock.receipt.count.mockResolvedValue(0);
-  prismaMock.receipt.findMany.mockResolvedValue([]);
   prismaMock.lease.count.mockResolvedValue(0);
-  prismaMock.property.count.mockImplementation(async (args: { where: { status?: string } }) =>
-    args.where.status ? 7 : 8,
-  );
   prismaMock.bankConnection.findMany.mockResolvedValue([]);
-  prismaMock.auditLog.findMany.mockResolvedValue([]);
   atMock.mockResolvedValue({ mode: "sandbox" });
   attentionMock.mockResolvedValue({ items: [], counts: { total: 0 } });
 });
@@ -94,95 +89,62 @@ describe("getDashboardMonth — the figures", () => {
     });
   });
 
-  it("counts a month paid only when the ledger says so today, whatever it stored", async () => {
-    monthPeriods = [
-      // Stored as paid, but nothing is allocated to it: it is owed.
-      period({ stored: "paid" }),
-      // Stored as upcoming, and fully paid: they count.
-      period({ ...PAID, stored: "upcoming" }),
-      period({ ...PAID, stored: "due" }),
-    ];
+  it("reads what arrived from the money allocated, whatever status was stored", async () => {
+    monthPeriods = [period({ stored: "paid" }), period({ ...PAID, stored: "upcoming" })];
 
     const month = await getDashboardMonth("user-1", 2026, 8, NOW);
 
-    expect(month.loop.paid).toBe(2);
+    expect(month.figures).toEqual({ expected: 1500, received: 750, outstanding: 750 });
   });
 });
 
-describe("getDashboardMonth — the loop", () => {
-  it("follows each rent through payment, reconciliation and receipt", async () => {
-    monthPeriods = [
-      // All the way through.
-      period({
-        ...PAID,
-        receipts: [{ lifecycle: "accepted", movements: ["matched_confirmed"] }],
-      }),
-      // Matched by the engine and issued: also all the way through.
-      period({ ...PAID, receipts: [{ lifecycle: "emitted", movements: ["auto_matched"] }] }),
-      // Paid by hand: issued, with no bank movement behind it.
-      period({ ...PAID, receipts: [{ lifecycle: "emitted" }] }),
-      // Matched, with its receipt still a draft.
-      period({ ...PAID, receipts: [{ lifecycle: "draft", movements: ["matched_confirmed"] }] }),
-      // A movement still waiting in the inbox does not reconcile anything.
-      period({ ...PAID, receipts: [{ lifecycle: "review", movements: ["needs_review"] }] }),
-      // Not paid at all.
-      period(),
+describe("getDashboardMonth — who is late", () => {
+  it("lists each tenancy still owing, with its months and balance, most owed first", async () => {
+    owedPeriods = [
+      owedMonth(750, 0),
+      owedMonth(500, 200, "lease-2"),
+      owedMonth(750, 0),
+      // Paid within a cent: nothing is owed.
+      owedMonth(500, 499.999, "lease-2"),
     ];
 
-    const month = await getDashboardMonth("user-1", 2026, 8, NOW);
+    const month = await getDashboardMonth("user-1", 2026, 9, NOW);
 
-    expect(month.loop).toEqual({
-      rents: 6,
-      paid: 5,
-      reconciled: 3,
-      receiptsIssued: 3,
-      receiptsToIssue: 2,
-      fullyProcessed: 2,
-    });
+    expect(month.late).toEqual([
+      {
+        leaseId: "lease-1",
+        tenantName: "Ana Martínez",
+        propertyName: "Rua Augusta 12",
+        months: 2,
+        amount: 1500,
+      },
+      {
+        leaseId: "lease-2",
+        tenantName: "Carlos Gómez",
+        propertyName: "Rua do Ouro 3",
+        months: 1,
+        amount: 300,
+      },
+    ]);
   });
 
-  it("leaves a paid, issued rent unprocessed until a bank movement reconciles it", async () => {
-    monthPeriods = [period({ ...PAID, receipts: [{ lifecycle: "emitted" }] })];
-
-    const month = await getDashboardMonth("user-1", 2026, 8, NOW);
-
-    expect(month.loop.receiptsIssued).toBe(1);
-    expect(month.loop.fullyProcessed).toBe(0);
+  it("is empty when nobody owes anything", async () => {
+    expect((await getDashboardMonth("user-1", 2026, 9, NOW)).late).toEqual([]);
   });
 });
 
 describe("getDashboardMonth — what waits", () => {
-  it("lists every month still owed, whichever month is shown", async () => {
-    owedPeriods = [
-      { dueAmount: 750, allocatedAmount: 0 },
-      { dueAmount: 500, allocatedAmount: 200 },
-      // Paid within a cent: nothing is owed.
-      { dueAmount: 500, allocatedAmount: 499.999 },
-    ];
-    prismaMock.bankTransaction.count.mockResolvedValue(3);
-    prismaMock.receipt.count.mockResolvedValue(2);
+  it("counts what waits, whichever month is shown", async () => {
     prismaMock.lease.count.mockResolvedValue(1);
 
     const month = await getDashboardMonth("user-1", 2026, 9, NOW);
 
-    expect(month.attention).toEqual({
-      monthsOwed: { count: 2, amount: 1050 },
-      movementsToReview: 3,
-      receiptsInDraft: 2,
-      leasesEnding: 1,
-      missingData: 0,
-    });
+    expect(month.attention).toEqual({ leasesEnding: 1, missingData: 0 });
     expect(prismaMock.rentPeriod.findMany.mock.calls[1][0].where).toEqual({
       userId: "user-1",
       status: { not: "waived" },
       paidAt: null,
       dueDate: { lt: NOW },
-    });
-    // Money in only: money going out is never work.
-    expect(prismaMock.bankTransaction.count.mock.calls[0][0].where).toEqual({
-      userId: "user-1",
-      status: "needs_review",
-      amount: { gt: 0 },
     });
     expect(prismaMock.lease.count.mock.calls[0][0].where).toEqual({
       userId: "user-1",
@@ -199,131 +161,32 @@ describe("getDashboardMonth — what waits", () => {
     expect(month.attention.missingData).toBe(3);
     expect(attentionMock).toHaveBeenCalledWith("user-1");
   });
-
-  it("gives the portfolio as counts", async () => {
-    prismaMock.lease.count.mockResolvedValue(2);
-
-    const month = await getDashboardMonth("user-1", 2026, 9, NOW);
-
-    expect(month.portfolio).toEqual({ properties: 8, occupied: 7, leasesEnding: 2 });
-  });
 });
 
-describe("getDashboardMonth — the status line and recent money", () => {
-  it("shows the last bank movements when a bank is connected, marking what waits", async () => {
+describe("getDashboardMonth — the status line", () => {
+  it("says no bank is connected", async () => {
+    expect((await getDashboardMonth("user-1", 2026, 9, NOW)).status.bank).toBeNull();
+  });
+
+  it("gives the last sync and the consent that ends first", async () => {
     prismaMock.bankConnection.findMany.mockResolvedValue([
       {
         status: "active",
-        lastSyncAt: new Date("2026-09-26T06:00:00.000Z"),
+        lastSyncAt: new Date("2026-09-26T08:00:00.000Z"),
         consentExpiresAt: new Date("2026-12-01T00:00:00.000Z"),
       },
       {
         status: "active",
-        lastSyncAt: new Date("2026-09-27T06:00:00.000Z"),
-        consentExpiresAt: new Date("2026-10-05T00:00:00.000Z"),
-      },
-    ]);
-    prismaMock.bankTransaction.findMany.mockResolvedValue([
-      {
-        id: "tx-1",
-        bookingDate: new Date("2026-09-26T00:00:00.000Z"),
-        amount: 750,
-        currency: "EUR",
-        counterpartyName: "Ana Silva",
-        status: "needs_review",
-      },
-      {
-        id: "tx-2",
-        bookingDate: new Date("2026-09-25T00:00:00.000Z"),
-        amount: 600,
-        currency: "EUR",
-        counterpartyName: null,
-        status: "auto_matched",
+        lastSyncAt: new Date("2026-09-27T08:00:00.000Z"),
+        consentExpiresAt: new Date("2026-10-15T00:00:00.000Z"),
       },
     ]);
 
-    const month = await getDashboardMonth("user-1", 2026, 9, NOW);
-
-    // The latest sync, and the consent that ends first.
-    expect(month.status.bank).toEqual({
-      lastSyncAt: "2026-09-27T06:00:00.000Z",
-      consentEndsAt: "2026-10-05T00:00:00.000Z",
+    expect((await getDashboardMonth("user-1", 2026, 9, NOW)).status.bank).toEqual({
+      lastSyncAt: "2026-09-27T08:00:00.000Z",
+      consentEndsAt: "2026-10-15T00:00:00.000Z",
       expired: false,
     });
-    expect(month.recent).toEqual({
-      source: "bank",
-      items: [
-        {
-          id: "tx-1",
-          date: "2026-09-26T00:00:00.000Z",
-          amount: 750,
-          currency: "EUR",
-          counterparty: "Ana Silva",
-          state: "review",
-        },
-        {
-          id: "tx-2",
-          date: "2026-09-25T00:00:00.000Z",
-          amount: 600,
-          currency: "EUR",
-          counterparty: null,
-          state: "processed",
-        },
-      ],
-    });
-    expect(prismaMock.receipt.findMany).not.toHaveBeenCalled();
-    // A disconnected connection is not a connected bank.
-    expect(prismaMock.bankConnection.findMany.mock.calls[0][0].where).toEqual({
-      userId: "user-1",
-      provider: { startsWith: "psd2_" },
-      status: { not: "revoked" },
-    });
-  });
-
-  it("never marks money going out for review, as the inbox never counts it as work", async () => {
-    prismaMock.bankConnection.findMany.mockResolvedValue([
-      { status: "active", lastSyncAt: null, consentExpiresAt: null },
-    ]);
-    prismaMock.bankTransaction.findMany.mockResolvedValue([
-      {
-        id: "tx-3",
-        bookingDate: new Date("2026-09-24T00:00:00.000Z"),
-        amount: -120.5,
-        currency: "EUR",
-        counterpartyName: "EDP Comercial",
-        status: "needs_review",
-      },
-    ]);
-
-    const month = await getDashboardMonth("user-1", 2026, 9, NOW);
-
-    expect(month.recent.source === "bank" && month.recent.items[0].state).toBe("outgoing");
-  });
-
-  it("shows the last payments instead when no bank is connected", async () => {
-    prismaMock.receipt.findMany.mockResolvedValue([
-      {
-        id: "rec-1",
-        date: new Date("2026-09-02T00:00:00.000Z"),
-        amount: 750,
-        tenant: { name: "Ana Silva" },
-      },
-    ]);
-
-    const month = await getDashboardMonth("user-1", 2026, 9, NOW);
-
-    expect(month.status.bank).toBeNull();
-    expect(month.recent).toEqual({
-      source: "payments",
-      items: [
-        { id: "rec-1", date: "2026-09-02T00:00:00.000Z", amount: 750, tenantName: "Ana Silva" },
-      ],
-    });
-    expect(prismaMock.receipt.findMany.mock.calls[0][0].where).toEqual({
-      userId: "user-1",
-      status: "paid",
-    });
-    expect(prismaMock.bankTransaction.findMany).not.toHaveBeenCalled();
   });
 
   it("says a consent has ended, by its status or its date", async () => {
@@ -346,34 +209,13 @@ describe("getDashboardMonth — the status line and recent money", () => {
     });
   });
 
-  it("passes the Finanças mode through, and the last audit entries", async () => {
+  it("passes the Finanças mode through", async () => {
     atMock.mockResolvedValue({ mode: "test" });
-    prismaMock.auditLog.findMany.mockResolvedValue([
-      {
-        id: "log-1",
-        action: "RECEIPT_EMITTED",
-        resourceType: "receipt",
-        createdAt: new Date("2026-09-27T10:00:00.000Z"),
-      },
-    ]);
 
     const month = await getDashboardMonth("user-1", 2026, 9, NOW);
 
     expect(month.status.taxMode).toBe("test");
     expect(atMock).toHaveBeenCalledWith("user-1");
-    expect(month.activity).toEqual([
-      {
-        id: "log-1",
-        action: "RECEIPT_EMITTED",
-        resourceType: "receipt",
-        createdAt: "2026-09-27T10:00:00.000Z",
-      },
-    ]);
-    expect(prismaMock.auditLog.findMany.mock.calls[0][0]).toMatchObject({
-      where: { userId: "user-1" },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    });
   });
 
   it("reads nothing but the owner's own records", async () => {
@@ -381,13 +223,8 @@ describe("getDashboardMonth — the status line and recent money", () => {
 
     const wheres = [
       ...prismaMock.rentPeriod.findMany.mock.calls,
-      ...prismaMock.bankTransaction.count.mock.calls,
-      ...prismaMock.receipt.count.mock.calls,
-      ...prismaMock.receipt.findMany.mock.calls,
       ...prismaMock.lease.count.mock.calls,
-      ...prismaMock.property.count.mock.calls,
       ...prismaMock.bankConnection.findMany.mock.calls,
-      ...prismaMock.auditLog.findMany.mock.calls,
     ].map((call) => call[0].where);
     expect(wheres.length).toBeGreaterThan(0);
     for (const where of wheres) expect(where.userId).toBe("user-1");

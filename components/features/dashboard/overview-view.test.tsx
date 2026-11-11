@@ -7,9 +7,11 @@ import type { DashboardMonth } from "@/lib/services/dashboard/month";
 import { formatDate } from "@/lib/utils/format-date";
 
 /**
- * The dashboard: the month at a glance. Asserted in Portuguese, because asserting English cannot
- * catch hardcoded English. The figures themselves are the server's (lib/services/dashboard/month
- * and its tests); this checks that the screen says them, links them and moves between months.
+ * The dashboard: the month's figures, the inbox, who is late, and what else waits. Asserted in
+ * Portuguese, because asserting English cannot catch hardcoded English. The figures themselves are
+ * the server's (lib/services/dashboard/month and its tests); the inbox has its own tests
+ * (home-inbox.test.tsx). This checks that the screen says them, links them and moves between
+ * months.
  */
 
 const { apiFetchMock, nothingSetUp } = vi.hoisted(() => ({
@@ -18,6 +20,7 @@ const { apiFetchMock, nothingSetUp } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/utils/api-client", () => ({ apiFetch: apiFetchMock }));
+vi.mock("@/lib/contexts/csrf-context", () => ({ useCsrf: () => ({ token: "csrf" }) }));
 vi.mock("next-auth/react", () => ({
   useSession: () => ({
     data: { user: { name: "José Pereira", email: "jose@example.com", id: "user-1" } },
@@ -42,6 +45,7 @@ vi.mock("@/lib/contexts/app-context", () => ({
       expenses: [],
       loading: false,
     },
+    refreshData: vi.fn(),
   }),
 }));
 
@@ -54,32 +58,19 @@ function month(overrides: Partial<DashboardMonth> = {}): DashboardMonth {
     year: 2026,
     month: 8,
     figures: { expected: 1850, received: 950, outstanding: 900 },
-    loop: {
-      rents: 12,
-      paid: 10,
-      reconciled: 9,
-      receiptsIssued: 11,
-      receiptsToIssue: 1,
-      fullyProcessed: 10,
-    },
-    attention: {
-      monthsOwed: { count: 0, amount: 0 },
-      movementsToReview: 0,
-      receiptsInDraft: 0,
-      leasesEnding: 0,
-      missingData: 0,
-    },
+    late: [],
+    attention: { leasesEnding: 0, missingData: 0 },
     status: { bank: null, taxMode: "sandbox" },
-    recent: { source: "payments", items: [] },
-    portfolio: { properties: 8, occupied: 7, leasesEnding: 2 },
-    activity: [],
     ...overrides,
   };
 }
 
 function show(answer: DashboardMonth = month(), search = "?month=2026-08") {
   window.history.replaceState({}, "", `/dashboard${search}`);
-  apiFetchMock.mockResolvedValue(answer);
+  // The month for the month; the inbox's movements are its own tests'.
+  apiFetchMock.mockImplementation(async (url: string) =>
+    url.startsWith("/api/dashboard/month") ? answer : [],
+  );
   render(<OverviewView />, { initialLocale: "pt" });
   return userEvent.setup();
 }
@@ -135,7 +126,7 @@ describe("OverviewView — the month", () => {
     const now = new Date();
     show(month(), "?month=2026-13");
 
-    await screen.findByTestId("dashboard-status");
+    await screen.findByText(d.figureExpected);
     expect(apiFetchMock).toHaveBeenCalledWith(
       `/api/dashboard/month?year=${now.getFullYear()}&month=${now.getMonth() + 1}`,
     );
@@ -160,63 +151,57 @@ describe("OverviewView — the month", () => {
   });
 });
 
-describe("OverviewView — the loop", () => {
-  it("follows the month's rents step by step, each opening where its work is", async () => {
+describe("OverviewView — the inbox and who is late", () => {
+  it("shows the inbox under the figures", async () => {
     show();
 
-    expect(await screen.findByText("10 de 12 totalmente processados")).toBeInTheDocument();
-    expect(screen.getByText("11 emitidos · 1 por emitir")).toBeInTheDocument();
-    const hrefs = Object.fromEntries(
-      [...document.querySelectorAll("a[data-step]")].map((a) => [
-        a.getAttribute("data-step"),
-        a.getAttribute("href"),
-      ]),
-    );
-    expect(hrefs).toEqual({
-      rents: "/financials?tab=rent-matrix",
-      paid: "/financials?tab=rent-matrix",
-      reconciled: "/financials?tab=bank",
-      receipts: "/financials?tab=receipts",
-    });
+    expect(await screen.findByTestId("home-inbox")).toHaveTextContent(d.inbox.empty);
   });
 
-  it("says so when no rent is due that month", async () => {
-    show(month({ loop: { ...month().loop, rents: 0 } }));
+  it("lists who is late, by how much, each opening the lease", async () => {
+    show(
+      month({
+        late: [
+          {
+            leaseId: "lease-1",
+            tenantName: "Ana Martínez",
+            propertyName: "Rua Augusta 12",
+            months: 2,
+            amount: 1500,
+          },
+        ],
+      }),
+    );
 
-    expect(await screen.findByText(d.loopEmpty)).toBeInTheDocument();
+    const list = await screen.findByTestId("dashboard-late");
+    const row = within(list).getByRole("link", { name: /Ana Martínez/ });
+    expect(row).toHaveTextContent("Rua Augusta 12 · 2 meses em dívida");
+    expect(row).toHaveTextContent("1500 €");
+    expect(row).toHaveAttribute("href", "/leases?detail=lease:lease-1");
+  });
+
+  it("shows no late list when nobody owes", async () => {
+    show();
+
+    await screen.findByTestId("home-inbox");
+    expect(screen.queryByTestId("dashboard-late")).not.toBeInTheDocument();
   });
 });
 
 describe("OverviewView — what waits", () => {
   it("lists only what waits, each opening where it is dealt with", async () => {
-    show(
-      month({
-        attention: {
-          monthsOwed: { count: 2, amount: 1050 },
-          movementsToReview: 3,
-          receiptsInDraft: 1,
-          leasesEnding: 0,
-          missingData: 4,
-        },
-      }),
-    );
+    show(month({ attention: { leasesEnding: 1, missingData: 4 } }));
 
     const list = await screen.findByTestId("dashboard-attention");
     expect(within(list).getByText(d.attentionTitle)).toBeInTheDocument();
-    expect(within(list).getByRole("link", { name: "2 meses em atraso · 1050 €" })).toHaveAttribute(
+    expect(within(list).getByRole("link", { name: /1 contrato/ })).toHaveAttribute(
       "href",
-      "/financials?tab=rent-matrix",
+      "/leases",
     );
-    expect(within(list).getByRole("link", { name: "3 movimentos para rever" })).toHaveAttribute(
-      "href",
-      "/financials?tab=bank",
-    );
-    expect(within(list).getByRole("link", { name: "1 recibo por emitir" })).toBeInTheDocument();
     // What a receipt still needs from the owner opens the guided list, one field at a time.
     expect(
       within(list).getByRole("link", { name: "Faltam 4 dados para os seus recibos" }),
     ).toHaveAttribute("href", "/complete");
-    expect(within(list).queryByText(/contrato/)).not.toBeInTheDocument();
   });
 
   it("says a single missing field in the singular", async () => {
@@ -235,22 +220,20 @@ describe("OverviewView — what waits", () => {
   it("shows no list when nothing waits", async () => {
     show();
 
-    await screen.findByTestId("dashboard-status");
+    await screen.findByTestId("home-inbox");
     expect(screen.queryByTestId("dashboard-attention")).not.toBeInTheDocument();
     expect(screen.queryByText(d.attentionTitle)).not.toBeInTheDocument();
   });
 });
 
 describe("OverviewView — the status line", () => {
-  it("says no bank is connected, and that Finanças sends nothing", async () => {
+  it("says nothing while the bank works, or when there is none", async () => {
     show();
-
-    expect(await screen.findByTestId("dashboard-status")).toHaveTextContent(
-      "Nenhum banco ligado · Finanças: simulação, nada é enviado",
-    );
+    await screen.findByTestId("home-inbox");
+    expect(screen.queryByTestId("dashboard-status")).not.toBeInTheDocument();
   });
 
-  it("warns before the bank's consent ends, and says when it has", async () => {
+  it("warns before the bank's consent ends, with the way to renew it", async () => {
     const soon = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString();
     show(
       month({
@@ -262,11 +245,8 @@ describe("OverviewView — the status line", () => {
     );
 
     const line = await screen.findByTestId("dashboard-status");
-    expect(line).toHaveTextContent(
-      `Banco sincronizado a ${formatDate("2026-09-27T06:00:00.000Z", "pt")}`,
-    );
-    expect(line).toHaveTextContent(`o consentimento termina a ${formatDate(soon, "pt")}`);
-    expect(line).toHaveTextContent(d.statusTaxTest);
+    expect(line).toHaveTextContent(`termina a ${formatDate(soon, "pt")}`);
+    expect(line).toHaveAttribute("href", "/settings?tab=integrations");
   });
 
   it("says the consent has ended", async () => {
@@ -280,91 +260,5 @@ describe("OverviewView — the status line", () => {
     );
 
     expect(await screen.findByTestId("dashboard-status")).toHaveTextContent(d.statusConsentEnded);
-  });
-});
-
-describe("OverviewView — recent money, the portfolio and activity", () => {
-  it("marks each bank movement processed or to review", async () => {
-    show(
-      month({
-        recent: {
-          source: "bank",
-          items: [
-            {
-              id: "tx-1",
-              date: "2026-08-02T00:00:00.000Z",
-              amount: 750,
-              currency: "EUR",
-              counterparty: "Ana Silva",
-              state: "processed",
-            },
-            {
-              id: "tx-2",
-              date: "2026-08-03T00:00:00.000Z",
-              amount: 600,
-              currency: "EUR",
-              counterparty: null,
-              state: "review",
-            },
-          ],
-        },
-      }),
-    );
-
-    expect(await screen.findByText(d.recentMovements)).toBeInTheDocument();
-    expect(screen.getByText(d.movementProcessed)).toBeInTheDocument();
-    expect(screen.getByText(d.movementToReview)).toBeInTheDocument();
-    // The section's own link leads to the inbox; the rows are not links.
-    expect(screen.getByRole("link", { name: d.seeAll })).toHaveAttribute(
-      "href",
-      "/financials?tab=bank",
-    );
-    expect(screen.getByText(d.unknownCounterparty)).toBeInTheDocument();
-  });
-
-  it("shows the last payments when no bank is connected", async () => {
-    show(
-      month({
-        recent: {
-          source: "payments",
-          items: [
-            { id: "rec-1", date: "2026-08-02T00:00:00.000Z", amount: 750, tenantName: "Ana Silva" },
-          ],
-        },
-      }),
-    );
-
-    expect(await screen.findByText(d.recentPayments)).toBeInTheDocument();
-    expect(screen.getByText("Ana Silva")).toBeInTheDocument();
-    expect(screen.queryByText(d.recentMovements)).not.toBeInTheDocument();
-  });
-
-  it("gives the portfolio as one line of text", async () => {
-    show();
-
-    expect(await screen.findByTestId("dashboard-portfolio")).toHaveTextContent(
-      "8 imóveis · 7 ocupados (88%) · 2 contratos terminam em 60 dias",
-    );
-  });
-
-  it("says the last audit entries in words, with the way to the whole trail", async () => {
-    show(
-      month({
-        activity: [
-          {
-            id: "log-1",
-            action: "BANK_CONNECTION_CREATED",
-            resourceType: "bank_connection",
-            createdAt: "2026-08-02T10:00:00.000Z",
-          },
-        ],
-      }),
-    );
-
-    expect(await screen.findByText(pt.auditActions.bankConnectionCreated)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: d.activitySeeAll })).toHaveAttribute(
-      "href",
-      "/settings?tab=account",
-    );
   });
 });
