@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { LIGHT_THEME_COLOR } from "../lib/theme/boot-script";
 
 /**
  * How the app opens. A device with no stored choice opens dark, whatever its own colour scheme is
@@ -40,7 +41,7 @@ test.describe("Launch theme", () => {
         tag.getAttribute("content"),
       ),
     );
-    expect(new Set(colours)).toEqual(new Set(["#f6f0e4"]));
+    expect(new Set(colours)).toEqual(new Set([LIGHT_THEME_COLOR]));
   });
 
   test("the install manifest opens on the same dark colour", async ({ request }) => {
