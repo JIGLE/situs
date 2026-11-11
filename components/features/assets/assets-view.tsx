@@ -4,9 +4,10 @@ import { PageHeader } from "@/components/shared/page-header";
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Building2, Home, Plus } from "lucide-react";
+import { Building2, FileUp, Home, Plus } from "lucide-react";
 import { PropertiesView, PropertiesViewRef } from "@/components/features/property/property-list";
 import { PortfolioSummary } from "@/components/features/property/portfolio-summary";
+import { PropertyImportSheet } from "@/components/features/financas-import/property-import-sheet";
 import { ExportButton, ExportColumn } from "@/components/ui/export-button";
 import { useApp } from "@/lib/contexts/app-context";
 import { useToast } from "@/lib/contexts/toast-context";
@@ -60,6 +61,8 @@ export function AssetsView(): React.ReactElement {
     city: "",
   });
   const [buildingSubmitting, setBuildingSubmitting] = useState(false);
+  // Properties read from cadernetas downloaded from the Portal das Finanças.
+  const [importOpen, setImportOpen] = useState(false);
 
   const handleAddBuilding = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,6 +130,13 @@ export function AssetsView(): React.ReactElement {
                     {t("newPropertyHint")}
                   </span>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setImportOpen(true)}>
+                  <FileUp className="mr-2 h-3.5 w-3.5" />
+                  {t("importFinancas")}
+                  <span className="ml-auto text-caption text-[var(--color-muted-foreground)]">
+                    {t("importFinancasHint")}
+                  </span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setBuildingDialogOpen(true)}>
                   <Building2 className="mr-2 h-3.5 w-3.5" />
@@ -145,6 +155,8 @@ export function AssetsView(): React.ReactElement {
           </>
         }
       />
+
+      <PropertyImportSheet open={importOpen} onOpenChange={setImportOpen} />
 
       {/* Add Building dialog */}
       <Dialog open={buildingDialogOpen} onOpenChange={setBuildingDialogOpen}>

@@ -22,7 +22,14 @@ vi.mock("@/lib/contexts/app-context", () => ({
   useApp: () => ({
     state: {
       properties: [
-        { id: "prop-1", name: "Rua Augusta 12", address: "Rua Augusta 12, Lisboa", rent: 850 },
+        {
+          id: "prop-1",
+          name: "Rua Augusta 12",
+          address: "Rua Augusta 12, Lisboa",
+          rent: 850,
+          cadasterReference: "1234",
+          fraction: "C",
+        },
       ],
       tenants: app.tenants,
     },
@@ -33,6 +40,8 @@ vi.mock("@/lib/contexts/app-context", () => ({
   }),
 }));
 vi.mock("@/lib/contexts/toast-context", () => ({ useToast: () => toast }));
+const { readContractProof } = vi.hoisted(() => ({ readContractProof: vi.fn() }));
+vi.mock("@/components/features/financas-import/read-document", () => ({ readContractProof }));
 
 const pt = ptMessages.leases.sheet;
 
@@ -131,5 +140,96 @@ describe("TenancySheet", () => {
 
     expect(screen.queryByPlaceholderText(pt.namePlaceholder)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: pt.typeNew })).toBeInTheDocument();
+  });
+
+  it("fills itself in from a Finanças contract proof, and saves only when the owner does", async () => {
+    readContractProof.mockResolvedValueOnce({
+      recognised: true,
+      contractNumber: "1234567",
+      startDate: "2026-02-01",
+      endDate: "2029-01-31",
+      renewable: true,
+      purpose: null,
+      monthlyRent: 900,
+      rentNotMonthly: false,
+      article: "1234",
+      fraction: "C",
+      parish: null,
+      landlords: [],
+      tenants: [
+        { taxId: "287654320", name: "MARIA DA SILVA", country: "PORTUGAL", share: null },
+        { taxId: "298765438", name: "PEDRO SANTOS", country: null, share: null },
+      ],
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<TenancySheet open onOpenChange={vi.fn()} />, { initialLocale: "pt" });
+
+    const proof = new File(["%PDF-1.7"], "comprovativo.pdf", { type: "application/pdf" });
+    await user.upload(
+      screen.getByLabelText(new RegExp(ptMessages.financasImport.tenancy.fill)),
+      proof,
+    );
+
+    await screen.findByText(
+      ptMessages.financasImport.tenancy.filled.replace("{number}", "1234567"),
+    );
+    expect(app.addLease).not.toHaveBeenCalled();
+    expect(screen.getByPlaceholderText(pt.namePlaceholder)).toHaveValue("Maria da Silva");
+    expect(screen.getByLabelText(/Renda mensal/)).toHaveValue(900);
+
+    await user.click(screen.getByRole("button", { name: pt.submit }));
+
+    await waitFor(() => expect(app.addLease).toHaveBeenCalledTimes(1));
+    expect(app.addTenant).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Maria da Silva", taxId: "287654320" }),
+    );
+    expect(app.addLease).toHaveBeenCalledWith(
+      expect.objectContaining({
+        propertyId: "prop-1",
+        startDate: "2026-02-01",
+        endDate: "2029-01-31",
+        monthlyRent: 900,
+        atContractNumber: "1234567",
+        parties: [
+          expect.objectContaining({ role: "tenant", name: "Pedro Santos", taxId: "298765438" }),
+        ],
+      }),
+    );
+  });
+
+  it("says which part of the proof needs the owner, and when it could not be read", async () => {
+    readContractProof
+      .mockResolvedValueOnce({
+        recognised: true,
+        contractNumber: null,
+        startDate: "2020-01-01",
+        endDate: "2021-12-31",
+        renewable: true,
+        purpose: null,
+        monthlyRent: 500,
+        rentNotMonthly: false,
+        article: "777",
+        fraction: null,
+        parish: null,
+        landlords: [],
+        tenants: [{ taxId: "287654320", name: "ANA", country: null, share: null }],
+      })
+      .mockRejectedValueOnce(Object.assign(new Error("x"), { status: 422 }));
+    const user = userEvent.setup();
+    renderWithProviders(<TenancySheet open onOpenChange={vi.fn()} />, { initialLocale: "pt" });
+    const input = screen.getByLabelText(new RegExp(ptMessages.financasImport.tenancy.fill));
+    const file = new File(["%PDF-1.7"], "c.pdf", { type: "application/pdf" });
+
+    await user.upload(input, file);
+    const warning = ptMessages.financasImport.tenancy.warning;
+    await screen.findByText(
+      warning.property_not_found.replace("{article}", "777").replace("{fraction}", "-"),
+    );
+    expect(
+      screen.getByText(new RegExp(warning.term_passed.split("{date}")[0])),
+    ).toBeInTheDocument();
+
+    await user.upload(input, file);
+    await screen.findByText(ptMessages.financasImport.tenancy.failed);
   });
 });

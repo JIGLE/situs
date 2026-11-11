@@ -67,7 +67,9 @@
       "name": "Nome dell'edificio *",
       "namePlaceholder": "es. Palazzo Riva",
       "submit": "Crea edificio"
-    }
+    },
+    "importFinancas": "Importa da Finanças",
+    "importFinancasHint": "PDF delle cadernetas"
   },
   "settings": {
     "title": "Impostazioni",
@@ -2045,5 +2047,56 @@
     "revokeInvitation": "Invito ritirato",
     "signUpSettingChange": "Impostazione di registrazione modificata",
     "changeAccountRole": "Ruolo dell'account modificato"
+  },
+  "financasImport": {
+    "title": "Importa da Finanças",
+    "description": "Immobili letti dalle loro cadernetas prediais. Controlla ciascuno prima di crearlo.",
+    "where": "Sul Portal das Finanças, apri Património Predial e scarica in PDF la caderneta predial di ogni immobile. Puoi sceglierne diverse insieme.",
+    "choose": "Scegli i PDF delle cadernetas",
+    "addMore": "Aggiungi altri PDF",
+    "reading": "Lettura…",
+    "include": "Crea {name}",
+    "name": "Nome",
+    "typeLabel": "Tipo",
+    "type": {
+      "apartment": "Appartamento",
+      "house": "Casa",
+      "commercial": "Commerciale",
+      "other": "Altro"
+    },
+    "article": "Articolo {article}",
+    "fraction": "Frazione {fraction}",
+    "area": "{area} m²",
+    "alreadyHave": "Già nel tuo portafoglio come {name}.",
+    "next": "Affitto e inquilini vengono dopo: in Nuova locazione, compila dalla ricevuta del contratto su Finanças.",
+    "create": "{count, plural, =0 {Crea immobili} one {Crea # immobile} other {Crea # immobili}}",
+    "created": "{count, plural, one {# immobile creato} other {# immobili creati}}",
+    "partial": "{created} creati. {failed} non salvati: riprova.",
+    "failure": {
+      "notPdf": "non è un PDF.",
+      "tooLarge": "il file è troppo grande.",
+      "noText": "non è stato possibile leggere il testo. Una scansione non funziona: scarica il PDF dal Portal.",
+      "notCaderneta": "non sembra una caderneta predial urbana.",
+      "rustica": "gli immobili rustici (caderneta rústica) non si possono ancora importare.",
+      "failed": "non è stato possibile leggere il file. Riprova.",
+      "saveFailed": "Non salvato. Riprova."
+    },
+    "tenancy": {
+      "fill": "Compila da Finanças",
+      "hint": "Il PDF della ricevuta del contratto, in Arrendamento › Contratos sul Portal",
+      "reading": "Lettura del contratto…",
+      "failed": "Questo PDF non si legge come ricevuta di contratto. Compila a mano.",
+      "filled": "Compilato dal contratto {number}. Controlla ogni campo prima di salvare.",
+      "filledNoNumber": "Compilato dalla ricevuta del contratto. Controlla ogni campo prima di salvare.",
+      "warning": {
+        "property_not_found": "Nessun immobile ha l'articolo {article}, frazione {fraction}. Sceglilo sotto o importa prima la sua caderneta.",
+        "property_ambiguous": "Più di un immobile ha l'articolo {article}, frazione {fraction}. Scegli quello giusto sotto.",
+        "no_tenant": "Nessun inquilino trovato nel PDF. Indicalo sotto.",
+        "no_rent": "Affitto non trovato. Indicalo sotto.",
+        "rent_not_monthly": "Finanças indica questo affitto per meno di un mese. Indica l'importo mensile.",
+        "no_start": "Data di inizio non trovata. Controlla la durata sotto.",
+        "term_passed": "La durata su Finanças è terminata il {date}. Se il contratto è stato rinnovato, indica la data di fine attuale."
+      }
+    }
   }
 }

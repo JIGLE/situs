@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { ChevronDown, Plus, Upload } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { ChevronDown, FileUp, Plus, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,8 +36,12 @@ import {
   onPropertyChosen,
   onRentChanged,
   onStartChanged,
+  oneYearTermEnd,
 } from "@/lib/utils/lease-defaults";
+import { tenancyFromContract, type TenancyWarning } from "@/lib/services/financas-import/match";
+import { readContractProof } from "@/components/features/financas-import/read-document";
 import { cn } from "@/lib/utils/utils";
+import { formatDate } from "@/lib/utils/format-date";
 import { uploadContract } from "./lease-contract";
 import { LeasePartiesEditor, leasePartiesInvalid } from "./lease-parties-editor";
 
@@ -129,6 +133,8 @@ function fromLease(lease: Lease): LeaseFormData {
  */
 export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancySheetProps) {
   const t = useTranslations("leases");
+  const tImport = useTranslations("financasImport.tenancy");
+  const locale = useLocale();
   const tActions = useTranslations("actions");
   const router = useRouter();
   const { state, addLease, updateLease, addTenant, refreshData } = useApp();
@@ -144,6 +150,20 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
   const [showMore, setShowMore] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<FieldError, string>>>({});
   const [submitting, setSubmitting] = useState(false);
+  // A contract proof from the Portal das Finanças the sheet was filled in from, and what in it
+  // the owner must still check.
+  const [readingProof, setReadingProof] = useState(false);
+  const [proof, setProof] = useState<
+    | {
+        number: string | null;
+        warnings: TenancyWarning[];
+        article: string;
+        fraction: string;
+        endDate: string;
+      }
+    | { failed: true }
+    | null
+  >(null);
 
   // Start afresh every time the sheet opens, from the lease being edited or from the prefill.
   useEffect(() => {
@@ -151,6 +171,7 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
     setErrors({});
     setContractFile(null);
     setNewTenant(EMPTY_TENANT);
+    setProof(null);
     if (lease) {
       setForm(fromLease(lease));
       setTenantMode("existing");
@@ -187,6 +208,75 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
       return;
     }
     setContractFile(file);
+  };
+
+  /**
+   * Fills the sheet from a contract proof downloaded from the Portal das Finanças (Arrendamento ›
+   * Contratos): the property by its article and fraction, the tenants by NIF, the rent, the term
+   * and AT's contract number. Nothing is saved: the owner checks the sheet and creates it as usual.
+   */
+  const handleProof = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (file.size > MAX_CONTRACT_BYTES) {
+      error(t("toast.fileTooLarge", { size: MAX_CONTRACT_MB }));
+      return;
+    }
+    setReadingProof(true);
+    try {
+      const contract = await readContractProof(file);
+      if (!contract.recognised) {
+        setProof({ failed: true });
+        return;
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      const found = tenancyFromContract(contract, properties, tenants, today);
+      setForm((prev) => {
+        const startDate = found.startDate ?? prev.startDate;
+        const withRent =
+          found.monthlyRent != null ? { ...prev, ...onRentChanged(prev, found.monthlyRent) } : prev;
+        return {
+          ...withRent,
+          propertyId: found.propertyId ?? prev.propertyId,
+          startDate,
+          endDate: found.endDate ?? (found.startDate ? oneYearTermEnd(startDate) : prev.endDate),
+          atContractNumber: found.atContractNumber ?? prev.atContractNumber,
+          parties: [
+            ...(prev.parties ?? []).filter((p) => p.role !== "tenant"),
+            ...found.coTenants.map((p) => ({
+              role: "tenant" as const,
+              name: p.name,
+              taxId: p.taxId,
+              taxCountry: "PT",
+              idDocument: "",
+            })),
+          ],
+        };
+      });
+      if (found.tenant && "existingId" in found.tenant) {
+        setTenantMode("existing");
+        update({ tenantId: found.tenant.existingId });
+      } else if (found.tenant) {
+        setTenantMode("new");
+        setNewTenant({ ...EMPTY_TENANT, name: found.tenant.name, taxId: found.tenant.taxId });
+      }
+      // The proof is Finanças' record of the contract: kept with the lease unless one was chosen.
+      setContractFile((prev) => prev ?? file);
+      setShowMore(true);
+      setErrors({});
+      setProof({
+        number: found.atContractNumber,
+        warnings: found.warnings,
+        article: contract.article ?? "",
+        fraction: contract.fraction ?? "",
+        endDate: contract.endDate ?? "",
+      });
+    } catch {
+      setProof({ failed: true });
+    } finally {
+      setReadingProof(false);
+    }
   };
 
   /** Every problem, each in the user's language: the schemas' English never reaches the screen. */
@@ -285,6 +375,63 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
 
         <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
           <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
+            {/* From Finanças: a registered contract's proof fills in what follows */}
+            {!editing && (
+              <section className="space-y-2">
+                <Input
+                  id="tenancy-proof"
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  onChange={handleProof}
+                  className="hidden"
+                  disabled={readingProof || submitting}
+                />
+                <Label
+                  htmlFor="tenancy-proof"
+                  className="flex min-h-11 cursor-pointer items-center gap-2 border border-dashed border-[var(--color-border)] px-4 py-2 text-sm transition-colors hover:bg-[var(--color-surface-hover)]"
+                >
+                  <FileUp className="h-4 w-4 shrink-0" />
+                  <span className="min-w-0">
+                    <span className="block">
+                      {readingProof ? tImport("reading") : tImport("fill")}
+                    </span>
+                    {!proof && (
+                      <span className="block text-xs text-[var(--color-muted-foreground)]">
+                        {tImport("hint")}
+                      </span>
+                    )}
+                  </span>
+                </Label>
+                {proof && "failed" in proof && (
+                  <p className="text-sm text-destructive" role="alert">
+                    {tImport("failed")}
+                  </p>
+                )}
+                {proof && !("failed" in proof) && (
+                  <div className="space-y-1 text-sm" aria-live="polite">
+                    <p>
+                      {proof.number
+                        ? tImport("filled", { number: proof.number })
+                        : tImport("filledNoNumber")}
+                    </p>
+                    {proof.warnings.length > 0 && (
+                      <ul className="list-disc space-y-1 pl-5 text-[var(--color-warning)]">
+                        {proof.warnings.map((warning) => (
+                          <li key={warning}>
+                            {tImport(`warning.${warning}`, {
+                              article: proof.article || "?",
+                              fraction: proof.fraction || "-",
+                              date: formatDate(proof.endDate, locale),
+                            })}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </section>
+            )}
+
             {/* Property */}
             <section className="space-y-2">
               <Label htmlFor="tenancy-property">{t("field.property")}</Label>

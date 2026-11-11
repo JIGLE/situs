@@ -239,6 +239,13 @@ e2e/                    # Playwright E2E tests
   and the Portal sub-user in Settings › Integrations (`lib/services/tax/at-connection.ts`). Every
   call appends an immutable `TaxSubmissionLog` row (`GET /api/tax/connectors`, Finance ›
   Reports).
+- **Import from Finanças**: the Portal exports no list, so setup reads its PDFs
+  (`lib/services/financas-import/`, pure readers over `unpdf`'s text; `POST /api/financas-import`
+  reads and stores nothing). Cadernetas prediais become properties the owner ticks in Portfolio ›
+  New asset › Import from Finanças; a contract proof fills the New tenancy sheet, which saves as
+  usual. A value is read from its label to the next known label, never to a line end, and the
+  readers' regexes avoid nested quantifiers (`security/detect-unsafe-regex`): write `(?:x|)`, not
+  `(?:x ?y)?`.
 - **Alert generation**: `lib/services/notifications/notification-automation.ts` reads the rent
   ledger. `payment_due` (D-5) and `payment_overdue` (D+1/D+7) come from `RentPeriod` and quote the
   OUTSTANDING balance, so a part-paid month is chased for its balance; `rent_receipt_due` comes
