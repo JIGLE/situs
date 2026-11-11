@@ -111,8 +111,10 @@ describe("PropertyImportSheet", () => {
       new File(["%PDF"], "scan.pdf", { type: "application/pdf" }),
     ]);
 
-    expect(await screen.findByText(new RegExp(t.failure.rustica.slice(0, 30)))).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(t.failure.noText.slice(0, 30)))).toBeInTheDocument();
+    expect(
+      await screen.findByText((text: string) => text.includes(t.failure.rustica)),
+    ).toBeInTheDocument();
+    expect(screen.getByText((text: string) => text.includes(t.failure.noText))).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Criar imóveis" })).toBeDisabled();
   });
 });

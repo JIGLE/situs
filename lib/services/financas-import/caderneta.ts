@@ -233,7 +233,14 @@ export function parseCaderneta(pages: string[] | string): ParsedCaderneta {
       const from = (heading.index ?? 0) + heading[0].length;
       const to = i + 1 < headings.length ? (headings[i + 1].index ?? text.length) : text.length;
       const block = text.slice(from, to);
-      const code = valueAfter(` ${block}`, /^/, [/LOCALIZA[ÇC][ÃA]O/, /ELEMENTOS/, /Av\.\/Rua/i]);
+      // The code is short ("LJ B", "2º ES", "C/V D"): it ends at the next heading or label.
+      const code = valueAfter(` ${block}`, /^/, [
+        /LOCALIZA[ÇC][ÃA]O/,
+        /ELEMENTOS/,
+        /Av\.\/Rua/i,
+        / [^ :]+ ?:/,
+        ...SECTIONS,
+      ]);
       const andar = valueAfter(block, /Andar\/Divis[ãa]o ?:/i, [
         /ELEMENTOS/,
         /Afe[c]?ta/i,

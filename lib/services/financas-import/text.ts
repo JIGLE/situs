@@ -75,10 +75,11 @@ export function titleCase(raw: string | null | undefined): string {
   return raw
     .toLocaleLowerCase("pt-PT")
     .split(" ")
-    .map((word, i) => {
+    .map((word, i, words) => {
       if (!word) return word;
       if (/\d/.test(word) || word.includes("/")) return word.toLocaleUpperCase("pt-PT");
-      if (i > 0 && LOWER_WORDS.has(word)) return word;
+      // "Rua de Angola", but "Rua A": a lone last word is a name, not an article.
+      if (i > 0 && i < words.length - 1 && LOWER_WORDS.has(word)) return word;
       return word.charAt(0).toLocaleUpperCase("pt-PT") + word.slice(1);
     })
     .join(" ");

@@ -131,4 +131,12 @@ describe("cadernetaDrafts", () => {
       fraction: "",
     });
   });
+
+  it("ends a unit's code at the next label when no location block follows it", () => {
+    const parsed = parseCaderneta(
+      `${HEADER} IDENTIFICAÇÃO DO PRÉDIO ARTIGO MATRICIAL: 374 NIP: LOCALIZAÇÃO DO PRÉDIO Av./Rua/Praça: RUA A Nº: 9 Código Postal: 2800-051 ALMADA ANDAR OU DIVISÃO COM UTILIZAÇÃO INDEPENDENTE: LJ B Afectação: Comércio Tipologia/Divisões: 1 ANDAR OU DIVISÃO COM UTILIZAÇÃO INDEPENDENTE: 2º ES Afectação: Habitação Tipologia/Divisões: T3 TITULARES Identificação fiscal: 123456789 Nome: JOSÉ EXEMPLO Parte: 1/1`,
+    );
+    expect(parsed.units.map((u) => u.fraction)).toEqual(["LJ B", "2º ES"]);
+    expect(cadernetaDrafts(parsed).map((d) => d.name)).toEqual(["Rua A 9, LJ B", "Rua A 9, 2º ES"]);
+  });
 });

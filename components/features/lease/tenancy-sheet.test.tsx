@@ -166,7 +166,9 @@ describe("TenancySheet", () => {
 
     const proof = new File(["%PDF-1.7"], "comprovativo.pdf", { type: "application/pdf" });
     await user.upload(
-      screen.getByLabelText(new RegExp(ptMessages.financasImport.tenancy.fill)),
+      screen.getByLabelText((label: string) =>
+        label.startsWith(ptMessages.financasImport.tenancy.fill),
+      ),
       proof,
     );
 
@@ -217,7 +219,9 @@ describe("TenancySheet", () => {
       .mockRejectedValueOnce(Object.assign(new Error("x"), { status: 422 }));
     const user = userEvent.setup();
     renderWithProviders(<TenancySheet open onOpenChange={vi.fn()} />, { initialLocale: "pt" });
-    const input = screen.getByLabelText(new RegExp(ptMessages.financasImport.tenancy.fill));
+    const input = screen.getByLabelText((label: string) =>
+      label.startsWith(ptMessages.financasImport.tenancy.fill),
+    );
     const file = new File(["%PDF-1.7"], "c.pdf", { type: "application/pdf" });
 
     await user.upload(input, file);
@@ -226,7 +230,7 @@ describe("TenancySheet", () => {
       warning.property_not_found.replace("{article}", "777").replace("{fraction}", "-"),
     );
     expect(
-      screen.getByText(new RegExp(warning.term_passed.split("{date}")[0])),
+      screen.getByText((text: string) => text.startsWith(warning.term_passed.split("{date}")[0])),
     ).toBeInTheDocument();
 
     await user.upload(input, file);

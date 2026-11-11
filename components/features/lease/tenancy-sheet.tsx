@@ -567,7 +567,7 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
             <section className="space-y-3">
               <div>
                 <h3 className="text-sm font-medium">{t("sheet.terms")}</h3>
-                {!editing && (
+                {!editing && !proof && (
                   <p className="text-xs text-[var(--color-muted-foreground)]">
                     {t("sheet.termsHint")}
                   </p>
