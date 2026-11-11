@@ -215,7 +215,14 @@ test("an account confirmed once is remembered, matched on its own for the rent, 
     await page.goto(`/people?detail=tenant:${tenant.id}`);
     await settle(page);
 
-    await page.getByRole("tab", { name: en.tenants.modal.tabPayments }).click();
+    // Below `md` the modal swaps its tab bar for a select (responsive rule 4), so a phone
+    // reaches the tab through that instead.
+    const paymentsTab = page.getByRole("tab", { name: en.tenants.modal.tabPayments });
+    if (await paymentsTab.isVisible()) await paymentsTab.click();
+    else
+      await page
+        .getByRole("combobox", { name: en.tenants.modal.tabOverview })
+        .selectOption("payments");
     const panel = page.getByRole("heading", { name: en.tenants.payerAccounts.title });
     await expect(panel).toBeVisible({ timeout: 10000 });
     await expect(
