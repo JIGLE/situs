@@ -31,6 +31,7 @@ const part = (ownerId: string, ownerName: string, net: number) => ({
 
 const YEAR = {
   year: 2026,
+  soleOwnerProperties: 0,
   income: 12000,
   expenses: 0,
   net: 12000,
@@ -115,10 +116,10 @@ describe("OwnerSharesView", () => {
     renderWithProviders(<OwnerSharesView />, { initialLocale: "pt" });
     await screen.findByText("Rui Lopes");
 
-    await user.click(screen.getAllByRole("button", { name: "Registar pagamento" })[1]);
+    await user.click(screen.getAllByRole("button", { name: "Registar entrega" })[1]);
     expect(screen.getByLabelText("Valor")).toHaveValue("5000,00");
     await user.click(
-      screen.getAllByRole("button", { name: "Registar pagamento" }).at(-1) as HTMLElement,
+      screen.getAllByRole("button", { name: "Registar entrega" }).at(-1) as HTMLElement,
     );
 
     await waitFor(() =>
@@ -143,7 +144,7 @@ describe("OwnerSharesView", () => {
 
     await user.click(await screen.findByRole("button", { name: /Rui Lopes/ }));
 
-    expect(screen.getByText("Pagamentos")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Remover o pagamento de/ })).toBeInTheDocument();
+    expect(screen.getByText("Entregas")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Remover a entrega de/ })).toBeInTheDocument();
   });
 });

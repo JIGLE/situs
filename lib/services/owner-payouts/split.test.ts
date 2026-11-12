@@ -172,3 +172,34 @@ describe("splitYear", () => {
     expect(year.outstanding).toBe(0);
   });
 });
+
+describe("splitYear, shared properties only", () => {
+  it("leaves out a property one owner holds alone, and counts it", () => {
+    const year = splitYear(
+      2026,
+      [
+        {
+          propertyId: "p1",
+          propertyName: "Shared",
+          shares: [share("ana", 50), share("rui", 50)],
+          income: months(100),
+          expenses: [],
+        },
+        {
+          propertyId: "p2",
+          propertyName: "Ana's own",
+          shares: [share("ana", 100)],
+          income: months(1000),
+          expenses: [],
+        },
+      ],
+      [],
+      { sharedOnly: true },
+    );
+
+    expect(year.properties.map((p) => p.propertyId)).toEqual(["p1"]);
+    expect(year.soleOwnerProperties).toBe(1);
+    expect(year).toMatchObject({ income: 1200, outstanding: 1200 });
+    expect(year.owners.find((o) => o.ownerId === "ana")).toMatchObject({ net: 600 });
+  });
+});

@@ -1549,7 +1549,7 @@
       "balance": "Balance",
       "colOwner": "Owner",
       "colProperties": "Properties",
-      "emptyTitle": "No property has owners recorded in {year}",
+      "emptyTitle": "No property was held with other owners in {year}",
       "emptyDescription": "Add the owners and their shares on a property's page. The rent received less the property's expenses is then split between them here, and you can record what you pay each one.",
       "byOwner": "By owner",
       "byProperty": "By property",
@@ -1577,7 +1577,9 @@
       "note": "Note (optional)",
       "amountRequired": "Enter an amount greater than zero.",
       "dateRequired": "Enter the day it was paid.",
-      "recorded": "Payout recorded"
+      "recorded": "Payout recorded",
+      "showAll": "All properties",
+      "soleOwnerHidden": "{count, plural, one {# property held by one owner is not shown.} other {# properties held by one owner are not shown.}}"
     }
   },
   "propertyDetail": {

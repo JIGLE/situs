@@ -19,13 +19,16 @@ async function handleGet(request: NextRequest): Promise<Response> {
   if (authResult instanceof Response) return authResult;
   const { scopeUserId } = authResult;
 
-  const yearParam = Number(new URL(request.url).searchParams.get("year"));
+  const params = new URL(request.url).searchParams;
+  const yearParam = Number(params.get("year"));
   const year =
     Number.isInteger(yearParam) && yearParam >= 2000 && yearParam <= 2100
       ? yearParam
       : new Date().getUTCFullYear();
 
-  return createSuccessResponse(await getOwnerPayoutYear(scopeUserId, year));
+  // Shared properties only unless `all=1`: one owner's property has nobody to pay.
+  const sharedOnly = params.get("all") !== "1";
+  return createSuccessResponse(await getOwnerPayoutYear(scopeUserId, year, { sharedOnly }));
 }
 
 async function handlePost(request: NextRequest): Promise<Response> {

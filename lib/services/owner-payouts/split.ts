@@ -98,6 +98,8 @@ export interface OwnerStatement {
 
 export interface YearSplit {
   year: number;
+  /** Properties with an owner in the year that one owner held alone, whether listed or not. */
+  soleOwnerProperties: number;
   income: number;
   expenses: number;
   net: number;
@@ -236,10 +238,15 @@ export function splitYear(
   year: number,
   properties: PropertyMoney[],
   payouts: PayoutRecord[],
+  options: { sharedOnly?: boolean } = {},
 ): YearSplit {
-  const splits = properties
+  const all = properties
     .filter((property) => property.shares.some((share) => overlapsYear(share, year)))
-    .map((property) => splitProperty(property, year))
+    .map((property) => splitProperty(property, year));
+  // A property one owner holds alone has nobody to pay; left out, the account's own properties
+  // do not bury the shared ones, nor swell "still to pay" with money the owner keeps.
+  const shared = all.filter((split) => split.owners.length > 1);
+  const splits = (options.sharedOnly ? shared : all)
     // Shared properties first: they are the ones with someone to pay.
     .sort(
       (a, b) =>
@@ -305,6 +312,7 @@ export function splitYear(
 
   return {
     year,
+    soleOwnerProperties: all.length - shared.length,
     income: sumMoney(splits.map((split) => split.income)),
     expenses: sumMoney(splits.map((split) => split.expenses)),
     net: sumMoney(splits.map((split) => split.net)),

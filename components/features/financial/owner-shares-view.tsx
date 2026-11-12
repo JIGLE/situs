@@ -20,6 +20,7 @@ import {
 import { ExportButton } from "@/components/ui/export-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useCsrf } from "@/lib/contexts/csrf-context";
 import { useToast } from "@/lib/contexts/toast-context";
@@ -79,13 +80,15 @@ export function OwnerSharesView(): React.ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [paying, setPaying] = useState<Statement | null>(null);
+  // Shared properties by default: one the owner holds alone has nobody to pay.
+  const [showAll, setShowAll] = useState(false);
 
   const load = useCallback(
-    async (y: number, quiet = false) => {
+    async (y: number, all: boolean, quiet = false) => {
       if (!quiet) setLoading(true);
       setError(null);
       try {
-        setData(await apiFetch<Year>(`/api/owner-payouts?year=${y}`));
+        setData(await apiFetch<Year>(`/api/owner-payouts?year=${y}${all ? "&all=1" : ""}`));
       } catch (err) {
         setError(apiError(err));
         if (!quiet) setData(null);
@@ -97,8 +100,8 @@ export function OwnerSharesView(): React.ReactElement {
   );
 
   useEffect(() => {
-    void load(year);
-  }, [year, load]);
+    void load(year, showAll);
+  }, [year, showAll, load]);
 
   const toggle = (ownerId: string) =>
     setOpen((shown) => {
@@ -125,7 +128,7 @@ export function OwnerSharesView(): React.ReactElement {
         try {
           await apiFetch(`/api/owner-payouts/${payout.id}`, csrfToken, "DELETE");
           toast.success(t("removed"));
-          await load(year, true);
+          await load(year, showAll, true);
         } catch (err) {
           if (!wasReported(err)) toast.error(apiError(err));
         }
@@ -180,23 +183,34 @@ export function OwnerSharesView(): React.ReactElement {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <ExportButton
-            data={exportRows}
-            filename={`owner-shares-${year}`}
-            disabled={exportRows.length === 0}
-            columns={[
-              { key: "owner", label: t("colOwner") },
-              { key: "properties", label: t("colProperties") },
-              { key: "income", label: t("income") },
-              { key: "expenses", label: t("expenses") },
-              { key: "net", label: t("net") },
-              { key: "paid", label: t("paid") },
-              { key: "balance", label: t("balance") },
-            ]}
-          />
+          <div className="flex items-center gap-3">
+            <label className="flex min-h-11 items-center gap-2 text-sm text-[var(--color-muted-foreground)] md:min-h-0">
+              <Switch checked={showAll} onCheckedChange={setShowAll} />
+              {t("showAll")}
+            </label>
+            <ExportButton
+              data={exportRows}
+              filename={`owner-shares-${year}`}
+              disabled={exportRows.length === 0}
+              columns={[
+                { key: "owner", label: t("colOwner") },
+                { key: "properties", label: t("colProperties") },
+                { key: "income", label: t("income") },
+                { key: "expenses", label: t("expenses") },
+                { key: "net", label: t("net") },
+                { key: "paid", label: t("paid") },
+                { key: "balance", label: t("balance") },
+              ]}
+            />
+          </div>
         </div>
         {data && data.properties.length > 0 ? (
           <p className="text-sm text-[var(--color-muted-foreground)]">
+            {!showAll && data.soleOwnerProperties > 0 ? (
+              <span className="block text-xs">
+                {t("soleOwnerHidden", { count: data.soleOwnerProperties })}
+              </span>
+            ) : null}
             {t("income")}{" "}
             <span className="tabular-nums text-[var(--color-foreground)]">
               {formatEuro(data.income)}
@@ -230,6 +244,9 @@ export function OwnerSharesView(): React.ReactElement {
         <div className="border border-[var(--color-hairline)] bg-[var(--color-surface-solid)] p-6 text-sm text-[var(--color-muted-foreground)]">
           <p className="font-medium text-[var(--color-foreground)]">{t("emptyTitle", { year })}</p>
           <p className="mt-1">{t("emptyDescription")}</p>
+          {!showAll && data && data.soleOwnerProperties > 0 ? (
+            <p className="mt-1">{t("soleOwnerHidden", { count: data.soleOwnerProperties })}</p>
+          ) : null}
         </div>
       ) : (
         <>
@@ -377,11 +394,11 @@ export function OwnerSharesView(): React.ReactElement {
             <ul className="divide-y divide-[var(--color-hairline)]">
               {data.properties.map((property) => (
                 <li key={property.propertyId} className="space-y-1 px-4 py-3">
-                  <div className="flex items-baseline justify-between gap-3">
+                  <div className="flex items-center justify-between gap-3">
                     <Link
                       href={detailHref(property.propertyId)}
                       scroll={false}
-                      className="min-w-0 truncate font-medium text-[var(--color-foreground)] hover:underline"
+                      className="flex min-h-11 min-w-0 items-center truncate font-medium text-[var(--color-foreground)] hover:underline md:min-h-0"
                     >
                       {property.propertyName}
                     </Link>
@@ -424,7 +441,7 @@ export function OwnerSharesView(): React.ReactElement {
         owner={paying}
         year={year}
         onOpenChange={(isOpen) => !isOpen && setPaying(null)}
-        onRecorded={() => void load(year, true)}
+        onRecorded={() => void load(year, showAll, true)}
       />
       <ConfirmationDialog dialog={confirmDialog} />
     </div>

@@ -1549,7 +1549,7 @@
       "balance": "Saldo",
       "colOwner": "Propietario",
       "colProperties": "Inmuebles",
-      "emptyTitle": "Ningún inmueble tiene propietarios registrados en {year}",
+      "emptyTitle": "Ningún inmueble se compartió con otros propietarios en {year}",
       "emptyDescription": "Añada los propietarios y sus cuotas en la página del inmueble. Las rentas cobradas, menos los gastos del inmueble, se reparten aquí entre ellos, y puede registrar lo que paga a cada uno.",
       "byOwner": "Por propietario",
       "byProperty": "Por inmueble",
@@ -1558,7 +1558,7 @@
       "toPay": "A pagar {amount}",
       "owesBack": "Debe devolver {amount}",
       "settled": "Liquidado",
-      "recordPayout": "Registrar pago",
+      "recordPayout": "Registrar entrega",
       "reimbursedLine": "Incluye {amount} de gastos que este propietario pagó de su bolsillo.",
       "payouts": "Pagos",
       "noPayouts": "Aún no se ha pagado nada de este año.",
@@ -1577,7 +1577,9 @@
       "note": "Nota (opcional)",
       "amountRequired": "Indique un importe mayor que cero.",
       "dateRequired": "Indique el día en que se pagó.",
-      "recorded": "Pago registrado"
+      "recorded": "Pago registrado",
+      "showAll": "Todos los inmuebles",
+      "soleOwnerHidden": "{count, plural, one {# inmueble de un solo propietario no aparece.} other {# inmuebles de un solo propietario no aparecen.}}"
     }
   },
   "propertyDetail": {

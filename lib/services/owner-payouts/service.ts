@@ -28,7 +28,11 @@ function referenceDay(referenceMonth: string | null): Date | null {
   return new Date(Date.UTC(Number(match[1]), month - 1, 1));
 }
 
-export async function getOwnerPayoutYear(userId: string, year: number): Promise<YearSplit> {
+export async function getOwnerPayoutYear(
+  userId: string,
+  year: number,
+  options: { sharedOnly?: boolean } = {},
+): Promise<YearSplit> {
   const prisma = getPrismaClient();
   const range = yearRange(year);
 
@@ -101,7 +105,7 @@ export async function getOwnerPayoutYear(userId: string, year: number): Promise<
       ?.expenses.push({ amount: expense.amount, day: expense.date });
   }
 
-  return splitYear(year, [...properties.values()], payouts);
+  return splitYear(year, [...properties.values()], payouts, options);
 }
 
 export interface PayoutInput {
