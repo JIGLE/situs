@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Link2, Plus, RotateCcw, X } from "lucide-react";
 
@@ -9,7 +10,10 @@ import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -63,6 +67,10 @@ interface InboxRow {
   recordedPayments: { id: string; date: string; amount: number }[];
 }
 
+/** Picker values that are not a lease: they open the New tenancy sheet instead of assigning. */
+const NEW_TENANCY = "new-tenancy";
+const TENANT_PREFIX = "tenant:";
+
 type InboxAction = "confirm" | "reassign" | "ignore" | "restore" | "link";
 
 /** What `PUT /api/bank/transactions/[id]` answers: `recordedPayments` is set when nothing was allocated. */
@@ -100,6 +108,7 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
   const toast = useToast();
   const { token: csrfToken } = useCsrf();
   const { state, refreshData } = useApp();
+  const router = useRouter();
   const [rows, setRows] = useState<InboxRow[]>([]);
   const [filter, setFilter] = useState<InboxFilter>("review");
   const [loading, setLoading] = useState(true);
@@ -122,6 +131,30 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
         }),
     [state.leases, state.tenants, state.properties],
   );
+
+  // A payment is assigned to a lease, never to a bare tenant: the lease is what owes rent month by
+  // month. A tenant added before there was a tenancy sheet (the property page's old "Add tenant",
+  // or the tenant form with a property and a rent) has no lease at all, so the picker had nothing
+  // to show for them and opened empty. They are listed now, and choosing one opens the New tenancy
+  // sheet with that tenant (and their property) filled in; the movement waits here meanwhile.
+  const tenantsWithoutLease = useMemo(
+    () =>
+      state.tenants
+        .filter((tenant) => !state.leases.some((lease) => lease.tenantId === tenant.id))
+        .map((tenant) => ({ id: tenant.id, name: tenant.name })),
+    [state.leases, state.tenants],
+  );
+
+  const pickLease = (row: InboxRow, value: string) => {
+    if (value === NEW_TENANCY) {
+      router.push("/portfolio?tab=leases&action=create");
+    } else if (value.startsWith(TENANT_PREFIX)) {
+      const tenantId = value.slice(TENANT_PREFIX.length);
+      router.push(`/portfolio?tab=leases&action=create&tenantId=${encodeURIComponent(tenantId)}`);
+    } else {
+      void act(row, "reassign", value);
+    }
+  };
 
   /** `quiet` keeps the current rows on screen while they refresh, after an action or a sync. */
   const load = useCallback(
@@ -303,19 +336,45 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
     if (reassigningId === row.id) {
       return (
         <div className="flex items-center gap-1">
-          <Select
-            onValueChange={(leaseId) => void act(row, "reassign", leaseId)}
-            disabled={busyId === row.id}
-          >
+          <Select onValueChange={(value) => pickLease(row, value)} disabled={busyId === row.id}>
             <SelectTrigger className="h-7 w-[190px] text-xs" aria-label={t("assignToLease")}>
               <SelectValue placeholder={t("assignToLease")} />
             </SelectTrigger>
             <SelectContent>
-              {leaseOptions.map((lease) => (
-                <SelectItem key={lease.id} value={lease.id}>
-                  {lease.label}
-                </SelectItem>
-              ))}
+              {leaseOptions.length === 0 ? (
+                <SelectGroup>
+                  <SelectLabel className="max-w-[260px] pl-2 font-normal text-[var(--color-muted-foreground)]">
+                    {t("noActiveLeases")}
+                  </SelectLabel>
+                </SelectGroup>
+              ) : (
+                leaseOptions.map((lease) => (
+                  <SelectItem key={lease.id} value={lease.id}>
+                    {lease.label}
+                  </SelectItem>
+                ))
+              )}
+              {tenantsWithoutLease.length > 0 ? (
+                <>
+                  <SelectSeparator />
+                  <SelectGroup>
+                    <SelectLabel className="pl-2 text-xs text-[var(--color-muted-foreground)]">
+                      {t("tenantsWithoutLease")}
+                    </SelectLabel>
+                    {tenantsWithoutLease.map((tenant) => (
+                      <SelectItem
+                        key={tenant.id}
+                        value={`${TENANT_PREFIX}${tenant.id}`}
+                        description={t("createTheirLease")}
+                      >
+                        {tenant.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </>
+              ) : null}
+              <SelectSeparator />
+              <SelectItem value={NEW_TENANCY}>{t("newTenancy")}</SelectItem>
             </SelectContent>
           </Select>
           <Button
