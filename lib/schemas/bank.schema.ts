@@ -33,6 +33,10 @@ export const bankTransactionActionSchema = z
     leaseId: z.string().optional(),
     receiptId: z.string().optional(),
     newPayment: z.boolean().optional(),
+    referenceMonth: z
+      .string()
+      .regex(/^\d{4}-(?:0[1-9]|1[0-2])$/)
+      .optional(),
   })
   .refine((body) => body.action !== "reassign" || !!body.leaseId, {
     message: "reassign requires a leaseId",

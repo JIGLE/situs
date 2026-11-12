@@ -20,7 +20,8 @@ import { documentService } from "@/lib/services/document-service";
 import { ConflictError, ResourceNotFoundError } from "@/lib/utils/error-handling";
 import { evaluateTransition, type ReceiptLifecycleState } from "./lifecycle";
 
-const ARCHIVE_MARKER_PREFIX = "situs-receipt-archive:";
+/** Exported for the recibo upload, which files the uploaded PDF as the archive. */
+export const ARCHIVE_MARKER_PREFIX = "situs-receipt-archive:";
 
 const AUDIT_ACTION_FOR_STATE: Partial<Record<ReceiptLifecycleState, AuditAction>> = {
   emitted: "EMIT_RECEIPT",
@@ -116,6 +117,8 @@ export async function findExistingArchive(
   const prisma = getPrismaClient();
   const existing = await prisma.document.findFirst({
     where: { userId, type: "receipt", description: `${ARCHIVE_MARKER_PREFIX}${receiptId}` },
+    // Newest first: a recibo uploaded from Finanças after a generated copy is the one that counts.
+    orderBy: { createdAt: "desc" },
     select: { id: true },
   });
   return existing?.id ?? null;

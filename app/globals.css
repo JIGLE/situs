@@ -204,6 +204,8 @@
 
   --semantic-success: #166534;
   --semantic-success-soft: rgba(22, 101, 52, 0.08);
+  /* A paid month with its recibo on file: the same green as a paid one, deeper. */
+  --semantic-success-strong: rgba(22, 101, 52, 0.24);
   --semantic-success-readable: #166534;
   --semantic-warning: #b45309;
   --semantic-warning-soft: rgba(180, 83, 9, 0.08);
@@ -321,6 +323,7 @@
   --logo-keyline: rgba(255, 255, 255, 0.68);
 
   --semantic-success-readable: #57906d;
+  --semantic-success-strong: rgba(87, 144, 109, 0.34);
   --semantic-warning-readable: #c3753a;
   --semantic-danger-readable: #d26e6e;
   --semantic-info-readable: #5c80e3;

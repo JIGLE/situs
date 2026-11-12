@@ -86,6 +86,8 @@ export type AuditAction =
   | "EMIT_RECEIPT"
   | "SUBMIT_RECEIPT"
   | "ARCHIVE_RECEIPT"
+  // A recibo de renda uploaded from the Portal das Finanças, put on a contract's month.
+  | "UPLOAD_FINANCAS_RECEIPT"
   | "VOID_RECEIPT"
   | "TRANSITION_RECEIPT_LIFECYCLE"
   // The AT connection: the Portal sub-user Situs signs in as, the connector's mode, a receipt

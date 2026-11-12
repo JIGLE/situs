@@ -29,7 +29,14 @@ const due = (year: number, month: number) => new Date(Date.UTC(year, month - 1, 
 function period(
   lease: { id: string; tenant: string; property: string },
   month: number,
-  figures: { status: string; dueAmount?: number; allocatedAmount?: number; paidAt?: Date | null },
+  figures: {
+    status: string;
+    dueAmount?: number;
+    allocatedAmount?: number;
+    paidAt?: Date | null;
+    /** Each live allocation's receipt's recibo number (null: none on file). */
+    recibos?: (string | null)[];
+  },
 ) {
   return {
     leaseId: lease.id,
@@ -44,6 +51,9 @@ function period(
     tenant: { name: lease.tenant },
     property: { name: lease.property },
     lease: { status: "active" },
+    allocations: (figures.recibos ?? []).map((financasNumber) => ({
+      receipt: { financasNumber },
+    })),
   };
 }
 
@@ -91,7 +101,21 @@ describe("getRentMatrix", () => {
       dueAmount: 800,
       allocatedAmount: 0,
       outstanding: 800,
+      receiptOnFile: false,
     });
+  });
+
+  it("marks a paid month whose every payment has its recibo on file", async () => {
+    const paid = { status: "paid", allocatedAmount: 800, paidAt: due(2026, 6) };
+    prismaMock.rentPeriod.findMany.mockResolvedValue([
+      period(ZE, 5, { ...paid, recibos: ["27"] }),
+      period(ZE, 6, { ...paid, recibos: [null] }),
+      period(ZE, 7, { ...paid, recibos: ["28", null] }),
+    ]);
+
+    const { months } = (await getRentMatrix("user-1", 2026, NOW)).rows[0];
+
+    expect([5, 6, 7].map((m) => months[m].receiptOnFile)).toEqual([true, false, false]);
   });
 
   it("gives each month what it still owes, and nothing once it is paid", async () => {

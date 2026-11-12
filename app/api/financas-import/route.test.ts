@@ -12,7 +12,18 @@ vi.mock("@/lib/services/auth/auth-middleware", () => ({
   handleOptions: vi.fn(),
 }));
 
+vi.mock("@/lib/services/receipts/financas-receipts", () => ({
+  proposeReceipt: vi.fn(async () => ({
+    leaseId: "lease-1",
+    candidates: [],
+    month: { year: 2026, month: 3 },
+    outcome: "create",
+    dueAmount: null,
+  })),
+}));
+
 import { POST } from "./route";
+import { proposeReceipt } from "@/lib/services/receipts/financas-receipts";
 import { requireOwnerAccess } from "@/lib/services/auth/auth-middleware";
 
 /** A PDF whose pages carry these lines, in this order. A line wider than the page is cut. */
@@ -120,6 +131,41 @@ describe("POST /api/financas-import", () => {
       fraction: "C",
     });
     expect(data.contract.tenants[0]).toMatchObject({ taxId: "287654321", name: "MARIA INQUILINA" });
+  });
+
+  it("reads a recibo de renda and proposes its contract and month for the owner", async () => {
+    const res = await send(
+      "receipt",
+      pdfOf([
+        [
+          "RECIBO DE RENDA ELETRÓNICO",
+          "RECIBO DE RENDA N.º 27 DATA DE EMISSÃO 2026-03-05",
+          "LOCADOR/SUBLOCADOR (SENHORIO)/CEDENTE",
+          "NOME JOSÉ EXEMPLO NIF 123456789",
+          "LOCATÁRIO/SUBLOCATÁRIO (INQUILINO)/CESSIONÁRIO",
+          "NOME MARIA NIF 234567899",
+          "IDENTIFICAÇÃO DO IMÓVEL Freguesia Tipo Artigo Fração/Secção",
+          "110654 U 1234 C",
+          "Período a que respeita a renda 2026-03-01 a 2026-03-31",
+          "Valor 850,00 Retenção de IRS 0,00 Importância Recebida 850,00",
+          "Data de recebimento: 2026-03-04",
+        ],
+      ]),
+    );
+    expect(res.status).toBe(200);
+    const { data } = await res.json();
+    expect(data.receipt).toMatchObject({
+      recognised: true,
+      number: "27",
+      periodStart: "2026-03-01",
+      receivedOn: "2026-03-04",
+      rent: 850,
+      taxIds: ["123456789", "234567899"],
+      article: "1234",
+      fraction: "C",
+    });
+    expect(data.proposal).toMatchObject({ leaseId: "lease-1", outcome: "create" });
+    expect(proposeReceipt).toHaveBeenCalledWith("user-1", data.receipt);
   });
 
   it("refuses what is not a PDF, an unknown kind, and a PDF with no text", async () => {

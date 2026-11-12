@@ -746,7 +746,8 @@
     "processing": "Elaborazione…",
     "exportCsv": "Esporta come CSV",
     "exportJson": "Esporta come JSON",
-    "discard": "Scarta"
+    "discard": "Scarta",
+    "close": "Chiudi"
   },
   "errors": {
     "notFound": {
@@ -810,7 +811,9 @@
       "rentIncreasePending": "Questo contratto ha già un aggiornamento del canone in attesa. Annullalo prima di programmarne un altro.",
       "rentIncreaseNotAhead": "Il nuovo canone deve partire da un mese non ancora iniziato. Per cambiare il canone di questo mese, modifica il contratto.",
       "rentIncreaseApplied": "Questo aggiornamento è già in vigore. Modifica il canone nel contratto.",
-      "leaseNotActive": "Solo un contratto attivo può avere il canone aggiornato."
+      "leaseNotActive": "Solo un contratto attivo può avere il canone aggiornato.",
+      "receiptMonthUntracked": "Questo contratto non ha affitto in quel mese: non era ancora iniziato o era già finito. Scegli un altro mese.",
+      "receiptAmountUnknown": "Non è stato possibile leggere l'importo di questa ricevuta. Registra il pagamento a mano."
     }
   },
   "payments": {
@@ -1525,7 +1528,23 @@
       "viaBankOn": "Movimento bancario del {date}",
       "recordedByHand": "Registrato a mano",
       "coversOlderFirst": "Un pagamento registrato ora copre prima {month}, il mese più vecchio ancora da pagare.",
-      "recordPayment": "Registra pagamento"
+      "recordPayment": "Registra pagamento",
+      "reciboOnFile": "ricevuta caricata",
+      "legendRecibo": "Pagato, con ricevuta",
+      "uploadRecibos": "Carica ricevute",
+      "uploadRecibo": "Carica ricevuta",
+      "fromRecibo": "Dalla ricevuta d'affitto",
+      "reciboNumber": "Ricevuta d'affitto n. {number}",
+      "movements": {
+        "title": "Movimenti bancari da associare",
+        "open": "Associa un movimento bancario",
+        "loading": "Caricamento movimenti…",
+        "none": "Nessun movimento in entrata da associare.",
+        "assign": "Associa",
+        "recorded": "Questo contratto ha già un pagamento di {amount} registrato a mano il {date}. Questo movimento è quel pagamento?",
+        "samePayment": "È quel pagamento",
+        "newPayment": "È un altro pagamento"
+      }
     },
     "recordPayment": {
       "title": "Registra pagamento",
@@ -2091,7 +2110,8 @@
     "createInvitation": "Persona invitata",
     "revokeInvitation": "Invito ritirato",
     "signUpSettingChange": "Impostazione di registrazione modificata",
-    "changeAccountRole": "Ruolo dell'account modificato"
+    "changeAccountRole": "Ruolo dell'account modificato",
+    "uploadFinancasReceipt": "Ricevuta caricata dalle Finanças"
   },
   "financasImport": {
     "title": "Importa da Finanças",
@@ -2146,6 +2166,32 @@
       "ownersFailed": "La locazione è stata salvata, ma non è stato possibile impostare i proprietari dell'immobile. Aggiungili nella sua pagina."
     },
     "owners": "Proprietari: {list}",
-    "ownersFailed": "{count, plural, one {Non è stato possibile impostare i proprietari di # immobile. Aggiungili nella sua pagina.} other {Non è stato possibile impostare i proprietari di # immobili. Aggiungili nella pagina di ciascuno.}}"
+    "ownersFailed": "{count, plural, one {Non è stato possibile impostare i proprietari di # immobile. Aggiungili nella sua pagina.} other {Non è stato possibile impostare i proprietari di # immobili. Aggiungili nella pagina di ciascuno.}}",
+    "receipts": {
+      "title": "Carica ricevute d'affitto",
+      "description": "Ogni ricevuta segna il suo mese come pagato sul suo contratto. Controlla contratto e mese prima di registrare.",
+      "where": "Sul Portal das Finanças, apri Arrendamento › Recibos de renda e scarica ogni ricevuta in PDF. Puoi sceglierne diverse insieme.",
+      "choose": "Scegli i PDF delle ricevute",
+      "addMore": "Aggiungi altri PDF",
+      "reading": "Lettura…",
+      "notReceipt": "non sembra una ricevuta d'affitto.",
+      "number": "Ricevuta n. {number}",
+      "contract": "Contratto",
+      "month": "Mese",
+      "pickContract": "Scegli il contratto",
+      "pickMonth": "Scegli il mese",
+      "ambiguous": "Più di un contratto ha questo inquilino. Controlla che sia quello giusto.",
+      "amountDiffers": "L'affitto di quel mese è {due}.",
+      "register": "{count, plural, =0 {Registra ricevute} one {Registra # ricevuta} other {Registra # ricevute}}",
+      "registered": "{count, plural, one {# ricevuta registrata} other {# ricevute registrate}}",
+      "done": "Registrata in {month}",
+      "outcome": {
+        "create": "Segna {month} come pagato",
+        "attach": "Aggiunge la ricevuta al pagamento già registrato di {month}",
+        "duplicate": "Già registrata: non cambia nulla",
+        "noMonth": "Questo contratto non ha affitto in {month}. Scegli un altro mese o contratto.",
+        "chosen": "Sarà registrata in {month}"
+      }
+    }
   }
 }

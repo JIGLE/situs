@@ -55,6 +55,14 @@ export function planAllocation(input: PlanAllocationInput): AllocationPlan {
   }
 
   const periods = [...input.periods].sort(comparePeriods);
+  // A payment that names its month fills that month and those after it before older ones.
+  const start = input.startAt;
+  const fillOrder = start
+    ? [
+        ...periods.filter((p) => comparePeriods(p, start) >= 0),
+        ...periods.filter((p) => comparePeriods(p, start) < 0),
+      ]
+    : periods;
   if (periods.length === 0) {
     return { paymentId: payment.id, entries, warnings: [{ code: "no_period_context" }] };
   }
@@ -65,8 +73,8 @@ export function planAllocation(input: PlanAllocationInput): AllocationPlan {
   let remaining = payment.amount;
   let first = true;
 
-  // Pass 1 — fill known periods, oldest unfilled first.
-  for (const period of periods) {
+  // Pass 1 — fill known periods, oldest unfilled first (from `startAt` when the payment names one).
+  for (const period of fillOrder) {
     if (remaining <= EPSILON) break;
     const open = period.dueAmount - period.allocatedAmount;
     if (open <= EPSILON) continue;

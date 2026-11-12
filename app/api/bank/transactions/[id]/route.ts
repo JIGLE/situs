@@ -38,6 +38,7 @@ async function handlePut(
   const result = await applyTransactionAction(scopeUserId, id, body.action, body.leaseId, {
     receiptId: body.receiptId,
     newPayment: body.newPayment,
+    referenceMonth: body.referenceMonth,
   });
   return createSuccessResponse(result);
 }
