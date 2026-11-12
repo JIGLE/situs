@@ -62,6 +62,7 @@ export async function seedDemoData(userId: string): Promise<void> {
   );
   await cleanup(() => prisma.tenant.deleteMany({ where: { userId } }), "tenants");
   await cleanup(() => prisma.property.deleteMany({ where: { userId } }), "properties");
+  await cleanup(() => prisma.ownerPayout.deleteMany({ where: { userId } }), "ownerPayouts");
   await cleanup(() => prisma.owner.deleteMany({ where: { userId } }), "owners");
 
   console.log(`[seeder] Cleared demo data for user: ${userId}`);
@@ -80,6 +81,15 @@ export async function seedDemoData(userId: string): Promise<void> {
       taxIdentificationNumber: "502000007",
     },
   });
+
+  // Two relatives who hold a quarter each of Apartment 3A, so Finance › Owners' shares has a property
+  // whose rent is collected here and split between its owners.
+  const coOwners = await Promise.all(
+    [
+      { name: "Maria Fernandes", taxIdentificationNumber: "123456789" },
+      { name: "Pedro Fernandes", taxIdentificationNumber: "234567899" },
+    ].map((data) => prisma.owner.create({ data: { userId, ...data } })),
+  );
 
   // 3. Create Properties (buildings grouped by address)
   const propertiesData = [
@@ -161,14 +171,22 @@ export async function seedDemoData(userId: string): Promise<void> {
     });
     dbProperties.push(prop);
 
-    // Link ownership
+    // Link ownership: Apartment 3A is held half by the company and a quarter by each co-owner.
+    const shared = dbProperties.length === 1;
     await prisma.propertyOwner.create({
       data: {
         propertyId: prop.id,
         ownerId: owner.id,
-        ownershipPercentage: 100.0,
+        ownershipPercentage: shared ? 50.0 : 100.0,
       },
     });
+    if (shared) {
+      for (const coOwner of coOwners) {
+        await prisma.propertyOwner.create({
+          data: { propertyId: prop.id, ownerId: coOwner.id, ownershipPercentage: 25.0 },
+        });
+      }
+    }
   }
 
   // 4. Create Tenants
@@ -447,6 +465,18 @@ export async function seedDemoData(userId: string): Promise<void> {
       },
     });
   }
+
+  // Part of Maria's share of the year already handed over.
+  await prisma.ownerPayout.create({
+    data: {
+      userId,
+      ownerId: coOwners[0].id,
+      year: 2026,
+      amount: 500,
+      paidAt: new Date("2026-06-30"),
+      note: "Transferência MB Way",
+    },
+  });
 
   // 7. Create RentPeriods (for Jan-May 2026, all paid; June 2026 due/overdue)
   for (const tenant of dbTenants) {

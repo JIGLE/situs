@@ -228,6 +228,7 @@ const SURFACES = [
   { id: "financials", path: "/financials" },
   { id: "financials-movements", path: "/financials?tab=movements" },
   { id: "financials-expenses", path: "/financials?tab=expenses" },
+  { id: "financials-shares", path: "/financials?tab=shares" },
   { id: "financials-reports", path: "/financials?tab=reports" },
   // A lease's month in the rent matrix, opened by its address: `?month=<leaseId>:<yyyy-mm>`.
   {

@@ -77,10 +77,10 @@ export async function assertLeaseHasNoHistory(userId: string, leaseId: string): 
 }
 
 /**
- * The properties it is or was a landlord of, and the income distributions it has a share in. Both
- * are `onDelete: Cascade` from Owner, so deleting it would take the landlord off every receipt for
+ * The properties it is or was a landlord of, the income distributions it has a share in, and the
+ * payouts made to it. All are `onDelete: Cascade` from Owner, so deleting it would take the landlord off every receipt for
  * those properties, the months it owned them included, and its share out of every distribution
- * already made. A share ended is history too (`ownership.ts`); only one entered by mistake and
+ * already made, and the record of money handed to it. A share ended is history too (`ownership.ts`); only one entered by mistake and
  * removed the same day leaves no row, and so leaves the owner free to go.
  */
 export async function assertOwnerHasNoHistory(userId: string, ownerId: string): Promise<void> {
@@ -89,6 +89,7 @@ export async function assertOwnerHasNoHistory(userId: string, ownerId: string): 
   const kept = await anyOf([
     prisma.propertyOwner.count({ where }),
     prisma.incomeDistributionShare.count({ where }),
+    prisma.ownerPayout.count({ where }),
   ]);
   if (kept) throw new HasHistoryError("owner");
 }

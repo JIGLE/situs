@@ -15,6 +15,7 @@ const { requireOwnerAccessMock, prismaMock } = vi.hoisted(() => ({
     owner: { findFirst: vi.fn(), update: vi.fn(), delete: vi.fn() },
     propertyOwner: { count: vi.fn() },
     incomeDistributionShare: { count: vi.fn() },
+    ownerPayout: { count: vi.fn() },
   },
 }));
 
@@ -149,6 +150,7 @@ describe("DELETE /api/owners/[id]", () => {
     prismaMock.owner.findFirst.mockResolvedValue({ id: "o1", userId: "user-1" });
     prismaMock.propertyOwner.count.mockResolvedValue(0);
     prismaMock.incomeDistributionShare.count.mockResolvedValue(0);
+    prismaMock.ownerPayout.count.mockResolvedValue(0);
   });
 
   it("removes an owner with nothing recorded against them", async () => {
@@ -164,6 +166,7 @@ describe("DELETE /api/owners/[id]", () => {
   it.each([
     ["is a landlord of a property", prismaMock.propertyOwner.count],
     ["has a share in an income distribution", prismaMock.incomeDistributionShare.count],
+    ["has been paid out a share of the rent", prismaMock.ownerPayout.count],
   ])("keeps an owner who %s, with a 409 the screen can word", async (_why, count) => {
     count.mockResolvedValue(1);
 
@@ -180,6 +183,7 @@ describe("DELETE /api/owners/[id]", () => {
     const where = { ownerId: "o1", owner: { userId: "user-1" } };
     expect(prismaMock.propertyOwner.count).toHaveBeenCalledWith({ where });
     expect(prismaMock.incomeDistributionShare.count).toHaveBeenCalledWith({ where });
+    expect(prismaMock.ownerPayout.count).toHaveBeenCalledWith({ where });
   });
 
   it("answers another owner's record as a 404, and removes nothing", async () => {

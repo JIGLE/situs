@@ -82,6 +82,8 @@ export const AUDIT_ACTION_KEY = {
   LINK_EXPENSE_DOCUMENT: "linkExpenseDocument",
   ASSIGN_PROPERTY_OWNER: "assignPropertyOwner",
   REMOVE_PROPERTY_OWNER: "removePropertyOwner",
+  RECORD_OWNER_PAYOUT: "recordOwnerPayout",
+  DELETE_OWNER_PAYOUT: "deleteOwnerPayout",
   CREATE_ACCOUNT: "createAccount",
   CREATE_INVITATION: "createInvitation",
   REVOKE_INVITATION: "revokeInvitation",

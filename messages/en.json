@@ -833,7 +833,8 @@
       "ledger": "Ledger",
       "movements": "Movements",
       "expenses": "Expenses",
-      "reports": "Reports"
+      "reports": "Reports",
+      "shares": "Owners' shares"
     }
   },
   "leases": {
@@ -1563,6 +1564,47 @@
       "dateRequired": "Enter the date the money arrived.",
       "submit": "Record payment",
       "recorded": "Payment recorded."
+    },
+    "ownerShares": {
+      "income": "Rent received",
+      "expenses": "Expenses",
+      "net": "Net",
+      "outstanding": "Still to pay",
+      "paid": "Paid",
+      "balance": "Balance",
+      "colOwner": "Owner",
+      "colProperties": "Properties",
+      "emptyTitle": "No property was held with other owners in {year}",
+      "emptyDescription": "Add the owners and their shares on a property's page. The rent received less the property's expenses is then split between them here, and you can record what you pay each one.",
+      "byOwner": "By owner",
+      "byProperty": "By property",
+      "ownerLine": "{count, plural, one {# property} other {# properties}} · share {net}",
+      "paidLine": "paid {amount}",
+      "toPay": "To pay {amount}",
+      "owesBack": "Owes back {amount}",
+      "settled": "Settled",
+      "recordPayout": "Record payout",
+      "reimbursedLine": "Includes {amount} of expenses this owner paid themselves.",
+      "payouts": "Payouts",
+      "noPayouts": "Nothing paid out for this year yet.",
+      "removePayout": "Remove the payout of {date}",
+      "removeTitle": "Remove this payout?",
+      "removeDescription": "The payout of {amount} to {name} on {date} will be removed, and what they are still due goes back up by that amount.",
+      "remove": "Remove",
+      "removed": "Payout removed",
+      "propertyLine": "Received {income} · expenses {expenses}",
+      "sharesChanged": "The shares changed during the year: each month is split by the shares in force then.",
+      "unassigned": "{amount} falls on days when this property's shares add up to less than 100%, so nobody is given it. Complete the shares on the property's page.",
+      "payoutTitle": "Payout to {name}",
+      "payoutDescription": "Money you handed over from the rent of {year}. Still due before this payout: {amount}.",
+      "amount": "Amount",
+      "date": "Date paid",
+      "note": "Note (optional)",
+      "amountRequired": "Enter an amount greater than zero.",
+      "dateRequired": "Enter the day it was paid.",
+      "recorded": "Payout recorded",
+      "showAll": "All properties",
+      "soleOwnerHidden": "{count, plural, one {# property held by one owner is not shown.} other {# properties held by one owner are not shown.}}"
     }
   },
   "propertyDetail": {
@@ -2117,6 +2159,8 @@
     "revokeInvitation": "Invitation withdrawn",
     "signUpSettingChange": "Sign-up setting changed",
     "changeAccountRole": "Account role changed",
+    "recordOwnerPayout": "Owner payout recorded",
+    "deleteOwnerPayout": "Owner payout removed",
     "uploadFinancasReceipt": "Recibo uploaded from Finanças"
   },
   "financasImport": {
