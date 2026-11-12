@@ -10,6 +10,7 @@ const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
     expense: { findFirst: vi.fn(), update: vi.fn() },
     property: { findFirst: vi.fn() },
+    bankTransaction: { findMany: vi.fn(async () => []) },
   },
 }));
 

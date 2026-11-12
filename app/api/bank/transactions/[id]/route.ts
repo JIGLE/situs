@@ -11,10 +11,15 @@ import {
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { bankTransactionActionSchema } from "@/lib/schemas/bank.schema";
 import { applyTransactionAction } from "@/lib/services/bank/import";
+import {
+  linkMovementToExpense,
+  unlinkMovementFromExpense,
+} from "@/lib/services/expenses/bank-expenses";
 
 export const runtime = "nodejs";
 
-// PUT /api/bank/transactions/[id] — confirm | reassign | ignore | restore | link a movement.
+// PUT /api/bank/transactions/[id] — confirm | reassign | ignore | restore | link a movement, or
+// link_expense | unlink_expense for money going out.
 async function handlePut(
   request: NextRequest,
   context?: { params?: Record<string, string> | Promise<Record<string, string>> },
@@ -31,6 +36,16 @@ async function handlePut(
   if (!id) return createErrorResponse(new Error("Invalid request: missing id"), 400, request);
 
   const body = parseBody(await readJson(request), bankTransactionActionSchema);
+
+  // The schema requires an expense for link_expense.
+  if (body.action === "link_expense") {
+    return createSuccessResponse(
+      await linkMovementToExpense(scopeUserId, id, body.expenseId ?? ""),
+    );
+  }
+  if (body.action === "unlink_expense") {
+    return createSuccessResponse(await unlinkMovementFromExpense(scopeUserId, id));
+  }
 
   // The service refuses with typed errors (404, or 409 with a `reason`), which
   // `withErrorHandler` answers as themselves. Catching them here and answering 400 turned

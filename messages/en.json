@@ -822,7 +822,11 @@
       "rentIncreaseApplied": "This increase has already taken effect. Change the rent on the lease instead.",
       "leaseNotActive": "Only an active lease can have its rent updated.",
       "receiptMonthUntracked": "This contract has no rent for that month: it had not started yet, or had already ended. Choose another month.",
-      "receiptAmountUnknown": "The amount on this recibo could not be read. Record the payment by hand instead."
+      "receiptAmountUnknown": "The amount on this recibo could not be read. Record the payment by hand instead.",
+      "bankMovementNotOutgoing": "Only money going out can be recorded as an expense.",
+      "bankMovementLinked": "This movement is already linked. Unlink it first.",
+      "bankMovementNotLinked": "This movement is not linked to an expense.",
+      "expenseAlreadyLinked": "That expense is already paid by another movement."
     }
   },
   "payments": {
@@ -1494,12 +1498,23 @@
         "linkedRemembered": "Linked to the payment you recorded. Nothing was counted twice. From now on, a payment from this account for the same amount as the rent is matched on its own.",
         "heldForRecorded": "{tenant} has a payment of that amount recorded around then. Say whether this is the same payment.",
         "ignored": "Movement ignored. It stays under Ignored.",
-        "restored": "Movement back under Needs review."
+        "restored": "Movement back under Needs review.",
+        "expenseLinked": "Linked to the expense. It is counted once.",
+        "expenseUnlinked": "Unlinked. The movement is back under Needs review."
       },
       "sync": {
         "noBank": "No bank connected. Movements arrive from a bank connected in Settings › Integrations.",
         "reconnect": "Renew in Settings",
         "done": "Synced: {imported, plural, =0 {no new movements} one {# new movement} other {# new movements}}."
+      },
+      "expense": {
+        "linkedTo": "Expense: {category} · {date} · {property}",
+        "maybe": "Maybe {category} · {date} · {property}",
+        "knownPayee": "Paid to them before",
+        "isThis": "It's this expense",
+        "isThisOn": "It's the one of {date}",
+        "record": "Record as expense",
+        "unlink": "Unlink"
       }
     },
     "timeRange": "Time range",
@@ -1528,7 +1543,9 @@
       "repeatEnded": "No longer repeats",
       "vendorName": "Supplier",
       "vendorVat": "Supplier NIF",
-      "optional": "optional"
+      "optional": "optional",
+      "fromBank": "From the bank: {payee} · {date}",
+      "fromBankHint": "Saving links this movement to the expense, so it is counted once and leaves the inbox."
     },
     "matrix": {
       "cellLabel": "{month}: {status}, {paid} of {due} paid",
@@ -1652,7 +1669,9 @@
       "view": "View invoice",
       "skip": "Skip",
       "label": "Invoice"
-    }
+    },
+    "paidFromBank": "Paid from the bank",
+    "notSeenInBank": "Not seen in the bank"
   },
   "propertyDetail": {
     "tabs": {
@@ -2175,6 +2194,8 @@
     "ignoreTransaction": "Movement ignored",
     "restoreTransaction": "Movement back to review",
     "linkPayment": "Movement linked to a recorded payment",
+    "linkExpense": "Movement linked to an expense",
+    "unlinkExpense": "Movement taken off its expense",
     "rememberPayerAccount": "Payer account remembered",
     "forgetPayerAccount": "Payer account forgotten",
     "applyReconciliationRule": "Reconciliation rule applied",

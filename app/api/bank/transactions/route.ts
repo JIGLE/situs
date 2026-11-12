@@ -9,6 +9,7 @@ import {
   recordedPaymentsForMovements,
   summarizeRecordedPayment,
 } from "@/lib/services/bank/recorded-payments";
+import { expenseHintsForMovements } from "@/lib/services/expenses/bank-expenses";
 
 export const runtime = "nodejs";
 
@@ -61,6 +62,18 @@ async function handleGet(request: NextRequest): Promise<Response> {
       matchReasons: true,
       duplicateOfId: true,
       receiptId: true,
+      expenseId: true,
+      counterpartyIbanHash: true,
+      // The expense money going out paid, to name it on the row.
+      expense: {
+        select: {
+          id: true,
+          date: true,
+          category: true,
+          amount: true,
+          property: { select: { name: true } },
+        },
+      },
       // Only to tell a test connection's movements apart: the metadata never leaves this route.
       bankAccount: { select: { label: true, connection: { select: { metadata: true } } } },
     },
@@ -104,9 +117,34 @@ async function handleGet(request: NextRequest): Promise<Response> {
       })),
   );
 
+  // For money going out that still waits: the expenses it may have paid, and the payee's last
+  // expense for the form to open with. Never a test connection's: sandbox money pays nothing.
+  const expenseHints = await expenseHintsForMovements(
+    scopeUserId,
+    transactions.filter(
+      (t) =>
+        t.amount < 0 &&
+        (t.status === "needs_review" || t.status === "imported") &&
+        !t.expenseId &&
+        !isTestConnection(t.bankAccount.connection.metadata),
+    ),
+  );
+
   return createSuccessResponse(
-    transactions.map(({ bankAccount, ...t }) => ({
+    // The payee's hash only serves the hints above: it never leaves this route.
+    transactions.map(({ bankAccount, counterpartyIbanHash: _hash, expense, ...t }) => ({
       ...t,
+      expense: expense
+        ? {
+            id: expense.id,
+            date: expense.date,
+            category: expense.category,
+            amount: expense.amount,
+            propertyName: expense.property.name,
+          }
+        : null,
+      expenseSuggestions: expenseHints.get(t.id)?.suggestions ?? [],
+      payee: expenseHints.get(t.id)?.payee ?? null,
       bankAccount: { label: bankAccount.label },
       suggestedLease: t.suggestedLeaseId ? (leaseNames.get(t.suggestedLeaseId) ?? null) : null,
       recordedPayments: (recorded.get(t.id) ?? []).map(summarizeRecordedPayment),

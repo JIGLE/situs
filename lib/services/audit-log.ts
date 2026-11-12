@@ -65,6 +65,9 @@ export type AuditAction =
   | "RESTORE_TRANSACTION"
   // A movement that is a payment the owner had recorded by hand: linked, nothing allocated.
   | "LINK_PAYMENT"
+  // Money going out said to have paid an expense, by the owner or the import, and taken off it.
+  | "LINK_EXPENSE"
+  | "UNLINK_EXPENSE"
   // An account the owner confirmed pays a tenant's rent: remembered after a confirmation, and
   // forgotten when the owner says so.
   | "REMEMBER_PAYER_ACCOUNT"

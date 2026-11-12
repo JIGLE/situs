@@ -822,7 +822,11 @@
       "rentIncreaseApplied": "Questo aggiornamento è già in vigore. Modifica il canone nel contratto.",
       "leaseNotActive": "Solo un contratto attivo può avere il canone aggiornato.",
       "receiptMonthUntracked": "Questo contratto non ha affitto in quel mese: non era ancora iniziato o era già finito. Scegli un altro mese.",
-      "receiptAmountUnknown": "Non è stato possibile leggere l'importo di questa ricevuta. Registra il pagamento a mano."
+      "receiptAmountUnknown": "Non è stato possibile leggere l'importo di questa ricevuta. Registra il pagamento a mano.",
+      "bankMovementNotOutgoing": "Solo il denaro in uscita può essere registrato come spesa.",
+      "bankMovementLinked": "Questo movimento è già collegato. Scollegalo prima.",
+      "bankMovementNotLinked": "Questo movimento non è collegato a nessuna spesa.",
+      "expenseAlreadyLinked": "Quella spesa è già pagata da un altro movimento."
     }
   },
   "payments": {
@@ -1494,12 +1498,23 @@
         "linkedRemembered": "Collegato al pagamento che hai registrato. Niente è stato contato due volte. D'ora in poi un pagamento da questo conto con lo stesso importo dell'affitto viene riconciliato da solo.",
         "heldForRecorded": "{tenant} ha un pagamento di questo importo registrato in quel periodo. Indica se è lo stesso pagamento.",
         "ignored": "Movimento ignorato. Resta in Ignorati.",
-        "restored": "Movimento di nuovo in Da rivedere."
+        "restored": "Movimento di nuovo in Da rivedere.",
+        "expenseLinked": "Collegato alla spesa. Conta una sola volta.",
+        "expenseUnlinked": "Scollegato. Il movimento torna in Da rivedere."
       },
       "sync": {
         "noBank": "Nessuna banca collegata. I movimenti arrivano da una banca collegata in Impostazioni › Integrazioni.",
         "reconnect": "Rinnova in Impostazioni",
         "done": "Sincronizzato: {imported, plural, =0 {nessun nuovo movimento} one {# nuovo movimento} other {# nuovi movimenti}}."
+      },
+      "expense": {
+        "linkedTo": "Spesa: {category} · {date} · {property}",
+        "maybe": "Forse {category} · {date} · {property}",
+        "knownPayee": "Già pagato in precedenza",
+        "isThis": "È questa spesa",
+        "isThisOn": "È quella del {date}",
+        "record": "Registra come spesa",
+        "unlink": "Scollega"
       }
     },
     "timeRange": "Intervallo di tempo",
@@ -1528,7 +1543,9 @@
       "repeatEnded": "Non si ripete più",
       "vendorName": "Fornitore",
       "vendorVat": "Partita IVA del fornitore",
-      "optional": "facoltativo"
+      "optional": "facoltativo",
+      "fromBank": "Dalla banca: {payee} · {date}",
+      "fromBankHint": "Salvando, il movimento resta collegato alla spesa: conta una sola volta ed esce dalla casella."
     },
     "matrix": {
       "cellLabel": "{month}: {status}, pagati {paid} su {due}",
@@ -1652,7 +1669,9 @@
       "view": "Vedi fattura",
       "skip": "Salta",
       "label": "Fattura"
-    }
+    },
+    "paidFromBank": "Pagato dalla banca",
+    "notSeenInBank": "Non visto in banca"
   },
   "propertyDetail": {
     "tabs": {
@@ -2175,6 +2194,8 @@
     "ignoreTransaction": "Movimento ignorato",
     "restoreTransaction": "Movimento riportato in revisione",
     "linkPayment": "Movimento collegato a un pagamento registrato",
+    "linkExpense": "Movimento collegato a una spesa",
+    "unlinkExpense": "Movimento scollegato dalla spesa",
     "rememberPayerAccount": "Conto del pagatore memorizzato",
     "forgetPayerAccount": "Conto del pagatore dimenticato",
     "applyReconciliationRule": "Regola di riconciliazione applicata",

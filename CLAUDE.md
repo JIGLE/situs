@@ -198,7 +198,13 @@ e2e/                    # Playwright E2E tests
   alone and allocates; any other amount scores as a known account does and waits. It is the tenant's,
   so a renewal inherits it, and the tenant's Payments tab lists it with Forget. Money going
   out waits too, under its own filter, and is never counted as work (`lib/utils/bank-inbox.ts`,
-  `GET /api/bank/transactions/summary`). **A payment recorded by hand is never allocated twice**
+  `GET /api/bank/transactions/summary`). **Money going out pays an expense**
+  (`lib/services/expenses/bank-expenses.ts`, scoring in `lib/utils/expense-match.ts`, pure): the owner
+  links it to one (`link_expense`) or records a new one from it (`POST /api/expenses` with
+  `bankTransactionId`); `BankTransaction.expenseId` is unique, so a cost counts once. The import
+  links a payment on its own only to a recurring expense's copy of the same amount, within ten
+  days, whose series the owner already linked to that payee; a copy with no payment ten days on
+  reads as not seen in the bank. **A payment recorded by hand is never allocated twice**
   (`lib/services/bank/recorded-payments.ts`): a movement whose lease has paid rent of the same amount
   to the cent, dated within 10 days, with live allocations and no movement linked, waits instead of
   allocating, whether the import or a Confirm or Assign would have done it (`possible_recorded_payment`;

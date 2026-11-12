@@ -64,6 +64,10 @@ const REASON_KEY = new Map<
   | "bankMovementNotWaiting"
   | "bankTestMovement"
   | "bankPaymentAlreadyLinked"
+  | "bankMovementNotOutgoing"
+  | "bankMovementLinked"
+  | "bankMovementNotLinked"
+  | "expenseAlreadyLinked"
   | "bankConnectionRenewalUnavailable"
   | "bankConnectionHasMovements"
   | "receiptTransitionNotAllowed"
@@ -99,6 +103,10 @@ const REASON_KEY = new Map<
   ["bank_movement_not_waiting", "bankMovementNotWaiting"],
   ["bank_test_movement", "bankTestMovement"],
   ["bank_payment_already_linked", "bankPaymentAlreadyLinked"],
+  ["bank_movement_not_outgoing", "bankMovementNotOutgoing"],
+  ["bank_movement_linked", "bankMovementLinked"],
+  ["bank_movement_not_linked", "bankMovementNotLinked"],
+  ["expense_already_linked", "expenseAlreadyLinked"],
   ["bank_connection_renewal_unavailable", "bankConnectionRenewalUnavailable"],
   ["bank_connection_has_movements", "bankConnectionHasMovements"],
   ["receipt_transition_not_allowed", "receiptTransitionNotAllowed"],

@@ -29,8 +29,17 @@ export const debugBankMovementsSchema = z.object({
  */
 export const bankTransactionActionSchema = z
   .object({
-    action: z.enum(["confirm", "reassign", "ignore", "restore", "link"]),
+    action: z.enum([
+      "confirm",
+      "reassign",
+      "ignore",
+      "restore",
+      "link",
+      "link_expense",
+      "unlink_expense",
+    ]),
     leaseId: z.string().optional(),
+    expenseId: z.string().optional(),
     receiptId: z.string().optional(),
     newPayment: z.boolean().optional(),
     referenceMonth: z
@@ -43,6 +52,9 @@ export const bankTransactionActionSchema = z
   })
   .refine((body) => body.action !== "link" || !!body.receiptId, {
     message: "link requires a receiptId",
+  })
+  .refine((body) => body.action !== "link_expense" || !!body.expenseId, {
+    message: "link_expense requires an expenseId",
   });
 
 export type BankTransactionActionInput = z.infer<typeof bankTransactionActionSchema>;

@@ -512,6 +512,9 @@ model BankTransaction {
   matchReasons         String? // JSON — explainability: fired signals, warnings, duplicate hints
   duplicateOfId        String? // suspected fuzzy-duplicate original (advisory)
   receiptId            String? // rent Receipt created on match — the allocation entry point
+  // The expense this money going out paid (lib/services/expenses/bank-expenses.ts): one movement,
+  // one expense, so a cost is never counted twice and a recurring month reads as seen in the bank.
+  expenseId            String?   @unique
   reversalOfId         String?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
@@ -520,6 +523,7 @@ model BankTransaction {
   bankAccount BankAccount       @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
   syncJob     BankSyncJob?      @relation(fields: [syncJobId], references: [id], onDelete: SetNull)
   receipt     Receipt?          @relation(fields: [receiptId], references: [id], onDelete: SetNull)
+  expense     Expense?          @relation(fields: [expenseId], references: [id], onDelete: SetNull)
   reversalOf  BankTransaction?  @relation("TransactionReversal", fields: [reversalOfId], references: [id], onDelete: SetNull)
   reversals   BankTransaction[] @relation("TransactionReversal")
 
@@ -660,6 +664,8 @@ model Expense {
   parentExpense Expense?  @relation("RecurringExpenses", fields: [parentExpenseId], references: [id], onDelete: SetNull)
   childExpenses Expense[] @relation("RecurringExpenses")
   document      Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  // The bank movement that paid it, when one did.
+  bankTransaction BankTransaction?
 
   // Performance indexes
   @@index([userId])

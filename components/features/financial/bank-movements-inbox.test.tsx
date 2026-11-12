@@ -9,13 +9,15 @@ import { formatDate } from "@/lib/utils/format-date";
  * speak in status codes, and report any refusal as a lost connection.
  */
 
-const { toast, refreshData, appState, push } = vi.hoisted(() => ({
+const { toast, refreshData, appState, push, addExpense } = vi.hoisted(() => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() },
   refreshData: vi.fn(),
+  addExpense: vi.fn(async (data: Record<string, unknown>) => ({ id: "exp-new", ...data })),
   appState: {
     leases: [] as Array<{ id: string; tenantId: string; propertyId: string; status: string }>,
     tenants: [] as Array<{ id: string; name: string }>,
     properties: [] as Array<{ id: string; name: string }>,
+    expenses: [] as unknown[],
   },
   push: vi.fn(),
 }));
@@ -29,9 +31,16 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/contexts/toast-context", () => ({ useToast: () => toast }));
 vi.mock("@/lib/contexts/csrf-context", () => ({ useCsrf: () => ({ token: "csrf-token" }) }));
 vi.mock("@/lib/contexts/app-context", () => ({
-  useApp: () => ({ state: appState, refreshData }),
+  useApp: () => ({
+    state: appState,
+    refreshData,
+    addExpense,
+    updateExpense: vi.fn(),
+    deleteExpense: vi.fn(),
+  }),
 }));
 
+import pt from "@/messages/pt.json";
 import { BankMovementsInbox } from "./bank-movements-inbox";
 
 const MONEY_IN = {
@@ -454,5 +463,144 @@ describe("Atribuir: the lease picker", () => {
 
     await user.click(screen.getByRole("option", { name: "Novo arrendamento…" }));
     expect(push).toHaveBeenCalledWith("/portfolio?tab=leases&action=create");
+  });
+});
+
+describe("money going out, as the expense it paid", () => {
+  const MONEY_OUT = {
+    ...MONEY_IN,
+    id: "txn-out",
+    amount: -45,
+    counterpartyName: "CONDOMINIO RUA ALEGRE",
+    reference: "Quota novembro",
+    suggestedLeaseId: null,
+    matchConfidence: null,
+    matchReasons: JSON.stringify({ reasons: [], warnings: ["negative_amount"] }),
+    suggestedLease: null,
+    recordedPayments: [],
+    expense: null,
+    expenseSuggestions: [] as unknown[],
+    payee: null as unknown,
+  };
+  const bank = pt.financial.bank;
+
+  beforeAll(() => {
+    // Radix Select and Sheet ask jsdom for what it does not have.
+    Element.prototype.hasPointerCapture ??= () => false;
+    Element.prototype.releasePointerCapture ??= () => undefined;
+    Element.prototype.scrollIntoView ??= () => undefined;
+    globalThis.ResizeObserver ??= class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+  });
+
+  it("names the recurring month it may have paid, and links it at a tap", async () => {
+    const user = userEvent.setup();
+    rows = [
+      {
+        ...MONEY_OUT,
+        expenseSuggestions: [
+          {
+            expenseId: "exp-nov",
+            confidence: 0.7,
+            reasons: ["amount_exact", "date_close"],
+            date: "2026-09-01T00:00:00.000Z",
+            category: "condominium_fees",
+            propertyId: "p1",
+          },
+        ],
+      },
+    ];
+    onPut = () => ({ body: { data: { status: "matched_confirmed", expenseId: "exp-nov" } } });
+    render(<BankMovementsInbox />, { initialLocale: "pt" });
+
+    expect(
+      (
+        await screen.findAllByText(
+          `Talvez Quotas de Condomínio · ${formatDate("2026-09-01", "pt")} · Rua A, 1`,
+        )
+      ).length,
+    ).toBeGreaterThan(0);
+    // Money going out is never rent: no Confirm, no Assign.
+    expect(screen.queryByRole("button", { name: /Confirmar/ })).not.toBeInTheDocument();
+    await user.click(screen.getAllByRole("button", { name: bank.expense.isThis })[0]);
+
+    await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith(bank.toast.expenseLinked));
+    const put = vi.mocked(fetch).mock.calls.find(([, init]) => init?.method === "PUT");
+    expect(JSON.parse(String(put?.[1]?.body))).toMatchObject({
+      action: "link_expense",
+      expenseId: "exp-nov",
+    });
+    expect(refreshData).toHaveBeenCalled();
+  });
+
+  it("records it as an expense from the form, filled with what the payee was last time", async () => {
+    const user = userEvent.setup();
+    rows = [
+      {
+        ...MONEY_OUT,
+        payee: {
+          category: "condominium_fees",
+          propertyId: "p1",
+          vendorName: "Condomínio Rua Alegre",
+          vendorVat: "501234567",
+          isDeductible: true,
+        },
+      },
+    ];
+    render(<BankMovementsInbox />, { initialLocale: "pt" });
+
+    await user.click((await screen.findAllByRole("button", { name: bank.expense.record }))[0]);
+    const dialog = await screen.findByRole("dialog", { name: pt.financial.recordExpense });
+    expect(dialog).toHaveTextContent(
+      `Do banco: CONDOMINIO RUA ALEGRE · ${formatDate(MONEY_OUT.bookingDate, "pt")}`,
+    );
+    await user.click(screen.getByRole("button", { name: pt.financial.expenseForm.submit }));
+
+    await vi.waitFor(() =>
+      expect(addExpense).toHaveBeenCalledWith(
+        expect.objectContaining({
+          bankTransactionId: "txn-out",
+          amount: 45,
+          date: "2026-09-01",
+          category: "condominium_fees",
+          propertyId: "p1",
+          vendorName: "Condomínio Rua Alegre",
+          vendorVat: "501234567",
+        }),
+      ),
+    );
+  });
+
+  it("names the expense a linked movement paid, and takes it off at a tap", async () => {
+    const user = userEvent.setup();
+    rows = [
+      {
+        ...MONEY_OUT,
+        status: "matched_confirmed",
+        expenseId: "exp-nov",
+        expense: {
+          id: "exp-nov",
+          date: "2026-09-01T00:00:00.000Z",
+          category: "condominium_fees",
+          propertyName: "Rua A, 1",
+        },
+      },
+    ];
+    onPut = () => ({ body: { data: { status: "needs_review" } } });
+    render(<BankMovementsInbox />, { initialLocale: "pt" });
+
+    expect(
+      (
+        await screen.findAllByText(
+          `Despesa: Quotas de Condomínio · ${formatDate("2026-09-01", "pt")} · Rua A, 1`,
+        )
+      ).length,
+    ).toBeGreaterThan(0);
+    await user.click(screen.getAllByRole("button", { name: bank.expense.unlink })[0]);
+
+    await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith(bank.toast.expenseUnlinked));
   });
 });

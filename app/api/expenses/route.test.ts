@@ -10,7 +10,8 @@ import { NextRequest } from "next/server";
 const { requireAuthMock, prismaMock } = vi.hoisted(() => ({
   requireAuthMock: vi.fn(),
   prismaMock: {
-    expense: { create: vi.fn(), findMany: vi.fn() },
+    expense: { create: vi.fn(), findMany: vi.fn(), findFirst: vi.fn(), delete: vi.fn() },
+    bankTransaction: { findFirst: vi.fn(), findMany: vi.fn(), updateMany: vi.fn() },
     // handlePost now calls assertOwnsRelations, which resolves the body's propertyId
     // against this user before writing. Defaults to "owned"; the refusal case sets it
     // to null explicitly.
@@ -24,6 +25,7 @@ vi.mock("@/lib/services/auth/auth-middleware", () => ({
 }));
 vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prismaMock }));
 vi.mock("@/lib/config/data-mode", () => ({ isMockMode: false }));
+vi.mock("@/lib/services/audit-log", () => ({ logAudit: vi.fn() }));
 import { POST } from "./route";
 
 const postRequest = (body: unknown) =>
@@ -95,5 +97,59 @@ describe("POST /api/expenses", () => {
       }),
     );
     expect(prismaMock.expense.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/expenses from a bank movement", () => {
+  const movement = {
+    id: "txn-1",
+    amount: -120.5,
+    expenseId: null,
+    receiptId: null,
+    bankAccount: { connection: { metadata: null } },
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    requireAuthMock.mockResolvedValue({ userId: "user-123" });
+    prismaMock.property.findFirst.mockResolvedValue({ id: "prop-1" });
+    prismaMock.expense.create.mockResolvedValue({
+      id: "exp-1",
+      amount: 120.5,
+      property: { name: "Rua Augusta 12" },
+    });
+    prismaMock.bankTransaction.findFirst.mockResolvedValue(movement);
+    prismaMock.expense.findFirst.mockResolvedValue({ id: "exp-1", bankTransaction: null });
+    prismaMock.bankTransaction.updateMany.mockResolvedValue({ count: 1 });
+  });
+
+  it("records the expense and links the movement that paid it", async () => {
+    const res = await POST(postRequest({ ...validExpense, bankTransactionId: "txn-1" }));
+
+    expect(res.status).toBe(201);
+    // The movement is not a column of the expense.
+    expect(prismaMock.expense.create.mock.calls[0][0].data).not.toHaveProperty("bankTransactionId");
+    expect(prismaMock.bankTransaction.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { expenseId: "exp-1", status: "matched_confirmed" } }),
+    );
+    expect((await res.json()).data).toMatchObject({ bankTransactionId: "txn-1" });
+  });
+
+  it("writes nothing when the movement cannot pay it", async () => {
+    prismaMock.bankTransaction.findFirst.mockResolvedValue({ ...movement, expenseId: "exp-0" });
+
+    const res = await POST(postRequest({ ...validExpense, bankTransactionId: "txn-1" }));
+
+    expect(res.status).toBe(409);
+    expect(prismaMock.expense.create).not.toHaveBeenCalled();
+  });
+
+  it("takes the expense back when the movement was taken meanwhile", async () => {
+    prismaMock.bankTransaction.updateMany.mockResolvedValue({ count: 0 });
+
+    const res = await POST(postRequest({ ...validExpense, bankTransactionId: "txn-1" }));
+
+    expect(res.status).toBe(409);
+    expect(prismaMock.expense.delete).toHaveBeenCalledWith({ where: { id: "exp-1" } });
   });
 });
