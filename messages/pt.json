@@ -2096,7 +2096,12 @@
         "rent_not_monthly": "As Finanças indicam esta renda para menos de um mês. Indique o valor mensal.",
         "no_start": "Não foi encontrada a data de início. Confirme o prazo abaixo.",
         "term_passed": "O prazo nas Finanças terminou em {date}. Se o contrato foi renovado, indique a data de fim atual."
-      }
-    }
+      },
+      "landlords": "Senhorios, definidos como proprietários do imóvel ao guardar: {list}",
+      "landlordsKept": "Este imóvel já tem proprietários no Situs. Ficam como estão.",
+      "ownersFailed": "O arrendamento foi guardado, mas não foi possível definir os proprietários do imóvel. Adicione-os na página do imóvel."
+    },
+    "owners": "Proprietários: {list}",
+    "ownersFailed": "{count, plural, one {Não foi possível definir os proprietários de # imóvel. Adicione-os na página do imóvel.} other {Não foi possível definir os proprietários de # imóveis. Adicione-os na página de cada um.}}"
   }
 }

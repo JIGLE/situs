@@ -54,7 +54,7 @@ describe("parseCaderneta", () => {
       taxValue: 61120,
     });
     expect(parsed.holders).toEqual([
-      { taxId: "500000000", name: "EMPRESA EXEMPLO LDA", share: "1/1" },
+      { taxId: "500000000", name: "EMPRESA EXEMPLO LDA", share: "1/1", kind: "full" },
     ]);
   });
 
@@ -138,5 +138,15 @@ describe("cadernetaDrafts", () => {
     );
     expect(parsed.units.map((u) => u.fraction)).toEqual(["LJ B", "2º ES"]);
     expect(cadernetaDrafts(parsed).map((d) => d.name)).toEqual(["Rua A 9, LJ B", "Rua A 9, 2º ES"]);
+  });
+
+  it("tells a usufruct from bare ownership", () => {
+    const parsed = parseCaderneta(
+      `${HEADER} IDENTIFICAÇÃO DO PRÉDIO ARTIGO MATRICIAL: 10 NIP: TITULARES Identificação fiscal: 123456789 Nome: MÃE Morada: X Tipo de titular: Usufruto Parte: 1/1 Identificação fiscal: 234567890 Nome: FILHO Morada: X Tipo de titular: Nua propriedade Parte: 1/1`,
+    );
+    expect(parsed.holders.map((h) => [h.name, h.kind])).toEqual([
+      ["MÃE", "usufruct"],
+      ["FILHO", "bare"],
+    ]);
   });
 });

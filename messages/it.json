@@ -2096,7 +2096,12 @@
         "rent_not_monthly": "Finanças indica questo affitto per meno di un mese. Indica l'importo mensile.",
         "no_start": "Data di inizio non trovata. Controlla la durata sotto.",
         "term_passed": "La durata su Finanças è terminata il {date}. Se il contratto è stato rinnovato, indica la data di fine attuale."
-      }
-    }
+      },
+      "landlords": "Locatori, impostati come proprietari dell'immobile al salvataggio: {list}",
+      "landlordsKept": "Questo immobile ha già proprietari in Situs. Restano come sono.",
+      "ownersFailed": "La locazione è stata salvata, ma non è stato possibile impostare i proprietari dell'immobile. Aggiungili nella sua pagina."
+    },
+    "owners": "Proprietari: {list}",
+    "ownersFailed": "{count, plural, one {Non è stato possibile impostare i proprietari di # immobile. Aggiungili nella sua pagina.} other {Non è stato possibile impostare i proprietari di # immobili. Aggiungili nella pagina di ciascuno.}}"
   }
 }

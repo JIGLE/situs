@@ -42,6 +42,11 @@ vi.mock("@/lib/contexts/app-context", () => ({
 vi.mock("@/lib/contexts/toast-context", () => ({ useToast: () => toast }));
 const { readContractProof } = vi.hoisted(() => ({ readContractProof: vi.fn() }));
 vi.mock("@/components/features/financas-import/read-document", () => ({ readContractProof }));
+const { applyShares } = vi.hoisted(() => ({ applyShares: vi.fn(async () => {}) }));
+vi.mock("@/components/features/financas-import/apply-shares", async (original) => ({
+  ...(await original<typeof import("@/components/features/financas-import/apply-shares")>()),
+  applyShares,
+}));
 
 const pt = ptMessages.leases.sheet;
 
@@ -155,7 +160,10 @@ describe("TenancySheet", () => {
       article: "1234",
       fraction: "C",
       parish: null,
-      landlords: [],
+      landlords: [
+        { taxId: "123456789", name: "JOSÉ EXEMPLO", country: null, share: "1/2" },
+        { taxId: "223456789", name: "ANA EXEMPLO", country: null, share: "1/2" },
+      ],
       tenants: [
         { taxId: "287654320", name: "MARIA DA SILVA", country: "PORTUGAL", share: null },
         { taxId: "298765438", name: "PEDRO SANTOS", country: null, share: null },
@@ -196,6 +204,15 @@ describe("TenancySheet", () => {
           expect.objectContaining({ role: "tenant", name: "Pedro Santos", taxId: "298765438" }),
         ],
       }),
+    );
+    // The property has no owners yet, so the proof's landlords become them.
+    expect(applyShares).toHaveBeenCalledWith(
+      "prop-1",
+      [
+        expect.objectContaining({ name: "José Exemplo", taxId: "123456789", percentage: 50 }),
+        expect.objectContaining({ name: "Ana Exemplo", percentage: 50 }),
+      ],
+      expect.any(Map),
     );
   });
 

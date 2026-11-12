@@ -2096,7 +2096,12 @@
         "rent_not_monthly": "Finanças lists this rent for less than a month. Enter the monthly amount.",
         "no_start": "The start date wasn't found. Check the term below.",
         "term_passed": "The term in Finanças ended on {date}. If the contract renewed, set the current end date."
-      }
-    }
+      },
+      "landlords": "Landlords, set as the property's owners when you save: {list}",
+      "landlordsKept": "This property already has owners in Situs. They stay as they are.",
+      "ownersFailed": "The tenancy was saved, but the property's owners could not be set. Add them on its page."
+    },
+    "owners": "Owners: {list}",
+    "ownersFailed": "{count, plural, one {The owners of # property could not be set. Add them on its page.} other {The owners of # properties could not be set. Add them on each page.}}"
   }
 }
