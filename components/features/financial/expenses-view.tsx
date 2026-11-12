@@ -222,6 +222,7 @@ export function ExpensesView() {
                             expense.vendorName,
                             expense.description,
                             isDeductible(expense) ? null : t("notDeductible"),
+                            expense.bankTransactionId ? t("paidFromBank") : null,
                           ]
                             .filter(Boolean)
                             .join(" · ")}
@@ -229,6 +230,13 @@ export function ExpensesView() {
                         {expense.isRecurring ? (
                           <p className="text-xs text-[var(--color-muted-foreground)]">
                             {repeatLine(expense)}
+                          </p>
+                        ) : null}
+                        {/* A recurring month the bank has not shown being paid: perhaps it was
+                            not charged, or was paid another way. */}
+                        {expense.notSeenInBank ? (
+                          <p className="text-xs text-[var(--semantic-warning-readable)]">
+                            {t("notSeenInBank")}
                           </p>
                         ) : null}
                       </div>

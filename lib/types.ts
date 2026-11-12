@@ -221,6 +221,10 @@ export interface Expense {
   recurrenceDay?: number;
   recurrenceEnd?: string | null;
   parentExpenseId?: string | null;
+  /** The bank movement that paid it, when one did. */
+  bankTransactionId?: string | null;
+  /** A recurring month the bank should have shown being paid by now, and did not. */
+  notSeenInBank?: boolean;
   createdAt: string;
   updatedAt: string;
 }

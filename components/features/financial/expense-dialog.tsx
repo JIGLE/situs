@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { FileText, Paperclip, ScanLine, Trash2 } from "lucide-react";
+import { FileText, Landmark, Paperclip, ScanLine, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
@@ -56,9 +56,33 @@ export interface PendingInvoice extends InvoiceRead {
   count: number;
 }
 
+/** A payment going out of the bank, which the form records as the expense it paid. */
+export interface BankPayment {
+  id: string;
+  amount: number;
+  bookingDate: string;
+  counterpartyName: string | null;
+  reference: string | null;
+  /** What the last expense paid to this payee was, when there is one. */
+  payee: {
+    category: string;
+    propertyId: string;
+    vendorName: string | null;
+    vendorVat: string | null;
+    isDeductible: boolean;
+  } | null;
+}
+
 export type ExpenseDialogState = UseFormDialogReturn<ExpenseFormData, Expense> & {
   /** Opens the form on a recorded expense, to change or delete it. */
   openExpense: (expense: Expense) => void;
+  /**
+   * Opens the form filled from a payment going out of the bank. Guardar records the expense and
+   * links the movement to it, in one request.
+   */
+  openFromBank: (payment: BankPayment) => void;
+  /** The bank payment the open form records, if any. */
+  bankPayment: BankPayment | null;
   /**
    * Reads each invoice in turn and opens the form filled from it. Nothing is saved until the
    * owner checks it and presses Guardar, which keeps the file with the expense and opens the
@@ -118,7 +142,24 @@ function toFormData(expense: Expense): ExpenseFormData {
  * The expense form's state. A property passed here is the expense's property, and the form does
  * not ask for one: that is the property page's case. `openExpense` opens it on a recorded expense.
  */
-export function useExpenseDialog(propertyId?: string): ExpenseDialogState {
+/** The form's fields from a bank payment: its amount and day, and what the payee was last time. */
+function bankPrefill(payment: BankPayment, fixedProperty: boolean): Partial<ExpenseFormData> {
+  const category = payment.payee ? expenseCategoryKey(payment.payee.category) : undefined;
+  return {
+    amount: Math.abs(payment.amount),
+    date: payment.bookingDate.slice(0, 10),
+    description: payment.reference ?? "",
+    vendorName: payment.payee?.vendorName ?? payment.counterpartyName ?? "",
+    ...(payment.payee?.vendorVat ? { vendorVat: payment.payee.vendorVat } : {}),
+    ...(category ? { category, isDeductible: payment.payee?.isDeductible ?? true } : {}),
+    ...(payment.payee && !fixedProperty ? { propertyId: payment.payee.propertyId } : {}),
+  };
+}
+
+export function useExpenseDialog(
+  propertyId?: string,
+  options: { onSaved?: () => void } = {},
+): ExpenseDialogState {
   const { addExpense, updateExpense } = useApp();
   const t = useTranslations("financial");
   // The expense being changed, for the submit handler, which the form hook builds before it
@@ -144,6 +185,12 @@ export function useExpenseDialog(propertyId?: string): ExpenseDialogState {
   const invoiceRef = useRef<PendingInvoice | null>(null);
   // Set by a save that came from a batch of invoices, so the next one opens after it.
   const advanceRef = useRef(false);
+  // The bank payment the form records, for the submit handler.
+  const bankRef = useRef<BankPayment | null>(null);
+  const onSavedRef = useRef(options.onSaved);
+  useEffect(() => {
+    onSavedRef.current = options.onSaved;
+  });
 
   const onSubmit = useCallback(
     async (data: ExpenseFormData, isEdit: boolean) => {
@@ -155,9 +202,15 @@ export function useExpenseDialog(propertyId?: string): ExpenseDialogState {
       if (isEdit && editingId.current) {
         await updateExpense(editingId.current, withDocument);
       } else {
-        await addExpense({ ...withDocument, propertyId: property });
+        const bankTransactionId = bankRef.current?.id;
+        await addExpense({
+          ...withDocument,
+          propertyId: property,
+          ...(bankTransactionId ? { bankTransactionId } : {}),
+        });
       }
       advanceRef.current = pending !== null;
+      onSavedRef.current?.();
     },
     [addExpense, updateExpense, propertyId],
   );
@@ -180,6 +233,11 @@ export function useExpenseDialog(propertyId?: string): ExpenseDialogState {
   const [invoice, setInvoiceState] = useState<PendingInvoice | null>(null);
   const [queue, setQueue] = useState<File[]>([]);
   const [readingInvoice, setReadingInvoice] = useState(false);
+  const [bankPayment, setBankPaymentState] = useState<BankPayment | null>(null);
+  const setBankPayment = useCallback((next: BankPayment | null) => {
+    bankRef.current = next;
+    setBankPaymentState(next);
+  }, []);
   const setInvoice = useCallback((next: PendingInvoice | null) => {
     invoiceRef.current = next;
     setInvoiceState(next);
@@ -231,8 +289,9 @@ export function useExpenseDialog(propertyId?: string): ExpenseDialogState {
   const closeAll = useCallback(() => {
     setQueue([]);
     setInvoice(null);
+    setBankPayment(null);
     closeDialog();
-  }, [closeDialog, setInvoice]);
+  }, [closeDialog, setBankPayment, setInvoice]);
 
   const skipInvoice = useCallback(() => {
     const current = invoiceRef.current;
@@ -263,20 +322,33 @@ export function useExpenseDialog(propertyId?: string): ExpenseDialogState {
   const openExpense = useCallback(
     (expense: Expense) => {
       setInvoice(null);
+      setBankPayment(null);
       openEditDialog(expense, toFormData);
     },
-    [openEditDialog, setInvoice],
+    [openEditDialog, setBankPayment, setInvoice],
   );
   const openBlank = useCallback(() => {
     setInvoice(null);
+    setBankPayment(null);
     openDialog();
-  }, [openDialog, setInvoice]);
+  }, [openDialog, setBankPayment, setInvoice]);
+  const openFromBank = useCallback(
+    (payment: BankPayment) => {
+      setInvoice(null);
+      setBankPayment(payment);
+      openDialog();
+      setFormData({ ...initialData, ...bankPrefill(payment, propertyId !== undefined) });
+    },
+    [initialData, openDialog, propertyId, setBankPayment, setFormData, setInvoice],
+  );
 
   return {
     ...dialog,
     openDialog: openBlank,
     closeDialog: closeAll,
     openExpense,
+    openFromBank,
+    bankPayment,
     readInvoices,
     attachInvoice,
     skipInvoice,
@@ -310,11 +382,11 @@ export function ExpenseDialog({
   const { currencySymbol, formatCurrency } = useCurrency();
   const { success } = useToast();
   const confirmDialog = useConfirmDialog();
-  const { formData, formErrors, updateFormData, editingItem, invoice } = dialog;
+  const { formData, formErrors, updateFormData, editingItem, invoice, bankPayment } = dialog;
   const attachInput = useRef<HTMLInputElement>(null);
   // A copy a recurring expense made is one month's cost: it does not repeat itself.
   const isCopy = !!editingItem?.parentExpenseId;
-  const frequent = useMemo(() => frequentCategories(state.expenses), [state.expenses]);
+  const frequent = useMemo(() => frequentCategories(state.expenses ?? []), [state.expenses]);
   // The amount as typed ("3200,00"), read on every keystroke; the field is keyed by the expense
   // so that opening another one starts it from that expense's amount.
   const amountDefault = formData.amount
@@ -366,6 +438,26 @@ export function ExpenseDialog({
           </SheetHeader>
           <form onSubmit={dialog.handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
+              {bankPayment && !editingItem ? (
+                // The payment this expense is recorded from: Guardar links the two.
+                <div
+                  className="space-y-1 border border-[var(--color-border)] bg-[var(--color-surface-hover)] px-4 py-3 text-sm"
+                  role="status"
+                >
+                  <p className="flex items-center gap-2 font-medium">
+                    <Landmark className="h-4 w-4 shrink-0" aria-hidden />
+                    <span className="min-w-0 break-words">
+                      {t("expenseForm.fromBank", {
+                        payee: bankPayment.counterpartyName ?? "—",
+                        date: formatDate(bankPayment.bookingDate, locale),
+                      })}
+                    </span>
+                  </p>
+                  <p className="text-xs text-[var(--color-muted-foreground)]">
+                    {t("expenseForm.fromBankHint")}
+                  </p>
+                </div>
+              ) : null}
               {invoice ? (
                 // What was read, and that it is a proposal: nothing is saved before Guardar.
                 <div
@@ -462,7 +554,7 @@ export function ExpenseDialog({
                     {t("expenseForm.amount", { symbol: currencySymbol })}
                   </Label>
                   <Input
-                    key={`${dialog.isOpen}-${editingItem?.id ?? "new"}-${invoice?.upload.name ?? ""}-${invoice?.position ?? 0}`}
+                    key={`${dialog.isOpen}-${editingItem?.id ?? "new"}-${invoice?.upload.name ?? ""}-${invoice?.position ?? 0}-${bankPayment?.id ?? ""}`}
                     id="expense-amount"
                     inputMode="decimal"
                     autoComplete="off"

@@ -12,6 +12,8 @@ import { sanitizeForDatabase, sanitizeNumber } from "@/lib/utils/sanitize";
 import { isMockMode } from "@/lib/config/data-mode";
 import { z } from "zod";
 import { expenseSchema } from "@/lib/schemas/expense.schema";
+import { bankSeenSince } from "@/lib/services/expenses/bank-expenses";
+import { notSeenInBank } from "@/lib/utils/expense-match";
 import { expenseWriteData } from "@/lib/services/expenses/write-data";
 
 /**
@@ -132,19 +134,27 @@ async function handlePut(
 
     const updateData = expenseWriteData(validatedData);
 
-    const expense = await prisma.expense.update({
+    const { bankTransaction, ...expense } = await prisma.expense.update({
       where: { id },
       data: updateData,
       include: {
         property: {
           select: { name: true },
         },
+        bankTransaction: { select: { id: true } },
       },
     });
 
+    // As the list gives it, so the row the app replaces keeps its bank state.
     return createSuccessResponse({
       ...expense,
       propertyName: expense.property.name,
+      bankTransactionId: bankTransaction?.id ?? null,
+      notSeenInBank: notSeenInBank(
+        { ...expense, linked: !!bankTransaction },
+        await bankSeenSince(userId),
+        new Date(),
+      ),
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -192,7 +202,14 @@ async function handleDelete(
       return createErrorResponse(new Error("Expense not found"), 404, request);
     }
 
-    await prisma.expense.delete({ where: { id } });
+    // The movement that paid it goes back to the inbox, rather than reading as dealt with.
+    await prisma.$transaction([
+      prisma.bankTransaction.updateMany({
+        where: { userId, expenseId: id },
+        data: { expenseId: null, status: "needs_review" },
+      }),
+      prisma.expense.delete({ where: { id } }),
+    ]);
     return createSuccessResponse({ message: "Expense deleted successfully" });
   } catch (error) {
     return createErrorResponse(error as Error, 500, request);

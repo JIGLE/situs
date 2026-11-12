@@ -822,7 +822,11 @@
       "rentIncreaseApplied": "Esta actualización ya está en vigor. Cambie la renta en el contrato.",
       "leaseNotActive": "Solo un contrato activo puede actualizar su renta.",
       "receiptMonthUntracked": "Este contrato no tiene renta en ese mes: aún no había empezado o ya había terminado. Elija otro mes.",
-      "receiptAmountUnknown": "No se pudo leer el importe de este recibo. Registre el pago a mano."
+      "receiptAmountUnknown": "No se pudo leer el importe de este recibo. Registre el pago a mano.",
+      "bankMovementNotOutgoing": "Solo el dinero que sale puede registrarse como gasto.",
+      "bankMovementLinked": "Este movimiento ya está vinculado. Desvincúlalo primero.",
+      "bankMovementNotLinked": "Este movimiento no está vinculado a ningún gasto.",
+      "expenseAlreadyLinked": "Ese gasto ya está pagado por otro movimiento."
     }
   },
   "payments": {
@@ -1494,12 +1498,23 @@
         "linkedRemembered": "Vinculado al pago que registraste. No se ha contado nada dos veces. Desde ahora, un pago de esta cuenta por el mismo importe que el alquiler se concilia solo.",
         "heldForRecorded": "{tenant} tiene un pago de ese importe registrado por esas fechas. Indica si es el mismo pago.",
         "ignored": "Movimiento ignorado. Queda en Ignorados.",
-        "restored": "Movimiento de nuevo en Por revisar."
+        "restored": "Movimiento de nuevo en Por revisar.",
+        "expenseLinked": "Vinculado al gasto. Cuenta una sola vez.",
+        "expenseUnlinked": "Desvinculado. El movimiento vuelve a Por revisar."
       },
       "sync": {
         "noBank": "Ningún banco conectado. Los movimientos llegan de un banco conectado en Configuración › Integraciones.",
         "reconnect": "Renovar en Configuración",
         "done": "Sincronizado: {imported, plural, =0 {ningún movimiento nuevo} one {# movimiento nuevo} other {# movimientos nuevos}}."
+      },
+      "expense": {
+        "linkedTo": "Gasto: {category} · {date} · {property}",
+        "maybe": "Quizá {category} · {date} · {property}",
+        "knownPayee": "Ya les pagaste antes",
+        "isThis": "Es este gasto",
+        "isThisOn": "Es el del {date}",
+        "record": "Registrar como gasto",
+        "unlink": "Desvincular"
       }
     },
     "timeRange": "Intervalo de tiempo",
@@ -1528,7 +1543,9 @@
       "repeatEnded": "Ya no se repite",
       "vendorName": "Proveedor",
       "vendorVat": "NIF del proveedor",
-      "optional": "opcional"
+      "optional": "opcional",
+      "fromBank": "Del banco: {payee} · {date}",
+      "fromBankHint": "Al guardar, el movimiento queda vinculado al gasto: cuenta una sola vez y sale de la bandeja."
     },
     "matrix": {
       "cellLabel": "{month}: {status}, pagados {paid} de {due}",
@@ -1652,7 +1669,9 @@
       "view": "Ver factura",
       "skip": "Omitir",
       "label": "Factura"
-    }
+    },
+    "paidFromBank": "Pagado por el banco",
+    "notSeenInBank": "No visto en el banco"
   },
   "propertyDetail": {
     "tabs": {
@@ -2175,6 +2194,8 @@
     "ignoreTransaction": "Movimiento ignorado",
     "restoreTransaction": "Movimiento devuelto a revisión",
     "linkPayment": "Movimiento vinculado a un pago registrado",
+    "linkExpense": "Movimiento vinculado a un gasto",
+    "unlinkExpense": "Movimiento desvinculado del gasto",
     "rememberPayerAccount": "Cuenta del pagador memorizada",
     "forgetPayerAccount": "Cuenta del pagador olvidada",
     "applyReconciliationRule": "Regla de conciliación aplicada",

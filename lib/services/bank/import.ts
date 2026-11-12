@@ -24,6 +24,7 @@ import { hashIban } from "@/lib/utils/iban-hash";
 import { encryptPII } from "@/lib/utils/pii-encryption";
 import { allocateReceipt } from "@/lib/services/allocation/service";
 import { isTestConnection } from "@/lib/services/bank/metadata";
+import { linkSureRecurringPayments } from "@/lib/services/expenses/bank-expenses";
 import {
   learnedHashesByTenant,
   rememberPayerAccount,
@@ -567,6 +568,13 @@ export async function importBankRows(
     } catch (err) {
       summary.errors.push(err instanceof Error ? err.message : "Import row failed");
     }
+  }
+
+  // Money going out that is surely this month of a recurring expense is linked to it. Sandbox
+  // money pays nothing, so a test connection's movements wait.
+  if (!quarantineFromAllocation && summary.imported > 0) {
+    // Linked, so no longer waiting for the owner.
+    summary.needsReview -= await linkSureRecurringPayments(userId, job.id);
   }
 
   await prisma.bankSyncJob.update({

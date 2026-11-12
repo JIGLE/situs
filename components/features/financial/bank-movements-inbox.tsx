@@ -4,7 +4,7 @@ import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, Link2, Plus, RotateCcw, X } from "lucide-react";
+import { Check, Link2, Plus, Receipt, RotateCcw, Unlink, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +38,8 @@ import { cn } from "@/lib/utils/utils";
 import { BankSyncStrip } from "./bank-sync-strip";
 import { StatusMark } from "@/components/ui/status-mark";
 import { movementStatus } from "@/lib/utils/status-tone";
+import { expenseCategoryKey } from "@/lib/utils/expense-labels";
+import { ExpenseDialog, useExpenseDialog, type BankPayment } from "./expense-dialog";
 
 /**
  * Situs Bank Movements inbox: the owner's to-do list for money that arrived. It opens on the
@@ -65,13 +67,26 @@ interface InboxRow {
   suggestedLease: { tenantName: string; propertyName: string } | null;
   /** Payments the owner recorded by hand that this movement may be the same money as. */
   recordedPayments: { id: string; date: string; amount: number }[];
+  /** The expense money going out paid, once linked. */
+  expense: { id: string; date: string; category: string; propertyName: string } | null;
+  /** For money going out that waits: the expenses it may have paid, surest first. */
+  expenseSuggestions: {
+    expenseId: string;
+    confidence: number;
+    reasons: string[];
+    date: string;
+    category: string;
+    propertyId: string;
+  }[];
+  payee: BankPayment["payee"];
 }
 
 /** Picker values that are not a lease: they open the New tenancy sheet instead of assigning. */
 const NEW_TENANCY = "new-tenancy";
 const TENANT_PREFIX = "tenant:";
 
-type InboxAction = "confirm" | "reassign" | "ignore" | "restore" | "link";
+type InboxAction =
+  "confirm" | "reassign" | "ignore" | "restore" | "link" | "link_expense" | "unlink_expense";
 
 /** What `PUT /api/bank/transactions/[id]` answers: `recordedPayments` is set when nothing was allocated. */
 interface ActionResult {
@@ -104,6 +119,7 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
   const t = useTranslations("financial.bank");
   const tForms = useTranslations("forms");
   const tCommon = useTranslations("common");
+  const tCategories = useTranslations("financial.categories");
   const locale = useLocale();
   const toast = useToast();
   const { token: csrfToken } = useCsrf();
@@ -167,7 +183,13 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
         );
         setRows(
           Array.isArray(data)
-            ? data.map((row) => ({ ...row, recordedPayments: row.recordedPayments ?? [] }))
+            ? data.map((row) => ({
+                ...row,
+                recordedPayments: row.recordedPayments ?? [],
+                expense: row.expense ?? null,
+                expenseSuggestions: row.expenseSuggestions ?? [],
+                payee: row.payee ?? null,
+              }))
             : [],
         );
       } catch (err) {
@@ -183,6 +205,21 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
   useEffect(() => {
     void load(filter);
   }, [filter, load]);
+
+  // Registar como despesa: the expense form, filled from the movement. Its save links the two.
+  const expenseDialog = useExpenseDialog(undefined, {
+    onSaved: () => {
+      void load(filter, true);
+      onChanged?.();
+    },
+  });
+
+  const categoryLabel = (raw: string) => {
+    const key = expenseCategoryKey(raw);
+    return key ? tCategories(key) : raw;
+  };
+  const propertyName = (id: string) =>
+    state.properties.find((property) => property.id === id)?.name ?? "—";
 
   /** The tenant an action is about: the one of the lease the owner picked, else the suggested one. */
   function tenantOf(row: InboxRow, action: InboxAction, leaseId?: string): string {
@@ -201,6 +238,8 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
     if (action === "ignore") return t("toast.ignored");
     if (action === "restore") return t("toast.restored");
     if (action === "link") return t(remembered ? "toast.linkedRemembered" : "toast.linked");
+    if (action === "link_expense") return t("toast.expenseLinked");
+    if (action === "unlink_expense") return t("toast.expenseUnlinked");
     const tenant = tenantOf(row, action, leaseId);
     return t(remembered ? "toast.confirmedRemembered" : "toast.confirmed", { tenant });
   }
@@ -209,7 +248,7 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
     row: InboxRow,
     action: InboxAction,
     leaseId?: string,
-    extra: { receiptId?: string; newPayment?: boolean } = {},
+    extra: { receiptId?: string; newPayment?: boolean; expenseId?: string } = {},
   ) => {
     setBusyId(row.id);
     setError(null);
@@ -228,7 +267,16 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
       else toast.success(doneMessage(row, action, leaseId, result?.remembered === true));
       // A confirmed movement is a new receipt and a paid month: the rest of the app reads those
       // from app state, which would otherwise show them only after a reload. A link makes none.
-      if ((action === "confirm" || action === "reassign") && !held) await refreshData();
+      // A link changes which expenses read as paid from the bank, which app state holds too.
+      if (
+        (action === "confirm" ||
+          action === "reassign" ||
+          action === "link_expense" ||
+          action === "unlink_expense") &&
+        !held
+      ) {
+        await refreshData();
+      }
       await load(filter, true);
       onChanged?.();
     } catch (err) {
@@ -267,6 +315,36 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
    * rather than as module-level components.
    */
   const renderMatch = (row: InboxRow) => {
+    // Money going out: the expense it paid, or the ones it may have.
+    if (row.amount < 0 && (row.expense || row.expenseSuggestions.length > 0)) {
+      return row.expense ? (
+        <span className="block text-xs">
+          {t("expense.linkedTo", {
+            category: categoryLabel(row.expense.category),
+            date: formatDate(row.expense.date, locale),
+            property: row.expense.propertyName,
+          })}
+        </span>
+      ) : (
+        <>
+          {row.expenseSuggestions.map((suggestion) => (
+            <span key={suggestion.expenseId} className="block text-xs">
+              {t("expense.maybe", {
+                category: categoryLabel(suggestion.category),
+                date: formatDate(suggestion.date, locale),
+                property: propertyName(suggestion.propertyId),
+              })}
+              {suggestion.reasons.includes("known_payee") ? (
+                <span className="text-[var(--color-muted-foreground)]">
+                  {" "}
+                  · {t("expense.knownPayee")}
+                </span>
+              ) : null}
+            </span>
+          ))}
+        </>
+      );
+    }
     const signals = matchSignals(row.matchReasons).map(describeSignal).join(" · ");
     return (
       <>
@@ -330,8 +408,74 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
         </Button>
       );
     }
+    if (row.expense) {
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs text-[var(--color-muted-foreground)]"
+          onClick={() => void act(row, "unlink_expense")}
+          disabled={busyId === row.id}
+        >
+          <Unlink className="mr-1 h-3 w-3" />
+          {t("expense.unlink")}
+        </Button>
+      );
+    }
     const actionable = row.status === "needs_review" || row.status === "imported";
     if (!actionable) return null;
+    if (row.amount < 0) {
+      // Money going out is an expense or nothing: it is never rent.
+      return (
+        <div className="flex flex-wrap items-center gap-1">
+          {row.expenseSuggestions.map((suggestion) => (
+            <Button
+              key={suggestion.expenseId}
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() =>
+                void act(row, "link_expense", undefined, { expenseId: suggestion.expenseId })
+              }
+              disabled={busyId === row.id}
+            >
+              <Link2 className="mr-1 h-3 w-3" />
+              {row.expenseSuggestions.length === 1
+                ? t("expense.isThis")
+                : t("expense.isThisOn", { date: formatDate(suggestion.date, locale) })}
+            </Button>
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() =>
+              expenseDialog.openFromBank({
+                id: row.id,
+                amount: row.amount,
+                bookingDate: row.bookingDate,
+                counterpartyName: row.counterpartyName,
+                reference: row.reference,
+                payee: row.payee,
+              })
+            }
+            disabled={busyId === row.id}
+          >
+            <Receipt className="mr-1 h-3 w-3" />
+            {t("expense.record")}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs text-[var(--color-muted-foreground)]"
+            onClick={() => void act(row, "ignore")}
+            disabled={busyId === row.id}
+          >
+            {t("ignore")}
+          </Button>
+        </div>
+      );
+    }
     if (reassigningId === row.id) {
       return (
         <div className="flex items-center gap-1">
@@ -461,6 +605,7 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
 
   return (
     <div className="border border-[var(--color-border)] bg-[var(--color-surface)]">
+      <ExpenseDialog dialog={expenseDialog} />
       <BankSyncStrip
         onSynced={() => {
           void load(filter, true);

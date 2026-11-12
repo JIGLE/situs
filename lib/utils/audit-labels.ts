@@ -55,6 +55,8 @@ export const AUDIT_ACTION_KEY = {
   IGNORE_TRANSACTION: "ignoreTransaction",
   RESTORE_TRANSACTION: "restoreTransaction",
   LINK_PAYMENT: "linkPayment",
+  LINK_EXPENSE: "linkExpense",
+  UNLINK_EXPENSE: "unlinkExpense",
   REMEMBER_PAYER_ACCOUNT: "rememberPayerAccount",
   FORGET_PAYER_ACCOUNT: "forgetPayerAccount",
   APPLY_RECONCILIATION_RULE: "applyReconciliationRule",
