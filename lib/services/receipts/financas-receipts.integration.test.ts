@@ -235,6 +235,28 @@ describe("recibos de renda uploaded — real Prisma client + real SQLite file", 
     expect((await monthRow(w.lease.id, 2)).allocatedAmount).toBe(0);
   });
 
+  it("adds no money to a month already paid with no receipt to take the recibo", async () => {
+    const w = await world("settled");
+    const row = await monthRow(w.lease.id, 3);
+    await prisma.rentPeriod.update({
+      where: { id: row.id },
+      data: { allocatedAmount: RENT, status: "paid" },
+    });
+
+    expect((await lib.proposeReceipt(w.user.id, recibo("2026-03"))).outcome).toBe("paid");
+    const result = await lib.registerReceipt(w.user.id, {
+      leaseId: w.lease.id,
+      month: { year: 2026, month: 3 },
+      parsed: recibo("2026-03"),
+      pdf: PDF,
+      fileName: "recibo.pdf",
+    });
+
+    expect(result).toEqual({ outcome: "paid", receiptIds: [] });
+    expect((await monthRow(w.lease.id, 4)).allocatedAmount).toBe(0);
+    expect(await prisma.receipt.count({ where: { leaseId: w.lease.id } })).toBe(0);
+  });
+
   it("refuses a month the contract has no rent for", async () => {
     const w = await world("outside");
 
