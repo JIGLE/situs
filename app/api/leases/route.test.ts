@@ -26,6 +26,7 @@ vi.mock("@/lib/services/auth/auth-middleware", () => ({
 }));
 vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prismaMock }));
 vi.mock("@/lib/services/allocation/service", () => ({ generateRentPeriods: vi.fn() }));
+vi.mock("@/lib/services/leases/rent-increases", () => ({ applyDueRentIncreases: vi.fn() }));
 
 import { GET, POST } from "./route";
 

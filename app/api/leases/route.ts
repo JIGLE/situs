@@ -17,10 +17,13 @@ import { isMockMode } from "@/lib/config/data-mode";
 import { ZodError } from "zod";
 import { assertOwnsRelations } from "@/lib/services/database/assert-owned";
 import { partiesByLease, replaceLeaseParties } from "@/lib/services/database/lease-parties";
+import { applyDueRentIncreases } from "@/lib/services/leases/rent-increases";
 
 const leaseInclude = {
   property: { select: { name: true, address: true } },
   tenant: { select: { name: true, email: true } },
+  // The rent's history and any increase still to start, oldest first.
+  rentIncreases: { orderBy: { effectiveFrom: "asc" as const } },
 };
 
 async function handleGet(request: NextRequest): Promise<Response> {
@@ -33,6 +36,10 @@ async function handleGet(request: NextRequest): Promise<Response> {
 
   const { scopeUserId } = authResult;
   const prisma = getPrismaClient();
+
+  // An increase whose month has come is written onto its lease before the lease is read, so the
+  // rent shown is the rent owed. The daily notifications job does the same for every account.
+  await applyDueRentIncreases(scopeUserId);
 
   // The contract's bytes are not here: the client omits them from every lease read, and
   // /api/leases/[id]/contract serves them. This list used to carry every lease's whole PDF.

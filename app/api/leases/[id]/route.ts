@@ -19,6 +19,8 @@ import { auditLeasePeriodSync, syncLeasePeriods } from "@/lib/services/allocatio
 const leaseInclude = {
   property: { select: { name: true, address: true } },
   tenant: { select: { name: true, email: true } },
+  // The rent's history and any increase still to start, oldest first.
+  rentIncreases: { orderBy: { effectiveFrom: "asc" as const } },
 };
 
 async function handlePut(

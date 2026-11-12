@@ -10,7 +10,6 @@ import {
   MoreHorizontal,
   Clock,
   TrendingUp,
-  Mail,
 } from "lucide-react";
 import { SortableHeader } from "@/components/ui/sortable-header";
 import { RenderTable } from "@/components/ui/table";
@@ -22,16 +21,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCurrency } from "@/lib/contexts/currency-context";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils/utils";
@@ -41,9 +30,10 @@ import { ExportButton } from "@/components/ui/export-button";
 import { useApp } from "@/lib/contexts/app-context";
 import { Lease } from "@/lib/types";
 import { useToast } from "@/lib/contexts/toast-context";
-import { wasReported } from "@/lib/utils/api-error";
 import { downloadContract } from "./lease-contract";
 import { TenancySheet } from "./tenancy-sheet";
+import { RentIncreaseDialog, pendingIncrease } from "./rent-increase-dialog";
+import { formatMonthYear } from "@/lib/utils/format-date";
 import { useSortableData } from "@/lib/hooks/use-sortable-data";
 import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
@@ -63,7 +53,7 @@ export interface LeasesViewProps {
 }
 
 export function LeasesView({ embedded = false }: LeasesViewProps = {}): React.ReactElement {
-  const { state, updateLease, deleteLease } = useApp();
+  const { state, deleteLease } = useApp();
   const { properties, tenants, leases, loading } = state;
   const { success, error } = useToast();
   const { formatCurrency } = useCurrency();
@@ -72,6 +62,22 @@ export function LeasesView({ embedded = false }: LeasesViewProps = {}): React.Re
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const locale = useLocale();
+  const tIncrease = useTranslations("leases.rentIncrease");
+
+  /** The rent a scheduled increase brings, and from when, under the current rent. */
+  const upcomingRent = (lease: Lease) => {
+    const next = pendingIncrease(lease);
+    if (!next) return null;
+    const from = new Date(next.effectiveFrom);
+    return (
+      <span className="block text-xs font-normal text-[var(--color-muted-foreground)]">
+        {tIncrease("pending", {
+          amount: formatCurrency(next.newRent),
+          month: formatMonthYear(from.getUTCFullYear(), from.getUTCMonth() + 1, locale),
+        })}
+      </span>
+    );
+  };
   const t = useTranslations("leases");
   const tNav = useTranslations("navigation");
   const openLeaseOverlay = (leaseId: string) => {
@@ -89,8 +95,6 @@ export function LeasesView({ embedded = false }: LeasesViewProps = {}): React.Re
   // Bulk selection state
   const [selectedLeaseIds, setSelectedLeaseIds] = useState<Set<string>>(new Set());
   const [bulkIncreaseOpen, setBulkIncreaseOpen] = useState(false);
-  const [bulkPct, setBulkPct] = useState("");
-  const [bulkApplying, setBulkApplying] = useState(false);
 
   const statusLabel = (status: string) => {
     switch (status) {
@@ -154,71 +158,6 @@ export function LeasesView({ embedded = false }: LeasesViewProps = {}): React.Re
     } else {
       setSelectedLeaseIds(new Set(visibleIds));
     }
-  };
-
-  const handleBulkRentIncrease = async () => {
-    const pct = parseFloat(bulkPct);
-    if (isNaN(pct) || pct <= 0 || pct > 100) return;
-    setBulkApplying(true);
-    try {
-      for (const id of selectedLeaseIds) {
-        const lease = leases.find((l) => l.id === id);
-        if (!lease) continue;
-        const newRent = Math.round(lease.monthlyRent * (1 + pct / 100) * 100) / 100;
-        await updateLease(id, { monthlyRent: newRent });
-      }
-      success(t("toast.rentIncreased", { pct, count: selectedLeaseIds.size }));
-      setBulkIncreaseOpen(false);
-      setBulkPct("");
-      setSelectedLeaseIds(new Set());
-    } catch (err) {
-      // `updateLease` reports its own failures; saying so again would be a second toast.
-      if (!wasReported(err)) error(t("toast.rentIncreaseFailed"));
-    } finally {
-      setBulkApplying(false);
-    }
-  };
-
-  const handleDownloadNotices = () => {
-    const pct = parseFloat(bulkPct);
-    const today = new Date().toLocaleDateString(locale);
-    const lines: string[] = [];
-    for (const id of selectedLeaseIds) {
-      const lease = leases.find((l) => l.id === id);
-      const tenant = tenants.find((t) => t.id === lease?.tenantId);
-      const property = properties.find((p) => p.id === lease?.propertyId);
-      if (!lease || !tenant || !property) continue;
-      const newRent = isNaN(pct)
-        ? lease.monthlyRent
-        : Math.round(lease.monthlyRent * (1 + pct / 100) * 100) / 100;
-      lines.push(
-        `Dear ${tenant.name},`,
-        ``,
-        `We are writing to inform you that the monthly rent for the property at`,
-        `${property.address} will be updated as follows:`,
-        ``,
-        `  Current rent: ${formatCurrency(lease.monthlyRent)}/month`,
-        `  New rent:     ${formatCurrency(newRent)}/month${isNaN(pct) ? "" : ` (${pct}% increase)`}`,
-        `  Effective:    ${today}`,
-        ``,
-        `If you have any questions, please contact us.`,
-        ``,
-        `Kind regards,`,
-        `Property Management`,
-        ``,
-        `${"─".repeat(60)}`,
-        ``,
-      );
-    }
-    const blob = new Blob([lines.join("\n")], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `rent-increase-notices-${new Date().toISOString().split("T")[0]}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   // Open the sheet from a link elsewhere:
@@ -390,7 +329,12 @@ export function LeasesView({ embedded = false }: LeasesViewProps = {}): React.Re
       ),
       headerClassName: "text-[var(--color-muted-foreground)]",
       cellClassName: "text-sm font-medium text-[var(--color-foreground)]",
-      cell: (lease: Lease) => formatCurrency(lease.monthlyRent),
+      cell: (lease: Lease) => (
+        <>
+          {formatCurrency(lease.monthlyRent)}
+          {upcomingRent(lease)}
+        </>
+      ),
     },
     {
       key: "status",
@@ -446,6 +390,7 @@ export function LeasesView({ embedded = false }: LeasesViewProps = {}): React.Re
       <p className="mt-2 flex flex-wrap items-baseline justify-between gap-x-4 text-sm">
         <span className="font-medium text-[var(--color-foreground)]">
           {formatCurrency(lease.monthlyRent)}
+          {upcomingRent(lease)}
         </span>
         <span className="text-[var(--color-muted-foreground)]">
           {new Date(lease.startDate).toLocaleDateString(locale)} →{" "}
@@ -596,102 +541,21 @@ export function LeasesView({ embedded = false }: LeasesViewProps = {}): React.Re
                   {t("bulk.selected", { count: selectedLeaseIds.size })}
                 </span>
                 <div className="ml-auto flex items-center gap-2">
-                  <Dialog open={bulkIncreaseOpen} onOpenChange={setBulkIncreaseOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-[var(--color-info)]/40 text-[var(--color-info)]"
-                      >
-                        <TrendingUp className="h-4 w-4 mr-1.5" />
-                        {t("bulk.increaseRent")}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[380px]">
-                      <DialogHeader>
-                        <DialogTitle>{t("bulk.title")}</DialogTitle>
-                        <DialogDescription>
-                          {t("bulkDescription", { count: selectedLeaseIds.size })}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 pt-2">
-                        <div className="space-y-1.5">
-                          <Label htmlFor="bulk-pct">{t("bulk.percentLabel")}</Label>
-                          <div className="flex gap-2">
-                            <Input
-                              id="bulk-pct"
-                              type="number"
-                              min="0.1"
-                              max="100"
-                              step="0.1"
-                              placeholder={t("bulk.percentPlaceholder")}
-                              value={bulkPct}
-                              onChange={(e) => setBulkPct(e.target.value)}
-                              className="flex-1"
-                            />
-                            <span className="flex items-center text-sm text-[var(--color-muted-foreground)]">
-                              %
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Preview */}
-                        {bulkPct && !isNaN(parseFloat(bulkPct)) && parseFloat(bulkPct) > 0 && (
-                          <div className="bg-[var(--color-card)] border border-[var(--color-border)] divide-y divide-[var(--color-border)] text-sm max-h-48 overflow-y-auto">
-                            {[...selectedLeaseIds].map((id) => {
-                              const lease = leases.find((l) => l.id === id);
-                              if (!lease) return null;
-                              const tenant = tenants.find((t) => t.id === lease.tenantId);
-                              const newRent =
-                                Math.round(
-                                  lease.monthlyRent * (1 + parseFloat(bulkPct) / 100) * 100,
-                                ) / 100;
-                              return (
-                                <div
-                                  key={id}
-                                  className="flex items-center justify-between px-3 py-2"
-                                >
-                                  <span className="text-[var(--color-muted-foreground)] truncate max-w-[180px]">
-                                    {tenant?.name ?? id}
-                                  </span>
-                                  <span className="text-[var(--color-muted-foreground)] line-through mr-2">
-                                    {formatCurrency(lease.monthlyRent)}
-                                  </span>
-                                  <span className="text-[var(--semantic-success-readable)] font-medium">
-                                    {formatCurrency(newRent)}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleDownloadNotices}
-                            disabled={!bulkPct || isNaN(parseFloat(bulkPct))}
-                          >
-                            <Mail className="h-4 w-4 mr-1.5" />
-                            {t("bulk.downloadNotices")}
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={handleBulkRentIncrease}
-                            disabled={
-                              bulkApplying ||
-                              !bulkPct ||
-                              isNaN(parseFloat(bulkPct)) ||
-                              parseFloat(bulkPct) <= 0
-                            }
-                          >
-                            {bulkApplying ? t("bulk.applying") : t("bulk.apply")}
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-[var(--color-info)]/40 text-[var(--color-info)]"
+                    onClick={() => setBulkIncreaseOpen(true)}
+                  >
+                    <TrendingUp className="h-4 w-4 mr-1.5" />
+                    {t("bulk.increaseRent")}
+                  </Button>
+                  <RentIncreaseDialog
+                    open={bulkIncreaseOpen}
+                    onOpenChange={setBulkIncreaseOpen}
+                    leases={leases.filter((lease) => selectedLeaseIds.has(lease.id))}
+                    onScheduled={() => setSelectedLeaseIds(new Set())}
+                  />
                   <Button
                     size="sm"
                     variant="ghost"

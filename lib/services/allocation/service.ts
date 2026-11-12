@@ -13,6 +13,7 @@ import { logAudit } from "@/lib/services/audit-log";
 
 import { derivePeriodStatus, deriveTenantStatus, periodDueDate, planAllocation } from "./engine";
 import { MONEY_EPSILON } from "@/lib/utils/money";
+import { rentForMonth, type PendingIncrease } from "@/lib/utils/rent-increase";
 import type { AllocationPlan, PeriodSnapshot, RentPeriodStatus } from "./types";
 
 const HORIZON_MONTHS = 12;
@@ -32,6 +33,17 @@ type LedgerClient = PrismaTransactionClient | ReturnType<typeof getPrismaClient>
 /** The first day of the month a date falls in, UTC. */
 function monthStart(date: Date): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+}
+
+/**
+ * The lease's rent increases that have not taken effect yet. The months from each one's start on
+ * are owed at its new rent while the lease still carries the old one.
+ */
+async function pendingIncreases(leaseId: string, client: LedgerClient): Promise<PendingIncrease[]> {
+  return client.rentIncrease.findMany({
+    where: { leaseId, appliedAt: null },
+    select: { effectiveFrom: true, newRent: true },
+  });
 }
 
 /**
@@ -100,9 +112,11 @@ async function createMissingPeriods(
   if (missing.length === 0) return null;
 
   const now = new Date();
+  const pending = await pendingIncreases(leaseId, client);
   await client.rentPeriod.createMany({
     data: missing.map((p) => {
       const dueDate = periodDueDate(p);
+      const dueAmount = rentForMonth(lease.monthlyRent, pending, dueDate);
       return {
         userId: lease.userId,
         leaseId,
@@ -111,12 +125,9 @@ async function createMissingPeriods(
         year: p.year,
         month: p.month,
         dueDate,
-        dueAmount: lease.monthlyRent,
+        dueAmount,
         allocatedAmount: 0,
-        status: derivePeriodStatus(
-          { dueDate, dueAmount: lease.monthlyRent, allocatedAmount: 0 },
-          now,
-        ),
+        status: derivePeriodStatus({ dueDate, dueAmount, allocatedAmount: 0 }, now),
         updatedAt: now,
       };
     }),
@@ -144,8 +155,9 @@ export interface LeasePeriodSync {
  *   marked `waived`, so its history stays; a month with live money on it is left alone, since
  *   that money has to be dealt with by a person (void the receipt) rather than by this.
  * - Future months with nothing allocated take the lease's current rent: they were generated up
- *   to a year ahead with the rent of that day, and a rent update has to reach them. Past months
- *   keep their snapshot — what was owed then does not change after the fact.
+ *   to a year ahead with the rent of that day, and a rent update has to reach them. A month on or
+ *   after a pending increase's start takes that increase's rent instead (`RentIncrease`). Past
+ *   months keep their snapshot — what was owed then does not change after the fact.
  * - An active lease then gets its missing months (`generateRentPeriods`).
  *
  * Runs on the client it is given so the lease write and this land together.
@@ -177,6 +189,8 @@ export async function syncLeasePeriods(
     },
   });
 
+  const pending = await pendingIncreases(leaseId, client);
+
   for (const period of periods) {
     const due = period.dueDate.getTime();
     const outside = owesNothing || due < firstOwed || due > lastOwed;
@@ -194,14 +208,15 @@ export async function syncLeasePeriods(
       continue;
     }
 
+    const rent = rentForMonth(lease.monthlyRent, pending, period.dueDate);
     if (
       due > now.getTime() &&
       period.allocations.length === 0 &&
-      Math.abs(period.dueAmount - lease.monthlyRent) > MONEY_EPSILON
+      Math.abs(period.dueAmount - rent) > MONEY_EPSILON
     ) {
       await client.rentPeriod.update({
         where: { id: period.id },
-        data: { dueAmount: lease.monthlyRent },
+        data: { dueAmount: rent },
       });
       result.repriced += 1;
     }
