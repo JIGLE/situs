@@ -35,6 +35,8 @@ import { ExpensesView } from "./expenses-view";
 import { ExpenseDialog, useExpenseDialog } from "./expense-dialog";
 
 const fin = pt.financial;
+// Fixtures sit in this year and the last, so the default year view shows them in any year.
+const YEAR = new Date().getFullYear();
 
 const expense = (over: Record<string, unknown>) => ({
   id: "exp-1",
@@ -42,11 +44,16 @@ const expense = (over: Record<string, unknown>) => ({
   propertyName: "Rua Augusta 12",
   category: "condominium_fees",
   amount: 40,
-  date: "2026-10-05",
+  date: `${YEAR}-10-05`,
   ...over,
 });
 
 beforeAll(() => {
+  // Radix Select asks the DOM for pointer capture and scrolls the chosen item into view; jsdom has
+  // neither.
+  Element.prototype.hasPointerCapture ??= () => false;
+  Element.prototype.releasePointerCapture ??= () => {};
+  Element.prototype.scrollIntoView ??= () => {};
   // Radix measures its popovers; jsdom has no ResizeObserver.
   globalThis.ResizeObserver ??= class {
     observe() {}
@@ -79,12 +86,12 @@ function PropertyExpense() {
 describe("ExpensesView", () => {
   it("lists every expense, newest first, with their count and total", () => {
     app.expenses = [
-      expense({ id: "a", date: "2026-09-01", amount: 60, category: "repairs" }),
-      expense({ id: "b", date: "2026-10-05" }),
+      expense({ id: "a", date: `${YEAR}-09-01`, amount: 60, category: "repairs" }),
+      expense({ id: "b", date: `${YEAR}-10-05` }),
     ];
     renderWithProviders(<ExpensesView />, { initialLocale: "pt" });
 
-    expect(screen.getByText("2 despesas · 100 €")).toBeInTheDocument();
+    expect(screen.getByText("2 despesas · 100 € · 100 € dedutível")).toBeInTheDocument();
     const rows = screen.getAllByRole("listitem").map((row: HTMLElement) => row.textContent);
     expect(rows[0]).toContain(fin.categories.condominium_fees);
     expect(rows[1]).toContain(fin.categories.repairs);
@@ -191,5 +198,71 @@ describe("ExpensesView", () => {
     renderWithProviders(<ExpensesView />, { initialLocale: "pt" });
 
     expect(screen.getByText(/Repete todos os meses · próxima/)).toBeInTheDocument();
+  });
+
+  it("shows one year at a time, by month, with each property's deductible part", async () => {
+    app.expenses = [
+      expense({ id: "a", amount: 40 }),
+      expense({ id: "b", amount: 800, category: "mortgage_interest", isDeductible: false }),
+      expense({ id: "c", amount: 999, date: `${YEAR - 1}-03-01` }),
+    ];
+    const user = userEvent.setup();
+    renderWithProviders(<ExpensesView />, { initialLocale: "pt" });
+
+    expect(screen.getByText("2 despesas · 840 € · 40 € dedutível")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /outubro/i })).toBeInTheDocument();
+    expect(screen.getByText(/Juros de Hipoteca/).closest("button")).toHaveTextContent(
+      fin.notDeductible,
+    );
+    expect(screen.getByRole("heading", { name: fin.expensesByProperty })).toBeInTheDocument();
+    expect(screen.getByText("40 € dedutível")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("combobox", { name: fin.expenseYear }));
+    await user.click(await screen.findByRole("option", { name: String(YEAR - 1) }));
+
+    expect(screen.getByText("1 despesa · 999 € · 999 € dedutível")).toBeInTheDocument();
+  });
+
+  it("narrows to one group of categories", async () => {
+    app.expenses = [
+      expense({ id: "a", amount: 40 }),
+      expense({ id: "b", amount: 75, category: "water" }),
+    ];
+    const user = userEvent.setup();
+    renderWithProviders(<ExpensesView />, { initialLocale: "pt" });
+
+    await user.click(screen.getByRole("combobox", { name: fin.expenseForm.category }));
+    await user.click(await screen.findByRole("option", { name: fin.categoryGroups.utilities }));
+
+    expect(screen.getByText("1 despesa · 75 € · 75 € dedutível")).toBeInTheDocument();
+  });
+
+  it("sets deductible from the category, and saves the supplier", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<PropertyExpense />, { initialLocale: "pt" });
+
+    await user.click(screen.getByRole("button", { name: "open" }));
+    const deductible = await screen.findByRole("switch", { name: fin.deductibleLabel });
+    expect(deductible).not.toBeChecked();
+
+    await user.click(screen.getByRole("combobox", { name: fin.expenseForm.category }));
+    await user.click(await screen.findByRole("option", { name: fin.categories.imi }));
+    expect(deductible).toBeChecked();
+
+    await user.type(screen.getByLabelText(/Valor/), "310");
+    await user.type(screen.getByLabelText(/^Fornecedor/), "Câmara Municipal");
+    await user.type(screen.getByLabelText(/NIF do fornecedor/), "501234567");
+    await user.click(screen.getByRole("button", { name: fin.expenseForm.submit }));
+
+    await waitFor(() =>
+      expect(app.addExpense).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: "imi",
+          isDeductible: true,
+          vendorName: "Câmara Municipal",
+          vendorVat: "501234567",
+        }),
+      ),
+    );
   });
 });

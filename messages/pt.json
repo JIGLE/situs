@@ -1507,7 +1507,6 @@
     "noFinancialData": "Ainda sem dados financeiros",
     "noFinancialDataDesc": "Comece por adicionar recibos ou despesas para acompanhar o fluxo de caixa",
     "noExpenseRecords": "Sem registos de despesa",
-    "expensesSummary": "{count, plural, =0 {Sem despesas} one {# despesa} other {# despesas}} · {total}",
     "expenseForm": {
       "property": "Imóvel",
       "selectProperty": "Selecionar imóvel",
@@ -1526,7 +1525,10 @@
       "deleteDescription": "{amount} de {date} deixa de contar nos totais.",
       "toastDeleted": "Despesa eliminada",
       "repeats": "{rule, select, monthly {Repete todos os meses} quarterly {Repete a cada 3 meses} other {Repete todos os anos}} · próxima {date}",
-      "repeatEnded": "Já não se repete"
+      "repeatEnded": "Já não se repete",
+      "vendorName": "Fornecedor",
+      "vendorVat": "NIF do fornecedor",
+      "optional": "opcional"
     },
     "matrix": {
       "cellLabel": "{month}: {status}, pagos {paid} de {due}",
@@ -1620,7 +1622,24 @@
       "unmarkCollector": "Deixar de marcar como quem recebe as rendas",
       "collectorHint": "Quem recebe as rendas? Abra esse proprietário na lista e marque-o: a parte dele passa a aparecer como «fica com» em vez de «a pagar».",
       "collectorSaved": "Guardado"
-    }
+    },
+    "categoryGroups": {
+      "taxes": "Impostos",
+      "insurance": "Seguros",
+      "condominium": "Condomínio",
+      "works": "Obras e reparações",
+      "utilities": "Consumos",
+      "fees": "Honorários e juros",
+      "other": "Outro"
+    },
+    "categoryGroupFrequent": "Mais usadas",
+    "allCategories": "Todas as categorias",
+    "expensesYearSummary": "{count, plural, =0 {Sem despesas} one {# despesa} other {# despesas}} · {total} · {deductible} dedutível",
+    "expensesByProperty": "Por imóvel",
+    "expensesByPropertyHint": "Para o Anexo F do IRS: o total de cada imóvel e a parte dedutível.",
+    "deductibleShort": "dedutível",
+    "notDeductible": "Não dedutível",
+    "expenseYear": "Ano"
   },
   "propertyDetail": {
     "tabs": {
