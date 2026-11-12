@@ -39,8 +39,7 @@ export type TenancyWarning =
   | "no_tenant"
   | "no_rent"
   | "rent_not_monthly"
-  | "no_start"
-  | "term_passed";
+  | "no_start";
 
 export interface ImportedTenancy {
   propertyId: string | null;
@@ -81,18 +80,33 @@ export function tenancyFromContract(
   if (contract.monthlyRent == null) warnings.push("no_rent");
   if (contract.rentNotMonthly) warnings.push("rent_not_monthly");
   if (!contract.startDate) warnings.push("no_start");
-  const termPassed = !!contract.endDate && contract.endDate < today;
-  if (termPassed) warnings.push("term_passed");
 
   return {
     propertyId: matches.length === 1 ? matches[0].id : null,
     tenant,
     coTenants: others.map((p) => ({ name: titleCase(p.name), taxId: p.taxId })),
     startDate: contract.startDate,
-    // A lapsed term is no end date for a tenancy still running: the warning quotes it instead.
-    endDate: termPassed ? null : contract.endDate,
+    endDate: currentTermEnd(contract.endDate, today),
     monthlyRent: contract.monthlyRent,
     atContractNumber: contract.contractNumber,
     warnings,
   };
+}
+
+/**
+ * The end of the term running today. A contract the owner imports is one still in force, so a term
+ * Finanças shows as ended has renewed since, as a lease renews by default (art. 1096 CC): it is
+ * carried forward a year at a time, the usual term, to the first end on or after today. The owner
+ * can change it in the sheet.
+ */
+export function currentTermEnd(endDate: string | null, today: string): string | null {
+  if (!endDate || endDate >= today) return endDate;
+  const [year, month, day] = endDate.split("-").map(Number);
+  for (let y = year + 1; y <= Number(today.slice(0, 4)) + 1; y++) {
+    // 29 February carries to the 28th in a year without it.
+    const last = new Date(Date.UTC(y, month, 0)).getUTCDate();
+    const end = `${y}-${String(month).padStart(2, "0")}-${String(Math.min(day, last)).padStart(2, "0")}`;
+    if (end >= today) return end;
+  }
+  return null;
 }

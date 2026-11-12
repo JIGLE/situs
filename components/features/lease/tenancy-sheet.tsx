@@ -47,7 +47,6 @@ import {
   type PlannedShare,
 } from "@/lib/services/financas-import/landlords";
 import { cn } from "@/lib/utils/utils";
-import { formatDate } from "@/lib/utils/format-date";
 import { apiFetch } from "@/lib/utils/api-client";
 import { uploadContract } from "./lease-contract";
 import { LeasePartiesEditor, leasePartiesInvalid } from "./lease-parties-editor";
@@ -176,7 +175,6 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
         warnings: TenancyWarning[];
         article: string;
         fraction: string;
-        endDate: string;
         /** The landlords on the proof, for the property when it has no owners yet. */
         shares: PlannedShare[];
       }
@@ -289,7 +287,6 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
         warnings: found.warnings,
         article: contract.article ?? "",
         fraction: contract.fraction ?? "",
-        endDate: contract.endDate ?? "",
         shares: planShares(contract.landlords, state.owners ?? []),
       });
     } catch {
@@ -481,7 +478,6 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
                               {tImport(`warning.${warning}`, {
                                 article: proof.article || "?",
                                 fraction: proof.fraction || "-",
-                                date: formatDate(proof.endDate, locale),
                               })}
                             </li>
                           ))}

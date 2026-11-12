@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ParsedContract } from "./contract";
-import { propertiesMatching, tenancyFromContract } from "./match";
+import { currentTermEnd, propertiesMatching, tenancyFromContract } from "./match";
 
 const contract = (over: Partial<ParsedContract> = {}): ParsedContract => ({
   recognised: true,
@@ -77,15 +77,14 @@ describe("tenancyFromContract", () => {
     );
     expect(result.propertyId).toBeNull();
     expect(result.tenant).toBeNull();
-    // The lapsed term is quoted by the warning, not filled in as the tenancy's end.
-    expect(result.endDate).toBeNull();
+    // A term Finanças shows as ended has renewed since: it runs to the next end after today.
+    expect(result.endDate).toBe("2027-01-31");
     expect(result.warnings).toEqual([
       "property_not_found",
       "no_tenant",
       "no_rent",
       "rent_not_monthly",
       "no_start",
-      "term_passed",
     ]);
   });
 
@@ -94,5 +93,16 @@ describe("tenancyFromContract", () => {
     const result = tenancyFromContract(contract(), twins, [], "2026-11-11");
     expect(result.propertyId).toBeNull();
     expect(result.warnings).toContain("property_ambiguous");
+  });
+});
+
+describe("currentTermEnd", () => {
+  it("keeps a term still running and carries a lapsed one forward a year at a time", () => {
+    expect(currentTermEnd("2027-03-31", "2026-11-12")).toBe("2027-03-31");
+    expect(currentTermEnd("2016-12-31", "2026-11-12")).toBe("2026-12-31");
+    expect(currentTermEnd("2020-06-30", "2026-11-12")).toBe("2027-06-30");
+    expect(currentTermEnd("2026-11-12", "2026-11-12")).toBe("2026-11-12");
+    expect(currentTermEnd("2020-02-29", "2026-11-12")).toBe("2027-02-28");
+    expect(currentTermEnd(null, "2026-11-12")).toBeNull();
   });
 });

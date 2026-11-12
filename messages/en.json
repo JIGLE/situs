@@ -2118,8 +2118,7 @@
         "no_tenant": "No tenant was found in the PDF. Enter them below.",
         "no_rent": "The rent wasn't found. Enter it below.",
         "rent_not_monthly": "Finanças lists this rent for less than a month. Enter the monthly amount.",
-        "no_start": "The start date wasn't found. Check the term below.",
-        "term_passed": "The term in Finanças ended on {date}. If the contract renewed, set the current end date."
+        "no_start": "The start date wasn't found. Check the term below."
       },
       "landlords": "Landlords, set as the property's owners when you save: {list}",
       "landlordsKept": "This property already has owners in Situs. They stay as they are.",
