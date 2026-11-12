@@ -62,6 +62,7 @@ export async function seedDemoData(userId: string): Promise<void> {
   );
   await cleanup(() => prisma.tenant.deleteMany({ where: { userId } }), "tenants");
   await cleanup(() => prisma.property.deleteMany({ where: { userId } }), "properties");
+  await cleanup(() => prisma.ownerPayout.deleteMany({ where: { userId } }), "ownerPayouts");
   await cleanup(() => prisma.owner.deleteMany({ where: { userId } }), "owners");
 
   console.log(`[seeder] Cleared demo data for user: ${userId}`);
