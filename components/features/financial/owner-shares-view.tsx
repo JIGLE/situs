@@ -20,7 +20,6 @@ import {
 import { ExportButton } from "@/components/ui/export-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useCsrf } from "@/lib/contexts/csrf-context";
 import { useToast } from "@/lib/contexts/toast-context";
@@ -184,10 +183,15 @@ export function OwnerSharesView(): React.ReactElement {
             </Button>
           </div>
           <div className="flex items-center gap-3">
-            <label className="flex min-h-11 items-center gap-2 text-sm text-[var(--color-muted-foreground)] md:min-h-0">
-              <Switch checked={showAll} onCheckedChange={setShowAll} />
+            {/* A toggle button, not a switch: a Button is 44px tall on a phone, a switch is 24. */}
+            <Button
+              size="sm"
+              variant={showAll ? "secondary" : "ghost"}
+              aria-pressed={showAll}
+              onClick={() => setShowAll((all) => !all)}
+            >
               {t("showAll")}
-            </label>
+            </Button>
             <ExportButton
               data={exportRows}
               filename={`owner-shares-${year}`}
