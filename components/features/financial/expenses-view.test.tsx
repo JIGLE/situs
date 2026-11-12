@@ -7,6 +7,8 @@ const { app } = vi.hoisted(() => ({
   app: {
     expenses: [] as Record<string, unknown>[],
     addExpense: vi.fn(async (data: Record<string, unknown>) => ({ id: "exp-new", ...data })),
+    updateExpense: vi.fn(async () => undefined),
+    deleteExpense: vi.fn(async () => undefined),
   },
 }));
 
@@ -21,6 +23,8 @@ vi.mock("@/lib/contexts/app-context", () => ({
       loading: false,
     },
     addExpense: app.addExpense,
+    updateExpense: app.updateExpense,
+    deleteExpense: app.deleteExpense,
   }),
 }));
 vi.mock("@/lib/contexts/currency-context", () => ({
@@ -120,5 +124,72 @@ describe("ExpensesView", () => {
         expect.objectContaining({ propertyId: "prop-2", amount: 75, category: "other" }),
       ),
     );
+  });
+
+  it("takes an amount written the Portuguese way", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<PropertyExpense />, { initialLocale: "pt" });
+
+    await user.click(screen.getByRole("button", { name: "open" }));
+    await user.type(await screen.findByLabelText(/Valor/), "3200,50");
+    await user.click(screen.getByRole("button", { name: fin.expenseForm.submit }));
+
+    await waitFor(() =>
+      expect(app.addExpense).toHaveBeenCalledWith(expect.objectContaining({ amount: 3200.5 })),
+    );
+  });
+
+  it("opens a recorded expense to change it", async () => {
+    app.expenses = [expense({ description: "Quota de outubro" })];
+    const user = userEvent.setup();
+    renderWithProviders(<ExpensesView />, { initialLocale: "pt" });
+
+    await user.click(screen.getByRole("button", { name: /Quota de outubro/ }));
+    await screen.findByRole("dialog", { name: fin.expenseForm.editTitle });
+    const amount = screen.getByLabelText(/Valor/);
+    expect(amount).toHaveValue("40,00");
+
+    await user.clear(amount);
+    await user.type(amount, "45");
+    await user.click(screen.getByRole("button", { name: pt.actions.save }));
+
+    await waitFor(() =>
+      expect(app.updateExpense).toHaveBeenCalledWith(
+        "exp-1",
+        expect.objectContaining({ amount: 45, category: "condominium_fees", propertyId: "prop-1" }),
+      ),
+    );
+    expect(app.addExpense).not.toHaveBeenCalled();
+  });
+
+  it("deletes a recorded expense once the owner confirms", async () => {
+    app.expenses = [expense({})];
+    const user = userEvent.setup();
+    renderWithProviders(<ExpensesView />, { initialLocale: "pt" });
+
+    await user.click(screen.getByRole("button", { name: /40 €/ }));
+    await screen.findByRole("dialog", { name: fin.expenseForm.editTitle });
+    await user.click(screen.getByRole("button", { name: pt.actions.delete }));
+    expect(app.deleteExpense).not.toHaveBeenCalled();
+
+    await screen.findByText(fin.expenseForm.deleteTitle);
+    const deletes = screen.getAllByRole("button", { name: pt.actions.delete });
+    await user.click(deletes[deletes.length - 1]);
+
+    await waitFor(() => expect(app.deleteExpense).toHaveBeenCalledWith("exp-1"));
+  });
+
+  it("says when a recurring expense repeats next", () => {
+    app.expenses = [
+      expense({
+        isRecurring: true,
+        recurrenceRule: "monthly",
+        recurrenceDay: 1,
+        date: "2026-01-01",
+      }),
+    ];
+    renderWithProviders(<ExpensesView />, { initialLocale: "pt" });
+
+    expect(screen.getByText(/Repete todos os meses · próxima/)).toBeInTheDocument();
   });
 });

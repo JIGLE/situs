@@ -45,6 +45,11 @@ export interface RentMatrixCell {
   dueAmount: number;
   allocatedAmount: number;
   outstanding: number;
+  /**
+   * Every payment on the month has its recibo from Finanças on file (`Receipt.financasNumber`).
+   * The matrix shows a paid month in two tones: payment recorded, and recibo on file too.
+   */
+  receiptOnFile: boolean;
 }
 
 export interface MoneyTotals {
@@ -99,6 +104,10 @@ export async function getRentMatrix(
       tenant: { select: { name: true } },
       property: { select: { name: true } },
       lease: { select: { status: true } },
+      allocations: {
+        where: { reversedAt: null },
+        select: { receipt: { select: { financasNumber: true } } },
+      },
     },
     orderBy: [{ leaseId: "asc" }, { month: "asc" }],
   });
@@ -126,6 +135,9 @@ export async function getRentMatrix(
       dueAmount: period.dueAmount,
       allocatedAmount: period.allocatedAmount,
       outstanding: outstandingOf(period),
+      receiptOnFile:
+        period.allocations.length > 0 &&
+        period.allocations.every((a) => a.receipt?.financasNumber != null),
     };
     addTo(row.totals, period);
     addTo((totals.months[period.month] ??= { expected: 0, received: 0 }), period);
@@ -152,7 +164,15 @@ export interface RentMonthMovement {
 export interface RentMonthPayment {
   amount: number;
   allocatedAt: string;
-  receipt: { id: string; date: string; amount: number; lifecycle: string; source: string } | null;
+  receipt: {
+    id: string;
+    date: string;
+    amount: number;
+    lifecycle: string;
+    source: string;
+    /** The recibo's number on the Portal when it was uploaded; "" when on file but unread. */
+    financasNumber: string | null;
+  } | null;
   /** Empty for a payment recorded by hand, which no bank movement is linked to. */
   movements: RentMonthMovement[];
 }
@@ -240,7 +260,14 @@ export async function getRentMonth(
           amount: true,
           allocatedAt: true,
           receipt: {
-            select: { id: true, date: true, amount: true, lifecycle: true, source: true },
+            select: {
+              id: true,
+              date: true,
+              amount: true,
+              lifecycle: true,
+              source: true,
+              financasNumber: true,
+            },
           },
         },
       })
@@ -305,6 +332,7 @@ export async function getRentMonth(
             amount: a.receipt.amount,
             lifecycle: a.receipt.lifecycle,
             source: a.receipt.source,
+            financasNumber: a.receipt.financasNumber,
           }
         : null,
       movements: a.receipt ? movementsOf(a.receipt.id) : [],

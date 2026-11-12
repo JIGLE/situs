@@ -5,7 +5,7 @@ import { useCallback, useEffect, useEffectEvent, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import type { RentMatrix, RentMatrixRow } from "@/lib/services/allocation/rent-matrix";
@@ -15,8 +15,16 @@ import { formatEuro, withEuroSign } from "@/lib/utils/currency";
 import { formatMonth, formatMonthYear } from "@/lib/utils/format-date";
 import { rentPeriodStatusKey } from "@/lib/utils/rent-period-labels";
 import { cn } from "@/lib/utils/utils";
+import { ReceiptUploadSheet } from "@/components/features/financas-import/receipt-upload-sheet";
 import { RentMonthSheet, monthParam, parseMonthParam, type MonthRef } from "./rent-month-sheet";
-import { CELL_ICONS, CELL_STYLES, LEGEND_STATUSES } from "./rent-status-styles";
+import {
+  CELL_ICONS,
+  CELL_STYLES,
+  LEGEND_STATUSES,
+  RECIBO_ICON,
+  RECIBO_STYLE,
+  cellLook,
+} from "./rent-status-styles";
 
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 
@@ -62,6 +70,7 @@ export function YearlyRentMatrix({ ledgerVersion = 0 }: Props): React.ReactEleme
   const [matrix, setMatrix] = useState<RentMatrix | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   // The month keeps its place while the sheet closes, so it leaves with its content.
   const [sheet, setSheet] = useState<{ month: MonthRef; open: boolean } | null>(() => {
     const month = parseMonthParam(searchParams.get("month"));
@@ -122,7 +131,7 @@ export function YearlyRentMatrix({ ledgerVersion = 0 }: Props): React.ReactEleme
         </span>
       );
     }
-    const Icon = CELL_ICONS[cell.status];
+    const { style, icon: Icon } = cellLook(cell.status, cell.receiptOnFile);
     const owed = SHOWS_OWED.has(cell.status) && cell.outstanding > 0;
     return (
       <button
@@ -130,13 +139,16 @@ export function YearlyRentMatrix({ ledgerVersion = 0 }: Props): React.ReactEleme
         onClick={() => open(row, month)}
         aria-label={t("cellLabel", {
           month: formatMonthYear(year, month, locale),
-          status: statusLabel(cell.status),
+          status:
+            Icon === RECIBO_ICON
+              ? `${statusLabel(cell.status)}, ${t("reciboOnFile")}`
+              : statusLabel(cell.status),
           paid: formatEuro(cell.allocatedAmount),
           due: formatEuro(cell.dueAmount),
         })}
         className={cn(
           "inline-flex h-11 w-full min-w-11 flex-col items-center justify-center gap-0.5 px-1 text-xs transition-colors hover:brightness-95 md:h-9",
-          CELL_STYLES[cell.status] ?? "",
+          style,
           month === currentMonth && "ring-1 ring-inset ring-[var(--color-foreground)]/40",
         )}
       >
@@ -173,25 +185,46 @@ export function YearlyRentMatrix({ ledgerVersion = 0 }: Props): React.ReactEleme
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        <ul className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-muted-foreground)]">
+        <ul className="order-last flex w-full flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-muted-foreground)] lg:order-none lg:w-auto">
           {LEGEND_STATUSES.map((status) => {
             const Icon = CELL_ICONS[status];
             return (
-              <li key={status} className="flex items-center gap-1">
-                <span
-                  className={cn(
-                    "inline-flex h-4 w-4 items-center justify-center",
-                    CELL_STYLES[status],
-                  )}
-                  aria-hidden
-                >
-                  {Icon ? <Icon className="h-3 w-3" /> : "·"}
-                </span>
-                {statusLabel(status)}
-              </li>
+              <React.Fragment key={status}>
+                <li className="flex items-center gap-1">
+                  <span
+                    className={cn(
+                      "inline-flex h-4 w-4 items-center justify-center",
+                      CELL_STYLES[status],
+                    )}
+                    aria-hidden
+                  >
+                    {Icon ? <Icon className="h-3 w-3" /> : "·"}
+                  </span>
+                  {statusLabel(status)}
+                </li>
+                {/* The paid green's deeper tone: the recibo is on file too. */}
+                {status === "paid" ? (
+                  <li className="flex items-center gap-1">
+                    <span
+                      className={cn(
+                        "inline-flex h-4 w-4 items-center justify-center",
+                        RECIBO_STYLE,
+                      )}
+                      aria-hidden
+                    >
+                      <RECIBO_ICON className="h-3 w-3" />
+                    </span>
+                    {t("legendRecibo")}
+                  </li>
+                ) : null}
+              </React.Fragment>
             );
           })}
         </ul>
+        <Button variant="outline" size="sm" onClick={() => setUploading(true)}>
+          <FileUp className="mr-2 h-4 w-4" />
+          {t("uploadRecibos")}
+        </Button>
       </div>
 
       {loading ? (
@@ -319,6 +352,12 @@ export function YearlyRentMatrix({ ledgerVersion = 0 }: Props): React.ReactEleme
         open={sheet?.open ?? false}
         onClose={close}
         onChanged={() => void load(year, true)}
+      />
+
+      <ReceiptUploadSheet
+        open={uploading}
+        onOpenChange={setUploading}
+        onRegistered={() => void load(year, true)}
       />
     </div>
   );

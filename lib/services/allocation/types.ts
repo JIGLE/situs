@@ -65,6 +65,13 @@ export interface PlanAllocationInput {
    */
   horizonMonths?: number;
   /**
+   * The month the payment says it is for, when it says so: an AT recibo names its period, and an
+   * owner can assign a bank movement to the month they tapped. That month and the ones after it
+   * are filled first; the waterfall then goes back for older months still open. Without it, the
+   * oldest open month comes first.
+   */
+  startAt?: PeriodRef;
+  /**
    * Due amount for engine-created future periods. Defaults to the last
    * known period's dueAmount.
    */

@@ -69,6 +69,8 @@ const REASON_KEY = new Map<
   | "receiptTransitionNotAllowed"
   | "receiptFilingUnavailable"
   | "receiptNotPaid"
+  | "receiptMonthUntracked"
+  | "receiptAmountUnknown"
   | "lastAdmin"
   | "accountExists"
   | "accountChanged"
@@ -102,6 +104,8 @@ const REASON_KEY = new Map<
   ["receipt_transition_not_allowed", "receiptTransitionNotAllowed"],
   ["receipt_filing_unavailable", "receiptFilingUnavailable"],
   ["receipt_not_paid", "receiptNotPaid"],
+  ["receipt_month_untracked", "receiptMonthUntracked"],
+  ["receipt_amount_unknown", "receiptAmountUnknown"],
   ["last_admin", "lastAdmin"],
   ["account_exists", "accountExists"],
   ["account_changed", "accountChanged"],

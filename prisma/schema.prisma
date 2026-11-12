@@ -344,6 +344,9 @@ model Receipt {
   // (Migration C, lib/services/receipts/lifecycle.ts). Legacy rows self-backfill to "emitted".
   lifecycle      String        @default("emitted")
   source         String        @default("manual") // manual|automation
+  // The number Finanças gave the recibo de renda, when the owner uploaded it
+  // (lib/services/receipts/financas-receipts.ts). Set means the month's recibo is on file.
+  financasNumber String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
@@ -619,30 +622,33 @@ model AccessInvitation {
 }
 
 model Expense {
-  id              String    @id @default(cuid())
-  userId          String
-  propertyId      String
-  leaseId         String? // Optional: link expense to a lease period
-  amount          Float
-  date            DateTime
-  category        String // ExpenseCategory value — validated by Zod, stored as string (SQLite)
-  description     String?
-  isDeductible    Boolean   @default(true) // Whether deductible for IRS/IRPF
-  vendorName      String? // Supplier/vendor name (useful for invoice records)
-  vendorVat       String? // Vendor NIF/VAT number for tax documentation
+  id                         String    @id @default(cuid())
+  userId                     String
+  propertyId                 String
+  leaseId                    String? // Optional: link expense to a lease period
+  amount                     Float
+  date                       DateTime
+  category                   String // ExpenseCategory value — validated by Zod, stored as string (SQLite)
+  description                String?
+  isDeductible               Boolean   @default(true) // Whether deductible for IRS/IRPF
+  vendorName                 String? // Supplier/vendor name (useful for invoice records)
+  vendorVat                  String? // Vendor NIF/VAT number for tax documentation
   // Situs deduction-evidence workflow: a real Document link + a tax review
   // state (receiptImage dropped PR 11 — no reads/writes remained, see the
   // 20260430000000-style consolidation migration for the drop).
-  documentId      String?
-  taxReviewStatus String? // pending_review|reviewed|flagged — Zod-validated
+  documentId                 String?
+  taxReviewStatus            String? // pending_review|reviewed|flagged — Zod-validated
   // Recurring expense fields (Wave 2.4)
-  isRecurring     Boolean   @default(false)
-  recurrenceRule  String? // "monthly" | "quarterly" | "annual"
-  recurrenceDay   Int? // Day of month to generate (1-28)
-  recurrenceEnd   DateTime? // Stop generating after this date (null = indefinite)
-  parentExpenseId String? // If this was auto-generated, points to the template expense
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  isRecurring                Boolean   @default(false)
+  recurrenceRule             String? // "monthly" | "quarterly" | "annual"
+  recurrenceDay              Int? // Day of month to generate (1-28)
+  recurrenceEnd              DateTime? // Stop generating after this date (null = indefinite)
+  parentExpenseId            String? // If this was auto-generated, points to the template expense
+  // The last date a copy was made for, so a copy the owner deleted is not made again
+  // (lib/services/expenses/recurring.ts). NULL: none yet; copies start after `date`.
+  recurrenceGeneratedThrough DateTime?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
 
   // Relations
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)

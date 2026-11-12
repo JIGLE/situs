@@ -11,20 +11,15 @@ import { assertExpenseLinks } from "@/lib/services/database/expense-links";
 import { sanitizeForDatabase, sanitizeNumber } from "@/lib/utils/sanitize";
 import { isMockMode } from "@/lib/config/data-mode";
 import { z } from "zod";
+import { expenseSchema } from "@/lib/schemas/expense.schema";
+import { expenseWriteData } from "@/lib/services/expenses/write-data";
 
-// Validation schema for expense updates
-const updateExpenseSchema = z.object({
-  propertyId: z.string().min(1).optional(),
-  amount: z.number().min(0.01, "Amount must be greater than 0").optional(),
-  date: z
-    .string()
-    .refine((date) => !isNaN(Date.parse(date)), "Invalid date")
-    .optional(),
-  category: z.string().min(1).optional(),
-  description: z.string().max(200, "Description too long").optional().nullable(),
-  vendor: z.string().max(100, "Vendor name too long").optional().nullable(),
-  documentId: z.string().optional().nullable(),
-});
+/**
+ * An update takes the same fields as a new expense, each optional. It used to take its own short
+ * list, so the form could not change whether an expense repeats or counts for IRS, and it named a
+ * `vendor` field that is no column (Prisma refused the write, a 500).
+ */
+const updateExpenseSchema = expenseSchema.partial();
 
 // GET /api/expenses/[id] - Get a specific expense
 async function handleGet(
@@ -114,11 +109,18 @@ async function handlePut(
       ...body,
       category: body.category ? sanitizeForDatabase(body.category) : undefined,
       description: body.description ? sanitizeForDatabase(body.description) : body.description,
-      vendor: body.vendor ? sanitizeForDatabase(body.vendor) : body.vendor,
+      vendorName: body.vendorName ? sanitizeForDatabase(body.vendorName) : body.vendorName,
       amount: body.amount !== undefined ? sanitizeNumber(body.amount, 0, 0.01) : undefined,
     };
 
-    const validatedData = updateExpenseSchema.parse(sanitizedBody);
+    // Only the fields the request sent: the schema's defaults (repeats: no, deductible: yes) are
+    // for a new expense, and applied here they would overwrite the stored ones.
+    const parsed = updateExpenseSchema.parse(sanitizedBody);
+    const validatedData = Object.fromEntries(
+      Object.entries(parsed).filter(
+        ([field]) => (sanitizedBody as Record<string, unknown>)[field] !== undefined,
+      ),
+    ) as typeof parsed;
 
     // POST checks what an expense points at; an update must too, as the expense will stand after it.
     await assertExpenseLinks(userId, {
@@ -128,10 +130,7 @@ async function handlePut(
         validatedData.documentId !== undefined ? validatedData.documentId : existing.documentId,
     });
 
-    const updateData: Record<string, unknown> = { ...validatedData };
-    if (validatedData.date) {
-      updateData.date = new Date(validatedData.date);
-    }
+    const updateData = expenseWriteData(validatedData);
 
     const expense = await prisma.expense.update({
       where: { id },

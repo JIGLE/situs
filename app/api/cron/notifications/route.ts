@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { runNotificationAutomation } from "@/lib/services/notifications/notification-automation";
 import { timingSafeEqualString } from "@/lib/utils/security";
 import { applyDueRentIncreases } from "@/lib/services/leases/rent-increases";
+import { generateDueRecurringExpenses } from "@/lib/services/expenses/recurring";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   // Verify cron secret to prevent unauthorized triggers
@@ -32,10 +33,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // A rent increase whose month has come is written onto its lease first, so tenants' rent and
     // the reminders read the rent now owed.
     const rentIncreasesApplied = await applyDueRentIncreases();
+    const recurringExpensesCreated = await generateDueRecurringExpenses();
     const result = await runNotificationAutomation();
     return NextResponse.json({
       ok: true,
       rentIncreasesApplied,
+      recurringExpensesCreated,
       ...result,
     });
   } catch (error) {

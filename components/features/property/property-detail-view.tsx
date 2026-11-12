@@ -829,9 +829,28 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                     .slice(0, 10)
                     .map((tx) => (
+                      // An expense opens in its form, to change or delete it; a payment has
+                      // its own screens.
                       <div
                         key={tx.id}
-                        className="flex items-center justify-between py-2 border-b border-[var(--color-border)] last:border-0"
+                        {...(tx.txType === "expense"
+                          ? {
+                              role: "button",
+                              tabIndex: 0,
+                              onClick: () => expenseDialog.openExpense(tx),
+                              onKeyDown: (e: React.KeyboardEvent) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  expenseDialog.openExpense(tx);
+                                }
+                              },
+                            }
+                          : {})}
+                        className={cn(
+                          "flex items-center justify-between py-2 border-b border-[var(--color-border)] last:border-0",
+                          tx.txType === "expense" &&
+                            "min-h-11 cursor-pointer hover:bg-[var(--color-surface-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:outline-none",
+                        )}
                       >
                         <div>
                           <p className="text-sm font-medium">
