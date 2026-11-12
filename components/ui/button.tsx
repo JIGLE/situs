@@ -9,7 +9,9 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        // The palette's accent fills the main action (design study D4); it was the ink colour,
+        // so every screen's primary button was black.
+        default: "bg-accent-primary text-accent-primary-foreground hover:bg-accent-primary/90",
         primary:
           "bg-accent-primary text-accent-primary-foreground hover:bg-accent-primary/90 hover:-translate-y-0.5",
         success: "bg-success text-success-foreground hover:bg-success/90",

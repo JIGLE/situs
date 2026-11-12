@@ -4,7 +4,10 @@ import {
   COUNTRY_CODES,
   COUNTRY_THEMES,
   DEFAULT_COUNTRY,
+  DEFAULT_PALETTE,
+  PALETTE_KEYS,
   SEMANTIC_TOKENS,
+  UI_PALETTES,
   contrastRatio,
   hexToRgba,
   isCountryCode,
@@ -212,5 +215,39 @@ describe("isCountryCode", () => {
     expect(isCountryCode("EU")).toBe(true);
     expect(isCountryCode("XX")).toBe(false);
     expect(isCountryCode("__proto__")).toBe(false);
+  });
+});
+
+describe("interface palettes (the country colours the logo only)", () => {
+  const cases = PALETTE_KEYS.flatMap((key) => MODES.map((mode) => [key, mode] as const));
+
+  it("offers Azulejo, Oliveira and Grafite, starting on Oliveira", () => {
+    expect(PALETTE_KEYS).toEqual(["azulejo", "oliveira", "grafite"]);
+    expect(DEFAULT_PALETTE).toBe("oliveira");
+  });
+
+  it.each(cases)("%s / %s fills a button its text can be read on", (key, mode) => {
+    const vars = resolveThemeVars("PT", mode, key);
+    expect(
+      contrastRatio(vars["--color-accent-primary"], vars["--color-accent-primary-foreground"]),
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each(cases)(
+    "%s / %s gives a focus ring and active row that read on the canvas",
+    (key, mode) => {
+      const pair = UI_PALETTES[key];
+      const canvas = mode === "dark" ? pair.dark.canvas : pair.normal.canvas;
+      expect(
+        contrastRatio(resolveThemeVars("PT", mode, key)["--color-ring"], canvas),
+      ).toBeGreaterThanOrEqual(4.5);
+    },
+  );
+
+  it("takes the interface from the palette and the logo from the country", () => {
+    const vars = resolveThemeVars("PT", "normal", "azulejo");
+    expect(vars["--ui-accent"]).toBe(UI_PALETTES.azulejo.normal.accent);
+    expect(vars["--logo-primary"]).toBe(COUNTRY_THEMES.PT.roles.primary);
+    expect(vars["--logo-accent"]).toBe(COUNTRY_THEMES.PT.roles.accent);
   });
 });

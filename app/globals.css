@@ -47,7 +47,7 @@
   --color-primary: #221d16;
   --color-primary-foreground: #fbfbfb;
   --color-secondary: rgba(0, 102, 0, 0.08);
-  --color-secondary-foreground: #006600;
+  --color-secondary-foreground: #4e6b3a;
   --color-muted: #f2f1f1;
   /* Was #756e63, which measured 4.15–4.44:1 against the light surfaces (#f0eadf, #f6f0e4,
      #f1e8d8) — under the 4.5:1 WCAG AA floor on all three. axe reported it on every page as
@@ -62,12 +62,12 @@
   --color-border: #e4e0d8;
   --color-border-hover: rgba(0, 0, 0, 0.24);
   --color-input: #e4e0d8;
-  --color-ring: #006600;
-  --color-focus: #006600;
+  --color-ring: #4e6b3a;
+  --color-focus: #4e6b3a;
 
-  /* Country accent (readable) + logo roles — PT defaults */
-  --color-ui-accent: #006600;
-  --color-country: #006600;
+  /* Interface accent (the default palette, Oliveira) + logo roles (Portugal) for first paint */
+  --color-ui-accent: #4e6b3a;
+  --color-country: #4e6b3a;
   --color-country-soft: rgba(0, 102, 0, 0.08);
 
   /* Surface layers — flat, no translucency games */
@@ -103,9 +103,9 @@
 
   /* Accent aliases (legacy names kept so existing components keep compiling;
      both point at the readable country accent — Situs has ONE accent) */
-  --color-accent-primary: #006600;
+  --color-accent-primary: #4e6b3a;
   --color-accent-primary-foreground: #fbfbfb;
-  --color-accent-secondary: #006600;
+  --color-accent-secondary: #4e6b3a;
   --color-accent-secondary-foreground: #fbfbfb;
 
   /* Interactive states */
@@ -118,7 +118,7 @@
   /* Same 4.5:1 correction as --color-muted-foreground above; this token names the nav item
      labels, which were the bulk of the reported nodes. */
   --color-sidebar-text: #6a6357;
-  --color-sidebar-text-active: #006600;
+  --color-sidebar-text-active: #4e6b3a;
   --color-sidebar-hover: rgba(0, 0, 0, 0.055);
   --color-sidebar-active: rgba(0, 102, 0, 0.08);
 
@@ -129,7 +129,7 @@
   --color-hairline: #f0eeea;
   --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 16px -10px rgba(0, 0, 0, 0.12);
   --color-inner-border-hover: rgba(0, 0, 0, 0.24);
-  --color-inner-border-active: #006600;
+  --color-inner-border-active: #4e6b3a;
 
   /* Z-Index layers */
   --z-base: 0;
@@ -188,9 +188,9 @@
   --google-button-fg: #1f1f1f;
   --google-button-border: #747775;
 
-  --ui-accent: #006600;
-  --country-highlight-readable: #006600;
-  --country-highlight-soft: rgba(0, 102, 0, 0.08);
+  --ui-accent: #4e6b3a;
+  --country-highlight-readable: #4e6b3a;
+  --country-highlight-soft: rgba(78, 107, 58, 0.08);
 
   --logo-primary: #006600;
   --logo-secondary: #ff0000;
@@ -244,7 +244,7 @@
   --color-primary: #eef7f0;
   --color-primary-foreground: #0d1117;
   --color-secondary: rgba(71, 145, 71, 0.08);
-  --color-secondary-foreground: #479147;
+  --color-secondary-foreground: #a9c48e;
   --color-muted: #121b15;
   --color-muted-foreground: #a5b8a9;
   --color-accent: rgba(255, 255, 255, 0.06);
@@ -254,11 +254,11 @@
   --color-border: #263428;
   --color-border-hover: rgba(255, 255, 255, 0.24);
   --color-input: #263428;
-  --color-ring: #479147;
-  --color-focus: #479147;
+  --color-ring: #a9c48e;
+  --color-focus: #a9c48e;
 
-  --color-ui-accent: #ffff00;
-  --color-country: #479147;
+  --color-ui-accent: #a9c48e;
+  --color-country: #a9c48e;
   --color-country-soft: rgba(71, 145, 71, 0.08);
 
   --color-surface: rgba(255, 255, 255, 0.035);
@@ -289,9 +289,9 @@
   --color-error-foreground: #0d1117;
   --color-error-muted: rgba(185, 28, 28, 0.15);
 
-  --color-accent-primary: #5d9e5d;
+  --color-accent-primary: #a9c48e;
   --color-accent-primary-foreground: #0d1117;
-  --color-accent-secondary: #5d9e5d;
+  --color-accent-secondary: #a9c48e;
   --color-accent-secondary-foreground: #0d1117;
 
   --color-overlay: rgba(0, 0, 0, 0.65);
@@ -300,7 +300,7 @@
   --color-sidebar-foreground: #eef7f0;
   --color-sidebar-border: #263428;
   --color-sidebar-text: #a5b8a9;
-  --color-sidebar-text-active: #ffff00;
+  --color-sidebar-text-active: #a9c48e;
   --color-sidebar-hover: rgba(255, 255, 255, 0.06);
   --color-sidebar-active: rgba(71, 145, 71, 0.12);
 
@@ -308,13 +308,13 @@
   --color-hairline: #202d22;
   --shadow-panel: none;
   --color-inner-border-hover: rgba(255, 255, 255, 0.24);
-  --color-inner-border-active: #479147;
+  --color-inner-border-active: #a9c48e;
 
   --shadow-modal: 0 24px 48px rgba(0, 0, 0, 0.5);
 
-  --ui-accent: #ffff00;
-  --country-highlight-readable: #5c9d5c;
-  --country-highlight-soft: rgba(71, 145, 71, 0.08);
+  --ui-accent: #a9c48e;
+  --country-highlight-readable: #a9c48e;
+  --country-highlight-soft: rgba(169, 196, 142, 0.08);
   /* Already clears contrast against the dark canvas, so it passes through untinted. */
   --logo-accent-readable: #ffff00;
   --logo-canvas: #121b15;

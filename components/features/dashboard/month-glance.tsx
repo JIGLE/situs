@@ -175,7 +175,7 @@ export function LateList({ late }: { late: DashboardMonth["late"] }) {
                   {t("lateSince", { month: sinceLabel(entry.since, locale) })}
                 </span>
               </span>
-              <span className="shrink-0 text-sm font-medium tabular-nums text-[var(--semantic-danger-readable)]">
+              <span className="shrink-0 text-sm font-medium tabular-nums">
                 {formatCurrency(entry.amount)}
               </span>
             </Link>

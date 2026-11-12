@@ -4,14 +4,14 @@ import { render, screen } from "@testing-library/react";
 import { StatusMark } from "./status-mark";
 
 describe("StatusMark", () => {
-  it("says the state in words, with the colour in a dot a screen reader skips", () => {
+  it("says the state in words, on a pill tinted in the state's colour", () => {
     render(<StatusMark tone="success">Ativo</StatusMark>);
 
     const mark = screen.getByText("Ativo").parentElement as HTMLElement;
-    const dot = mark.querySelector("span");
-    expect(dot?.getAttribute("aria-hidden")).toBe("true");
-    expect(dot?.className).toContain("bg-[var(--semantic-success-readable)]");
-    expect(mark.className).toContain("text-[var(--color-foreground)]");
+    // No separate dot: the words are the state, and the tint repeats it.
+    expect(mark.querySelector("[aria-hidden]")).toBeNull();
+    expect(mark.className).toContain("bg-[var(--semantic-success-soft)]");
+    expect(mark.className).toContain("text-[var(--semantic-success-readable)]");
   });
 
   it("strikes through a state that no longer counts", () => {

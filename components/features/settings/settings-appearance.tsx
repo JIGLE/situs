@@ -13,7 +13,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useTheme } from "@/lib/contexts/theme-context";
-import { COUNTRY_CODES, COUNTRY_THEMES, isCountryCode } from "@/lib/design/country-themes";
+import {
+  COUNTRY_CODES,
+  COUNTRY_THEMES,
+  PALETTE_KEYS,
+  isCountryCode,
+  isPaletteKey,
+  type PaletteKey,
+} from "@/lib/design/country-themes";
 import { isLocale, locales, localeNames } from "@/lib/i18n/locales";
 import { useSetLanguage } from "@/lib/i18n/use-set-language";
 import type { UserSettings } from "./settings-types";
@@ -24,6 +31,13 @@ const THEME_OPTIONS = [
   { value: "dark", icon: Moon, labelKey: "themeMatchedDark" },
   { value: "system", icon: Monitor, labelKey: "themeSystem" },
 ] as const;
+
+/** Each palette's name in the catalog. */
+const PALETTE_LABELS = {
+  azulejo: "paletteAzulejo",
+  oliveira: "paletteOliveira",
+  grafite: "paletteGrafite",
+} as const satisfies Record<PaletteKey, string>;
 
 interface SettingsAppearanceProps {
   settings: UserSettings;
@@ -41,7 +55,7 @@ interface SettingsAppearanceProps {
  */
 export function SettingsAppearance({ settings, updateSetting }: SettingsAppearanceProps) {
   const t = useTranslations("settings.panel");
-  const { setTheme, country, setCountry } = useTheme();
+  const { setTheme, country, setCountry, palette, setPalette } = useTheme();
   const activeLocale = useLocale();
   const setLanguage = useSetLanguage();
 
@@ -74,6 +88,34 @@ export function SettingsAppearance({ settings, updateSetting }: SettingsAppearan
             </Button>
           ))}
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="settings-ui-palette">{t("palette")}</Label>
+        <Select
+          value={palette}
+          onValueChange={(value) => {
+            if (isPaletteKey(value)) setPalette(value);
+          }}
+        >
+          <SelectTrigger
+            id="settings-ui-palette"
+            className="max-w-xs"
+            aria-describedby="settings-ui-palette-help"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PALETTE_KEYS.map((key) => (
+              <SelectItem key={key} value={key}>
+                {t(PALETTE_LABELS[key])}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p id="settings-ui-palette-help" className="text-xs text-muted-foreground">
+          {t("paletteHelp")}
+        </p>
       </div>
 
       <div className="space-y-2">
