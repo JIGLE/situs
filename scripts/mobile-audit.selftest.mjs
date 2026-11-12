@@ -162,6 +162,43 @@ const CASES = [
     read: (m) => (m.renderFailure ? 1 : 0),
     expect: (bad, good) => bad === 1 && good === 0,
   },
+  {
+    // A label wider than its button with no overflow rule paints past the border; a `truncate`
+    // span inside the same button is the intended ellipsis and must not count.
+    name: "bleedingCount",
+    trigger: page(
+      `${filler(12)}<button style="width:80px;white-space:nowrap">Criar arrendamento agora</button>` +
+        `<div role="combobox" style="width:120px;height:40px"><div>Sta Rita 32</div>` +
+        `<div>Rua do Vale de Sta Rita, Bloco A e B</div></div>`,
+    ),
+    clean: page(
+      `${filler(12)}<button style="width:80px"><span style="display:block;overflow:hidden;` +
+        `white-space:nowrap;text-overflow:ellipsis">Criar arrendamento agora</span></button>` +
+        `<button style="width:200px">Guardar</button>` +
+        `<div role="combobox" style="width:200px;height:40px;display:flex;align-items:center">` +
+        `<span>Sta Rita 32</span><svg width="16" height="16"></svg></div>`,
+    ),
+    read: (m) => m.bleedingCount,
+    // The trigger's combobox counts once: its address both bleeds and makes a second line.
+    expect: (bad, good) => bad === 2 && good === 0,
+  },
+  {
+    // A picker whose chosen item is two lines that both fit inside the box: nothing paints past
+    // the border, but a one-line field showing two lines is the defect all the same.
+    name: "bleedingCount (two-line picker)",
+    trigger: page(
+      `${filler(12)}<div role="combobox" style="width:300px;height:44px;overflow:hidden">` +
+        `<span style="display:block;overflow:hidden;white-space:nowrap">` +
+        `<div style="font-size:14px">Apartment 3A</div><div style="font-size:12px">Av. da Liberdade 120</div>` +
+        `</span></div>`,
+    ),
+    clean: page(
+      `${filler(12)}<div role="combobox" style="width:300px;height:44px;overflow:hidden">` +
+        `<span style="display:block;overflow:hidden;white-space:nowrap">Apartment 3A</span></div>`,
+    ),
+    read: (m) => m.bleedingCount,
+    expect: (bad, good) => bad === 1 && good === 0,
+  },
 ];
 
 const browser = await chromium.launch({

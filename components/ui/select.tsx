@@ -122,12 +122,22 @@ SelectLabel.displayName = SelectPrimitive.Label.displayName;
 
 const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
->(({ className, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item> & {
+    /**
+     * A second, muted line shown in the open list only. Radix copies everything inside
+     * `ItemText` into the closed trigger, so a two-line item written as children put both lines
+     * into a one-line box: on a 360px phone the tenancy sheet's property field showed the name
+     * centred and the address running out of the border. The description sits outside
+     * `ItemText`, so the trigger shows the name alone.
+     */
+    description?: React.ReactNode;
+  }
+>(({ className, children, description, ...props }, ref) => (
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
       "relative flex w-full cursor-default select-none items-center py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      description != null && "flex-col items-start",
       className,
     )}
     {...props}
@@ -139,6 +149,9 @@ const SelectItem = React.forwardRef<
     </span>
 
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+    {description != null && (
+      <span className="text-xs text-[var(--color-muted-foreground)]">{description}</span>
+    )}
   </SelectPrimitive.Item>
 ));
 SelectItem.displayName = SelectPrimitive.Item.displayName;

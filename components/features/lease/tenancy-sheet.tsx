@@ -524,13 +524,12 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
                     </SelectTrigger>
                     <SelectContent>
                       {properties.map((property) => (
-                        <SelectItem key={property.id} value={property.id}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{property.name}</span>
-                            <span className="text-xs text-[var(--color-muted-foreground)]">
-                              {property.address}
-                            </span>
-                          </div>
+                        <SelectItem
+                          key={property.id}
+                          value={property.id}
+                          description={property.address}
+                        >
+                          {property.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -572,15 +571,12 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
                       </SelectTrigger>
                       <SelectContent>
                         {tenants.map((tenant) => (
-                          <SelectItem key={tenant.id} value={tenant.id}>
-                            <div className="flex flex-col">
-                              <span className="font-medium">{tenant.name}</span>
-                              {tenant.email && (
-                                <span className="text-xs text-[var(--color-muted-foreground)]">
-                                  {tenant.email}
-                                </span>
-                              )}
-                            </div>
+                          <SelectItem
+                            key={tenant.id}
+                            value={tenant.id}
+                            description={tenant.email ?? undefined}
+                          >
+                            {tenant.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

@@ -190,6 +190,11 @@ const BASELINE = {
   // fixed at the source, so this measures a property of the layout rather than of the run.
   // Confirmed 0 on two consecutive full sweeps.
   clippedContainers: 0,
+  // Text painted past its own control's border: a label wider than its button, or a select whose
+  // chosen item brought its second line into a one-line field (Galaxy S24, Portuguese). 0 at 390
+  // and at 360 the first time it was measured, and it has no legitimate reason to be anything
+  // else, so it is pinned. The selftest proves it fires.
+  bleedingText: 0,
   // Text under 12px outside the phone bar; the bar's labels and avatar initials are `chromeText`,
   // counted apart. 0 on two consecutive sweeps, CI on `b528b6b` and again on `a638314`, so it is
   // pinned: nothing that small outside the bar is deliberate. While it still counted the bar it
@@ -235,6 +240,14 @@ const SURFACES = [
   { id: "detail-lease", path: "/portfolio?tab=leases&detail=lease:{leaseId}", overlay: true },
   // The New tenancy sheet: a tenant and their lease on one form, opened by its link.
   { id: "new-tenancy", path: "/portfolio?tab=leases&action=create", overlay: true },
+  // The same sheet opened from a tenant, so both pickers hold a choice. Empty, a picker shows its
+  // placeholder; chosen, it shows the item, and a two-line item (name over address) drew its
+  // second line out of the one-line field on a 360px phone. Only a filled picker can show that.
+  {
+    id: "new-tenancy-chosen",
+    path: "/portfolio?tab=leases&action=create&tenantId={tenantId}",
+    overlay: true,
+  },
   { id: "buildings", path: "/buildings" },
   { id: "contracts", path: "/contracts" },
   { id: "settings", path: "/settings" },
@@ -385,6 +398,80 @@ function measure({ touchFail, touchWarn, minFontPx, tolerance }) {
       h: Math.round(r.height),
       severity: min < touchFail ? "fail" : "warn",
     });
+  }
+
+  // --- text bleeding out of its control -------------------------------------------------
+  // A label longer than its button, in a box with no overflow rule, paints past the border:
+  // "Criar arrendamento" over the edge of its button, a select whose chosen item drew its
+  // second line under the field. Nothing above sees it. The page does not scroll, nothing has
+  // `overflow:hidden` to count, and the target is still a fine size. So measure the text itself:
+  // every text node inside a control, by its rendered line boxes, against the control's own
+  // border box. Text an ancestor inside the control clips (a `truncate` span) is the intended
+  // ellipsis, not a bleed, and is skipped.
+  const bleeding = [];
+  const controls = document.querySelectorAll(
+    'button, a[href], [role="button"], [role="combobox"], [role="tab"]',
+  );
+  for (const el of controls) {
+    const box = el.getBoundingClientRect();
+    if (box.width === 0 || box.height === 0) continue;
+    if (isVisuallyHidden(el)) continue;
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let worst = 0;
+    let sample = "";
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      if (!n.textContent.trim()) continue;
+      let clippedBy = null;
+      for (let a = n.parentElement; a && clippedBy === null; a = a.parentElement) {
+        const cs = getComputedStyle(a);
+        if (cs.display === "none" || cs.visibility === "hidden") clippedBy = a;
+        else if (cs.overflowX !== "visible" || cs.overflowY !== "visible") clippedBy = a;
+        if (a === el) break;
+      }
+      if (clippedBy) continue;
+      const range = document.createRange();
+      range.selectNodeContents(n);
+      for (const r of range.getClientRects()) {
+        if (r.width === 0) continue;
+        const out = Math.max(
+          r.right - box.right,
+          box.left - r.left,
+          r.bottom - box.bottom,
+          box.top - r.top,
+        );
+        if (out > worst) {
+          worst = out;
+          sample = n.textContent.trim().slice(0, 40);
+        }
+      }
+    }
+    // A closed picker is a one-line field. Radix copies the chosen item into it, so an item
+    // written as two lines (a property's name over its address) put both into the field, where
+    // the second line ran past the border or was cut mid-word. That holds even when the cut hides
+    // it from the check above, so a picker showing text on two lines counts by itself.
+    if (el.getAttribute("role") === "combobox") {
+      // Line boxes of the text alone (an icon sits at its own height), grouped by vertical
+      // centre: two rects whose centres sit more than half a line apart are two lines.
+      const lines = [];
+      const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      for (let n = tw.nextNode(); n; n = tw.nextNode()) {
+        if (!n.textContent.trim()) continue;
+        const range = document.createRange();
+        range.selectNodeContents(n);
+        for (const r of range.getClientRects()) {
+          if (r.width === 0) continue;
+          const mid = r.top + r.height / 2;
+          if (!lines.some((l) => Math.abs(l - mid) < r.height / 2)) lines.push(mid);
+        }
+      }
+      if (lines.length > 1 && worst <= tolerance) {
+        worst = lines.length;
+        sample = (el.textContent ?? "").trim().slice(0, 40);
+      }
+    }
+    if (worst > tolerance) {
+      bleeding.push({ ...describe(el), amount: Math.round(worst), text: sample });
+    }
   }
 
   // --- small text ---------------------------------------------------------------------
@@ -669,6 +756,8 @@ function measure({ touchFail, touchWarn, minFontPx, tolerance }) {
     containerOverflow: containerOverflow.sort((a, b) => b.amount - a.amount).slice(0, 12),
     containerOverflowCount: containerOverflow.length,
     clippedContainerCount: containerOverflow.filter((c) => c.clipped).length,
+    bleeding: bleeding.sort((a, b) => b.amount - a.amount).slice(0, 10),
+    bleedingCount: bleeding.length,
     smallTargets: smallTargets.slice(0, 25),
     smallTargetCount: smallTargets.length,
     smallTargetFailCount: smallTargets.filter((t) => t.severity === "fail").length,
@@ -914,7 +1003,8 @@ function score(r) {
     ((r.smallTargetCount ?? 0) - (r.smallTargetFailCount ?? 0)) * 2 +
     (r.smallTextCount ?? 0) * 2 +
     (r.clipped?.length ?? 0) * 6 +
-    (r.clippedContainerCount ?? 0) * 7
+    (r.clippedContainerCount ?? 0) * 7 +
+    (r.bleedingCount ?? 0) * 7
   );
 }
 
@@ -955,6 +1045,9 @@ function toMarkdown(results, meta) {
     `| **Containers clipping content (\`overflow:hidden\`, unreachable)** | **${ok.reduce((a, r) => a + (r.clippedContainerCount ?? 0), 0)}** |`,
   );
   lines.push(
+    `| **Controls with text bleeding past their border** | **${ok.reduce((a, r) => a + (r.bleedingCount ?? 0), 0)}** |`,
+  );
+  lines.push(
     `| Containers overflowing but scrollable | ${ok.reduce((a, r) => a + ((r.containerOverflowCount ?? 0) - (r.clippedContainerCount ?? 0)), 0)} |`,
   );
   lines.push(
@@ -990,6 +1083,7 @@ function toMarkdown(results, meta) {
     if (r.smallTextCount) badges.push(`${r.smallTextCount} text <${MIN_FONT_PX}px`);
     if (r.clipped?.length) badges.push(`${r.clipped.length} offscreen`);
     if (r.clippedContainerCount) badges.push(`${r.clippedContainerCount} clipped containers`);
+    if (r.bleedingCount) badges.push(`${r.bleedingCount} text bleeding`);
     if (r.inertAnimationCount) badges.push(`${r.inertAnimationCount} inert animations`);
     if ((r.contentWidthRatio ?? 1) < NARROW_CONTENT_RATIO)
       badges.push(`uses ${Math.round(r.contentWidthRatio * 100)}% of width`);
@@ -1012,6 +1106,13 @@ function toMarkdown(results, meta) {
           `- \`${o.height}px tall, +${o.overshoot}px too low\` \`${o.selector}\`${o.text ? ` — "${o.text}"` : ""}`,
         );
       }
+      lines.push("");
+    }
+    if (r.bleeding?.length) {
+      lines.push("Text bleeding past its control:");
+      lines.push("");
+      for (const b of r.bleeding)
+        lines.push(`- \`+${b.amount}px\` \`${b.sel ?? b.selector ?? ""}\` — "${b.text}"`);
       lines.push("");
     }
     if (r.overflowOffenders?.length) {
@@ -1179,6 +1280,7 @@ async function main() {
     touchTargetFails: sum(results, "smallTargetFailCount"),
     touchTargetWarns: sum(results, "smallTargetCount"),
     clippedContainers: sum(results, "clippedContainerCount"),
+    bleedingText: sum(results, "bleedingCount"),
     smallText: sum(results, "smallTextCount"),
     // Not ratcheted: the bar's deliberate labels and initials, which grow with the surface count.
     chromeText: sum(results, "chromeTextCount"),
