@@ -48,7 +48,10 @@ vi.mock("@/lib/contexts/currency-context", () => ({
   }),
 }));
 
-vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams() }));
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), refresh: vi.fn() }),
+}));
 
 vi.mock("@/lib/contexts/csrf-context", () => ({
   useCsrf: () => ({ token: "test-csrf-token" }),

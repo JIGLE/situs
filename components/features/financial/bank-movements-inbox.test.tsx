@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders as render, screen } from "@/tests/helpers/render-with-providers";
 import { formatDate } from "@/lib/utils/format-date";
@@ -9,22 +9,27 @@ import { formatDate } from "@/lib/utils/format-date";
  * speak in status codes, and report any refusal as a lost connection.
  */
 
-const { toast, refreshData } = vi.hoisted(() => ({
+const { toast, refreshData, appState, push } = vi.hoisted(() => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() },
   refreshData: vi.fn(),
+  appState: {
+    leases: [] as Array<{ id: string; tenantId: string; propertyId: string; status: string }>,
+    tenants: [] as Array<{ id: string; name: string }>,
+    properties: [] as Array<{ id: string; name: string }>,
+  },
+  push: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push, replace: vi.fn(), prefetch: vi.fn(), refresh: vi.fn() }),
+  usePathname: () => "/financials",
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock("@/lib/contexts/toast-context", () => ({ useToast: () => toast }));
 vi.mock("@/lib/contexts/csrf-context", () => ({ useCsrf: () => ({ token: "csrf-token" }) }));
 vi.mock("@/lib/contexts/app-context", () => ({
-  useApp: () => ({
-    state: {
-      leases: [{ id: "lease-1", tenantId: "t1", propertyId: "p1", status: "active" }],
-      tenants: [{ id: "t1", name: "Maria Silva" }],
-      properties: [{ id: "p1", name: "Rua A, 1" }],
-    },
-    refreshData,
-  }),
+  useApp: () => ({ state: appState, refreshData }),
 }));
 
 import { BankMovementsInbox } from "./bank-movements-inbox";
@@ -60,6 +65,9 @@ let onPut: (body: { action: string }) => Reply;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  appState.leases = [{ id: "lease-1", tenantId: "t1", propertyId: "p1", status: "active" }];
+  appState.tenants = [{ id: "t1", name: "Maria Silva" }];
+  appState.properties = [{ id: "p1", name: "Rua A, 1" }];
   rows = [MONEY_IN];
   connections = [];
   onPut = () => ({ body: { data: { status: "matched_confirmed", receiptId: "r1" } } });
@@ -379,5 +387,71 @@ describe("the bank strip above the inbox", () => {
     );
     expect(onChanged).toHaveBeenCalled();
     expect(fetchCalls()).toContain("/api/bank/connections/conn-1/sync");
+  });
+});
+
+/**
+ * The picker behind Atribuir lists leases, since a payment pays a lease's months. A tenant added
+ * before the New tenancy sheet has no lease at all, and for an owner whose tenants were all made
+ * that way the picker opened empty, with nothing to say why.
+ */
+describe("Atribuir: the lease picker", () => {
+  // Radix Select asks the DOM for pointer capture and scrolls the chosen item into view; jsdom has
+  // neither.
+  beforeAll(() => {
+    Element.prototype.hasPointerCapture ??= () => false;
+    Element.prototype.releasePointerCapture ??= () => {};
+    Element.prototype.scrollIntoView ??= () => {};
+  });
+
+  const openPicker = async () => {
+    const user = userEvent.setup();
+    render(<BankMovementsInbox />, { initialLocale: "pt" });
+    await user.click((await screen.findAllByRole("button", { name: "Atribuir" }))[0]);
+    await user.click(screen.getAllByRole("combobox", { name: "Atribuir a contrato…" })[0]);
+    return user;
+  };
+
+  it("lists the active leases and assigns to the one chosen", async () => {
+    appState.leases.push({ id: "lease-2", tenantId: "t2", propertyId: "p2", status: "expired" });
+    appState.tenants.push({ id: "t2", name: "Rui Costa" });
+    const user = await openPicker();
+
+    expect(screen.getByRole("option", { name: "Maria Silva · Rua A, 1" })).toBeInTheDocument();
+    // An ended lease owes no months, and a tenant who had one is not offered a new one here.
+    expect(screen.queryByRole("option", { name: /Rui Costa/ })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("option", { name: "Maria Silva · Rua A, 1" }));
+    await vi.waitFor(() =>
+      expect(
+        vi
+          .mocked(fetch)
+          .mock.calls.filter(([, init]) => init?.method === "PUT")
+          .map(([, init]) => JSON.parse(String(init?.body))),
+      ).toEqual([{ action: "reassign", leaseId: "lease-1" }]),
+    );
+  });
+
+  it("says there is no active lease, and offers the tenants who have none", async () => {
+    appState.leases = [];
+    appState.tenants = [{ id: "t1", name: "Maria Silva" }];
+    const user = await openPicker();
+
+    expect(screen.getByText(/Ainda não há contratos ativos/)).toBeInTheDocument();
+    expect(screen.getByText("Inquilinos sem contrato")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("option", { name: /Maria Silva/ }));
+    expect(push).toHaveBeenCalledWith("/portfolio?tab=leases&action=create&tenantId=t1");
+    // Choosing a tenant opens the tenancy sheet; it assigns nothing.
+    expect(vi.mocked(fetch).mock.calls.some(([, init]) => init?.method === "PUT")).toBe(false);
+  });
+
+  it("always offers a new tenancy", async () => {
+    appState.leases = [];
+    appState.tenants = [];
+    const user = await openPicker();
+
+    await user.click(screen.getByRole("option", { name: "Novo arrendamento…" }));
+    expect(push).toHaveBeenCalledWith("/portfolio?tab=leases&action=create");
   });
 });
