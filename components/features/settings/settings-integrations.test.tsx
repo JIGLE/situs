@@ -27,25 +27,28 @@ describe("SettingsIntegrations", () => {
     window.history.replaceState(null, "", `/settings?${search}`);
   });
 
-  it("opens on Bancos, with Finanças beside it and no classifier card", () => {
+  it("opens on Bancos, with the Portal das Finanças beside it and no classifier card", () => {
     render(<SettingsIntegrations />, { initialLocale: "pt" });
 
     const tabs = screen.getAllByRole("tab");
-    expect(tabs.map((tab: HTMLElement) => tab.textContent)).toEqual(["Bancos", "Finanças"]);
+    expect(tabs.map((tab: HTMLElement) => tab.textContent)).toEqual([
+      "Bancos",
+      "Portal das Finanças (AT)",
+    ]);
     expect(screen.getByRole("tab", { name: "Bancos" }).getAttribute("aria-selected")).toBe("true");
-    expect(screen.getByRole("tablist", { name: "Integrações" })).toBeDefined();
+    expect(screen.getByRole("tablist", { name: "Ligações" })).toBeDefined();
     expect(screen.getByText("painel dos bancos")).toBeDefined();
     // The classifier it described was removed long ago.
     expect(screen.queryByText("Classificador simulado")).toBeNull();
   });
 
-  it("opens Finanças from ?view=at, and keeps the chosen tab in the URL", () => {
+  it("opens the Portal das Finanças from ?view=at, and keeps the chosen tab in the URL", () => {
     search = "tab=integrations&view=at";
     render(<SettingsIntegrations />, { initialLocale: "pt" });
 
-    expect(screen.getByRole("tab", { name: "Finanças" }).getAttribute("aria-selected")).toBe(
-      "true",
-    );
+    expect(
+      screen.getByRole("tab", { name: "Portal das Finanças (AT)" }).getAttribute("aria-selected"),
+    ).toBe("true");
     expect(screen.getByText("painel da AT")).toBeDefined();
 
     fireEvent.mouseDown(screen.getByRole("tab", { name: "Bancos" }), { button: 0 });

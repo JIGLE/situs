@@ -26,7 +26,7 @@ vi.mock("next/navigation", () => ({
 
 // Mock next-auth. Signed out unless a test signs in: Settings loads the account's row only for a
 // session.
-let sessionData: { user: { name: string; email: string } } | null = null;
+let sessionData: { user: { name: string; email: string; role?: string } } | null = null;
 vi.mock("next-auth/react", () => ({
   useSession: () => ({
     data: sessionData,
@@ -169,7 +169,7 @@ describe("SettingsView, signed in", () => {
     fireEvent.click(await screen.findByRole("option", { name: option }));
   }
 
-  it("saves the country of tax residence with Guardar, then re-reads the account", async () => {
+  it("saves the country of tax residence as soon as it changes, then re-reads the account", async () => {
     render(<SettingsView />, { initialLocale: "pt" });
 
     const country = await screen.findByRole("combobox", { name: "País de residência fiscal" });
@@ -178,13 +178,38 @@ describe("SettingsView, signed in", () => {
     await choose(country, "Espanha");
     expect(country).toHaveTextContent("Espanha");
 
-    fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
-    // The rail's line under the name reads the account's row, so it is read again.
-    await waitFor(() => expect(refreshAccount).toHaveBeenCalledTimes(1));
+    // No Guardar to press: the change saves itself, and the rail's line under the name, which
+    // reads the account's row, is read again.
+    expect(screen.queryByRole("button", { name: "Guardar" })).toBeNull();
+    await waitFor(() => expect(refreshAccount).toHaveBeenCalledTimes(1), { timeout: 3000 });
 
     const save = requests.find((request) => request.init?.method === "POST");
     expect(save?.url).toBe("/api/settings");
     expect(JSON.parse(String(save?.init?.body)).residenceCountry).toBe("ES");
+  });
+
+  it("sends a change still waiting when the owner leaves Settings", async () => {
+    const { unmount } = render(<SettingsView />, { initialLocale: "pt" });
+
+    await choose(
+      await screen.findByRole("combobox", { name: "País de residência fiscal" }),
+      "Espanha",
+    );
+    unmount();
+
+    const save = requests.find((request) => request.init?.method === "POST");
+    expect(JSON.parse(String(save?.init?.body)).residenceCountry).toBe("ES");
+  });
+
+  it("lists Administração only for an administrator", async () => {
+    const { unmount } = render(<SettingsView />, { initialLocale: "pt" });
+    expect(await screen.findByRole("button", { name: "Conta" })).toBeDefined();
+    expect(screen.queryByRole("button", { name: "Administração" })).toBeNull();
+    unmount();
+
+    sessionData = { user: { name: "Ana Lopes", email: "ana@example.com", role: "ADMIN" } };
+    render(<SettingsView />, { initialLocale: "pt" });
+    expect(await screen.findByRole("button", { name: "Administração" })).toBeDefined();
   });
 
   it("drops Integrations' tab from the URL on moving to another section", async () => {
@@ -196,18 +221,15 @@ describe("SettingsView, signed in", () => {
     expect(window.location.search).toBe("?tab=account");
   });
 
-  it("switches the language from Appearance at once, without Guardar", async () => {
+  it("opens an old Appearance link on Account, which holds the language", async () => {
+    window.history.replaceState(null, "", "/settings?tab=appearance");
     render(<SettingsView />, { initialLocale: "pt" });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Aparência" }));
-    // The open section is in the URL, so the page rendered afresh in the new language opens it.
-    expect(window.location.search).toBe("?tab=appearance");
-
-    const language = screen.getByRole("combobox", { name: "Idioma" });
+    const language = await screen.findByRole("combobox", { name: "Idioma" });
     expect(language).toHaveTextContent("Português");
+    expect(screen.getByRole("button", { name: "Conta" }).getAttribute("aria-current")).toBe("page");
 
     await choose(language, "English");
     expect(setLanguage).toHaveBeenCalledWith("en");
-    expect(screen.queryByRole("button", { name: "Guardar" })).toBeNull();
   });
 });

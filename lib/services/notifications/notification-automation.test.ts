@@ -182,8 +182,8 @@ describe("rent reminders (payment_due, D-5)", () => {
       rentPeriods: [period({ allocatedAmount: 300, status: "partially_paid" })],
     });
 
-    expect(created[0].message).toContain("€500.00");
-    expect(created[0].message).not.toContain("€800.00");
+    expect(created[0].message).toContain("500,00\u00A0€");
+    expect(created[0].message).not.toContain("800,00\u00A0€");
   });
 
   it.each(["paid", "paid_late", "waived"])("never chases a %s period", async (status) => {
@@ -243,7 +243,7 @@ describe("overdue notices (payment_overdue, D+1 and D+7)", () => {
     });
 
     expect(result.overdueNotices).toBe(1);
-    expect(created[0].message).toContain("€500.00");
+    expect(created[0].message).toContain("500,00\u00A0€");
   });
 
   it("sends D+7 even though D+1 was already sent, and neither one twice", async () => {

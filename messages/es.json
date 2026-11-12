@@ -80,21 +80,17 @@
     "nav": {
       "account": "Cuenta",
       "notifications": "Notificaciones",
-      "security": "Seguridad y privacidad",
-      "integrations": "Integraciones",
+      "security": "Seguridad",
+      "integrations": "Conexiones",
       "system": "Administración",
       "heading": "Ajustes",
       "subtitle": "Gestiona tus preferencias y los ajustes de la cuenta",
       "sectionsLabel": "Secciones de ajustes",
-      "toastSaved": "Ajustes guardados",
+      "toastSaved": "Guardado",
       "loadFailed": "No se han podido cargar los ajustes.",
       "toastSaveFailed": "No se han podido guardar los ajustes.",
       "appearance": "Apariencia",
-      "groups": {
-        "personal": "Personal",
-        "workspace": "Espacio de trabajo",
-        "system": "Sistema"
-      }
+      "data": "Mis datos"
     },
     "panel": {
       "accountInfo": "Información de la cuenta",
@@ -104,16 +100,21 @@
       "notAvailable": "No disponible",
       "notSet": "Sin definir",
       "residenceCountry": "País de residencia fiscal",
-      "residenceCountryHelp": "Aparece bajo su nombre en la barra lateral, después del idioma.",
+      "residenceCountryHelp": "Aparece bajo su nombre en el menú, después del idioma.",
       "version": "Situs v{version}",
       "appearance": "Apariencia",
       "appearanceDescription": "Cómo se ve la aplicación en este dispositivo",
       "theme": "Tema",
-      "themeMatchedNormal": "Normal del país",
-      "themeMatchedDark": "Oscuro del país",
-      "themeSystem": "Sistema",
-      "countryPalette": "Paleta del país",
-      "countryPaletteHelp": "Ajusta los colores del logotipo Situs Portal y el acento de la interfaz a la paleta de la bandera de tu país. La legibilidad es lo primero: el acento se ajusta al contraste y los colores de estado no cambian entre países.",
+      "themeMatchedNormal": "Claro",
+      "themeMatchedDark": "Oscuro",
+      "themeSystem": "Automático",
+      "palette": "Paleta",
+      "paletteHelp": "Los colores de la interfaz. Se guarda en este dispositivo.",
+      "paletteAzulejo": "Azulejo",
+      "paletteOliveira": "Olivo",
+      "paletteGrafite": "Grafito",
+      "countryPalette": "Colores del logotipo",
+      "countryPaletteHelp": "El logotipo de Situs usa los colores de la bandera del país elegido. El resto de la interfaz sigue la paleta de arriba.",
       "language": "Idioma",
       "selectLanguage": "Selecciona el idioma",
       "languageHelp": "Se aplica de inmediato y se guarda en su cuenta para los correos de recordatorio.",
@@ -177,7 +178,7 @@
       "emailService": "Servicio de correo",
       "refresh": "Actualizar",
       "systemUnavailable": "No se ha podido obtener la información del sistema.",
-      "bankConnectionsHelp": "Cuentas que alimentan la bandeja Finanzas › Movimientos bancarios",
+      "bankConnectionsHelp": "Cuentas que alimentan Finanzas › Movimientos",
       "noBankConnection": "Aún no hay ningún banco conectado.",
       "uptimeValue": "{hours} h {minutes} min",
       "bankConnectCta": "Conectar un banco",
@@ -235,13 +236,13 @@
       },
       "bankNoProviderTitle": "Conexión bancaria no configurada",
       "bankNoProviderBody": "Esta instancia no tiene credenciales de Enable Banking, así que los movimientos no pueden importarse automáticamente. Define ENABLE_BANKING_APPLICATION_ID y ENABLE_BANKING_PRIVATE_KEY_FILE apuntando al .pem montado y reinicia.",
-      "bankNoProviderManual": "Mientras tanto no llegan movimientos bancarios. Un pago se puede seguir registrando a mano, en Finanzas › Recibos.",
+      "bankNoProviderManual": "Mientras tanto no llegan movimientos bancarios. Un pago se puede seguir registrando a mano, con Registrar pago en Finanzas.",
       "bankConsentUntil": "Consentimiento válido hasta el {date}",
       "bankConsentEnding": "El consentimiento termina el {date}: renueva el acceso antes para seguir sincronizando",
       "bankConsentEnded": "El consentimiento terminó el {date}",
       "integrationTabs": {
         "banks": "Bancos",
-        "at": "Finanças"
+        "at": "Portal das Finanças (AT)"
       },
       "passkeysTitle": "Passkeys",
       "passkeysDescription": "Inicia sesión con la huella, el rostro o el bloqueo de pantalla del móvil en lugar de escribir un código. La aplicación de autenticación sigue como alternativa.",
@@ -269,7 +270,8 @@
       "passkeyErrLimit": "Has alcanzado el límite de 10 passkeys. Elimina una primero.",
       "passkeyErrTooMany": "Demasiados intentos. Espera un momento e inténtalo de nuevo.",
       "passkeyErrGeneric": "No se pudo guardar la passkey. Inténtalo de nuevo.",
-      "passkeyRemoveFailed": "No se pudo eliminar la passkey."
+      "passkeyRemoveFailed": "No se pudo eliminar la passkey.",
+      "bankManualNote": "Movimientos registrados a mano. No se sincroniza."
     },
     "at": {
       "description": "Situs accede a la AT como un subusuario del Portal, con el certificado que la AT firmó para esta instancia.",
@@ -577,7 +579,25 @@
     "startTenancyAction": "Nuevo arrendamiento",
     "connectBankLabel": "Conectar su banco",
     "connectBankDesc": "Los pagos llegan solos, listos para confirmar. También puede registrar uno a mano.",
-    "connectBankAction": "Conectar banco"
+    "connectBankAction": "Conectar banco",
+    "monthReceivedOf": "{received} de {expected}",
+    "monthOf": "de {expected}",
+    "monthOutstanding": "{amount} pendiente",
+    "monthAllIn": "Todo cobrado",
+    "monthEmpty": "Sin rentas este mes.",
+    "tenancyPaidOn": "Pagado el {date}",
+    "tenancyDueOn": "Vence el {date}",
+    "tenancyPartial": "{received} de {due}",
+    "tenancyOverdue": "Atrasado desde el {date}",
+    "yearLine": "{year}: {received} cobrados · {expenses} gastos · {net} neto",
+    "bankSynced": "{bank} · sincronizado {when}",
+    "bankNotSynced": "{bank} · aún no se ha sincronizado",
+    "upcomingTitle": "Próximamente",
+    "upcomingRent": "Renta de {name}",
+    "upcomingIncrease": "Subida de la renta de {name}",
+    "upcomingRenews": "El contrato de {name} se renueva",
+    "upcomingEnds": "El contrato de {name} termina",
+    "lateSince": "desde {month}"
   },
   "completion": {
     "title": "Lo que falta",
@@ -1613,8 +1633,8 @@
     "unread": "Sin leer ({count})",
     "noUnreadNotifications": "Sin notificaciones sin leer",
     "noNotifications": "Sin notificaciones",
-    "allCaughtUp": "¡Todo al día!",
-    "notificationsWillAppear": "Las notificaciones aparecerán aquí",
+    "allCaughtUp": "Sin recordatorios",
+    "notificationsWillAppear": "Los pagos por confirmar y los recibos por emitir están en la bandeja de Inicio.",
     "clearAll": "Borrar todo",
     "clearAllLabel": "Borrar todas las notificaciones",
     "settings": "Ajustes",
@@ -1630,7 +1650,8 @@
       "medium": "Media",
       "high": "Alta",
       "urgent": "Urgente"
-    }
+    },
+    "openInbox": "Abrir la bandeja"
   },
   "portfolioTree": {
     "title": "Inventario estructural de la cartera",

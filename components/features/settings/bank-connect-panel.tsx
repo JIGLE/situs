@@ -427,14 +427,21 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
                     {c.provider === "manual" ? t("bankManualName") : c.institutionName}
                   </p>
                 ) : null}
-                <p className="text-xs text-muted-foreground">
-                  {t("bankLastSync", {
-                    date: formatDate(c.lastSyncAt, locale, t("bankNeverSynced")),
-                  })}
-                  {c.canSync && c.remainingBudget !== null
-                    ? ` · ${t("bankSyncsLeft", { count: c.remainingBudget })}`
-                    : ""}
-                </p>
+                {/* A manual or old CSV connection is a bucket for movements that came in by hand: it
+                    syncs nothing, so a "last sync" date and an "Ativa" mark made it read as a
+                    second, working bank beside "no bank connected". */}
+                {!isLiveConnection(c) ? (
+                  <p className="text-xs text-muted-foreground">{t("bankManualNote")}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    {t("bankLastSync", {
+                      date: formatDate(c.lastSyncAt, locale, t("bankNeverSynced")),
+                    })}
+                    {c.canSync && c.remainingBudget !== null
+                      ? ` · ${t("bankSyncsLeft", { count: c.remainingBudget })}`
+                      : ""}
+                  </p>
+                )}
                 {c.consentExpiresAt && c.status !== "revoked" ? (
                   <p className="text-xs text-muted-foreground">
                     {t("bankConsentUntil", { date: formatDate(c.consentExpiresAt, locale) })}
@@ -443,7 +450,9 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
-                <StatusMark {...connectionStatus(c.status)}>{statusLabel(c.status)}</StatusMark>
+                {isLiveConnection(c) ? (
+                  <StatusMark {...connectionStatus(c.status)}>{statusLabel(c.status)}</StatusMark>
+                ) : null}
 
                 {c.status === "expired" ? (
                   // The same connection, renewed: its accounts keep their ids, so the movements
@@ -658,3 +667,8 @@ export function BankConnectPanel({ connections, providersConfigured, loading, on
 }
 
 export default BankConnectPanel;
+
+/** A connection to a real bank (`psd2_<key>`), as opposed to a manual or CSV bucket. */
+function isLiveConnection(connection: { provider: string }): boolean {
+  return connection.provider.startsWith("psd2_");
+}

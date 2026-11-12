@@ -7,16 +7,20 @@ import { normalizeMode, type ThemeMode } from "@/lib/theme/mode";
 import { readModeCookie, writeModeCookie } from "@/lib/theme/mode-cookie";
 import {
   DEFAULT_COUNTRY,
+  DEFAULT_PALETTE,
   isCountryCode,
+  isPaletteKey,
   resolveThemeVars,
   type CountryCode,
+  type PaletteKey,
 } from "@/lib/design/country-themes";
 
 /**
  * Situs country theme provider.
  *
- * Two independent axes, per the brand spec:
- *  - country  → logo role colours + the matched UI palette pair
+ * Three independent axes:
+ *  - country  → the logo's flag colours, and nothing else (design study K3)
+ *  - palette  → the interface's colours: Azulejo, Oliveira (the default) or Grafite
  *  - mode     → "normal" | "dark" (or "system" to follow the OS)
  *
  * The country palette drives the Situs Portal logo authentically; the UI
@@ -30,8 +34,10 @@ interface ThemeContextType {
   theme: ThemeMode;
   resolvedTheme: ResolvedMode;
   country: CountryCode;
+  palette: PaletteKey;
   setTheme: (mode: ThemeMode) => void;
   setCountry: (country: CountryCode) => void;
+  setPalette: (palette: PaletteKey) => void;
   toggleTheme: () => void;
 }
 
@@ -39,6 +45,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const MODE_STORAGE_KEY = "situs-mode";
 const COUNTRY_STORAGE_KEY = "situs-country";
+const PALETTE_STORAGE_KEY = "situs-palette";
 /**
  * Pre-rebrand key — read once for migration, then superseded.
  *
@@ -55,6 +62,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
   const [theme, setThemeState] = useState<ThemeMode>("dark");
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedMode>("dark");
   const [country, setCountryState] = useState<CountryCode>(DEFAULT_COUNTRY);
+  const [palette, setPaletteState] = useState<PaletteKey>(DEFAULT_PALETTE);
+  // Read by applyTheme, so a country or mode change keeps the palette without a dependency on it.
+  const paletteRef = React.useRef<PaletteKey>(DEFAULT_PALETTE);
   const [_mounted, setMounted] = useState(false);
 
   const getSystemMode = useCallback((): ResolvedMode => {
@@ -89,7 +99,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
       tag.removeAttribute("media");
     });
 
-    const vars = resolveThemeVars(nextCountry, resolved);
+    root.setAttribute("data-palette", paletteRef.current);
+    const vars = resolveThemeVars(nextCountry, resolved, paletteRef.current);
     for (const [name, value] of Object.entries(vars)) {
       root.style.setProperty(name, value);
     }
@@ -104,6 +115,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
     const storedCountry =
       storedCountryRaw && isCountryCode(storedCountryRaw) ? storedCountryRaw : DEFAULT_COUNTRY;
     setCountryState(storedCountry);
+    const storedPaletteRaw = localStorage.getItem(PALETTE_STORAGE_KEY);
+    const storedPalette =
+      storedPaletteRaw && isPaletteKey(storedPaletteRaw) ? storedPaletteRaw : DEFAULT_PALETTE;
+    paletteRef.current = storedPalette;
+    setPaletteState(storedPalette);
 
     // This device's storage first, then the cookie the server renders from (a device whose storage
     // was cleared but not its cookies still knows its choice).
@@ -187,13 +203,33 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
     [theme, applyTheme, resolveMode],
   );
 
+  const setPalette = useCallback(
+    (next: PaletteKey) => {
+      if (!isPaletteKey(next)) return;
+      paletteRef.current = next;
+      setPaletteState(next);
+      localStorage.setItem(PALETTE_STORAGE_KEY, next);
+      applyTheme(country, resolveMode(theme));
+    },
+    [country, theme, applyTheme, resolveMode],
+  );
+
   const toggleTheme = useCallback(() => {
     setTheme(resolvedTheme === "normal" ? "dark" : "normal");
   }, [resolvedTheme, setTheme]);
 
   return (
     <ThemeContext.Provider
-      value={{ theme, resolvedTheme, country, setTheme, setCountry, toggleTheme }}
+      value={{
+        theme,
+        resolvedTheme,
+        country,
+        palette,
+        setTheme,
+        setCountry,
+        setPalette,
+        toggleTheme,
+      }}
     >
       {children}
     </ThemeContext.Provider>

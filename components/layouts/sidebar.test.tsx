@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderWithProviders as render } from "@/tests/helpers/render-with-providers";
 import { act } from "react";
+import { screen } from "@testing-library/react";
+import { within } from "@testing-library/dom";
+import userEvent from "@testing-library/user-event";
 import { Sidebar } from "./sidebar";
 
 vi.mock("next/navigation", () => ({
@@ -109,7 +112,29 @@ describe("Sidebar", () => {
     // Every label a screen reader announces here, in the app's language.
     expect(getByLabelText!("Recolher barra lateral")).toBeDefined();
     expect(getByLabelText!("Navegação principal")).toBeDefined();
-    expect(getByLabelText!("Terminar sessão")).toBeDefined();
+    expect(getByLabelText!("Conta")).toBeDefined();
+  });
+
+  it("keeps Settings out of the rail, in the menu under the owner's name", async () => {
+    const user = userEvent.setup();
+    let utils: ReturnType<typeof render>;
+    await act(async () => {
+      utils = render(<Sidebar activeTab="dashboard" />, { initialLocale: "pt" });
+    });
+    const nav = utils!.getByLabelText("Navegação principal");
+    expect(within(nav).queryByRole("link", { name: "Configurações" })).toBeNull();
+    // No heading for a group of one.
+    expect(within(nav).queryByText("Sistema")).toBeNull();
+
+    await user.click(utils!.getByRole("button", { name: "Conta" }));
+
+    const menu = await screen.findByRole("menu");
+    expect(within(menu).getByRole("menuitem", { name: "Configurações" })).toHaveAttribute(
+      "href",
+      "/settings",
+    );
+    expect(within(menu).getByRole("menuitem", { name: "Terminar sessão" })).toBeDefined();
+    expect(within(menu).getByRole("menuitem", { name: /Idioma/ })).toBeDefined();
   });
 
   it("puts the bell in the header row, beside the collapse button", async () => {

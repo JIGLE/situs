@@ -36,6 +36,14 @@ export interface PortalNavItem {
   icon: ComponentType<{ className?: string }>;
   mobilePrimary?: boolean;
   hidden?: boolean;
+  /**
+   * Reached from the account: the desktop rail lists it in the menu under the owner's name, not
+   * among the daily sections, and the phone in the More sheet behind the avatar. It stays in the
+   * navigation, so the phone's top bar still names the page and the route stays permitted.
+   */
+  accountMenu?: boolean;
+  /** Other routes that count as this entry for the rail's highlight (a page reached from it). */
+  activeFor?: string[];
 }
 
 export interface PortalNavGroup {
@@ -102,6 +110,9 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "Settings",
         labelKey: "navigation.settings",
         icon: Settings,
+        accountMenu: true,
+        // Administration is a section of Settings, so its pages light up Settings.
+        activeFor: ["/admin"],
       },
       {
         // Owner-only. `canAccessPortalPath` derives access from this list, so a page absent

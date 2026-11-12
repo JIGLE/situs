@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import type { RentMatrix, RentMatrixRow } from "@/lib/services/allocation/rent-matrix";
 import { apiFetch } from "@/lib/utils/api-client";
 import { useApiError } from "@/lib/utils/api-error";
-import { formatEuro } from "@/lib/utils/currency";
+import { formatEuro, withEuroSign } from "@/lib/utils/currency";
 import { formatMonth, formatMonthYear } from "@/lib/utils/format-date";
 import { rentPeriodStatusKey } from "@/lib/utils/rent-period-labels";
 import { cn } from "@/lib/utils/utils";
@@ -27,7 +27,7 @@ const STICKY = "sticky left-0 z-10 bg-[var(--color-card-solid)]";
 const SHOWS_OWED = new Set(["partially_paid", "overdue", "due"]);
 
 const WHOLE_EUROS = new Intl.NumberFormat("pt-PT", { maximumFractionDigits: 0 });
-const compactEuro = (amount: number) => `€${WHOLE_EUROS.format(amount)}`;
+const compactEuro = (amount: number) => withEuroSign(WHOLE_EUROS.format(amount));
 
 /** Replaces the address's query without a navigation: Next keeps `useSearchParams` in step. */
 function writeMonthParam(value: string | null) {

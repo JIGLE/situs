@@ -108,7 +108,7 @@ describe("BankMovementsInbox", () => {
       0,
     );
     expect(screen.getAllByText("A rever").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("€850,00").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("850,00 €").length).toBeGreaterThan(0);
     expect(screen.getAllByText(formatDate(MONEY_IN.bookingDate, "pt")).length).toBeGreaterThan(0);
     expect(screen.queryByText(/REVIEW|iban match/)).not.toBeInTheDocument();
   });
@@ -209,7 +209,8 @@ describe("a movement that looks like a payment the owner recorded", () => {
     render(<BankMovementsInbox />, { initialLocale: "pt" });
 
     expect(
-      (await screen.findAllByText(`Registou €850,00 em ${formatDate(RECORDED.date, "pt")}`)).length,
+      (await screen.findAllByText(`Registou 850,00 € em ${formatDate(RECORDED.date, "pt")}`))
+        .length,
     ).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: /Mesmo pagamento/ }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: /Um novo pagamento/ }).length).toBeGreaterThan(0);

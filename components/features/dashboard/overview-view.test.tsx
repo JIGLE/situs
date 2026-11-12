@@ -59,6 +59,30 @@ function month(overrides: Partial<DashboardMonth> = {}): DashboardMonth {
     month: 8,
     figures: { expected: 1850, received: 950, outstanding: 900 },
     late: [],
+    tenancies: [
+      {
+        leaseId: "lease-1",
+        tenantName: "Ana Martínez",
+        propertyName: "Rua Augusta 12",
+        status: "paid",
+        dueDate: "2026-08-08T00:00:00.000Z",
+        dueAmount: 950,
+        allocatedAmount: 950,
+        paidAt: "2026-08-03T00:00:00.000Z",
+      },
+      {
+        leaseId: "lease-2",
+        tenantName: "Carlos Gómez",
+        propertyName: "Rua do Ouro 3",
+        status: "overdue",
+        dueDate: "2026-08-08T00:00:00.000Z",
+        dueAmount: 900,
+        allocatedAmount: 0,
+        paidAt: null,
+      },
+    ],
+    yearTotals: { received: 7600, expenses: 400 },
+    upcoming: [],
     attention: { leasesEnding: 0, missingData: 0 },
     status: { bank: null, taxMode: "sandbox" },
     ...overrides,
@@ -109,7 +133,7 @@ describe("OverviewView — the month", () => {
   it("moves between months, across a year, and keeps the choice in the URL", async () => {
     const user = show(month(), "?month=2026-01");
 
-    await user.click(screen.getByRole("button", { name: d.previousMonth }));
+    await user.click(await screen.findByRole("button", { name: d.previousMonth }));
 
     expect(screen.getByTestId("dashboard-month")).toHaveTextContent("dezembro de 2025");
     expect(apiFetchMock).toHaveBeenLastCalledWith("/api/dashboard/month?year=2025&month=12");
@@ -126,20 +150,45 @@ describe("OverviewView — the month", () => {
     const now = new Date();
     show(month(), "?month=2026-13");
 
-    await screen.findByText(d.figureExpected);
+    await screen.findByTestId("dashboard-month-block");
     expect(apiFetchMock).toHaveBeenCalledWith(
       `/api/dashboard/month?year=${now.getFullYear()}&month=${now.getMonth() + 1}`,
     );
   });
 
-  it("says the month's three figures", async () => {
+  it("says how much of the month arrived, and what is still owed", async () => {
     show();
 
-    expect(await screen.findByText(d.figureExpected)).toBeInTheDocument();
-    expect(screen.getByText("1850 €")).toBeInTheDocument();
-    expect(screen.getByText("950 €")).toBeInTheDocument();
-    expect(screen.getByText("900 €")).toBeInTheDocument();
-    expect(screen.getByText(d.figureOutstanding)).toBeInTheDocument();
+    expect(await screen.findByTestId("dashboard-figures")).toHaveTextContent("950 € de 1850 €");
+    expect(screen.getByText("900 € em falta")).toBeInTheDocument();
+  });
+
+  it("lists the month by tenancy, each opening its month in the rent map", async () => {
+    show();
+
+    const block = await screen.findByTestId("dashboard-month-block");
+    const paid = within(block).getByRole("link", { name: /Ana Martínez/ });
+    expect(paid).toHaveTextContent(pt.rentPeriodStatus.paid);
+    expect(paid).toHaveTextContent("Pago a");
+    expect(paid).toHaveAttribute("href", "/financials?tab=ledger&month=lease-1:2026-08");
+    const late = within(block).getByRole("link", { name: /Carlos Gómez/ });
+    expect(late).toHaveTextContent(pt.rentPeriodStatus.overdue);
+    expect(late).toHaveTextContent("Em atraso desde");
+  });
+
+  it("says when a month has no rent", async () => {
+    show(month({ tenancies: [], figures: { expected: 0, received: 0, outstanding: 0 } }));
+
+    expect(await screen.findByText(d.monthEmpty)).toBeInTheDocument();
+    expect(screen.queryByTestId("dashboard-figures")).not.toBeInTheDocument();
+  });
+
+  it("says the year so far in one line", async () => {
+    show();
+
+    expect(await screen.findByTestId("dashboard-year")).toHaveTextContent(
+      "2026: 7600 € recebidos · 400 € despesas · 7200 € líquido",
+    );
   });
 
   it("says why the month could not be read", async () => {
@@ -158,7 +207,7 @@ describe("OverviewView — the inbox and who is late", () => {
     expect(await screen.findByTestId("home-inbox")).toHaveTextContent(d.inbox.empty);
   });
 
-  it("lists who is late, by how much, each opening the lease", async () => {
+  it("lists who is late, by how much and since when, each opening the oldest month owed", async () => {
     show(
       month({
         late: [
@@ -168,6 +217,7 @@ describe("OverviewView — the inbox and who is late", () => {
             propertyName: "Rua Augusta 12",
             months: 2,
             amount: 1500,
+            since: "2026-06",
           },
         ],
       }),
@@ -175,9 +225,9 @@ describe("OverviewView — the inbox and who is late", () => {
 
     const list = await screen.findByTestId("dashboard-late");
     const row = within(list).getByRole("link", { name: /Ana Martínez/ });
-    expect(row).toHaveTextContent("Rua Augusta 12 · 2 meses em dívida");
+    expect(row).toHaveTextContent("Rua Augusta 12 · 2 meses em dívida desde junho de 2026");
     expect(row).toHaveTextContent("1500 €");
-    expect(row).toHaveAttribute("href", "/portfolio?tab=leases&detail=lease:lease-1");
+    expect(row).toHaveAttribute("href", "/financials?tab=ledger&month=lease-1:2026-06");
   });
 
   it("shows no late list when nobody owes", async () => {
@@ -194,10 +244,8 @@ describe("OverviewView — what waits", () => {
 
     const list = await screen.findByTestId("dashboard-attention");
     expect(within(list).getByText(d.attentionTitle)).toBeInTheDocument();
-    expect(within(list).getByRole("link", { name: /1 contrato/ })).toHaveAttribute(
-      "href",
-      "/portfolio?tab=leases",
-    );
+    // Contracts reaching their term are under "A seguir", with their dates.
+    expect(within(list).queryByRole("link", { name: /contrato/ })).not.toBeInTheDocument();
     // What a receipt still needs from the owner opens the guided list, one field at a time.
     expect(
       within(list).getByRole("link", { name: "Faltam 4 dados para os seus recibos" }),
@@ -226,11 +274,82 @@ describe("OverviewView — what waits", () => {
   });
 });
 
+describe("OverviewView — what comes next", () => {
+  it("lists rent due, rent increases and contracts reaching their term, each opening the lease", async () => {
+    show(
+      month({
+        upcoming: [
+          {
+            kind: "rent",
+            date: "2026-09-08T00:00:00.000Z",
+            leaseId: "lease-1",
+            tenantName: "Ana Martínez",
+            amount: 950,
+          },
+          {
+            kind: "increase",
+            date: "2026-10-01T00:00:00.000Z",
+            leaseId: "lease-2",
+            tenantName: "Carlos Gómez",
+            previousRent: 900,
+            newRent: 920,
+          },
+          {
+            kind: "leaseEnd",
+            date: "2026-10-31T00:00:00.000Z",
+            leaseId: "lease-1",
+            tenantName: "Ana Martínez",
+            autoRenew: true,
+          },
+        ],
+      }),
+    );
+
+    const list = await screen.findByTestId("dashboard-upcoming");
+    expect(within(list).getByText(d.upcomingTitle)).toBeInTheDocument();
+    expect(within(list).getByRole("link", { name: /Renda de Ana Martínez/ })).toHaveAttribute(
+      "href",
+      "/portfolio?tab=leases&detail=lease:lease-1",
+    );
+    expect(
+      within(list).getByRole("link", { name: /Aumento da renda de Carlos Gómez/ }),
+    ).toHaveTextContent("900 € → 920 €");
+    // Jose's contracts renew by themselves: one that does says so rather than "ends".
+    expect(within(list).getByText("Contrato de Ana Martínez renova-se")).toBeInTheDocument();
+  });
+
+  it("shows no list when nothing comes up", async () => {
+    show();
+    await screen.findByTestId("home-inbox");
+    expect(screen.queryByTestId("dashboard-upcoming")).not.toBeInTheDocument();
+  });
+});
+
 describe("OverviewView — the status line", () => {
-  it("says nothing while the bank works, or when there is none", async () => {
+  it("says nothing when there is no bank", async () => {
     show();
     await screen.findByTestId("home-inbox");
     expect(screen.queryByTestId("dashboard-status")).not.toBeInTheDocument();
+  });
+
+  it("names the bank and when it last synced, while it works", async () => {
+    show(
+      month({
+        status: {
+          bank: {
+            name: "Millennium BCP",
+            lastSyncAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+            consentEndsAt: null,
+            expired: false,
+          },
+          taxMode: "test",
+        },
+      }),
+    );
+
+    const line = await screen.findByTestId("dashboard-status");
+    expect(line).toHaveTextContent("Millennium BCP · sincronizado há 2 horas");
+    expect(line).toHaveAttribute("href", "/settings?tab=integrations");
   });
 
   it("warns before the bank's consent ends, with the way to renew it", async () => {
@@ -238,7 +357,12 @@ describe("OverviewView — the status line", () => {
     show(
       month({
         status: {
-          bank: { lastSyncAt: "2026-09-27T06:00:00.000Z", consentEndsAt: soon, expired: false },
+          bank: {
+            name: "Millennium BCP",
+            lastSyncAt: "2026-09-27T06:00:00.000Z",
+            consentEndsAt: soon,
+            expired: false,
+          },
           taxMode: "test",
         },
       }),
@@ -253,7 +377,7 @@ describe("OverviewView — the status line", () => {
     show(
       month({
         status: {
-          bank: { lastSyncAt: null, consentEndsAt: null, expired: true },
+          bank: { name: "Millennium BCP", lastSyncAt: null, consentEndsAt: null, expired: true },
           taxMode: "sandbox",
         },
       }),

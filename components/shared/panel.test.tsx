@@ -39,26 +39,24 @@ describe("Panel", () => {
   });
 
   it("says warning and danger with its border, not with another shape", () => {
+    // The tone is the box's border; the heading sits above the box.
+    const box = () => screen.getByText("A").closest("section")?.lastElementChild;
     const { rerender } = render(<Panel title="A">x</Panel>);
-    expect(screen.getByText("A").closest("section")).not.toHaveClass(
-      "border-[var(--semantic-danger)]",
-    );
+    expect(box()).not.toHaveClass("border-[var(--semantic-danger)]");
 
     rerender(
       <Panel title="A" tone="danger">
         x
       </Panel>,
     );
-    expect(screen.getByText("A").closest("section")).toHaveClass("border-[var(--semantic-danger)]");
+    expect(box()).toHaveClass("border-[var(--semantic-danger)]");
 
     rerender(
       <Panel title="A" tone="warning">
         x
       </Panel>,
     );
-    expect(screen.getByText("A").closest("section")).toHaveClass(
-      "border-[var(--semantic-warning-readable)]",
-    );
+    expect(box()).toHaveClass("border-[var(--semantic-warning-readable)]");
   });
 
   it("draws no header, and so no heading, when something else already names it", () => {

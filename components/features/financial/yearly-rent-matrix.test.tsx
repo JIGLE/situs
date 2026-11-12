@@ -180,13 +180,13 @@ describe("YearlyRentMatrix", () => {
     const august = await screen.findByRole("button", {
       name: `agosto de 2026: Parcialmente pago, pagos ${formatEuro(500)} de ${formatEuro(800)}`,
     });
-    expect(august).toHaveTextContent("€300");
+    expect(august).toHaveTextContent("300 €");
     const july = screen.getByRole("button", {
       name: `julho de 2026: Pago, pagos ${formatEuro(800)} de ${formatEuro(800)}`,
     });
     expect(july).not.toHaveTextContent("€");
     expect(screen.getByRole("button", { name: /^setembro de 2026: Em atraso/ })).toHaveTextContent(
-      "€800",
+      "800 €",
     );
     // A month not yet due owes nothing today.
     expect(
@@ -203,7 +203,7 @@ describe("YearlyRentMatrix", () => {
     );
     expect(screen.getByRole("rowheader", { name: "Recebido" })).toBeInTheDocument();
     // The lease's year and the whole year, received of expected.
-    expect(screen.getAllByText(`de ${formatEuro(3200)}`)).toHaveLength(2);
+    expect(screen.getAllByText("de 3200,00 €")).toHaveLength(2);
   });
 
   it("opens a month from its cell, and records a payment filled in with what is owed", async () => {
@@ -219,7 +219,7 @@ describe("YearlyRentMatrix", () => {
     expect(new URLSearchParams(window.location.search).get("month")).toBe("lease-1:2026-08");
     const figures = within(sheet);
     expect(await figures.findByText("Em falta")).toBeInTheDocument();
-    expect(figures.getByText(formatEuro(300))).toBeInTheDocument();
+    expect(figures.getByText("300,00 €")).toBeInTheDocument();
     // The payment that part-paid it, with its receipt's stage.
     expect(figures.getByText(/Emitido/)).toBeInTheDocument();
 

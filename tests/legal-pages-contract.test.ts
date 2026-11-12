@@ -41,7 +41,8 @@ describe("legal pages", () => {
   it("Settings links to both pages", () => {
     // Neither page was linked from anywhere: they existed and could be reached only by typing the
     // address. The bank registration asks for both URLs.
-    expect(source("components/features/settings/settings-account.tsx")).toMatch(/<LegalLinks\b/);
+    // They sit at the foot of Settings' section list, on a computer and on a phone.
+    expect(source("components/features/settings/settings-view.tsx")).toMatch(/<LegalLinks\b/);
   });
 
   it("the sign-in page links to both pages, in its consent line", () => {
