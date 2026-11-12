@@ -316,8 +316,9 @@ themes.
 `scripts/audit-server.mjs` boots a disposable standalone app (`.next/standalone/server.js`, the
 entrypoint CI and the Dockerfile use) with the environment it needs, and refuses to start when
 something already answers on the port — a stale server passes every readiness check and measures
-the wrong build. In CI the 390×844 pass is a blocking `--strict` gate against `BASELINE` in the
-harness on every PR; a 1440×900 Portuguese pass is advisory. `scripts/build-gallery.mjs` turns a run
+the wrong build. In CI the 390×844 pass and a 360×780 pass (the Galaxy S2x width) are blocking
+`--strict` gates against `BASELINE` in the harness on every PR; a 1440×900 Portuguese pass is
+advisory. `scripts/build-gallery.mjs` turns a run
 into one HTML page of screenshots and figures.
 
 ## CI Gates

@@ -174,8 +174,9 @@ Enforced on every PR:
 - **ESLint** `--max-warnings=0` — zero warnings
 - **Vitest** with a coverage ratchet in `vitest.config.ts` — a PR may not lower it
 - **Mobile audit** — `scripts/mobile-audit.mjs` walks every owner-facing surface in both themes at
-  390×844 against seeded data, measuring horizontal overflow, touch targets, clipping and text
-  legibility. A blocking `--strict` gate against the `BASELINE` in the harness; a 1440×900
+  390×844 and again at 360×780 (a Galaxy S2x) against seeded data, measuring horizontal overflow,
+  touch targets, clipping and text legibility. Both are blocking `--strict` gates against the
+  `BASELINE` in the harness; a 1440×900
   Portuguese pass runs alongside it as advisory.
 
 The responsive rules the harness enforces are documented in [CLAUDE.md](CLAUDE.md) alongside the

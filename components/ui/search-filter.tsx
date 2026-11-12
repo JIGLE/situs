@@ -215,7 +215,20 @@ export function SearchFilter({
           </Popover.Content>
         </Popover.Root>
       ) : (
-        filters.map((filter) => <div key={filter.key}>{renderFilter(filter)}</div>)
+        // Two dropdowns share one row on a phone instead of stacking into a wall of
+        // full-width boxes; from `sm` they sit inline beside the search as before.
+        <div
+          className={cn(
+            filters.length === 2 ? "grid grid-cols-2 gap-3" : "contents",
+            "sm:flex sm:gap-3",
+          )}
+        >
+          {filters.map((filter) => (
+            <div key={filter.key} className="min-w-0">
+              {renderFilter(filter)}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

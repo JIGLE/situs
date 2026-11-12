@@ -387,6 +387,17 @@ jobs:
           AUDIT_BASE_URL: http://localhost:3000
           CI: "true"
 
+      # The narrow end of current Android flagships: a Galaxy S2x at its default display zoom is
+      # 360 CSS px wide. 30px under the pass above was enough to squeeze a tenant's name to 82px,
+      # push a property's rent past the screen edge and shrink month cells under 44px, none of
+      # which the 390px pass could see. Same BASELINE: a phone that is 30px narrower gets no
+      # looser ceilings. Re-seeding is idempotent, and `--strict` refuses an unseeded run.
+      - name: Run narrow-phone audit harness (360px)
+        run: node scripts/mobile-audit.mjs --seed --strict --width 360 --height 780
+        env:
+          AUDIT_BASE_URL: http://localhost:3000
+          CI: "true"
+
       # Desktop, in the longest locale. Two blind spots this closes, both found by running it:
       # the harness only ever measured 390px, and it only ever measured `/en` — the shortest of
       # the four catalogues, so nav and tab bars were always being judged on their best case.
