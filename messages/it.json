@@ -1525,7 +1525,8 @@
       "addExpense": "Aggiungi spesa",
       "manageDocuments": "Gestisci documenti",
       "recordPayment": "Registra pagamento",
-      "cancel": "Annulla"
+      "cancel": "Annulla",
+      "delete": "Elimina"
     },
     "notFound": "Immobile non trovato",
     "status": {
@@ -1574,6 +1575,12 @@
       "allocated": "{allocated} di {due} imputati",
       "receipt": "Ricevuta: {state}",
       "noPeriod": "Nessun mese di affitto"
+    },
+    "deleteOne": {
+      "title": "Elimina immobile",
+      "description": "“{name}” sarà rimosso. Un immobile con contratti, ricevute o spese non può essere eliminato.",
+      "confirmLabel": "Elimina",
+      "done": "“{name}” eliminato"
     }
   },
   "notificationCenter": {

@@ -43,6 +43,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useApp } from "@/lib/contexts/app-context";
+import { useToast } from "@/lib/contexts/toast-context";
+import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { useTabPersistence } from "@/lib/hooks/use-tab-persistence";
 import { EntityLink } from "@/components/shared/entity-link";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
@@ -69,7 +72,9 @@ interface PropertyDetailViewProps {
 }
 
 export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
-  const { state, refreshData } = useApp();
+  const { state, refreshData, deleteProperty } = useApp();
+  const { success } = useToast();
+  const confirmDialog = useConfirmDialog();
   const { formatCurrency } = useCurrency();
   const router = useRouter();
   const locale = useLocale();
@@ -281,6 +286,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
     <div className="@container space-y-6">
       {/* Edit property — own instance of the shared create/edit form */}
       <PropertyFormDialog ref={editFormDialogRef} />
+      <ConfirmationDialog dialog={confirmDialog} />
 
       {/* Header */}
       <div className="flex flex-col gap-4 sticky top-0 z-20 bg-[var(--color-card-solid)]">
@@ -488,16 +494,45 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                 </p>
               )}
             </div>
-            {/* Edit sits with the fields it edits rather than in a global action bar. */}
-            <Button
-              variant="outline"
-              size="sm"
-              className="shrink-0"
-              onClick={() => editFormDialogRef.current?.openEditDialog(property)}
-            >
-              <Pencil className="mr-1.5 h-3.5 w-3.5" />
-              {t("actions.edit")}
-            </Button>
+            {/* Edit sits with the fields it edits rather than in a global action bar. Delete beside
+                it is for a property added by mistake: one with leases, receipts or expenses is
+                refused by the server, and the toast says why. */}
+            <div className="flex shrink-0 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => editFormDialogRef.current?.openEditDialog(property)}
+              >
+                <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                {t("actions.edit")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label={t("actions.delete")}
+                onClick={() =>
+                  confirmDialog.confirm(
+                    {
+                      title: t("deleteOne.title"),
+                      description: t("deleteOne.description", { name: property.name }),
+                      confirmLabel: t("deleteOne.confirmLabel"),
+                      variant: "destructive",
+                    },
+                    async () => {
+                      try {
+                        await deleteProperty(property.id);
+                      } catch {
+                        return; // Refused (it has history) or failed: the toast already says why.
+                      }
+                      success(t("deleteOne.done", { name: property.name }));
+                      router.push("/portfolio");
+                    },
+                  )
+                }
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
 
           {/* Splits at @xl (36rem) rather than @2xl: the workspace container is ~644px at a

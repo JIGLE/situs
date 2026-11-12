@@ -1525,7 +1525,8 @@
       "addExpense": "Adicionar despesa",
       "manageDocuments": "Gerir documentos",
       "recordPayment": "Registar pagamento",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "delete": "Eliminar"
     },
     "notFound": "Imóvel não encontrado",
     "status": {
@@ -1574,6 +1575,12 @@
       "allocated": "{allocated} de {due} imputados",
       "receipt": "Recibo: {state}",
       "noPeriod": "Sem mês de renda"
+    },
+    "deleteOne": {
+      "title": "Eliminar imóvel",
+      "description": "“{name}” será removido. Um imóvel com contratos, recibos ou despesas não pode ser eliminado.",
+      "confirmLabel": "Eliminar",
+      "done": "“{name}” eliminado"
     }
   },
   "notificationCenter": {

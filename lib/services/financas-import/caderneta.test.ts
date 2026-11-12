@@ -107,7 +107,7 @@ describe("cadernetaDrafts", () => {
     const drafts = cadernetaDrafts(parseCaderneta(MODEL_A));
     expect(drafts).toHaveLength(2);
     expect(drafts[0]).toMatchObject({
-      name: "Rua Capitão Leitão 9, LJ B",
+      name: "R. Cap. Leitão 9, LJ B",
       streetAddress: "Rua Capitão Leitão 9",
       city: "Almada",
       zipCode: "2800-051",
@@ -119,9 +119,11 @@ describe("cadernetaDrafts", () => {
     expect(drafts[1].address).toBe("Rua Capitão Leitão 9, 2º ES, 2800-051 Almada");
   });
 
-  it("names a fraction by its street and letter, and a plot as other", () => {
+  it("names a fraction by its street, door and floor, and a plot as other", () => {
     expect(cadernetaDrafts(parseCaderneta(FRACTION))[0]).toMatchObject({
-      name: "Rua de Angola 25, C",
+      name: "R. Angola 25, 2º ESQ",
+      address: "Rua de Angola 25, 2º ESQ, 1170-020 Lisboa",
+      fraction: "C",
       type: "apartment",
       city: "Lisboa",
     });
@@ -137,7 +139,7 @@ describe("cadernetaDrafts", () => {
       `${HEADER} IDENTIFICAÇÃO DO PRÉDIO ARTIGO MATRICIAL: 374 NIP: LOCALIZAÇÃO DO PRÉDIO Av./Rua/Praça: RUA A Nº: 9 Código Postal: 2800-051 ALMADA ANDAR OU DIVISÃO COM UTILIZAÇÃO INDEPENDENTE: LJ B Afectação: Comércio Tipologia/Divisões: 1 ANDAR OU DIVISÃO COM UTILIZAÇÃO INDEPENDENTE: 2º ES Afectação: Habitação Tipologia/Divisões: T3 TITULARES Identificação fiscal: 123456789 Nome: JOSÉ EXEMPLO Parte: 1/1`,
     );
     expect(parsed.units.map((u) => u.fraction)).toEqual(["LJ B", "2º ES"]);
-    expect(cadernetaDrafts(parsed).map((d) => d.name)).toEqual(["Rua A 9, LJ B", "Rua A 9, 2º ES"]);
+    expect(cadernetaDrafts(parsed).map((d) => d.name)).toEqual(["R. A 9, LJ B", "R. A 9, 2º ES"]);
   });
 
   it("tells a usufruct from bare ownership", () => {

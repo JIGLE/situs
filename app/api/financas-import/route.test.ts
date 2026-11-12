@@ -79,7 +79,7 @@ describe("POST /api/financas-import", () => {
     ]);
     expect(data.drafts).toEqual([
       expect.objectContaining({
-        name: "Rua de Angola 25, C",
+        name: "R. Angola 25, C",
         zipCode: "1170-020",
         city: "Lisboa",
         type: "apartment",

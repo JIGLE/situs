@@ -13,7 +13,7 @@
  * The owner confirms every field before anything is created, so a value this cannot find is left
  * blank rather than guessed.
  */
-import { articleKey, normalize, parseAmount, titleCase, valueAfter } from "./text";
+import { articleKey, normalize, parseAmount, shortStreet, titleCase, valueAfter } from "./text";
 
 export interface CadernetaHolder {
   /** The titular's NIF, as printed. */
@@ -31,6 +31,11 @@ export interface CadernetaHolder {
 export interface CadernetaUnit {
   /** The fraction or the andar/divisão code ("C", "2º ES", "RC 1"); null for a whole property. */
   fraction: string | null;
+  /**
+   * The floor and side ("2º ESQ"), when the caderneta prints one: a fração's "Andar/Divisão", or
+   * a model A unit's code, which already is its floor.
+   */
+  floor: string | null;
   /** "Afectação": Habitação, Comércio, Serviços… */
   use: string | null;
   /** "Tipologia/Divisões": "T2", or a number of rooms. */
@@ -135,7 +140,11 @@ function bedroomsOf(layout: string | null): number | null {
   return match ? Number(match[1]) : null;
 }
 
-function unitFrom(block: string, fraction: string | null): CadernetaUnit {
+function unitFrom(
+  block: string,
+  fraction: string | null,
+  floor: string | null = fraction,
+): CadernetaUnit {
   const unitStops = [/Tipologia/i, /N[ºo°] de pisos/i, /Permilagem/i, /[ÁA]rea/i, ...SECTIONS];
   const use = valueAfter(block, /Afe[c]?ta[çc][ãa]o ?:/i, unitStops);
   const layoutRaw = valueAfter(block, /Tipologia\/Divis[õo]es ?:/i, [
@@ -152,6 +161,7 @@ function unitFrom(block: string, fraction: string | null): CadernetaUnit {
   const { street, doorNumber } = addressOf(block);
   return {
     fraction,
+    floor,
     use,
     layout,
     bedrooms: bedroomsOf(layout),
@@ -262,7 +272,13 @@ export function parseCaderneta(pages: string[] | string): ParsedCaderneta {
       units.push(unitFrom(block, (code ?? andar)?.trim() || null));
     });
   } else {
-    units.push(unitFrom(text, horizontalFraction(text)));
+    const floor = valueAfter(text, /Andar\/Divis[ãa]o ?:/i, [
+      /Afe[c]?ta/i,
+      /N[ºo°] de pisos/i,
+      / [^ :]+ ?:/,
+      ...SECTIONS,
+    ]);
+    units.push(unitFrom(text, horizontalFraction(text), floor?.trim() || null));
   }
 
   return {
@@ -323,13 +339,18 @@ export function cadernetaDrafts(parsed: ParsedCaderneta): PropertyDraft[] {
   return parsed.units.map((unit) => {
     const streetRaw = unit.street ?? parsed.street ?? parsed.place;
     const door = unit.doorNumber ?? parsed.doorNumber;
-    const streetAddress = [titleCase(streetRaw), door].filter(Boolean).join(" ");
+    const street = titleCase(streetRaw);
+    const streetAddress = [street, door].filter(Boolean).join(" ");
     const fraction = unit.fraction ?? "";
+    // What the owner calls it: the street as a letter would abbreviate it, the door, and the
+    // floor, or the fraction's letter when no floor is printed. "R. Capitão Leitão 9, 2º ES".
+    const where = unit.floor || fraction;
+    const short = [shortStreet(street), door].filter(Boolean).join(" ");
     const name =
-      [streetAddress || titleCase(parsed.parish), fraction].filter(Boolean).join(", ") ||
+      [short || titleCase(parsed.parish), where].filter(Boolean).join(", ") ||
       `Artigo ${parsed.article ?? ""}`.trim();
     const address = [
-      [streetAddress, fraction].filter(Boolean).join(", "),
+      [streetAddress, where].filter(Boolean).join(", "),
       [parsed.postalCode, city].filter(Boolean).join(" "),
     ]
       .filter(Boolean)

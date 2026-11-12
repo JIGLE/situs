@@ -1525,7 +1525,8 @@
       "addExpense": "Add expense",
       "manageDocuments": "Manage documents",
       "recordPayment": "Record payment",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "delete": "Delete"
     },
     "notFound": "Property not found",
     "status": {
@@ -1574,6 +1575,12 @@
       "allocated": "{allocated} of {due} allocated",
       "receipt": "Receipt: {state}",
       "noPeriod": "No rent month"
+    },
+    "deleteOne": {
+      "title": "Delete property",
+      "description": "“{name}” will be removed. A property with leases, receipts or expenses cannot be deleted.",
+      "confirmLabel": "Delete",
+      "done": "“{name}” deleted"
     }
   },
   "notificationCenter": {
