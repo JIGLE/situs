@@ -40,6 +40,41 @@ async function withDerived(userId: string, row: PropertyRow): Promise<Property> 
   return toProperty(row, statuses.get(row.id));
 }
 
+const ADDRESS_SELECT = {
+  address: true,
+  streetAddress: true,
+  city: true,
+  zipCode: true,
+  latitude: true,
+  longitude: true,
+} as const;
+
+type StoredAddress = Prisma.PropertyGetPayload<{ select: typeof ADDRESS_SELECT }>;
+
+/**
+ * The coordinates an edit writes. An edit that changes the address without picking a new place
+ * (the edit form sends back the coordinates it loaded) would leave the map's pin at the old
+ * address, so the coordinates are cleared and the Portfolio map places it again from the new one.
+ * New coordinates, from an address picked in the form, are written as sent.
+ */
+export function coordinatesAfterEdit(
+  existing: StoredAddress,
+  data: Partial<
+    Pick<Property, "address" | "streetAddress" | "city" | "zipCode" | "latitude" | "longitude">
+  >,
+): { latitude: number | null | undefined; longitude: number | null | undefined } {
+  const norm = (v: string | null | undefined) => (v ?? "").trim();
+  const changed = (["address", "streetAddress", "city", "zipCode"] as const).some(
+    (field) => data[field] !== undefined && norm(data[field]) !== norm(existing[field]),
+  );
+  const newPlace =
+    data.latitude !== undefined &&
+    data.longitude !== undefined &&
+    (data.latitude !== existing.latitude || data.longitude !== existing.longitude);
+  if (changed && !newPlace) return { latitude: null, longitude: null };
+  return { latitude: data.latitude, longitude: data.longitude };
+}
+
 export const propertyService = {
   /** Every property, or one page of them, newest first, when `page` is given. */
   async getAll(userId: string, page?: { skip: number; take: number }): Promise<Property[]> {
@@ -109,6 +144,14 @@ export const propertyService = {
   ): Promise<Property> {
     await assertOwnsRelations(userId, { buildingId: data.buildingId });
 
+    const existing = await getPrismaClient().property.findUnique({
+      where: { id, userId },
+      select: ADDRESS_SELECT,
+    });
+    const coordinates = existing
+      ? coordinatesAfterEdit(existing, data)
+      : { latitude: data.latitude, longitude: data.longitude };
+
     const property = await getPrismaClient().property.update({
       where: { id, userId },
       data: {
@@ -117,8 +160,8 @@ export const propertyService = {
         streetAddress: data.streetAddress,
         city: data.city,
         zipCode: data.zipCode,
-        latitude: data.latitude,
-        longitude: data.longitude,
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
         addressVerified: data.addressVerified,
         buildingId: data.buildingId,
         buildingName: data.buildingName,

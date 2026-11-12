@@ -22,6 +22,12 @@ import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { PortfolioTree } from "./portfolio-tree";
 import { PropertyDetailView } from "./property-detail-view";
 import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
+import dynamic from "next/dynamic";
+
+// Leaflet reads `window` as it loads, and only the desktop workspace shows the map.
+const PortfolioMap = dynamic(() => import("./portfolio-map"), { ssr: false });
 
 export type PropertiesViewProps = {
   onPropertySelect?: (propertyId: string) => void;
@@ -40,7 +46,12 @@ export type PropertiesViewProps = {
    * An owner gets the portfolio summary; a tenant keeps the placeholder, because a summary of
    * a portfolio is not their screen.
    */
-  workspaceDefault?: React.ReactNode;
+  workspaceDefault?: React.ReactNode | ((select: (propertyId: string) => void) => React.ReactNode);
+  /**
+   * Desktop only: the workspace is a map of the properties, with the summary (`workspaceDefault`)
+   * above it and a chosen property's detail laid over it, closable back to the whole map.
+   */
+  map?: boolean;
 };
 
 export type PropertiesViewRef = {
@@ -55,6 +66,7 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
       showPageHeader = true,
       treeActions,
       workspaceDefault,
+      map = false,
     }: PropertiesViewProps,
     ref,
   ): React.ReactElement {
@@ -73,6 +85,7 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
     // The Portfolio commits to the tree + workspace (mockup-faithful) — no view toggle.
     const t = useTranslations("properties");
     const tNav = useTranslations("navigation");
+    const tMap = useTranslations("portfolio.map");
     // The asset whose command workspace is open in the tree split (desktop only).
     const [workspacePropertyId, setWorkspacePropertyId] = useState<string | null>(null);
 
@@ -210,6 +223,41 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
       return () => mql.removeEventListener("change", handleChange);
     }, [workspacePropertyId, openPropertyDetail]);
 
+    const renderDefault = () =>
+      typeof workspaceDefault === "function"
+        ? workspaceDefault(handleTreeSelect)
+        : workspaceDefault;
+
+    const closeWorkspace = useCallback(() => setWorkspacePropertyId(null), []);
+
+    // Escape closes the detail back to the map, unless a dialog opened from it has the key.
+    useEffect(() => {
+      if (!map || !workspacePropertyId) return;
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key !== "Escape" || e.defaultPrevented) return;
+        if (document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')) return;
+        setWorkspacePropertyId(null);
+      };
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }, [map, workspacePropertyId]);
+
+    // The detail panel's width, so the map centres a chosen pin in the part it leaves visible.
+    const [panelWidth, setPanelWidth] = useState(0);
+    const panelObserver = useRef<ResizeObserver | null>(null);
+    const panelRef = useCallback((el: HTMLDivElement | null) => {
+      panelObserver.current?.disconnect();
+      panelObserver.current = null;
+      if (!el || typeof ResizeObserver === "undefined") {
+        setPanelWidth(0);
+        return;
+      }
+      const observer = new ResizeObserver(() => setPanelWidth(el.offsetWidth));
+      observer.observe(el);
+      setPanelWidth(el.offsetWidth);
+      panelObserver.current = observer;
+    }, []);
+
     return (
       <>
         {loading ? (
@@ -226,6 +274,12 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
                   Below lg: rail only — selecting an asset routes to the detail. */}
               <div
                 ref={splitRef}
+                // Read by the rail and, with the map, by the workspace beside it.
+                style={
+                  railHeight === null
+                    ? undefined
+                    : ({ "--rail-height": `${railHeight}px` } as React.CSSProperties)
+                }
                 // The rail track scales with the viewport instead of sitting at a flat
                 // 260px from `lg` to 4K — a tree of nested countries/buildings/properties
                 // is exactly the content that benefits from the width a wide monitor has
@@ -244,11 +298,6 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
                     It stays in flow so the page heading above it and the workspace beside it
                     lay out around it instead of under it. */}
                 <aside
-                  style={
-                    railHeight === null
-                      ? undefined
-                      : ({ "--rail-height": `${railHeight}px` } as React.CSSProperties)
-                  }
                   className={cn(
                     "flex flex-col bg-[var(--color-surface)]",
                     // -ml-8 + the matching width bleed puts the rail's left edge on the
@@ -308,24 +357,63 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
                   </div>
                 </aside>
 
-                <div className="hidden min-w-0 lg:block">
-                  {workspacePropertyId ? (
-                    <div
-                      key={workspacePropertyId}
-                      className="border border-[var(--color-border)] bg-[var(--color-card)] p-4 motion-safe:animate-fade-in lg:p-6"
-                    >
-                      <PropertyDetailView propertyId={workspacePropertyId} />
+                {map ? (
+                  // The workspace runs to the rail's floor, so the map fills the screen beside it.
+                  // One map element throughout: the summary above it comes and goes, and the
+                  // detail lies over it, so choosing a property flies the same map to it.
+                  <div className="hidden min-w-0 lg:flex lg:h-[var(--rail-height,calc(100dvh-9rem))] lg:flex-col lg:gap-4">
+                    {!workspacePropertyId && workspaceDefault && (
+                      <div className="flex-none">{renderDefault()}</div>
+                    )}
+                    <div className="relative min-h-0 flex-1 border border-[var(--color-border)]">
+                      {/* The rail's search narrows the map too. */}
+                      <PortfolioMap
+                        properties={filteredProperties}
+                        selectedId={workspacePropertyId}
+                        onSelect={handleTreeSelect}
+                        coveredRight={workspacePropertyId ? panelWidth + 12 : 0}
+                      />
+                      {workspacePropertyId && (
+                        <div
+                          key={workspacePropertyId}
+                          ref={panelRef}
+                          className="absolute inset-y-3 right-3 z-[600] w-[clamp(560px,62%,880px)] max-w-[calc(100%-1.5rem)] overflow-y-auto border border-[var(--color-border)] bg-[var(--color-card-solid)] p-4 motion-safe:animate-fade-in lg:p-6"
+                        >
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={closeWorkspace}
+                            aria-label={tMap("closeDetail")}
+                            title={tMap("closeDetail")}
+                            className="absolute right-2 top-2 z-10"
+                          >
+                            <X className="size-4" />
+                          </Button>
+                          <PropertyDetailView propertyId={workspacePropertyId} />
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    (workspaceDefault ?? (
-                      <div className="flex min-h-[440px] items-center justify-center border border-dashed border-[var(--color-border)] p-12 text-center">
-                        <p className="mono-label max-w-[26ch] leading-relaxed">
-                          {t("portfolio.selectAsset")}
-                        </p>
+                  </div>
+                ) : (
+                  <div className="hidden min-w-0 lg:block">
+                    {workspacePropertyId ? (
+                      <div
+                        key={workspacePropertyId}
+                        className="border border-[var(--color-border)] bg-[var(--color-card)] p-4 motion-safe:animate-fade-in lg:p-6"
+                      >
+                        <PropertyDetailView propertyId={workspacePropertyId} />
                       </div>
-                    ))
-                  )}
-                </div>
+                    ) : (
+                      (renderDefault() ?? (
+                        <div className="flex min-h-[440px] items-center justify-center border border-dashed border-[var(--color-border)] p-12 text-center">
+                          <p className="mono-label max-w-[26ch] leading-relaxed">
+                            {t("portfolio.selectAsset")}
+                          </p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

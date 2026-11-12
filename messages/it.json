@@ -69,7 +69,16 @@
       "submit": "Crea edificio"
     },
     "importFinancas": "Importa da Finanças",
-    "importFinancasHint": "PDF delle cadernetas"
+    "importFinancasHint": "PDF delle cadernetas",
+    "map": {
+      "label": "Mappa del portafoglio",
+      "zoomIn": "Ingrandisci",
+      "zoomOut": "Riduci",
+      "placing": "Ricerca di {count, plural, one {# immobile} other {# immobili}} sulla mappa…",
+      "unplaced": "{count, plural, one {# immobile} other {# immobili}} non sulla mappa",
+      "unplacedHint": "L'indirizzo non è stato trovato. Modifica l'immobile e scegli l'indirizzo tra i suggerimenti per collocarlo.",
+      "closeDetail": "Chiudi e mostra la mappa"
+    }
   },
   "settings": {
     "title": "Impostazioni",

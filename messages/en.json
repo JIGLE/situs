@@ -69,7 +69,16 @@
       "submit": "Create building"
     },
     "importFinancas": "Import from Finanças",
-    "importFinancasHint": "caderneta PDFs"
+    "importFinancasHint": "caderneta PDFs",
+    "map": {
+      "label": "Map of the portfolio",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "placing": "Finding {count, plural, one {# property} other {# properties}} on the map…",
+      "unplaced": "{count, plural, one {# property} other {# properties}} not on the map",
+      "unplacedHint": "The address was not found. Edit the property and pick the address from the suggestions to place it.",
+      "closeDetail": "Close and show the map"
+    }
   },
   "settings": {
     "title": "Settings",
