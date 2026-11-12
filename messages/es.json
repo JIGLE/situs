@@ -1022,6 +1022,20 @@
         "from": "A partir de la renta que vence en {month}.",
         "closing": "Atentamente,"
       }
+    },
+    "history": {
+      "title": "Alquileres ya recibidos",
+      "description": "Este arrendamiento empezó antes de hoy. Indique desde qué mes Situs sigue el alquiler y marque los movimientos bancarios que fueron alquiler.",
+      "from": "Seguir el alquiler desde",
+      "fromHint": "Los meses antes de {month} cuentan como pagados antes de Situs y nunca se reclaman.",
+      "movements": "Movimientos bancarios que parecen este alquiler",
+      "none": "Ningún movimiento bancario parece este alquiler. Los próximos se asociarán al llegar.",
+      "pays": "paga {month}",
+      "include": "Pago del {date}, {amount}",
+      "unknownPayer": "Ordenante sin nombre",
+      "skip": "Omitir",
+      "save": "Guardar",
+      "saved": "{count, plural, =0 {Seguimiento del alquiler fijado} one {# pago registrado} other {# pagos registrados}}"
     }
   },
   "notifications": {
@@ -1525,7 +1539,8 @@
       "addExpense": "Añadir gasto",
       "manageDocuments": "Gestionar documentos",
       "recordPayment": "Registrar pago",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "delete": "Eliminar"
     },
     "notFound": "Propiedad no encontrada",
     "status": {
@@ -1574,6 +1589,12 @@
       "allocated": "{allocated} de {due} imputados",
       "receipt": "Recibo: {state}",
       "noPeriod": "Sin mes de alquiler"
+    },
+    "deleteOne": {
+      "title": "Eliminar inmueble",
+      "description": "“{name}” se eliminará. Un inmueble con contratos, recibos o gastos no se puede eliminar.",
+      "confirmLabel": "Eliminar",
+      "done": "“{name}” eliminado"
     }
   },
   "notificationCenter": {
@@ -2005,6 +2026,7 @@
     "databaseExport": "Base de datos exportada",
     "settingsChange": "Ajustes cambiados",
     "generateRentPeriods": "Meses de alquiler generados",
+    "settleRentBefore": "Meses anteriores marcados como pagados antes de Situs",
     "allocatePayment": "Pago asignado",
     "reverseAllocation": "Asignación revertida",
     "importBankTransactions": "Movimientos bancarios importados",

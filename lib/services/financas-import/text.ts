@@ -86,6 +86,50 @@ export function titleCase(raw: string | null | undefined): string {
 }
 
 /**
+ * Street types and titles as Portuguese addresses abbreviate them. Words end at a space, not `\b`,
+ * which does not see the end of "Praça" or "Capitão".
+ */
+const ABBREVIATIONS: [RegExp, string][] = [
+  [/^Avenida(?= |$)/, "Av."],
+  [/^Rua(?= |$)/, "R."],
+  [/^Travessa(?= |$)/, "Tv."],
+  [/^Praça(?= |$)/, "Pç."],
+  [/^Praceta(?= |$)/, "Pct."],
+  [/^Largo(?= |$)/, "Lg."],
+  [/^Estrada(?= |$)/, "Estr."],
+  [/^Calçada(?= |$)/, "Cç."],
+  [/^Alameda(?= |$)/, "Al."],
+  [/^Urbanização(?= |$)/, "Urb."],
+  [/^Bairro(?= |$)/, "B."],
+  [/^Quinta(?= |$)/, "Qta."],
+  [/^Rotunda(?= |$)/, "Rot."],
+  [/(?<=^| )Doutora(?= |$)/g, "Dra."],
+  [/(?<=^| )Doutor(?= |$)/g, "Dr."],
+  [/(?<=^| )Professora(?= |$)/g, "Prof.ª"],
+  [/(?<=^| )Professor(?= |$)/g, "Prof."],
+  [/(?<=^| )Engenheiro(?= |$)/g, "Eng."],
+  [/(?<=^| )General(?= |$)/g, "Gen."],
+  [/(?<=^| )Almirante(?= |$)/g, "Alm."],
+  [/(?<=^| )Comandante(?= |$)/g, "Cmdt."],
+  [/(?<=^| )Coronel(?= |$)/g, "Cor."],
+  [/(?<=^| )Capitão(?= |$)/g, "Cap."],
+  [/(?<=^| )Nossa Senhora(?= |$)/g, "N.ª Sr.ª"],
+  [/(?<=^| )Santa(?= |$)/g, "Sta."],
+  [/(?<=^| )Santo(?= |$)/g, "Sto."],
+];
+
+/**
+ * "Rua Capitão Leitão" → "R. Cap. Leitão": a street as an owner writes it on a label, for a
+ * property's short name. The full form stays in the address.
+ */
+export function shortStreet(street: string | null | undefined): string {
+  let out = (street ?? "").trim();
+  for (const [pattern, short] of ABBREVIATIONS) out = out.replace(pattern, short);
+  // The street type takes no article after it: "R. de Angola" reads "R. Angola".
+  return out.replace(/^([A-Z][a-zç]{0,4}\.) (?:de|da|do|das|dos) /, "$1 ");
+}
+
+/**
  * A fração or andar as Finanças and an owner may each write it ("2º ES", "2.º Es", "c"), reduced
  * to one comparable form: upper case, no spaces, dots or ordinal marks.
  */

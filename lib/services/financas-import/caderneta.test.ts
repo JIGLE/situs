@@ -21,6 +21,9 @@ const PLOT = `061614 - TABUA - U - 2419 CADERNETA PREDIAL URBANA SERVIÇO DE FIN
 /** A fração autónoma of a building in propriedade horizontal. */
 const FRACTION = `110664 - ARROIOS - U - 1234 - C CADERNETA PREDIAL URBANA SERVIÇO DE FINANÇAS: 3085 - LISBOA-8 IDENTIFICAÇÃO DO PRÉDIO DISTRITO: 11 - LISBOA CONCELHO: 06 - LISBOA FREGUESIA: 64 - ARROIOS ARTIGO MATRICIAL: 1234 NIP: FRACÇÃO: C LOCALIZAÇÃO DO PRÉDIO Av./Rua/Praça: RUA DE ANGOLA Nº: 25 Lugar: Código Postal: 1170-020 LISBOA DESCRIÇÃO DO PRÉDIO Tipo de Prédio: Prédio em Propriedade Horizontal ELEMENTOS DA FRACÇÃO Andar/Divisão: 2º ESQ Afectação: Habitação Nº de pisos da fracção: 1 Tipologia/Divisões: T2 Permilagem: 125,0000 ÁREAS (em m²) Área bruta privativa: 85,0000 m² DADOS DE AVALIAÇÃO Valor patrimonial actual (CIMI): €98.765,43 Determinado no ano: 2024 TITULARES Identificação fiscal: 123456789 Nome: JOSÉ EXEMPLO Morada: RUA Z Tipo de titular: Propriedade plena Parte: 1/1`;
 
+/** A fraction of a large building: the building lists an address per entrance, the fraction its own. */
+const MANY_ADDRESSES = `110508 - CASCAIS E ESTORIL - U - 5151 - D CADERNETA PREDIAL URBANA SERVIÇO DE FINANÇAS: 1503 - CASCAIS-1. IDENTIFICAÇÃO DO PRÉDIO DISTRITO: 11 - LISBOA CONCELHO: 05 - CASCAIS FREGUESIA: 08 - CASCAIS E ESTORIL ARTIGO MATRICIAL: 5151 NIP: Descrito na C.R.P. de : CASCAIS sob o registo nº: 318 LOCALIZAÇÃO DO PRÉDIO Av./Rua/Praça: RUA DE S. JOSÉ PORTA Nº8 Nº: 195 Lugar: FONTAINHAS Código Postal: 2750-134 CASCAIS Av./Rua/Praça: Rua de S.José Bloco 195 4º piso porta 1 Lugar: Cascais Código Postal: 2750-135 CASCAIS DESCRIÇÃO DO PRÉDIO Tipo de Prédio: Prédio em Regime de Prop. Horiz. FRACÇÃO AUTÓNOMA: D LOCALIZAÇÃO DA FRACÇÃO Av./Rua/Praça: RUA S JOSE Nº: 195 Lugar: OUTEIRO DA VELA Código Postal: 2750-077 CASCAIS Andar/Divisão: 2º ESQ ELEMENTOS DA FRACÇÃO Afectação: Habitação Tipologia/Divisões: T2 Permilagem: 4,0000 ÁREAS (em m²) Área bruta privativa: 80,0000 m² TEVE ORIGEM NOS ARTIGOS DISTRITO: 11 - LISBOA Artigo: 4484 Fracção: B TITULARES Identificação fiscal: 123456789 Nome: JOSÉ EXEMPLO Tipo de titular: Propriedade plena Parte: 1/1`;
+
 describe("parseCaderneta", () => {
   it("reads a building with independent units as one unit per andar", () => {
     const parsed = parseCaderneta(MODEL_A);
@@ -107,7 +110,7 @@ describe("cadernetaDrafts", () => {
     const drafts = cadernetaDrafts(parseCaderneta(MODEL_A));
     expect(drafts).toHaveLength(2);
     expect(drafts[0]).toMatchObject({
-      name: "Rua Capitão Leitão 9, LJ B",
+      name: "R. Cap. Leitão 9, LJ B",
       streetAddress: "Rua Capitão Leitão 9",
       city: "Almada",
       zipCode: "2800-051",
@@ -119,9 +122,11 @@ describe("cadernetaDrafts", () => {
     expect(drafts[1].address).toBe("Rua Capitão Leitão 9, 2º ES, 2800-051 Almada");
   });
 
-  it("names a fraction by its street and letter, and a plot as other", () => {
+  it("names a fraction by its street, door and floor, and a plot as other", () => {
     expect(cadernetaDrafts(parseCaderneta(FRACTION))[0]).toMatchObject({
-      name: "Rua de Angola 25, C",
+      name: "R. Angola 25, 2º ESQ",
+      address: "Rua de Angola 25, 2º ESQ, 1170-020 Lisboa",
+      fraction: "C",
       type: "apartment",
       city: "Lisboa",
     });
@@ -132,12 +137,23 @@ describe("cadernetaDrafts", () => {
     });
   });
 
+  it("takes a fraction's own address, not the building's many or the land registry's number", () => {
+    const [draft] = cadernetaDrafts(parseCaderneta(MANY_ADDRESSES));
+    expect(draft).toMatchObject({
+      name: "R. S Jose 195, 2º ESQ",
+      zipCode: "2750-077",
+      city: "Cascais",
+      fraction: "D",
+      bedrooms: 2,
+    });
+  });
+
   it("ends a unit's code at the next label when no location block follows it", () => {
     const parsed = parseCaderneta(
       `${HEADER} IDENTIFICAÇÃO DO PRÉDIO ARTIGO MATRICIAL: 374 NIP: LOCALIZAÇÃO DO PRÉDIO Av./Rua/Praça: RUA A Nº: 9 Código Postal: 2800-051 ALMADA ANDAR OU DIVISÃO COM UTILIZAÇÃO INDEPENDENTE: LJ B Afectação: Comércio Tipologia/Divisões: 1 ANDAR OU DIVISÃO COM UTILIZAÇÃO INDEPENDENTE: 2º ES Afectação: Habitação Tipologia/Divisões: T3 TITULARES Identificação fiscal: 123456789 Nome: JOSÉ EXEMPLO Parte: 1/1`,
     );
     expect(parsed.units.map((u) => u.fraction)).toEqual(["LJ B", "2º ES"]);
-    expect(cadernetaDrafts(parsed).map((d) => d.name)).toEqual(["Rua A 9, LJ B", "Rua A 9, 2º ES"]);
+    expect(cadernetaDrafts(parsed).map((d) => d.name)).toEqual(["R. A 9, LJ B", "R. A 9, 2º ES"]);
   });
 
   it("tells a usufruct from bare ownership", () => {

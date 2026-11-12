@@ -48,8 +48,11 @@ import {
 } from "@/lib/services/financas-import/landlords";
 import { cn } from "@/lib/utils/utils";
 import { formatDate } from "@/lib/utils/format-date";
+import { apiFetch } from "@/lib/utils/api-client";
 import { uploadContract } from "./lease-contract";
 import { LeasePartiesEditor, leasePartiesInvalid } from "./lease-parties-editor";
+import { RentHistorySheet } from "./rent-history-sheet";
+import type { RentHistory } from "@/lib/services/leases/rent-history";
 
 /** The person typed in when the tenant is new: what a receipt in Finanças needs, and an email. */
 type NewTenant = {
@@ -159,6 +162,14 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
   // A contract proof from the Portal das Finanças the sheet was filled in from, and what in it
   // the owner must still check.
   const [readingProof, setReadingProof] = useState(false);
+  // After a new tenancy that began before this month, or that the bank already shows paying: what
+  // was paid before it reached Situs (`RentHistorySheet`).
+  const [history, setHistory] = useState<{
+    leaseId: string;
+    rent: number;
+    data: RentHistory;
+  } | null>(null);
+
   const [proof, setProof] = useState<
     | {
         number: string | null;
@@ -374,6 +385,17 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
       // The tenant's property, rent and dates are read from the lease, so read them again.
       await refreshData();
       success(lease ? t("toast.updated") : t("sheet.created"));
+      if (!lease) {
+        try {
+          const data = await apiFetch<RentHistory>(`/api/leases/${saved.id}/rent-history`);
+          const thisMonth = new Date().toISOString().slice(0, 7);
+          if (data.startMonth < thisMonth || data.suggestions.length > 0) {
+            setHistory({ leaseId: saved.id, rent: saved.monthlyRent, data });
+          }
+        } catch {
+          // Only a help: the tenancy is saved, and its months can be settled from the ledger.
+        }
+      }
       onOpenChange(false);
     } catch (err) {
       // The app's actions report their own failures; saying so again would be a second toast.
@@ -388,407 +410,422 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
   const invalid = (key: FieldError) => (errors[key] !== undefined ? "border-destructive" : "");
 
   return (
-    <Sheet open={open} onOpenChange={(next) => !submitting && onOpenChange(next)}>
-      <SheetContent side="center" className="md:max-w-2xl">
-        <SheetHeader className="pr-14">
-          <SheetTitle>{editing ? t("dialogEditTitle") : t("sheet.title")}</SheetTitle>
-          <SheetDescription>
-            {editing ? t("dialogEditDescription") : t("sheet.description")}
-          </SheetDescription>
-        </SheetHeader>
+    <>
+      <RentHistorySheet
+        leaseId={history?.leaseId ?? null}
+        monthlyRent={history?.rent ?? 0}
+        history={history?.data ?? null}
+        onClose={() => setHistory(null)}
+      />
+      <Sheet open={open} onOpenChange={(next) => !submitting && onOpenChange(next)}>
+        <SheetContent side="center" className="md:max-w-2xl">
+          <SheetHeader className="pr-14">
+            <SheetTitle>{editing ? t("dialogEditTitle") : t("sheet.title")}</SheetTitle>
+            <SheetDescription>
+              {editing ? t("dialogEditDescription") : t("sheet.description")}
+            </SheetDescription>
+          </SheetHeader>
 
-        <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
-            {/* From Finanças: a registered contract's proof fills in what follows */}
-            {!editing && (
-              <section className="space-y-2">
-                <Input
-                  id="tenancy-proof"
-                  type="file"
-                  accept=".pdf,application/pdf"
-                  onChange={handleProof}
-                  className="hidden"
-                  disabled={readingProof || submitting}
-                />
-                <Label
-                  htmlFor="tenancy-proof"
-                  className="flex min-h-11 cursor-pointer items-center gap-2 border border-dashed border-[var(--color-border)] px-4 py-2 text-sm transition-colors hover:bg-[var(--color-surface-hover)]"
-                >
-                  <FileUp className="h-4 w-4 shrink-0" />
-                  <span className="min-w-0">
-                    <span className="block">
-                      {readingProof ? tImport("reading") : tImport("fill")}
-                    </span>
-                    {!proof && (
-                      <span className="block text-xs text-[var(--color-muted-foreground)]">
-                        {tImport("hint")}
+          <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
+              {/* From Finanças: a registered contract's proof fills in what follows */}
+              {!editing && (
+                <section className="space-y-2">
+                  <Input
+                    id="tenancy-proof"
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={handleProof}
+                    className="hidden"
+                    disabled={readingProof || submitting}
+                  />
+                  <Label
+                    htmlFor="tenancy-proof"
+                    className="flex min-h-11 cursor-pointer items-center gap-2 border border-dashed border-[var(--color-border)] px-4 py-2 text-sm transition-colors hover:bg-[var(--color-surface-hover)]"
+                  >
+                    <FileUp className="h-4 w-4 shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block">
+                        {readingProof ? tImport("reading") : tImport("fill")}
                       </span>
-                    )}
-                  </span>
-                </Label>
-                {proof && "failed" in proof && (
-                  <p className="text-sm text-destructive" role="alert">
-                    {tImport("failed")}
-                  </p>
-                )}
-                {proof && !("failed" in proof) && (
-                  <div className="space-y-1 text-sm" aria-live="polite">
-                    <p>
-                      {proof.number
-                        ? tImport("filled", { number: proof.number })
-                        : tImport("filledNoNumber")}
+                      {!proof && (
+                        <span className="block text-xs text-[var(--color-muted-foreground)]">
+                          {tImport("hint")}
+                        </span>
+                      )}
+                    </span>
+                  </Label>
+                  {proof && "failed" in proof && (
+                    <p className="text-sm text-destructive" role="alert">
+                      {tImport("failed")}
                     </p>
-                    {proof.shares.length > 0 && (
-                      <p className="text-[var(--color-muted-foreground)]">
-                        {form.propertyId && hasOwners(state.owners, form.propertyId)
-                          ? tImport("landlordsKept")
-                          : tImport("landlords", { list: describeShares(proof.shares, locale) })}
+                  )}
+                  {proof && !("failed" in proof) && (
+                    <div className="space-y-1 text-sm" aria-live="polite">
+                      <p>
+                        {proof.number
+                          ? tImport("filled", { number: proof.number })
+                          : tImport("filledNoNumber")}
                       </p>
-                    )}
-                    {proof.warnings.length > 0 && (
-                      <ul className="list-disc space-y-1 pl-5 text-[var(--color-warning)]">
-                        {proof.warnings.map((warning) => (
-                          <li key={warning}>
-                            {tImport(`warning.${warning}`, {
-                              article: proof.article || "?",
-                              fraction: proof.fraction || "-",
-                              date: formatDate(proof.endDate, locale),
-                            })}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                )}
-              </section>
-            )}
-
-            {/* Property */}
-            <section className="space-y-2">
-              <Label htmlFor="tenancy-property">{t("field.property")}</Label>
-              {properties.length === 0 ? (
-                <div className="border border-[var(--color-border)] bg-[var(--color-surface-hover)] p-4 text-center">
-                  <p className="mb-2 text-sm text-[var(--color-muted-foreground)]">
-                    {t("selectProperty.noneFound")}
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => router.push("/portfolio")}
-                  >
-                    <Plus className="mr-2 h-4 w-4" /> {t("goToPortfolio")}
-                  </Button>
-                </div>
-              ) : (
-                <Select
-                  value={form.propertyId}
-                  onValueChange={(value) =>
-                    update({
-                      propertyId: value,
-                      ...onPropertyChosen(form, properties.find((p) => p.id === value)?.rent),
-                    })
-                  }
-                >
-                  <SelectTrigger id="tenancy-property" className={invalid("propertyId")}>
-                    <SelectValue placeholder={t("selectProperty.placeholder")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {properties.map((property) => (
-                      <SelectItem key={property.id} value={property.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{property.name}</span>
-                          <span className="text-xs text-[var(--color-muted-foreground)]">
-                            {property.address}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      {proof.shares.length > 0 && (
+                        <p className="text-[var(--color-muted-foreground)]">
+                          {form.propertyId && hasOwners(state.owners, form.propertyId)
+                            ? tImport("landlordsKept")
+                            : tImport("landlords", { list: describeShares(proof.shares, locale) })}
+                        </p>
+                      )}
+                      {proof.warnings.length > 0 && (
+                        <ul className="list-disc space-y-1 pl-5 text-[var(--color-warning)]">
+                          {proof.warnings.map((warning) => (
+                            <li key={warning}>
+                              {tImport(`warning.${warning}`, {
+                                article: proof.article || "?",
+                                fraction: proof.fraction || "-",
+                                date: formatDate(proof.endDate, locale),
+                              })}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </section>
               )}
-              {fieldError("propertyId")}
-            </section>
 
-            {/* Tenant: typed in here, or picked from the list */}
-            <section className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Label htmlFor={tenantMode === "new" ? "tenancy-name" : "tenancy-tenant"}>
-                  {t("field.tenant")}
-                </Label>
-                {!editing && tenants.length > 0 && (
-                  <Button
-                    type="button"
-                    variant="link"
-                    size="sm"
-                    className="h-auto px-0"
-                    onClick={() => {
-                      setTenantMode(tenantMode === "new" ? "existing" : "new");
-                      setErrors({});
-                    }}
-                  >
-                    {tenantMode === "new" ? t("sheet.pickExisting") : t("sheet.typeNew")}
-                  </Button>
-                )}
-              </div>
-
-              {tenantMode === "existing" ? (
-                <>
+              {/* Property */}
+              <section className="space-y-2">
+                <Label htmlFor="tenancy-property">{t("field.property")}</Label>
+                {properties.length === 0 ? (
+                  <div className="border border-[var(--color-border)] bg-[var(--color-surface-hover)] p-4 text-center">
+                    <p className="mb-2 text-sm text-[var(--color-muted-foreground)]">
+                      {t("selectProperty.noneFound")}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push("/portfolio")}
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> {t("goToPortfolio")}
+                    </Button>
+                  </div>
+                ) : (
                   <Select
-                    value={form.tenantId}
-                    onValueChange={(value) => update({ tenantId: value })}
+                    value={form.propertyId}
+                    onValueChange={(value) =>
+                      update({
+                        propertyId: value,
+                        ...onPropertyChosen(form, properties.find((p) => p.id === value)?.rent),
+                      })
+                    }
                   >
-                    <SelectTrigger id="tenancy-tenant" className={invalid("tenantId")}>
-                      <SelectValue placeholder={t("selectTenant.placeholder")} />
+                    <SelectTrigger id="tenancy-property" className={invalid("propertyId")}>
+                      <SelectValue placeholder={t("selectProperty.placeholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {tenants.map((tenant) => (
-                        <SelectItem key={tenant.id} value={tenant.id}>
+                      {properties.map((property) => (
+                        <SelectItem key={property.id} value={property.id}>
                           <div className="flex flex-col">
-                            <span className="font-medium">{tenant.name}</span>
-                            {tenant.email && (
-                              <span className="text-xs text-[var(--color-muted-foreground)]">
-                                {tenant.email}
-                              </span>
-                            )}
+                            <span className="font-medium">{property.name}</span>
+                            <span className="text-xs text-[var(--color-muted-foreground)]">
+                              {property.address}
+                            </span>
                           </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {fieldError("tenantId")}
-                </>
-              ) : (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Input
-                      id="tenancy-name"
-                      autoComplete="off"
-                      placeholder={t("sheet.namePlaceholder")}
-                      value={newTenant.name}
-                      onChange={(e) => setNewTenant((prev) => ({ ...prev, name: e.target.value }))}
-                      aria-invalid={errors.name !== undefined}
-                      className={invalid("name")}
-                    />
-                    {fieldError("name")}
-                  </div>
-                  <TaxIdentityFields
-                    idPrefix="tenancy"
-                    value={newTenant}
-                    onChange={(change) => setNewTenant((prev) => ({ ...prev, ...change }))}
-                  />
-                  <div className="space-y-2">
-                    <Label htmlFor="tenancy-email">{t("sheet.email")}</Label>
-                    <Input
-                      id="tenancy-email"
-                      type="email"
-                      autoComplete="off"
-                      value={newTenant.email}
-                      onChange={(e) => setNewTenant((prev) => ({ ...prev, email: e.target.value }))}
-                      aria-invalid={errors.email !== undefined}
-                      className={invalid("email")}
-                    />
-                    {fieldError("email")}
-                  </div>
-                </div>
-              )}
-            </section>
-
-            {/* Rent and term, pre-filled */}
-            <section className="space-y-3">
-              <div>
-                <h3 className="text-sm font-medium">{t("sheet.terms")}</h3>
-                {!editing && !proof && (
-                  <p className="text-xs text-[var(--color-muted-foreground)]">
-                    {t("sheet.termsHint")}
-                  </p>
                 )}
-              </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="tenancy-rent">
-                    {t("sheet.rent", { symbol: currencySymbol })}
+                {fieldError("propertyId")}
+              </section>
+
+              {/* Tenant: typed in here, or picked from the list */}
+              <section className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Label htmlFor={tenantMode === "new" ? "tenancy-name" : "tenancy-tenant"}>
+                    {t("field.tenant")}
                   </Label>
-                  <Input
-                    id="tenancy-rent"
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="0.01"
-                    value={form.monthlyRent || ""}
-                    onChange={(e) => update(onRentChanged(form, parseFloat(e.target.value) || 0))}
-                    aria-invalid={errors.monthlyRent !== undefined}
-                    className={invalid("monthlyRent")}
-                  />
-                  {fieldError("monthlyRent")}
+                  {!editing && tenants.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="sm"
+                      className="h-auto px-0"
+                      onClick={() => {
+                        setTenantMode(tenantMode === "new" ? "existing" : "new");
+                        setErrors({});
+                      }}
+                    >
+                      {tenantMode === "new" ? t("sheet.pickExisting") : t("sheet.typeNew")}
+                    </Button>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tenancy-deposit">
-                    {t("sheet.deposit", { symbol: currencySymbol })}
-                  </Label>
-                  <Input
-                    id="tenancy-deposit"
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="0.01"
-                    value={form.deposit || ""}
-                    onChange={(e) => update({ deposit: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tenancy-start">{t("field.startDate")}</Label>
-                  <Input
-                    id="tenancy-start"
-                    type="date"
-                    value={form.startDate}
-                    onChange={(e) => update(onStartChanged(form, e.target.value))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tenancy-end">{t("field.endDate")}</Label>
-                  <Input
-                    id="tenancy-end"
-                    type="date"
-                    value={form.endDate}
-                    onChange={(e) => update({ endDate: e.target.value })}
-                    aria-invalid={errors.endDate !== undefined}
-                    className={invalid("endDate")}
-                  />
-                  {fieldError("endDate")}
-                </div>
-              </div>
-            </section>
 
-            {/* What can wait */}
-            <section className="space-y-4">
-              <button
-                type="button"
-                onClick={() => setShowMore((v) => !v)}
-                aria-expanded={showMore}
-                className="flex min-h-11 w-full items-center justify-between gap-2 border-t border-[var(--color-border)] pt-4 text-left"
-              >
-                <span>
-                  <span className="block text-sm font-medium">{t("sheet.more")}</span>
-                  <span className="block text-xs text-[var(--color-muted-foreground)]">
-                    {t("sheet.moreHint")}
-                  </span>
-                </span>
-                <ChevronDown
-                  className={cn("h-4 w-4 shrink-0 transition-transform", showMore && "rotate-180")}
-                />
-              </button>
-
-              {showMore && (
-                <div className="space-y-6">
-                  <LeasePartiesEditor
-                    parties={form.parties ?? []}
-                    onChange={(parties) => update({ parties })}
-                    error={errors.parties}
-                  />
-
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="atContractNumber">{t("atContract.number")}</Label>
-                        <Input
-                          id="atContractNumber"
-                          inputMode="numeric"
-                          maxLength={20}
-                          value={form.atContractNumber ?? ""}
-                          onChange={(e) => update({ atContractNumber: e.target.value.trim() })}
-                          aria-invalid={errors.atContractNumber !== undefined}
-                          className={invalid("atContractNumber")}
-                        />
-                        {fieldError("atContractNumber")}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="atContractVersion">{t("atContract.version")}</Label>
-                        <Input
-                          id="atContractVersion"
-                          type="number"
-                          min="1"
-                          max="999"
-                          value={form.atContractVersion ?? ""}
-                          onChange={(e) => {
-                            const version = parseInt(e.target.value, 10);
-                            update({ atContractVersion: Number.isNaN(version) ? null : version });
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <p className="text-xs text-[var(--color-muted-foreground)]">
-                      {t("atContract.hint")}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {tenantMode === "existing" ? (
+                  <>
+                    <Select
+                      value={form.tenantId}
+                      onValueChange={(value) => update({ tenantId: value })}
+                    >
+                      <SelectTrigger id="tenancy-tenant" className={invalid("tenantId")}>
+                        <SelectValue placeholder={t("selectTenant.placeholder")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tenants.map((tenant) => (
+                          <SelectItem key={tenant.id} value={tenant.id}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{tenant.name}</span>
+                              {tenant.email && (
+                                <span className="text-xs text-[var(--color-muted-foreground)]">
+                                  {tenant.email}
+                                </span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {fieldError("tenantId")}
+                  </>
+                ) : (
+                  <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="renewalNoticeDays">{t("field.renewalNoticeDays")}</Label>
                       <Input
-                        id="renewalNoticeDays"
-                        type="number"
-                        min="0"
-                        value={form.renewalNoticeDays}
+                        id="tenancy-name"
+                        autoComplete="off"
+                        placeholder={t("sheet.namePlaceholder")}
+                        value={newTenant.name}
                         onChange={(e) =>
-                          update({ renewalNoticeDays: parseInt(e.target.value) || 60 })
+                          setNewTenant((prev) => ({ ...prev, name: e.target.value }))
                         }
+                        aria-invalid={errors.name !== undefined}
+                        className={invalid("name")}
                       />
+                      {fieldError("name")}
                     </div>
+                    <TaxIdentityFields
+                      idPrefix="tenancy"
+                      value={newTenant}
+                      onChange={(change) => setNewTenant((prev) => ({ ...prev, ...change }))}
+                    />
                     <div className="space-y-2">
-                      <Label htmlFor="contractFile">{t("contractPdf")}</Label>
+                      <Label htmlFor="tenancy-email">{t("sheet.email")}</Label>
                       <Input
-                        id="contractFile"
-                        type="file"
-                        accept=".pdf"
-                        onChange={handleFile}
-                        className="hidden"
+                        id="tenancy-email"
+                        type="email"
+                        autoComplete="off"
+                        value={newTenant.email}
+                        onChange={(e) =>
+                          setNewTenant((prev) => ({ ...prev, email: e.target.value }))
+                        }
+                        aria-invalid={errors.email !== undefined}
+                        className={invalid("email")}
                       />
-                      <Label
-                        htmlFor="contractFile"
-                        className="flex min-h-11 cursor-pointer items-center gap-2 border border-[var(--color-border)] bg-[var(--color-secondary)] px-4 py-2 transition-colors hover:bg-[var(--color-surface-hover)]"
-                      >
-                        <Upload className="h-4 w-4 shrink-0" />
-                        <span className="truncate">
-                          {contractFile ? contractFile.name : t("choosePdf")}
-                        </span>
-                      </Label>
+                      {fieldError("email")}
+                    </div>
+                  </div>
+                )}
+              </section>
+
+              {/* Rent and term, pre-filled */}
+              <section className="space-y-3">
+                <div>
+                  <h3 className="text-sm font-medium">{t("sheet.terms")}</h3>
+                  {!editing && !proof && (
+                    <p className="text-xs text-[var(--color-muted-foreground)]">
+                      {t("sheet.termsHint")}
+                    </p>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="tenancy-rent">
+                      {t("sheet.rent", { symbol: currencySymbol })}
+                    </Label>
+                    <Input
+                      id="tenancy-rent"
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      step="0.01"
+                      value={form.monthlyRent || ""}
+                      onChange={(e) => update(onRentChanged(form, parseFloat(e.target.value) || 0))}
+                      aria-invalid={errors.monthlyRent !== undefined}
+                      className={invalid("monthlyRent")}
+                    />
+                    {fieldError("monthlyRent")}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tenancy-deposit">
+                      {t("sheet.deposit", { symbol: currencySymbol })}
+                    </Label>
+                    <Input
+                      id="tenancy-deposit"
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      step="0.01"
+                      value={form.deposit || ""}
+                      onChange={(e) => update({ deposit: parseFloat(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tenancy-start">{t("field.startDate")}</Label>
+                    <Input
+                      id="tenancy-start"
+                      type="date"
+                      value={form.startDate}
+                      onChange={(e) => update(onStartChanged(form, e.target.value))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tenancy-end">{t("field.endDate")}</Label>
+                    <Input
+                      id="tenancy-end"
+                      type="date"
+                      value={form.endDate}
+                      onChange={(e) => update({ endDate: e.target.value })}
+                      aria-invalid={errors.endDate !== undefined}
+                      className={invalid("endDate")}
+                    />
+                    {fieldError("endDate")}
+                  </div>
+                </div>
+              </section>
+
+              {/* What can wait */}
+              <section className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setShowMore((v) => !v)}
+                  aria-expanded={showMore}
+                  className="flex min-h-11 w-full items-center justify-between gap-2 border-t border-[var(--color-border)] pt-4 text-left"
+                >
+                  <span>
+                    <span className="block text-sm font-medium">{t("sheet.more")}</span>
+                    <span className="block text-xs text-[var(--color-muted-foreground)]">
+                      {t("sheet.moreHint")}
+                    </span>
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 shrink-0 transition-transform",
+                      showMore && "rotate-180",
+                    )}
+                  />
+                </button>
+
+                {showMore && (
+                  <div className="space-y-6">
+                    <LeasePartiesEditor
+                      parties={form.parties ?? []}
+                      onChange={(parties) => update({ parties })}
+                      error={errors.parties}
+                    />
+
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="atContractNumber">{t("atContract.number")}</Label>
+                          <Input
+                            id="atContractNumber"
+                            inputMode="numeric"
+                            maxLength={20}
+                            value={form.atContractNumber ?? ""}
+                            onChange={(e) => update({ atContractNumber: e.target.value.trim() })}
+                            aria-invalid={errors.atContractNumber !== undefined}
+                            className={invalid("atContractNumber")}
+                          />
+                          {fieldError("atContractNumber")}
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="atContractVersion">{t("atContract.version")}</Label>
+                          <Input
+                            id="atContractVersion"
+                            type="number"
+                            min="1"
+                            max="999"
+                            value={form.atContractVersion ?? ""}
+                            onChange={(e) => {
+                              const version = parseInt(e.target.value, 10);
+                              update({ atContractVersion: Number.isNaN(version) ? null : version });
+                            }}
+                          />
+                        </div>
+                      </div>
                       <p className="text-xs text-[var(--color-muted-foreground)]">
-                        {t("maxFileSize", { size: MAX_CONTRACT_MB })}
+                        {t("atContract.hint")}
                       </p>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">{t("additionalNotes")}</Label>
-                    <Textarea
-                      id="notes"
-                      value={form.notes}
-                      onChange={(e) => update({ notes: e.target.value })}
-                      placeholder={t("notesPlaceholder")}
-                      rows={4}
-                    />
-                  </div>
-                </div>
-              )}
-            </section>
-          </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="renewalNoticeDays">{t("field.renewalNoticeDays")}</Label>
+                        <Input
+                          id="renewalNoticeDays"
+                          type="number"
+                          min="0"
+                          value={form.renewalNoticeDays}
+                          onChange={(e) =>
+                            update({ renewalNoticeDays: parseInt(e.target.value) || 60 })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="contractFile">{t("contractPdf")}</Label>
+                        <Input
+                          id="contractFile"
+                          type="file"
+                          accept=".pdf"
+                          onChange={handleFile}
+                          className="hidden"
+                        />
+                        <Label
+                          htmlFor="contractFile"
+                          className="flex min-h-11 cursor-pointer items-center gap-2 border border-[var(--color-border)] bg-[var(--color-secondary)] px-4 py-2 transition-colors hover:bg-[var(--color-surface-hover)]"
+                        >
+                          <Upload className="h-4 w-4 shrink-0" />
+                          <span className="truncate">
+                            {contractFile ? contractFile.name : t("choosePdf")}
+                          </span>
+                        </Label>
+                        <p className="text-xs text-[var(--color-muted-foreground)]">
+                          {t("maxFileSize", { size: MAX_CONTRACT_MB })}
+                        </p>
+                      </div>
+                    </div>
 
-          <div className="flex justify-end gap-2 border-t border-[var(--color-border)] px-6 py-4">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={submitting}
-              onClick={() => onOpenChange(false)}
-            >
-              {tActions("cancel")}
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              {editing ? t("submitUpdate") : t("sheet.submit")}
-            </Button>
-          </div>
-        </form>
-      </SheetContent>
-    </Sheet>
+                    <div className="space-y-2">
+                      <Label htmlFor="notes">{t("additionalNotes")}</Label>
+                      <Textarea
+                        id="notes"
+                        value={form.notes}
+                        onChange={(e) => update({ notes: e.target.value })}
+                        placeholder={t("notesPlaceholder")}
+                        rows={4}
+                      />
+                    </div>
+                  </div>
+                )}
+              </section>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-[var(--color-border)] px-6 py-4">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={submitting}
+                onClick={() => onOpenChange(false)}
+              >
+                {tActions("cancel")}
+              </Button>
+              <Button type="submit" disabled={submitting}>
+                {editing ? t("submitUpdate") : t("sheet.submit")}
+              </Button>
+            </div>
+          </form>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

@@ -30,28 +30,24 @@ const AnimatedToast = ({
         return {
           icon: CheckCircle,
           bgColor: "var(--color-success)",
-          textColor: "var(--color-success-foreground)",
           duration: 4000,
         };
       case "error":
         return {
           icon: XCircle,
           bgColor: "var(--color-destructive)",
-          textColor: "var(--color-destructive-foreground)",
-          duration: 5000,
+          duration: 8000,
         };
       case "warning":
         return {
           icon: AlertTriangle,
           bgColor: "var(--color-warning)",
-          textColor: "var(--color-warning-foreground)",
           duration: 4500,
         };
       default:
         return {
           icon: Info,
           bgColor: "var(--color-info)",
-          textColor: "var(--color-info-foreground)",
           duration: 4000,
         };
     }
@@ -74,12 +70,16 @@ const AnimatedToast = ({
           stiffness: 300,
           damping: 30,
         }}
-        className="relative overflow-hidden rounded-lg border shadow-lg backdrop-blur-sm"
+        className="relative max-w-[min(28rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-l-4 shadow-lg"
+        // A solid card tinted with the tone, and the page's own text colour. This used to append a
+        // hex alpha to a `var()` ("var(--color-destructive)15"), which is not a colour: the
+        // background dropped out, and white text sat on whatever the page showed behind it.
         style={{
-          backgroundColor: config.bgColor + "15",
-          borderColor: config.bgColor + "30",
-          color: config.textColor,
-          minWidth: "320px",
+          backgroundColor: `color-mix(in srgb, ${config.bgColor} 10%, var(--color-card-solid))`,
+          borderColor: `color-mix(in srgb, ${config.bgColor} 35%, var(--color-border))`,
+          borderLeftColor: config.bgColor,
+          color: "var(--color-foreground)",
+          minWidth: "min(320px, calc(100vw - 2rem))",
         }}
       >
         {/* Progress bar */}
@@ -98,11 +98,12 @@ const AnimatedToast = ({
             animate={{ scale: 1 }}
             transition={{ delay: 0.1, type: "spring" }}
             aria-hidden="true"
+            style={{ color: config.bgColor }}
           >
             <Icon className="h-5 w-5 flex-shrink-0" />
           </motion.div>
 
-          <div className="flex-1 text-sm font-medium leading-tight">{message}</div>
+          <div className="flex-1 text-sm font-medium leading-snug">{message}</div>
 
           {/* The dismiss glyph carries no box of its own, so it measured 9×26 — the single
               worst touch target in the app, and the most frequent, since a toast can appear
@@ -120,14 +121,6 @@ const AnimatedToast = ({
             ×
           </motion.button>
         </div>
-
-        {/* Subtle glow effect */}
-        <div
-          className="absolute inset-0 rounded-lg opacity-20"
-          style={{
-            background: `linear-gradient(135deg, ${config.bgColor}20, transparent)`,
-          }}
-        />
       </motion.div>
     </AnimatePresence>
   );
@@ -143,8 +136,9 @@ export function ToastProvider({ children }: { children: ReactNode }): React.Reac
   );
   const error = useCallback(
     (message: string) =>
+      // An error is a sentence to read and act on: it stays longer than a confirmation.
       toast.custom((t) => <AnimatedToast t={t} message={message} type="error" />, {
-        duration: 5000,
+        duration: 8000,
       }),
     [],
   );
