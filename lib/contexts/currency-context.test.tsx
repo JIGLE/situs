@@ -9,8 +9,8 @@ describe("useCurrency", () => {
     const { formatCurrency, currencySymbol } = useCurrency();
 
     expect(currencySymbol).toBe("€");
-    expect(formatCurrency(1234.5)).toBe("€1234,50");
-    expect(formatCurrency(0)).toBe("€0,00");
+    expect(formatCurrency(1234.5)).toBe("1234,50\u00A0€");
+    expect(formatCurrency(0)).toBe("0,00\u00A0€");
   });
 
   it("shows a dash when there is no amount", () => {

@@ -88,7 +88,7 @@ describe("HomeInbox", () => {
     movements = [movement()];
     const { user, onChanged } = show();
 
-    expect(await screen.findByText(/850,00 de J\. SILVA$/)).toBeInTheDocument();
+    expect(await screen.findByText(/850,00 € de J\. SILVA$/)).toBeInTheDocument();
     expect(screen.getByText(/Ana Martínez · Rua Augusta 12/)).toBeInTheDocument();
     movements = [];
     await user.click(screen.getByRole("button", { name: bank.confirm }));

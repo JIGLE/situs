@@ -38,6 +38,7 @@ import { getPrismaClient } from "@/lib/services/database/database";
 import type { RentPeriodStatus } from "@/lib/services/allocation/types";
 import { logger } from "@/lib/utils/logger";
 import { MONEY_EPSILON } from "@/lib/utils/money";
+import { formatEuro } from "@/lib/utils/currency";
 import { sendReminderEmail, resetReminderEmailCache } from "./reminder-email";
 
 /** A receipt the owner has issued: it left draft and review, and was not voided. */
@@ -119,7 +120,7 @@ async function generateRentReminders(prisma: ReturnType<typeof getPrismaClient>)
     const tenantName = period.tenant?.name ?? "Tenant";
     const propertyAddr = period.property?.address ?? "Property";
 
-    const amount = `€${owed.toFixed(2)}`;
+    const amount = formatEuro(owed);
     const date = period.dueDate.toLocaleDateString("pt-PT");
 
     await prisma.notification.create({
@@ -193,7 +194,7 @@ async function generateOverdueNotices(prisma: ReturnType<typeof getPrismaClient>
     const tenantName = period.tenant?.name ?? "Tenant";
     const propertyAddr = period.property?.address ?? "Property";
 
-    const amount = `€${owed.toFixed(2)}`;
+    const amount = formatEuro(owed);
 
     await prisma.notification.create({
       data: {
@@ -342,7 +343,7 @@ async function generateReceiptDeadlineReminders(
     const tenantName = period.tenant?.name ?? "Tenant";
     const propertyAddr = period.property.address ?? "Property";
 
-    const amount = `€${allocation.amount.toFixed(2)}`;
+    const amount = formatEuro(allocation.amount);
 
     await prisma.notification.create({
       data: {

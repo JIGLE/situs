@@ -11,11 +11,11 @@ import {
 
 describe("formatMovementAmount", () => {
   it("writes euros as the rest of the app does", () => {
-    expect(formatMovementAmount(850, "EUR")).toBe("€850,00");
+    expect(formatMovementAmount(850, "EUR")).toBe("850,00\u00A0€");
   });
 
   it("marks money going out with a minus before the sign", () => {
-    expect(formatMovementAmount(-42.5, "EUR")).toBe("−€42,50");
+    expect(formatMovementAmount(-42.5, "EUR")).toBe("−42,50\u00A0€");
   });
 
   it("shows another currency by its code rather than as euros", () => {

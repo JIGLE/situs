@@ -1,3 +1,5 @@
+import { withEuroSign } from "@/lib/utils/currency";
+
 /**
  * The bank inbox's filters, and the counts behind them. Shared by the inbox, the Finance tab
  * badge, the dashboard and `GET /api/bank/transactions/summary`, so the number on the badge is
@@ -49,14 +51,14 @@ const DIGITS = new Intl.NumberFormat("pt-PT", {
 });
 
 /**
- * A movement's amount in the app's money format: "€850,00", or "−€850,00" for money going out.
+ * A movement's amount in the app's money format: "850,00 €", or "−850,00 €" for money going out.
  * `currency` is kept per movement because an account's currency is the bank's to say, so any
  * other currency is shown by its code rather than dressed as euros.
  */
 export function formatMovementAmount(amount: number, currency: string): string {
   const sign = amount < 0 ? "−" : "";
   const digits = DIGITS.format(Math.abs(amount));
-  return currency === "EUR" ? `${sign}€${digits}` : `${sign}${digits} ${currency}`;
+  return currency === "EUR" ? `${sign}${withEuroSign(digits)}` : `${sign}${digits} ${currency}`;
 }
 
 /** Whole days from `now` until `date`, rounded up; negative once it has passed. */
