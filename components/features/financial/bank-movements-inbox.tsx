@@ -532,8 +532,9 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
             {
               key: "booked",
               header: t("booked"),
+              headerClassName: "whitespace-nowrap",
               cell: (row) => formatDate(row.bookingDate, locale),
-              cellClassName: "text-xs tabular-nums",
+              cellClassName: "whitespace-nowrap text-xs tabular-nums",
             },
             {
               key: "counterparty",

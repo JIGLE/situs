@@ -243,7 +243,8 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
     <>
       <div className="space-y-4">
         {/* ── Zone 1: Header + Status ─────────────────────────────────── */}
-        <div className="flex flex-col space-y-2 text-left">
+        {/* `pr-8` keeps the status marks clear of the dialog's close button in the corner. */}
+        <div className="flex flex-col space-y-2 pr-8 text-left">
           <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-primary/20 ring-1 ring-accent-primary/30">

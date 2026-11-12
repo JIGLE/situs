@@ -224,7 +224,7 @@ export function OverviewView({
       {month ? (
         // Two columns on a wide screen: this month and what waits on the left, who is late and
         // what comes next on the right. One column, in that order, on a phone.
-        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <div className="grid items-start gap-5 xl:grid-cols-2 2xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <div className="min-w-0 space-y-5">
             {/* The label follows the choice at once; the rows follow when the month arrives. */}
             <MonthBlock

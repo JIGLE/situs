@@ -243,18 +243,20 @@ export function SettingsView(): React.ReactElement {
           className={cn(
             "min-w-0 space-y-6",
             // Forms stay near their labels; Administration's panels sit side by side, so it
-            // takes the column's width.
+            // takes the column's width. On a wide screen Account's two panels do too, rather than
+            // leaving half the screen empty beside one column of forms.
             visibleSection !== "system" && "max-w-3xl",
+            visibleSection === "account" && "2xl:max-w-none",
             activeSection === null && "max-md:hidden",
           )}
         >
           {/* On a phone the open section names itself, since the list that named it is gone. */}
           <h2 className="text-lg font-semibold md:hidden">{t(visibleSection)}</h2>
           {visibleSection === "account" && (
-            <>
+            <div className="grid items-start gap-6 2xl:grid-cols-2">
               <SettingsAccount settings={settings} updateSetting={updateSetting} />
               <SettingsAppearance settings={settings} updateSetting={updateSetting} />
-            </>
+            </div>
           )}
           {visibleSection === "security" && <SettingsSecurity />}
           {visibleSection === "notifications" && (
