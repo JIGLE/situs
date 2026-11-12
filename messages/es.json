@@ -2191,7 +2191,7 @@
         "duplicate": "Ya registrado: nada cambia",
         "noMonth": "Este contrato no tiene renta en {month}. Elija otro mes u otro contrato.",
         "chosen": "Se registrará en {month}",
-        "paid": "{month} ya está pagado: nada cambia"
+        "paid": "Ya pagado en {month}: nada cambia"
       }
     }
   }

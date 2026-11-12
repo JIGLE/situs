@@ -236,7 +236,12 @@ export function ReceiptUploadSheet({
     return { text: t("outcome.chosen", { month }), tone: "plain" };
   };
 
-  const pending = rows.some((row) => !row.done);
+  // A recibo already on file, or for a month already paid, leaves nothing to do.
+  const settled = (row: Row) => {
+    const outcome = outcomeOf(row);
+    return Boolean(row.done) || outcome === "duplicate" || outcome === "paid";
+  };
+  const pending = rows.some((row) => !settled(row));
   const allDone = rows.length > 0 && !pending;
 
   return (
