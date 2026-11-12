@@ -247,7 +247,8 @@ e2e/                    # Playwright E2E tests
   (`lib/services/financas-import/`, pure readers over `unpdf`'s text; `POST /api/financas-import`
   reads and stores nothing). Cadernetas prediais become properties the owner ticks in Portfolio ›
   New asset › Import from Finanças; a contract proof fills the New tenancy sheet, which saves as
-  usual. A value is read from its label to the next known label, never to a line end, and the
+  usual. The filled Modelo 2 form draws its values after all its labels, so it is read by position
+  (`contract-form.ts`, over `readPdf`'s items), not as text. A value is read from its label to the next known label, never to a line end, and the
   readers' regexes avoid nested quantifiers (`security/detect-unsafe-regex`): write `(?:x|)`, not
   `(?:x ?y)?`.
 - **Alert generation**: `lib/services/notifications/notification-automation.ts` reads the rent

@@ -77,6 +77,8 @@ describe("tenancyFromContract", () => {
     );
     expect(result.propertyId).toBeNull();
     expect(result.tenant).toBeNull();
+    // The lapsed term is quoted by the warning, not filled in as the tenancy's end.
+    expect(result.endDate).toBeNull();
     expect(result.warnings).toEqual([
       "property_not_found",
       "no_tenant",
