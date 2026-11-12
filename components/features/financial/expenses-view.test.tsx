@@ -27,6 +27,14 @@ vi.mock("@/lib/contexts/app-context", () => ({
     deleteExpense: app.deleteExpense,
   }),
 }));
+const { reader } = vi.hoisted(() => ({
+  reader: {
+    readInvoiceFile: vi.fn(),
+    uploadInvoice: vi.fn(async () => "doc-1"),
+  },
+}));
+vi.mock("./invoice-reader", () => reader);
+
 vi.mock("@/lib/contexts/currency-context", () => ({
   useCurrency: () => ({ formatCurrency: (n: number) => `${n} €`, currencySymbol: "€" }),
 }));
@@ -264,5 +272,78 @@ describe("ExpensesView", () => {
         }),
       ),
     );
+  });
+
+  it("reads invoices one by one, saving each with its file only once confirmed", async () => {
+    app.expenses = [
+      expense({
+        id: "old",
+        vendorVat: "509876543",
+        vendorName: "Condomínio Rua Augusta",
+        amount: 45,
+      }),
+    ];
+    reader.readInvoiceFile
+      .mockResolvedValueOnce({
+        fields: { supplierNif: "509876543", date: `${YEAR}-11-05`, total: 45, source: "qr" },
+        upload: { blob: new Blob(["a"]), mimeType: "image/jpeg", name: "condominio.jpg" },
+      })
+      .mockResolvedValueOnce({
+        fields: null,
+        upload: { blob: new Blob(["b"]), mimeType: "application/pdf", name: "scan.pdf" },
+      });
+    const user = userEvent.setup();
+    renderWithProviders(<ExpensesView />, { initialLocale: "pt" });
+
+    await user.upload(screen.getByLabelText(fin.invoice.readButton), [
+      new File(["a"], "condominio.jpg", { type: "image/jpeg" }),
+      new File(["b"], "scan.pdf", { type: "application/pdf" }),
+    ]);
+
+    const first = await screen.findByRole("dialog", { name: fin.recordExpense });
+    expect(first).toHaveTextContent("Fatura 1 de 2 · condominio.jpg");
+    expect(first).toHaveTextContent(fin.invoice.readQr);
+    expect(screen.getByLabelText(/Valor/)).toHaveValue("45,00");
+    expect(reader.uploadInvoice).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: fin.expenseForm.submit }));
+    await waitFor(() =>
+      expect(app.addExpense).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 45,
+          date: `${YEAR}-11-05`,
+          vendorVat: "509876543",
+          vendorName: "Condomínio Rua Augusta",
+          category: "condominium_fees",
+          propertyId: "prop-1",
+          documentId: "doc-1",
+        }),
+      ),
+    );
+
+    // The second could not be read: the owner types it, and it stays attached.
+    const second = await screen.findByText(/Fatura 2 de 2 · scan.pdf/);
+    expect(second.closest("[role=dialog]")).toHaveTextContent(fin.invoice.unread);
+    expect(screen.queryByRole("button", { name: fin.invoice.skip })).not.toBeInTheDocument();
+  });
+
+  it("leaves an invoice out with Saltar, saving nothing for it", async () => {
+    reader.readInvoiceFile.mockImplementation(async (file: File) => ({
+      fields: { total: 10, source: "text" },
+      upload: { blob: file, mimeType: "application/pdf", name: file.name },
+    }));
+    const user = userEvent.setup();
+    renderWithProviders(<ExpensesView />, { initialLocale: "pt" });
+
+    await user.upload(screen.getByLabelText(fin.invoice.readButton), [
+      new File(["a"], "a.pdf", { type: "application/pdf" }),
+      new File(["b"], "b.pdf", { type: "application/pdf" }),
+    ]);
+    await screen.findByText(/Fatura 1 de 2 · a.pdf/);
+    await user.click(screen.getByRole("button", { name: fin.invoice.skip }));
+
+    await screen.findByText(/Fatura 2 de 2 · b.pdf/);
+    expect(app.addExpense).not.toHaveBeenCalled();
+    expect(reader.uploadInvoice).not.toHaveBeenCalled();
   });
 });

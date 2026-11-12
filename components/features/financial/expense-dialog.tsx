@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Trash2 } from "lucide-react";
+import { FileText, Paperclip, ScanLine, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
@@ -39,7 +39,9 @@ import {
   frequentCategories,
 } from "@/lib/utils/expense-labels";
 import { formatDate } from "@/lib/utils/format-date";
+import { rememberedSupplier, type InvoiceFields } from "@/lib/utils/invoice-read";
 import { parseAmountInput } from "@/lib/utils/money";
+import { readInvoiceFile, uploadInvoice, type InvoiceRead } from "./invoice-reader";
 import {
   isDefaultDeductible,
   RECURRENCE_RULES,
@@ -47,10 +49,51 @@ import {
   type ExpenseFormData,
 } from "@/lib/schemas/expense.schema";
 
+/** The invoice the open form came from, or that the owner attached to it. */
+export interface PendingInvoice extends InvoiceRead {
+  /** Its place in the files picked together: "2 of 3". */
+  position: number;
+  count: number;
+}
+
 export type ExpenseDialogState = UseFormDialogReturn<ExpenseFormData, Expense> & {
   /** Opens the form on a recorded expense, to change or delete it. */
   openExpense: (expense: Expense) => void;
+  /**
+   * Reads each invoice in turn and opens the form filled from it. Nothing is saved until the
+   * owner checks it and presses Guardar, which keeps the file with the expense and opens the
+   * next; Saltar leaves one out, closing the form stops.
+   */
+  readInvoices: (files: File[]) => void;
+  /** Keeps a file with the expense on the form, without changing what was typed. */
+  attachInvoice: (file: File) => void;
+  skipInvoice: () => void;
+  invoice: PendingInvoice | null;
+  /** True while an invoice is being read. */
+  readingInvoice: boolean;
 };
+
+/** The fields an invoice fills in. What it does not say is left as the form had it. */
+function invoicePrefill(
+  fields: InvoiceFields | null,
+  expenses: readonly Expense[],
+  fixedProperty: boolean,
+): Partial<ExpenseFormData> {
+  if (!fields) return {};
+  const known = rememberedSupplier(expenses, fields.supplierNif);
+  const category = known ? expenseCategoryKey(known.category) : undefined;
+  return {
+    ...(fields.total !== undefined ? { amount: fields.total } : {}),
+    ...(fields.date ? { date: fields.date } : {}),
+    ...(fields.supplierNif ? { vendorVat: fields.supplierNif } : {}),
+    ...(fields.documentNumber ? { description: fields.documentNumber } : {}),
+    ...(known?.vendorName ? { vendorName: known.vendorName } : {}),
+    ...(category
+      ? { category, isDeductible: known?.isDeductible ?? isDefaultDeductible(category) }
+      : {}),
+    ...(known && !fixedProperty ? { propertyId: known.propertyId } : {}),
+  };
+}
 
 /** A recorded expense as the form's fields. A category from older data that is not one of
  * today's reads as "other", which the owner can then correct. */
@@ -97,13 +140,24 @@ export function useExpenseDialog(propertyId?: string): ExpenseDialogState {
     }),
     [propertyId],
   );
+  // The invoice on the form, for the submit handler (state below is for the screen).
+  const invoiceRef = useRef<PendingInvoice | null>(null);
+  // Set by a save that came from a batch of invoices, so the next one opens after it.
+  const advanceRef = useRef(false);
+
   const onSubmit = useCallback(
     async (data: ExpenseFormData, isEdit: boolean) => {
+      const property = propertyId ?? data.propertyId;
+      // The file is sent only now, once the owner has checked the expense it backs.
+      const pending = invoiceRef.current;
+      const documentId = pending ? await uploadInvoice(pending.upload, property) : undefined;
+      const withDocument = documentId ? { ...data, documentId } : data;
       if (isEdit && editingId.current) {
-        await updateExpense(editingId.current, data);
-        return;
+        await updateExpense(editingId.current, withDocument);
+      } else {
+        await addExpense({ ...withDocument, propertyId: property });
       }
-      await addExpense({ ...data, propertyId: propertyId ?? data.propertyId });
+      advanceRef.current = pending !== null;
     },
     [addExpense, updateExpense, propertyId],
   );
@@ -117,16 +171,118 @@ export function useExpenseDialog(propertyId?: string): ExpenseDialogState {
       update: t("expenseForm.toastUpdated"),
     },
   });
-  const { editingItem, openEditDialog } = dialog;
+  const { editingItem, openEditDialog, openDialog, setFormData, isOpen, formData } = dialog;
   useEffect(() => {
     editingId.current = editingItem?.id ?? null;
   }, [editingItem]);
 
-  const openExpense = useCallback(
-    (expense: Expense) => openEditDialog(expense, toFormData),
-    [openEditDialog],
+  const { state } = useApp();
+  const [invoice, setInvoiceState] = useState<PendingInvoice | null>(null);
+  const [queue, setQueue] = useState<File[]>([]);
+  const [readingInvoice, setReadingInvoice] = useState(false);
+  const setInvoice = useCallback((next: PendingInvoice | null) => {
+    invoiceRef.current = next;
+    setInvoiceState(next);
+  }, []);
+
+  const openNext = useCallback(
+    async (files: File[], position: number, count: number) => {
+      const [file, ...rest] = files;
+      setQueue(rest);
+      if (!file) {
+        setInvoice(null);
+        return;
+      }
+      setReadingInvoice(true);
+      // Between two invoices the form closes; its reset runs 200ms after, so wait it out.
+      const [read] = await Promise.all([
+        readInvoiceFile(file),
+        position > 1 ? new Promise((resolve) => setTimeout(resolve, 250)) : null,
+      ]);
+      setReadingInvoice(false);
+      setInvoice({ ...read, position, count });
+      openDialog();
+      setFormData({
+        ...initialData,
+        ...invoicePrefill(read.fields, state.expenses, propertyId !== undefined),
+      });
+    },
+    [initialData, openDialog, propertyId, setFormData, setInvoice, state.expenses],
   );
-  return { ...dialog, openExpense };
+
+  const readInvoices = useCallback(
+    (files: File[]) => {
+      if (files.length > 0) void openNext(files, 1, files.length);
+    },
+    [openNext],
+  );
+
+  // A save from a batch opens the next invoice once the form has closed.
+  useEffect(() => {
+    if (isOpen || !advanceRef.current) return;
+    advanceRef.current = false;
+    const current = invoiceRef.current;
+    if (current && queue.length > 0) void openNext(queue, current.position + 1, current.count);
+    else setInvoice(null);
+  }, [isOpen, openNext, queue, setInvoice]);
+
+  const closeDialog = dialog.closeDialog;
+  // Closing the form by hand stops the batch.
+  const closeAll = useCallback(() => {
+    setQueue([]);
+    setInvoice(null);
+    closeDialog();
+  }, [closeDialog, setInvoice]);
+
+  const skipInvoice = useCallback(() => {
+    const current = invoiceRef.current;
+    closeDialog();
+    if (current && queue.length > 0) void openNext(queue, current.position + 1, current.count);
+    else setInvoice(null);
+  }, [closeDialog, openNext, queue, setInvoice]);
+
+  const attachInvoice = useCallback(
+    (file: File) => {
+      setReadingInvoice(true);
+      void readInvoiceFile(file).then((read) => {
+        setReadingInvoice(false);
+        setInvoice({ ...read, position: 1, count: 1 });
+        // Fill only what the owner has not typed yet.
+        const prefill = invoicePrefill(read.fields, state.expenses, true);
+        setFormData({
+          ...formData,
+          ...(formData.amount ? {} : { amount: prefill.amount ?? 0 }),
+          ...(formData.vendorVat ? {} : { vendorVat: prefill.vendorVat }),
+          ...(formData.vendorName ? {} : { vendorName: prefill.vendorName }),
+        });
+      });
+    },
+    [formData, setFormData, setInvoice, state.expenses],
+  );
+
+  const openExpense = useCallback(
+    (expense: Expense) => {
+      setInvoice(null);
+      openEditDialog(expense, toFormData);
+    },
+    [openEditDialog, setInvoice],
+  );
+  const openBlank = useCallback(() => {
+    setInvoice(null);
+    openDialog();
+  }, [openDialog, setInvoice]);
+
+  return {
+    ...dialog,
+    openDialog: openBlank,
+    closeDialog: closeAll,
+    openExpense,
+    readInvoices,
+    attachInvoice,
+    skipInvoice,
+    invoice,
+    readingInvoice,
+  };
 }
 
 /**
@@ -154,7 +310,8 @@ export function ExpenseDialog({
   const { currencySymbol, formatCurrency } = useCurrency();
   const { success } = useToast();
   const confirmDialog = useConfirmDialog();
-  const { formData, formErrors, updateFormData, editingItem } = dialog;
+  const { formData, formErrors, updateFormData, editingItem, invoice } = dialog;
+  const attachInput = useRef<HTMLInputElement>(null);
   // A copy a recurring expense made is one month's cost: it does not repeat itself.
   const isCopy = !!editingItem?.parentExpenseId;
   const frequent = useMemo(() => frequentCategories(state.expenses), [state.expenses]);
@@ -209,6 +366,30 @@ export function ExpenseDialog({
           </SheetHeader>
           <form onSubmit={dialog.handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
+              {invoice ? (
+                // What was read, and that it is a proposal: nothing is saved before Guardar.
+                <div
+                  className="space-y-1 border border-[var(--color-border)] bg-[var(--color-surface-hover)] px-4 py-3 text-sm"
+                  role="status"
+                >
+                  <p className="flex items-center gap-2 font-medium">
+                    <ScanLine className="h-4 w-4 shrink-0" aria-hidden />
+                    <span className="min-w-0 break-words">
+                      {invoice.count > 1
+                        ? `${t("invoice.position", { position: invoice.position, count: invoice.count })} · `
+                        : ""}
+                      {invoice.upload.name}
+                    </span>
+                  </p>
+                  <p className="text-xs text-[var(--color-muted-foreground)]">
+                    {invoice.fields?.source === "qr"
+                      ? t("invoice.readQr")
+                      : invoice.fields?.source === "text"
+                        ? t("invoice.readText")
+                        : t("invoice.unread")}
+                  </p>
+                </div>
+              ) : null}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {propertyName ? null : (
                   <div className="space-y-2">
@@ -281,7 +462,7 @@ export function ExpenseDialog({
                     {t("expenseForm.amount", { symbol: currencySymbol })}
                   </Label>
                   <Input
-                    key={`${dialog.isOpen}-${editingItem?.id ?? "new"}`}
+                    key={`${dialog.isOpen}-${editingItem?.id ?? "new"}-${invoice?.upload.name ?? ""}-${invoice?.position ?? 0}`}
                     id="expense-amount"
                     inputMode="decimal"
                     autoComplete="off"
@@ -315,6 +496,47 @@ export function ExpenseDialog({
                   onChange={(e) => updateFormData({ description: e.target.value })}
                   placeholder={t("expenseForm.descriptionPlaceholder")}
                 />
+              </div>
+
+              {/* The invoice kept with the expense: the proof the IRS asks a landlord to keep. */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-medium">{t("invoice.label")}</span>
+                {editingItem?.documentId && !invoice ? (
+                  <a
+                    href={`/api/documents/${editingItem.documentId}/download`}
+                    className="inline-flex min-h-11 items-center gap-1.5 text-sm underline underline-offset-2 md:min-h-0"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <FileText className="h-4 w-4" aria-hidden />
+                    {t("invoice.view")}
+                  </a>
+                ) : null}
+                <input
+                  ref={attachInput}
+                  type="file"
+                  accept="application/pdf,image/*"
+                  className="hidden"
+                  aria-label={t("invoice.attach")}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) dialog.attachInvoice(file);
+                    e.target.value = "";
+                  }}
+                />
+                {invoice ? null : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    loading={dialog.readingInvoice}
+                    onClick={() => attachInput.current?.click()}
+                  >
+                    <Paperclip className="h-4 w-4" aria-hidden />
+                    {editingItem?.documentId ? t("invoice.replace") : t("invoice.attach")}
+                  </Button>
+                )}
               </div>
 
               {/* Who was paid, for the invoice record the IRS asks a landlord to keep. */}
@@ -464,6 +686,11 @@ export function ExpenseDialog({
                 </Button>
               ) : null}
               <div className="ml-auto flex gap-2">
+                {invoice && invoice.position < invoice.count ? (
+                  <Button type="button" variant="ghost" onClick={dialog.skipInvoice}>
+                    {t("invoice.skip")}
+                  </Button>
+                ) : null}
                 <Button type="button" variant="outline" onClick={dialog.closeDialog}>
                   {tActions("cancel")}
                 </Button>

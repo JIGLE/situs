@@ -1639,7 +1639,20 @@
     "expensesByPropertyHint": "Para o Anexo F do IRS: o total de cada imóvel e a parte dedutível.",
     "deductibleShort": "dedutível",
     "notDeductible": "Não dedutível",
-    "expenseYear": "Ano"
+    "expenseYear": "Ano",
+    "invoice": {
+      "readButton": "Ler faturas",
+      "reading": "A ler a fatura…",
+      "position": "Fatura {position} de {count}",
+      "readQr": "Preenchido a partir do código QR da fatura. Confirme antes de guardar.",
+      "readText": "Preenchido a partir do texto do PDF. Confirme antes de guardar.",
+      "unread": "Não foi possível ler esta fatura: preencha à mão. Fica anexada à despesa.",
+      "attach": "Anexar fatura",
+      "replace": "Substituir",
+      "view": "Ver fatura",
+      "skip": "Saltar",
+      "label": "Fatura"
+    }
   },
   "propertyDetail": {
     "tabs": {

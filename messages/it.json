@@ -1639,7 +1639,20 @@
     "expensesByPropertyHint": "Per l'IRS (Anexo F): il totale di ogni immobile e la parte deducibile.",
     "deductibleShort": "deducibile",
     "notDeductible": "Non deducibile",
-    "expenseYear": "Anno"
+    "expenseYear": "Anno",
+    "invoice": {
+      "readButton": "Leggi fatture",
+      "reading": "Lettura della fattura…",
+      "position": "Fattura {position} di {count}",
+      "readQr": "Compilato dal codice QR della fattura. Controlla prima di salvare.",
+      "readText": "Compilato dal testo del PDF. Controlla prima di salvare.",
+      "unread": "Impossibile leggere questa fattura: compila a mano. Resta allegata alla spesa.",
+      "attach": "Allega fattura",
+      "replace": "Sostituisci",
+      "view": "Vedi fattura",
+      "skip": "Salta",
+      "label": "Fattura"
+    }
   },
   "propertyDetail": {
     "tabs": {
