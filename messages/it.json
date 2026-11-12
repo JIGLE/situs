@@ -1022,6 +1022,20 @@
         "from": "A partire dal canone in scadenza a {month}.",
         "closing": "Cordiali saluti,"
       }
+    },
+    "history": {
+      "title": "Affitti già ricevuti",
+      "description": "Questa locazione è iniziata prima di oggi. Indica da quale mese Situs segue l'affitto e spunta i movimenti bancari che erano affitto.",
+      "from": "Segui l'affitto da",
+      "fromHint": "I mesi prima di {month} contano come pagati prima di Situs e non vengono mai sollecitati.",
+      "movements": "Movimenti bancari che sembrano questo affitto",
+      "none": "Nessun movimento bancario sembra questo affitto. I prossimi saranno abbinati all'arrivo.",
+      "pays": "paga {month}",
+      "include": "Pagamento del {date}, {amount}",
+      "unknownPayer": "Ordinante senza nome",
+      "skip": "Salta",
+      "save": "Salva",
+      "saved": "{count, plural, =0 {Monitoraggio dell'affitto impostato} one {# pagamento registrato} other {# pagamenti registrati}}"
     }
   },
   "notifications": {
@@ -2012,6 +2026,7 @@
     "databaseExport": "Database esportato",
     "settingsChange": "Impostazioni modificate",
     "generateRentPeriods": "Mesi d'affitto generati",
+    "settleRentBefore": "Mesi precedenti segnati come pagati prima di Situs",
     "allocatePayment": "Pagamento attribuito",
     "reverseAllocation": "Attribuzione annullata",
     "importBankTransactions": "Movimenti bancari importati",

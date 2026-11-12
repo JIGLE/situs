@@ -45,6 +45,7 @@ export const AUDIT_ACTION_KEY = {
   DATABASE_EXPORT: "databaseExport",
   SETTINGS_CHANGE: "settingsChange",
   GENERATE_RENT_PERIODS: "generateRentPeriods",
+  SETTLE_RENT_BEFORE: "settleRentBefore",
   ALLOCATE_PAYMENT: "allocatePayment",
   REVERSE_ALLOCATION: "reverseAllocation",
   IMPORT_BANK_TRANSACTIONS: "importBankTransactions",

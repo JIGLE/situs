@@ -53,6 +53,7 @@ export type AuditAction =
   | "SETTINGS_CHANGE"
   // Situs reference-month workflow (Migration A)
   | "GENERATE_RENT_PERIODS"
+  | "SETTLE_RENT_BEFORE"
   | "ALLOCATE_PAYMENT"
   | "REVERSE_ALLOCATION"
   // Situs bank layer (Migration B)

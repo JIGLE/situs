@@ -1022,6 +1022,20 @@
         "from": "Starting with the rent due in {month}.",
         "closing": "Kind regards,"
       }
+    },
+    "history": {
+      "title": "Rent already received",
+      "description": "This tenancy began before today. Say from which month Situs tracks its rent, and tick the bank movements that were its rent.",
+      "from": "Track rent from",
+      "fromHint": "Months before {month} count as paid before Situs and are never chased.",
+      "movements": "Bank movements that look like this rent",
+      "none": "No bank movement looks like this rent yet. The next ones will be matched as they arrive.",
+      "pays": "pays {month}",
+      "include": "Payment of {date}, {amount}",
+      "unknownPayer": "Payer not named",
+      "skip": "Skip",
+      "save": "Save",
+      "saved": "{count, plural, =0 {Rent tracking set} one {# payment recorded} other {# payments recorded}}"
     }
   },
   "notifications": {
@@ -2012,6 +2026,7 @@
     "databaseExport": "Database exported",
     "settingsChange": "Settings changed",
     "generateRentPeriods": "Rent months generated",
+    "settleRentBefore": "Earlier months marked as paid before Situs",
     "allocatePayment": "Payment allocated",
     "reverseAllocation": "Allocation reversed",
     "importBankTransactions": "Bank movements imported",
