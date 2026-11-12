@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Plus, Repeat } from "lucide-react";
+import { Plus, Repeat, ScanLine } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
@@ -46,6 +46,7 @@ export function ExpensesView() {
   const { state } = useApp();
   const { expenses, properties, loading } = state;
   const dialog = useExpenseDialog();
+  const invoiceInput = useRef<HTMLInputElement>(null);
   const [propertyId, setPropertyId] = useState(ALL);
   const [group, setGroup] = useState<ExpenseCategoryGroup | typeof ALL>(ALL);
   const years = useMemo(() => expenseYears(expenses), [expenses]);
@@ -96,10 +97,35 @@ export function ExpensesView() {
             deductible: formatCurrency(summary.deductible),
           })}
         </p>
-        <Button onClick={dialog.openDialog} className="gap-2">
-          <Plus className="h-4 w-4" />
-          {t("addExpense")}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* One or many invoices, PDFs or photos: each opens the form filled from it, to check
+              and save in turn. */}
+          <input
+            ref={invoiceInput}
+            type="file"
+            multiple
+            accept="application/pdf,image/*"
+            className="hidden"
+            aria-label={t("invoice.readButton")}
+            onChange={(e) => {
+              dialog.readInvoices(Array.from(e.target.files ?? []));
+              e.target.value = "";
+            }}
+          />
+          <Button
+            variant="outline"
+            className="gap-2"
+            loading={dialog.readingInvoice}
+            onClick={() => invoiceInput.current?.click()}
+          >
+            <ScanLine className="h-4 w-4" />
+            {t("invoice.readButton")}
+          </Button>
+          <Button onClick={dialog.openDialog} className="gap-2">
+            <Plus className="h-4 w-4" />
+            {t("addExpense")}
+          </Button>
+        </div>
       </div>
 
       {/* Three dropdowns fit inline (density rule 3); below that they wrap. */}

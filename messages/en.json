@@ -1639,7 +1639,20 @@
     "expensesByPropertyHint": "For the IRS Anexo F: each property's total and its deductible part.",
     "deductibleShort": "deductible",
     "notDeductible": "Not deductible",
-    "expenseYear": "Year"
+    "expenseYear": "Year",
+    "invoice": {
+      "readButton": "Read invoices",
+      "reading": "Reading the invoice…",
+      "position": "Invoice {position} of {count}",
+      "readQr": "Filled in from the invoice's QR code. Check it before saving.",
+      "readText": "Filled in from the PDF's text. Check it before saving.",
+      "unread": "This invoice could not be read: fill it in by hand. It stays attached to the expense.",
+      "attach": "Attach invoice",
+      "replace": "Replace",
+      "view": "View invoice",
+      "skip": "Skip",
+      "label": "Invoice"
+    }
   },
   "propertyDetail": {
     "tabs": {
