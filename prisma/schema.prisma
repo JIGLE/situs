@@ -64,6 +64,7 @@ model User {
   paymentAllocations     PaymentAllocation[]
   leases                 Lease[]
   leaseParties           LeaseParty[]
+  rentIncreases          RentIncrease[]
   owners                 Owner[]
   emailLogs              EmailLog[]
   documents              Document[]
@@ -696,12 +697,13 @@ model Lease {
   updatedAt           DateTime    @updatedAt
 
   // Relations
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property    Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  expenses    Expense[]
-  rentPeriods RentPeriod[]
-  parties     LeaseParty[]
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property      Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  expenses      Expense[]
+  rentPeriods   RentPeriod[]
+  parties       LeaseParty[]
+  rentIncreases RentIncrease[]
 
   @@index([userId])
   @@index([propertyId])
@@ -709,6 +711,36 @@ model Lease {
   @@index([status])
   @@index([userId, status])
   @@map("leases")
+}
+
+/// A yearly rent update (NRAU art. 24, Código Civil art. 1077), recorded when the owner decides it.
+///
+/// The new rent starts with the month `effectiveFrom` names (its first day, UTC), not on the day it
+/// is entered: the tenant has to be told in writing at least 30 days before. Until then the row is
+/// pending (`appliedAt` NULL) and the lease keeps its `monthlyRent`, while the rent months from
+/// `effectiveFrom` on already carry `newRent` (`syncLeasePeriods`). Once the month arrives,
+/// `applyDueRentIncreases` writes `newRent` onto the lease and stamps `appliedAt`. Applied rows
+/// stay as the lease's rent history; the next update counts its year from the last one.
+model RentIncrease {
+  id            String    @id @default(cuid())
+  userId        String
+  leaseId       String
+  effectiveFrom DateTime
+  previousRent  Float
+  newRent       Float
+  /// The percentage applied, usually the INE coefficient for the year.
+  percent       Float
+  /// When the owner says the written notice was sent.
+  noticeDate    DateTime?
+  appliedAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lease Lease @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([leaseId])
+  @@map("rent_increases")
 }
 
 /// Someone on a lease besides its main tenant: a co-tenant, or a guarantor (fiador).

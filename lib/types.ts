@@ -133,6 +133,21 @@ export interface PropertyOwner {
   updatedAt: string;
 }
 
+/** A yearly rent update decided for a lease (`RentIncrease` in the schema). */
+export interface RentIncrease {
+  id: string;
+  leaseId: string;
+  /** The first day of the month the new rent starts. */
+  effectiveFrom: string;
+  previousRent: number;
+  newRent: number;
+  percent: number;
+  noticeDate?: string | null;
+  /** Set once the month arrived and the lease took the new rent. */
+  appliedAt?: string | null;
+  createdAt: string;
+}
+
 export interface Lease {
   id: string;
   userId: string;
@@ -160,6 +175,8 @@ export interface Lease {
   atContractVersion?: number | null;
   /** Co-tenants and guarantors: everyone on the lease besides its main tenant. */
   parties?: LeaseParty[];
+  /** The rent's updates, oldest first; one with no `appliedAt` has yet to start. */
+  rentIncreases?: RentIncrease[];
   status: "active" | "expiring" | "expired" | "terminated" | "pending" | "draft";
   autoRenew: boolean;
   renewalNoticeDays: number;

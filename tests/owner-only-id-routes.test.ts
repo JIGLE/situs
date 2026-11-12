@@ -34,6 +34,8 @@ import * as bankRenew from "@/app/api/bank/connections/[id]/renew/route";
 import * as bankDisconnect from "@/app/api/bank/connections/[id]/disconnect/route";
 import * as payerAccounts from "@/app/api/tenants/[id]/payer-accounts/route";
 import * as payerAccount from "@/app/api/tenants/[id]/payer-accounts/[accountId]/route";
+import * as rentIncreases from "@/app/api/leases/[id]/rent-increases/route";
+import * as rentIncrease from "@/app/api/leases/[id]/rent-increases/[increaseId]/route";
 
 type Handler = (
   request: NextRequest,
@@ -52,6 +54,8 @@ const routes: Record<string, Record<string, unknown>> = {
   "bank/connections/[id]/disconnect": bankDisconnect,
   "tenants/[id]/payer-accounts": payerAccounts,
   "tenants/[id]/payer-accounts/[accountId]": payerAccount,
+  "leases/[id]/rent-increases": rentIncreases,
+  "leases/[id]/rent-increases/[increaseId]": rentIncrease,
 };
 
 const cases = Object.entries(routes).flatMap(([name, route]) =>
@@ -64,8 +68,9 @@ describe("[id] routes admit owners only, as their collections do", () => {
   it("covers every handler of the routes", () => {
     // leases/[id] and owners/[id] have PUT and DELETE; the other three records have GET, PUT and
     // DELETE; a bank connection has PATCH and DELETE, and each of its actions is one POST; a
-    // tenant's remembered accounts are one GET, and forgetting one is one DELETE.
-    expect(cases).toHaveLength(20);
+    // tenant's remembered accounts are one GET, and forgetting one is one DELETE; a lease's rent
+    // increase is scheduled with one POST and cancelled with one DELETE.
+    expect(cases).toHaveLength(22);
   });
 
   it.each(cases)("%s refuses a USER-role session", async (_name, method, handler) => {

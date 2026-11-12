@@ -786,7 +786,11 @@
       "securityTokenExpired": "Su token de seguridad ha caducado. Actualice la página e inténtelo de nuevo.",
       "receiptTransitionNotAllowed": "Este recibo ya no está en una fase que lo permita. Actualice la lista e inténtelo de nuevo.",
       "receiptFilingUnavailable": "Situs aún no comunica recibos a Finanças. Emita este en el Portal das Finanças.",
-      "receiptNotPaid": "Un recibo de renta declara que la renta se ha cobrado. Márquelo como pagado antes de emitirlo."
+      "receiptNotPaid": "Un recibo de renta declara que la renta se ha cobrado. Márquelo como pagado antes de emitirlo.",
+      "rentIncreasePending": "Este contrato ya tiene una actualización de renta pendiente. Cancélela primero para programar otra.",
+      "rentIncreaseNotAhead": "La nueva renta debe empezar en un mes que aún no ha comenzado. Para cambiar la renta de este mes, edite el contrato.",
+      "rentIncreaseApplied": "Esta actualización ya está en vigor. Cambie la renta en el contrato.",
+      "leaseNotActive": "Solo un contrato activo puede actualizar su renta."
     }
   },
   "payments": {
@@ -845,8 +849,6 @@
       "deleted": "Contrato eliminado correctamente",
       "fileTooLarge": "El archivo debe pesar menos de {size} MB",
       "pdfOnly": "Solo se permiten archivos PDF",
-      "rentIncreased": "Alquiler incrementado un {pct}% en {count} contrato(s).",
-      "rentIncreaseFailed": "No se ha podido aplicar el incremento. Inténtalo de nuevo.",
       "contractUploadFailed": "El alquiler se ha guardado, pero no se ha podido subir el contrato.",
       "contractDownloadFailed": "No se ha podido descargar el contrato."
     },
@@ -886,15 +888,9 @@
       "allStatuses": "Todos los estados"
     },
     "bulk": {
-      "title": "Incremento masivo de alquiler",
-      "percentLabel": "Porcentaje de incremento (%)",
-      "percentPlaceholder": "p. ej. 3,5",
       "increaseRent": "Incrementar alquiler",
-      "apply": "Aplicar incremento",
-      "applying": "Aplicando…",
       "clear": "Limpiar",
-      "selected": "{count, plural, one {# contrato seleccionado} other {# contratos seleccionados}}",
-      "downloadNotices": "Descargar avisos"
+      "selected": "{count, plural, one {# contrato seleccionado} other {# contratos seleccionados}}"
     },
     "leaseOptions": "Opciones del contrato",
     "selectAll": "Seleccionar todos los contratos",
@@ -912,7 +908,6 @@
     "noneFound": "No se han encontrado contratos",
     "adjustFilters": "Prueba a ajustar la búsqueda o los filtros",
     "addFirst": "Añadir primer contrato",
-    "bulkDescription": "Aplicar un incremento porcentual a {count, plural, one {# contrato seleccionado} other {# contratos seleccionados}}.",
     "daysToExpiry": "{days} d para vencer",
     "perMonth": "{amount}/mes",
     "dateTo": "a",
@@ -999,6 +994,33 @@
         "rent": "Indique la renta mensual.",
         "endDate": "La fecha de fin debe ser posterior a la de inicio.",
         "saveFailed": "No se pudo guardar el arrendamiento. Inténtelo de nuevo."
+      }
+    },
+    "rentIncrease": {
+      "title": "Actualización de renta",
+      "description": "Elija el mes en que empieza cada nueva renta. El inquilino debe ser avisado por escrito con al menos {days} días de antelación. La primera actualización puede aplicarse un año después del inicio del contrato, y las siguientes un año después de la anterior.",
+      "percent": "Actualización (%)",
+      "coefficientHint": "Coeficiente del INE para {year}: {percent}%",
+      "noticeDate": "Aviso enviado el",
+      "startsIn": "Nueva renta desde",
+      "alreadyPending": "Ya programada: {amount} desde {month}",
+      "downloadNotices": "Descargar avisos",
+      "schedule": "Programar actualización",
+      "scheduled": "{count, plural, one {Actualización programada para # contrato.} other {Actualización programada para # contratos.}}",
+      "pending": "{amount} desde {month}",
+      "cancel": "Cancelar actualización",
+      "cancelled": "Actualización de renta cancelada.",
+      "warning": {
+        "shortNotice": "Menos de {days} días después del aviso.",
+        "beforeAnniversary": "Menos de un año desde el inicio del contrato o la última actualización."
+      },
+      "notice": {
+        "greeting": "Estimado/a {name}:",
+        "body": "De acuerdo con el artículo 1077 del Código Civil portugués, la renta mensual de {address} se actualiza un {percent}%, el coeficiente publicado para {year}.",
+        "current": "Renta actual: {amount} al mes",
+        "new": "Nueva renta: {amount} al mes",
+        "from": "A partir de la renta que vence en {month}.",
+        "closing": "Atentamente,"
       }
     }
   },

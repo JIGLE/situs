@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { FileText, Edit, ArrowLeft, Calendar, RotateCcw, XCircle } from "lucide-react";
+import { FileText, Edit, ArrowLeft, Calendar, RotateCcw, TrendingUp, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils/utils";
 import { useCurrency } from "@/lib/contexts/currency-context";
@@ -30,6 +30,11 @@ import { csrfHeaders } from "@/lib/utils/api-client";
 import { wasReported } from "@/lib/utils/api-error";
 import { joinContact } from "@/lib/utils/contact";
 import { downloadContract } from "./lease-contract";
+import { RentIncreaseDialog, pendingIncrease } from "./rent-increase-dialog";
+import { apiFetch } from "@/lib/utils/api-client";
+import { useApiError } from "@/lib/utils/api-error";
+import { useCsrf } from "@/lib/contexts/csrf-context";
+import { formatMonthYear } from "@/lib/utils/format-date";
 import { StatusMark } from "@/components/ui/status-mark";
 import { leaseEndStatus, leaseStatus, paymentStatus } from "@/lib/utils/status-tone";
 import { receivedTotal } from "@/lib/utils/receipt-income";
@@ -52,6 +57,11 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
   const locale = useLocale();
   const confirmDialog = useConfirmDialog();
   const router = useRouter();
+
+  const tIncrease = useTranslations("leases.rentIncrease");
+  const { token: csrfToken } = useCsrf();
+  const explain = useApiError();
+  const [increaseOpen, setIncreaseOpen] = useState(false);
 
   // Renewal offer dialog state
   const [renewalOpen, setRenewalOpen] = useState(false);
@@ -94,6 +104,22 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
   };
 
   const handleRenew = () => setRenewalOpen(true);
+
+  const upcomingIncrease = pendingIncrease(lease);
+  const handleCancelIncrease = async () => {
+    if (!upcomingIncrease) return;
+    try {
+      await apiFetch(
+        `/api/leases/${lease.id}/rent-increases/${upcomingIncrease.id}`,
+        csrfToken,
+        "DELETE",
+      );
+      success(tIncrease("cancelled"));
+      await refreshData();
+    } catch (err) {
+      error(explain(err));
+    }
+  };
 
   const handleRenewalSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -210,6 +236,11 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
         <div className="flex items-center gap-2 flex-wrap">
           {lease.status === "active" && (
             <>
+              {upcomingIncrease ? null : (
+                <Button variant="outline" size="sm" onClick={() => setIncreaseOpen(true)}>
+                  <TrendingUp className="h-4 w-4 mr-1" /> {tLease("bulk.increaseRent")}
+                </Button>
+              )}
               {!lease.renewalStatus || lease.renewalStatus === "declined" ? (
                 <Button variant="outline" size="sm" onClick={handleRenew}>
                   <RotateCcw className="h-4 w-4 mr-1" /> {tLease("offerRenewal")}
@@ -231,6 +262,8 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
           </Button>
         </div>
       </div>
+
+      <RentIncreaseDialog open={increaseOpen} onOpenChange={setIncreaseOpen} leases={[lease]} />
 
       {/* Linked Entities */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -282,6 +315,28 @@ export function LeaseDetailView({ leaseId }: LeaseDetailViewProps) {
                 {tLease("field.monthlyRent")}
               </span>
               <p className="text-lg font-semibold mt-1">{formatCurrency(lease.monthlyRent)}</p>
+              {upcomingIncrease ? (
+                <div className="mt-1 space-y-1">
+                  <p className="text-xs text-[var(--color-muted-foreground)]">
+                    {tIncrease("pending", {
+                      amount: formatCurrency(upcomingIncrease.newRent),
+                      month: formatMonthYear(
+                        new Date(upcomingIncrease.effectiveFrom).getUTCFullYear(),
+                        new Date(upcomingIncrease.effectiveFrom).getUTCMonth() + 1,
+                        locale,
+                      ),
+                    })}
+                  </p>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0"
+                    onClick={handleCancelIncrease}
+                  >
+                    {tIncrease("cancel")}
+                  </Button>
+                </div>
+              ) : null}
             </div>
             <div>
               <span className="text-[var(--color-muted-foreground)]">

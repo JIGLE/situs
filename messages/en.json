@@ -786,7 +786,11 @@
       "securityTokenExpired": "Your security token expired. Refresh the page and try again.",
       "receiptTransitionNotAllowed": "This receipt is no longer at a stage that allows this. Refresh the list and try again.",
       "receiptFilingUnavailable": "Situs can't file receipts with Finanças yet. Issue this one on the Portal das Finanças.",
-      "receiptNotPaid": "A rent receipt says the rent was received. Mark this one paid before you issue it."
+      "receiptNotPaid": "A rent receipt says the rent was received. Mark this one paid before you issue it.",
+      "rentIncreasePending": "This lease already has a rent increase waiting to start. Cancel it first to set another.",
+      "rentIncreaseNotAhead": "The new rent has to start in a month that hasn't begun yet. To change this month's rent, edit the lease.",
+      "rentIncreaseApplied": "This increase has already taken effect. Change the rent on the lease instead.",
+      "leaseNotActive": "Only an active lease can have its rent updated."
     }
   },
   "payments": {
@@ -845,8 +849,6 @@
       "deleted": "Lease deleted successfully",
       "fileTooLarge": "File size must be less than {size} MB",
       "pdfOnly": "Only PDF files are allowed",
-      "rentIncreased": "Rent increased by {pct}% for {count} lease(s).",
-      "rentIncreaseFailed": "Failed to apply rent increase. Please try again.",
       "contractUploadFailed": "The lease was saved, but the contract could not be uploaded.",
       "contractDownloadFailed": "The contract could not be downloaded."
     },
@@ -886,15 +888,9 @@
       "allStatuses": "All Statuses"
     },
     "bulk": {
-      "title": "Bulk Rent Increase",
-      "percentLabel": "Increase percentage (%)",
-      "percentPlaceholder": "e.g. 3.5",
       "increaseRent": "Increase Rent",
-      "apply": "Apply Increase",
-      "applying": "Applying…",
       "clear": "Clear",
-      "selected": "{count, plural, one {# lease selected} other {# leases selected}}",
-      "downloadNotices": "Download Notices"
+      "selected": "{count, plural, one {# lease selected} other {# leases selected}}"
     },
     "leaseOptions": "Lease options",
     "selectAll": "Select all leases",
@@ -912,7 +908,6 @@
     "noneFound": "No leases found",
     "adjustFilters": "Try adjusting your search or filters",
     "addFirst": "Add First Lease",
-    "bulkDescription": "Apply a percentage increase to {count, plural, one {# selected lease} other {# selected leases}}.",
     "daysToExpiry": "{days}d to expiry",
     "perMonth": "{amount}/mo",
     "dateTo": "to",
@@ -999,6 +994,33 @@
         "rent": "Enter the monthly rent.",
         "endDate": "The end date must be after the start date.",
         "saveFailed": "The tenancy could not be saved. Try again."
+      }
+    },
+    "rentIncrease": {
+      "title": "Rent increase",
+      "description": "Choose the month each new rent starts. The tenant has to be told in writing at least {days} days before. The first increase can apply a year after the contract started, and each later one a year after the last.",
+      "percent": "Increase (%)",
+      "coefficientHint": "INE coefficient for {year}: {percent}%",
+      "noticeDate": "Notice sent on",
+      "startsIn": "New rent from",
+      "alreadyPending": "Already set: {amount} from {month}",
+      "downloadNotices": "Download notices",
+      "schedule": "Schedule increase",
+      "scheduled": "{count, plural, one {Rent increase scheduled for # lease.} other {Rent increase scheduled for # leases.}}",
+      "pending": "{amount} from {month}",
+      "cancel": "Cancel increase",
+      "cancelled": "Rent increase cancelled.",
+      "warning": {
+        "shortNotice": "Less than {days} days after the notice.",
+        "beforeAnniversary": "Less than a year after the contract started or the last increase."
+      },
+      "notice": {
+        "greeting": "Dear {name},",
+        "body": "Under article 1077 of the Portuguese Civil Code, the monthly rent for {address} is updated by {percent}%, the coefficient published for {year}.",
+        "current": "Current rent: {amount} a month",
+        "new": "New rent: {amount} a month",
+        "from": "Starting with the rent due in {month}.",
+        "closing": "Kind regards,"
       }
     }
   },

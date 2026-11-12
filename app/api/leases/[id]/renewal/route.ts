@@ -20,6 +20,8 @@ async function readBody<T>(request: NextRequest): Promise<T | Response> {
 const leaseInclude = {
   property: { select: { name: true, address: true } },
   tenant: { select: { name: true, email: true } },
+  // The rent's history and any increase still to start, oldest first.
+  rentIncreases: { orderBy: { effectiveFrom: "asc" as const } },
 };
 
 // POST — landlord sends a renewal offer

@@ -135,7 +135,11 @@ e2e/                    # Playwright E2E tests
   a `paid` receipt is allocated, inside the transaction that writes it. A lease edit runs
   `syncLeasePeriods` in its own transaction: months outside the term go (waived if they carry
   reversed history, kept if they carry live money), future unpaid months take the new rent, and a
-  lease with money allocated keeps its tenant and property (409 `lease_has_payments`). A receipt
+  lease with money allocated keeps its tenant and property (409 `lease_has_payments`). A yearly
+  update is a `RentIncrease` row with the month it starts, not a new rent typed over the old
+  (`lib/services/leases/rent-increases.ts`; the art. 1077 dates are warnings, `lib/utils/rent-increase.ts`):
+  months from that month on owe its rent while it is pending, and `applyDueRentIncreases` (leases GET,
+  the notifications cron) writes it onto the lease once the month arrives. A receipt
   whose money is allocated, or that was issued, keeps its amount, date, tenant, property, type and
   status (409 `receipt_allocated`): a correction is a void and a new receipt. Screens that still sum
   receipts count income through `lib/utils/receipt-income.ts` (not voided, not pending, not a

@@ -34,6 +34,7 @@ vi.mock("@/lib/contexts/app-context", () => ({
   }),
 }));
 vi.mock("@/lib/contexts/toast-context", () => ({ useToast: () => toast }));
+vi.mock("@/lib/contexts/csrf-context", () => ({ useCsrf: () => ({ token: "csrf" }) }));
 vi.mock("@/lib/contexts/currency-context", () => ({
   useCurrency: () => ({ formatCurrency: (n: number) => `€${n}` }),
 }));

@@ -786,7 +786,11 @@
       "securityTokenExpired": "Il token di sicurezza è scaduto. Aggiorna la pagina e riprova.",
       "receiptTransitionNotAllowed": "Questa ricevuta non è più in una fase che lo consente. Aggiorna l'elenco e riprova.",
       "receiptFilingUnavailable": "Situs non trasmette ancora le ricevute alle Finanças. Emetti questa sul Portal das Finanças.",
-      "receiptNotPaid": "Una ricevuta d'affitto dichiara che l'affitto è stato incassato. Segna questa come pagata prima di emetterla."
+      "receiptNotPaid": "Una ricevuta d'affitto dichiara che l'affitto è stato incassato. Segna questa come pagata prima di emetterla.",
+      "rentIncreasePending": "Questo contratto ha già un aggiornamento del canone in attesa. Annullalo prima di programmarne un altro.",
+      "rentIncreaseNotAhead": "Il nuovo canone deve partire da un mese non ancora iniziato. Per cambiare il canone di questo mese, modifica il contratto.",
+      "rentIncreaseApplied": "Questo aggiornamento è già in vigore. Modifica il canone nel contratto.",
+      "leaseNotActive": "Solo un contratto attivo può avere il canone aggiornato."
     }
   },
   "payments": {
@@ -845,8 +849,6 @@
       "deleted": "Contratto eliminato correttamente",
       "fileTooLarge": "Il file deve pesare meno di {size} MB",
       "pdfOnly": "Sono ammessi solo file PDF",
-      "rentIncreased": "Canone aumentato del {pct}% su {count} contratto/i.",
-      "rentIncreaseFailed": "Impossibile applicare l'aumento del canone. Riprova.",
       "contractUploadFailed": "La locazione è stata salvata, ma non è stato possibile caricare il contratto.",
       "contractDownloadFailed": "Non è stato possibile scaricare il contratto."
     },
@@ -886,15 +888,9 @@
       "allStatuses": "Tutti gli stati"
     },
     "bulk": {
-      "title": "Aumento canone in blocco",
-      "percentLabel": "Percentuale di aumento (%)",
-      "percentPlaceholder": "es. 3,5",
       "increaseRent": "Aumenta canone",
-      "apply": "Applica aumento",
-      "applying": "Applicazione…",
       "clear": "Azzera",
-      "selected": "{count, plural, one {# contratto selezionato} other {# contratti selezionati}}",
-      "downloadNotices": "Scarica avvisi"
+      "selected": "{count, plural, one {# contratto selezionato} other {# contratti selezionati}}"
     },
     "leaseOptions": "Opzioni contratto",
     "selectAll": "Seleziona tutti i contratti",
@@ -912,7 +908,6 @@
     "noneFound": "Nessun contratto trovato",
     "adjustFilters": "Prova a modificare la ricerca o i filtri",
     "addFirst": "Aggiungi primo contratto",
-    "bulkDescription": "Applica un aumento percentuale a {count, plural, one {# contratto selezionato} other {# contratti selezionati}}.",
     "daysToExpiry": "{days} gg alla scadenza",
     "perMonth": "{amount}/mese",
     "dateTo": "a",
@@ -999,6 +994,33 @@
         "rent": "Inserisci il canone mensile.",
         "endDate": "La data di fine deve essere successiva a quella di inizio.",
         "saveFailed": "Impossibile salvare la locazione. Riprova."
+      }
+    },
+    "rentIncrease": {
+      "title": "Aggiornamento del canone",
+      "description": "Scegli il mese da cui parte ogni nuovo canone. L'inquilino deve essere avvisato per iscritto almeno {days} giorni prima. Il primo aggiornamento può applicarsi un anno dopo l'inizio del contratto, e i successivi un anno dopo il precedente.",
+      "percent": "Aumento (%)",
+      "coefficientHint": "Coefficiente INE per il {year}: {percent}%",
+      "noticeDate": "Avviso inviato il",
+      "startsIn": "Nuovo canone da",
+      "alreadyPending": "Già programmato: {amount} da {month}",
+      "downloadNotices": "Scarica avvisi",
+      "schedule": "Programma aggiornamento",
+      "scheduled": "{count, plural, one {Aggiornamento programmato per # contratto.} other {Aggiornamento programmato per # contratti.}}",
+      "pending": "{amount} da {month}",
+      "cancel": "Annulla aggiornamento",
+      "cancelled": "Aggiornamento del canone annullato.",
+      "warning": {
+        "shortNotice": "Meno di {days} giorni dopo l'avviso.",
+        "beforeAnniversary": "Meno di un anno dall'inizio del contratto o dall'ultimo aggiornamento."
+      },
+      "notice": {
+        "greeting": "Gentile {name},",
+        "body": "Ai sensi dell'articolo 1077 del Codice civile portoghese, il canone mensile di {address} è aggiornato del {percent}%, il coefficiente pubblicato per il {year}.",
+        "current": "Canone attuale: {amount} al mese",
+        "new": "Nuovo canone: {amount} al mese",
+        "from": "A partire dal canone in scadenza a {month}.",
+        "closing": "Cordiali saluti,"
       }
     }
   },

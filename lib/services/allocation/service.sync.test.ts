@@ -33,9 +33,14 @@ const month = (id: string, iso: string, allocations: Row["allocations"] = [], du
   allocations,
 });
 
-function fakeClient(lease: Record<string, unknown>, rows: Row[]) {
+function fakeClient(
+  lease: Record<string, unknown>,
+  rows: Row[],
+  increases: { effectiveFrom: Date; newRent: number }[] = [],
+) {
   return {
     lease: { findUnique: vi.fn(async () => lease) },
+    rentIncrease: { findMany: vi.fn(async () => increases) },
     rentPeriod: {
       findMany: vi.fn(async (args: { select: Record<string, unknown> }) =>
         // The months that exist, as `generateRentPeriods` asks for them, or the full rows.
@@ -153,6 +158,43 @@ describe("syncLeasePeriods", () => {
       data: { dueAmount: 950 },
     });
     expect(sync.repriced).toBe(1);
+  });
+
+  it("owes a pending increase's rent from its month on, and the old rent before", async () => {
+    // Rent stays 900 until August, when an increase to 920 starts; it has not taken effect yet.
+    const client = fakeClient(
+      lease(),
+      [month("m7", "2026-07-01"), month("m8", "2026-08-01")],
+      [{ effectiveFrom: new Date("2026-08-01T00:00:00.000Z"), newRent: 920 }],
+    );
+
+    const sync = await syncLeasePeriods("lease-1", client as never, NOW);
+
+    expect(client.rentPeriod.update).toHaveBeenCalledTimes(1);
+    expect(client.rentPeriod.update).toHaveBeenCalledWith({
+      where: { id: "m8" },
+      data: { dueAmount: 920 },
+    });
+    expect(sync.repriced).toBe(1);
+  });
+
+  it("generates months after a pending increase at its rent", async () => {
+    const client = fakeClient(
+      lease(),
+      [month("m5", "2026-05-01")],
+      [{ effectiveFrom: new Date("2026-07-01T00:00:00.000Z"), newRent: 920 }],
+    );
+
+    await syncLeasePeriods("lease-1", client as never, NOW);
+
+    const created = client.rentPeriod.createMany.mock.calls[0][0] as {
+      data: { month: number; dueAmount: number }[];
+    };
+    expect(created.data.map((p) => [p.month, p.dueAmount])).toEqual([
+      [6, 900],
+      [7, 920],
+      [8, 920],
+    ]);
   });
 
   it("generates the missing months of an active lease", async () => {

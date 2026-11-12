@@ -72,6 +72,10 @@ const REASON_KEY = new Map<
   | "lastAdmin"
   | "accountExists"
   | "accountChanged"
+  | "rentIncreasePending"
+  | "rentIncreaseNotAhead"
+  | "rentIncreaseApplied"
+  | "leaseNotActive"
 >([
   ["tenant_has_history", "tenantHasHistory"],
   ["property_has_history", "propertyHasHistory"],
@@ -101,6 +105,10 @@ const REASON_KEY = new Map<
   ["last_admin", "lastAdmin"],
   ["account_exists", "accountExists"],
   ["account_changed", "accountChanged"],
+  ["rent_increase_pending", "rentIncreasePending"],
+  ["rent_increase_not_ahead", "rentIncreaseNotAhead"],
+  ["rent_increase_applied", "rentIncreaseApplied"],
+  ["lease_not_active", "leaseNotActive"],
 ]);
 
 type FormsCatalogue = (typeof en)["forms"];
