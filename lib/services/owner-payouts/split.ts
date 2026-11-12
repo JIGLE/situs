@@ -94,6 +94,11 @@ export interface OwnerStatement {
   /** What is still to be paid to the owner; below zero, what the owner owes back. */
   balance: number;
   payouts: PayoutRecord[];
+  /**
+   * The owner who collects the rent: their balance is what they keep, not a debt to them, so it
+   * stays out of `outstanding`.
+   */
+  collects: boolean;
 }
 
 export interface YearSplit {
@@ -104,7 +109,7 @@ export interface YearSplit {
   expenses: number;
   net: number;
   paid: number;
-  /** The positive balances added up: what is still to be paid out. */
+  /** The positive balances of owners who do not collect the rent: what is still to be paid out. */
   outstanding: number;
   properties: PropertySplit[];
   owners: OwnerStatement[];
@@ -238,8 +243,9 @@ export function splitYear(
   year: number,
   properties: PropertyMoney[],
   payouts: PayoutRecord[],
-  options: { sharedOnly?: boolean } = {},
+  options: { sharedOnly?: boolean; collectors?: ReadonlySet<string> } = {},
 ): YearSplit {
+  const collectors = options.collectors ?? new Set<string>();
   const all = properties
     .filter((property) => property.shares.some((share) => overlapsYear(share, year)))
     .map((property) => splitProperty(property, year));
@@ -269,6 +275,7 @@ export function splitYear(
         paid: 0,
         balance: 0,
         payouts: [],
+        collects: collectors.has(ownerId),
       };
       owners.set(ownerId, statement);
     }
@@ -306,8 +313,12 @@ export function splitYear(
     statement.balance = round2(statement.net - statement.paid);
   }
 
+  // The collector last: everyone above is someone to pay.
   const ownerList = [...owners.values()].sort(
-    (a, b) => b.balance - a.balance || a.ownerName.localeCompare(b.ownerName),
+    (a, b) =>
+      Number(a.collects) - Number(b.collects) ||
+      b.balance - a.balance ||
+      a.ownerName.localeCompare(b.ownerName),
   );
 
   return {
@@ -317,7 +328,9 @@ export function splitYear(
     expenses: sumMoney(splits.map((split) => split.expenses)),
     net: sumMoney(splits.map((split) => split.net)),
     paid: sumMoney(ownerList.map((owner) => owner.paid)),
-    outstanding: sumMoney(ownerList.map((owner) => Math.max(owner.balance, 0))),
+    outstanding: sumMoney(
+      ownerList.filter((owner) => !owner.collects).map((owner) => Math.max(owner.balance, 0)),
+    ),
     properties: splits,
     owners: ownerList,
   };

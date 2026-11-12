@@ -203,3 +203,28 @@ describe("splitYear, shared properties only", () => {
     expect(year.owners.find((o) => o.ownerId === "ana")).toMatchObject({ net: 600 });
   });
 });
+
+describe("splitYear, with the owner who collects the rent", () => {
+  it("leaves what the collector keeps out of what is still to pay, and lists them last", () => {
+    const year = splitYear(
+      2026,
+      [
+        {
+          propertyId: "p1",
+          propertyName: "Shared",
+          shares: [share("ana", 50), share("rui", 50)],
+          income: months(100),
+          expenses: [],
+        },
+      ],
+      [],
+      { collectors: new Set(["ana"]) },
+    );
+
+    expect(year.outstanding).toBe(600);
+    expect(year.owners.map((o) => [o.ownerId, o.collects, o.balance])).toEqual([
+      ["rui", false, 600],
+      ["ana", true, 600],
+    ]);
+  });
+});

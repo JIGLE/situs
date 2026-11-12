@@ -175,7 +175,9 @@ e2e/                    # Playwright E2E tests
   its `referenceMonth`, else its date) less the property's expenses dated in the year by the shares in
   force on that day, rounding per property so the parts add up to the cent; days whose shares add up
   to less than 100% stay `unassigned`, never given to anyone. Only payouts are stored (`OwnerPayout`:
-  owner, year, amount, day), so a balance is the live share less them. An owner with payouts is kept
+  owner, year, amount, day), so a balance is the live share less them. `Owner.collectsRent` marks the one owner who
+  collects the rent (`PUT /api/owner-payouts/collector`; marking one unmarks the last): their balance
+  is what they keep, so it is left out of `outstanding` and has no payout to record. An owner with payouts is kept
   (`owner_has_history`).
 - **Optional contacts**: `Tenant.email` and `phone`, `Owner.email`, `Property.bedrooms` and
   `bathrooms` are nullable, since Finanças names a person by NIF and name and gives a property no

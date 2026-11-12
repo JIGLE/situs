@@ -121,6 +121,9 @@ model Owner {
   taxRate                 Float? // Optional override for tax rate
   portalAccess            Boolean   @default(true) // Access to owner portal
   emailNotifications      Boolean   @default(true) // Receive email notifications
+  // The owner who receives the rent of the properties they share and pays the others their part
+  // (Finance › Owners' shares): their line shows what they keep, not what is still to pay them.
+  collectsRent            Boolean   @default(false)
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 

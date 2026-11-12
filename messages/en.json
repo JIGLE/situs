@@ -1613,7 +1613,13 @@
       "dateRequired": "Enter the day it was paid.",
       "recorded": "Payout recorded",
       "showAll": "All properties",
-      "soleOwnerHidden": "{count, plural, one {# property held by one owner is not shown.} other {# properties held by one owner are not shown.}}"
+      "soleOwnerHidden": "{count, plural, one {# property held by one owner is not shown.} other {# properties held by one owner are not shown.}}",
+      "keeps": "Keeps {amount}",
+      "collectorBadge": "collects the rent",
+      "markCollector": "Mark as the one who collects the rent",
+      "unmarkCollector": "Unmark as the one who collects the rent",
+      "collectorHint": "Who collects the rent? Open that owner in the list and mark them: their part then reads as kept rather than to pay.",
+      "collectorSaved": "Saved"
     }
   },
   "propertyDetail": {
@@ -2170,6 +2176,7 @@
     "changeAccountRole": "Account role changed",
     "recordOwnerPayout": "Owner payout recorded",
     "deleteOwnerPayout": "Owner payout removed",
+    "setRentCollector": "Rent collector changed",
     "uploadFinancasReceipt": "Recibo uploaded from Finanças"
   },
   "financasImport": {

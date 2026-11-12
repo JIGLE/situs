@@ -61,6 +61,7 @@ const YEAR = {
       paid: 0,
       balance: 6000,
       payouts: [],
+      collects: false,
     },
     {
       ownerId: "rui",
@@ -75,20 +76,27 @@ const YEAR = {
       payouts: [
         { id: "x1", ownerId: "rui", amount: 1000, paidAt: "2026-06-30T00:00:00.000Z", note: null },
       ],
+      collects: false,
     },
   ],
 };
 
+let year: typeof YEAR = YEAR;
+
 const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+  if (init?.method === "PUT") {
+    return { ok: true, status: 200, json: async () => ({ data: {} }) };
+  }
   if (init?.method === "POST") {
     return { ok: true, status: 201, json: async () => ({ data: { id: "x2" } }) };
   }
-  return { ok: true, status: 200, json: async () => ({ data: YEAR }) };
+  return { ok: true, status: 200, json: async () => ({ data: year }) };
 });
 
 describe("OwnerSharesView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    year = YEAR;
     vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-12-20T12:00:00.000Z") });
     vi.stubGlobal("fetch", fetchMock);
   });
@@ -146,5 +154,37 @@ describe("OwnerSharesView", () => {
 
     expect(screen.getByText("Entregas")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Remover a entrega de/ })).toBeInTheDocument();
+  });
+
+  it("says what the owner who collects the rent keeps, with nothing to record", async () => {
+    year = {
+      ...YEAR,
+      owners: YEAR.owners.map((o) => (o.ownerId === "ana" ? { ...o, collects: true } : o)),
+    };
+    renderWithProviders(<OwnerSharesView />, { initialLocale: "pt" });
+
+    expect(
+      await screen.findByText(`Fica com ${formatEuro(6000)}`.replace(/\s+/g, " ")),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Registar entrega" })).toHaveLength(1);
+    expect(screen.queryByText(/Quem recebe as rendas\?/)).not.toBeInTheDocument();
+  });
+
+  it("marks an owner as the one who collects the rent", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OwnerSharesView />, { initialLocale: "pt" });
+
+    expect(await screen.findByText(/Quem recebe as rendas\?/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Ana Costa/ }));
+    await user.click(screen.getByRole("button", { name: "Marcar como quem recebe as rendas" }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/owner-payouts/collector",
+        expect.objectContaining({ method: "PUT" }),
+      ),
+    );
+    const put = fetchMock.mock.calls.find(([, init]) => init?.method === "PUT")!;
+    expect(JSON.parse(put[1]!.body as string)).toEqual({ ownerId: "ana", collects: true });
   });
 });

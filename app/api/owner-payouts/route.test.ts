@@ -14,7 +14,8 @@ const { requireOwnerAccessMock, logAuditMock, prismaMock } = vi.hoisted(() => ({
     propertyOwner: { findMany: vi.fn() },
     receipt: { findMany: vi.fn() },
     expense: { findMany: vi.fn() },
-    owner: { findFirst: vi.fn() },
+    owner: { findFirst: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+    $transaction: vi.fn(async (ops: unknown[]) => Promise.all(ops)),
     ownerPayout: { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn(), delete: vi.fn() },
   },
 }));
@@ -28,6 +29,7 @@ vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => pris
 
 import { GET, POST } from "./route";
 import { DELETE } from "./[id]/route";
+import { PUT } from "./collector/route";
 
 const day = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 const url = "http://localhost:3000/api/owner-payouts";
@@ -126,6 +128,72 @@ describe("GET /api/owner-payouts", () => {
       data.owners.map((o: { ownerId: string; balance: number }) => [o.ownerId, o.balance]),
     );
     expect(balances).toEqual({ ana: 450, rui: 250 });
+  });
+
+  it("counts what the collector keeps out of what is still to pay", async () => {
+    const [ana, rui] = await prismaMock.propertyOwner.findMany();
+    prismaMock.propertyOwner.findMany.mockResolvedValue([
+      { ...ana, owner: { name: "Ana", collectsRent: true } },
+      rui,
+    ]);
+    prismaMock.receipt.findMany.mockResolvedValue([receipt()]);
+
+    const { data } = await (await GET(new NextRequest(`${url}?year=2026`))).json();
+
+    expect(data.outstanding).toBe(500);
+    expect(
+      data.owners.map((o: { ownerId: string; collects: boolean }) => [o.ownerId, o.collects]),
+    ).toEqual([
+      ["rui", false],
+      ["ana", true],
+    ]);
+  });
+});
+
+describe("PUT /api/owner-payouts/collector", () => {
+  const put = (body: unknown) =>
+    new NextRequest(`${url}/collector`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+      headers: { "Content-Type": "application/json" },
+    });
+
+  it("marks the caller's owner, unmarks whoever collected before, and audits it", async () => {
+    prismaMock.owner.findFirst.mockResolvedValue({ id: "ana", name: "Ana" });
+
+    const res = await PUT(put({ ownerId: "ana", collects: true }));
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.owner.findFirst.mock.calls[0][0].where).toEqual({
+      id: "ana",
+      userId: "user-1",
+    });
+    expect(prismaMock.owner.updateMany).toHaveBeenCalledWith({
+      where: { userId: "user-1", collectsRent: true, id: { not: "ana" } },
+      data: { collectsRent: false },
+    });
+    expect(prismaMock.owner.update).toHaveBeenCalledWith({
+      where: { id: "ana" },
+      data: { collectsRent: true },
+    });
+    expect(logAuditMock).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "SET_RENT_COLLECTOR", resourceId: "ana" }),
+    );
+  });
+
+  it("answers another account's owner as a 404 and changes nothing", async () => {
+    prismaMock.owner.findFirst.mockResolvedValue(null);
+
+    const res = await PUT(put({ ownerId: "eve", collects: true }));
+
+    expect(res.status).toBe(404);
+    expect(prismaMock.owner.update).not.toHaveBeenCalled();
+    expect(prismaMock.owner.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("refuses a body without the flag as a 400", async () => {
+    const res = await PUT(put({ ownerId: "ana" }));
+    expect(res.status).toBe(400);
   });
 });
 

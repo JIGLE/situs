@@ -109,6 +109,7 @@ export type AuditAction =
   // as recorded by mistake (lib/services/owner-payouts/).
   | "RECORD_OWNER_PAYOUT"
   | "DELETE_OWNER_PAYOUT"
+  | "SET_RENT_COLLECTOR"
   // Who may create an account (lib/services/auth/sign-up.ts, registration.ts): an account made, how
   // it was let in, an invitation sent or withdrawn, and a sign-up switch changed.
   | "CREATE_ACCOUNT"

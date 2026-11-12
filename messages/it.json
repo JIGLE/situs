@@ -1613,7 +1613,13 @@
       "dateRequired": "Inserisci il giorno del pagamento.",
       "recorded": "Pagamento registrato",
       "showAll": "Tutti gli immobili",
-      "soleOwnerHidden": "{count, plural, one {# immobile con un solo proprietario non è mostrato.} other {# immobili con un solo proprietario non sono mostrati.}}"
+      "soleOwnerHidden": "{count, plural, one {# immobile con un solo proprietario non è mostrato.} other {# immobili con un solo proprietario non sono mostrati.}}",
+      "keeps": "Trattiene {amount}",
+      "collectorBadge": "incassa gli affitti",
+      "markCollector": "Segna come chi incassa gli affitti",
+      "unmarkCollector": "Non segnare più come chi incassa gli affitti",
+      "collectorHint": "Chi incassa gli affitti? Apri quel proprietario nell'elenco e segnalo: la sua parte apparirà come «trattiene» invece che «da pagare».",
+      "collectorSaved": "Salvato"
     }
   },
   "propertyDetail": {
@@ -2170,6 +2176,7 @@
     "changeAccountRole": "Ruolo dell'account modificato",
     "recordOwnerPayout": "Pagamento al proprietario registrato",
     "deleteOwnerPayout": "Pagamento al proprietario rimosso",
+    "setRentCollector": "Incaricato degli affitti cambiato",
     "uploadFinancasReceipt": "Ricevuta caricata dalle Finanças"
   },
   "financasImport": {
