@@ -830,7 +830,8 @@
       "ledger": "Rentas",
       "movements": "Movimientos",
       "expenses": "Gastos",
-      "reports": "Informes"
+      "reports": "Informes",
+      "shares": "Reparto"
     }
   },
   "leases": {
@@ -1538,6 +1539,45 @@
       "dateRequired": "Indica la fecha en que llegó el dinero.",
       "submit": "Registrar pago",
       "recorded": "Pago registrado."
+    },
+    "ownerShares": {
+      "income": "Rentas cobradas",
+      "expenses": "Gastos",
+      "net": "Neto",
+      "outstanding": "Por pagar",
+      "paid": "Pagado",
+      "balance": "Saldo",
+      "colOwner": "Propietario",
+      "colProperties": "Inmuebles",
+      "emptyTitle": "Ningún inmueble tiene propietarios registrados en {year}",
+      "emptyDescription": "Añada los propietarios y sus cuotas en la página del inmueble. Las rentas cobradas, menos los gastos del inmueble, se reparten aquí entre ellos, y puede registrar lo que paga a cada uno.",
+      "byOwner": "Por propietario",
+      "byProperty": "Por inmueble",
+      "ownerLine": "{count, plural, one {# inmueble} other {# inmuebles}} · cuota {net}",
+      "paidLine": "pagado {amount}",
+      "toPay": "A pagar {amount}",
+      "owesBack": "Debe devolver {amount}",
+      "settled": "Liquidado",
+      "recordPayout": "Registrar pago",
+      "reimbursedLine": "Incluye {amount} de gastos que este propietario pagó de su bolsillo.",
+      "payouts": "Pagos",
+      "noPayouts": "Aún no se ha pagado nada de este año.",
+      "removePayout": "Eliminar el pago del {date}",
+      "removeTitle": "¿Eliminar este pago?",
+      "removeDescription": "Se eliminará el pago de {amount} a {name} del {date}, y lo que aún se le debe sube esa cantidad.",
+      "remove": "Eliminar",
+      "removed": "Pago eliminado",
+      "propertyLine": "Cobrado {income} · gastos {expenses}",
+      "sharesChanged": "Las cuotas cambiaron durante el año: cada mes se reparte según las cuotas vigentes entonces.",
+      "unassigned": "{amount} cae en días en que las cuotas de este inmueble suman menos del 100%, así que no se asigna a nadie. Complete las cuotas en la página del inmueble.",
+      "payoutTitle": "Pago a {name}",
+      "payoutDescription": "Dinero que entregó de las rentas de {year}. Pendiente antes de este pago: {amount}.",
+      "amount": "Importe",
+      "date": "Fecha de pago",
+      "note": "Nota (opcional)",
+      "amountRequired": "Indique un importe mayor que cero.",
+      "dateRequired": "Indique el día en que se pagó.",
+      "recorded": "Pago registrado"
     }
   },
   "propertyDetail": {
@@ -2091,7 +2131,9 @@
     "createInvitation": "Persona invitada",
     "revokeInvitation": "Invitación retirada",
     "signUpSettingChange": "Ajuste de registro cambiado",
-    "changeAccountRole": "Rol de la cuenta cambiado"
+    "changeAccountRole": "Rol de la cuenta cambiado",
+    "recordOwnerPayout": "Pago a propietario registrado",
+    "deleteOwnerPayout": "Pago a propietario eliminado"
   },
   "financasImport": {
     "title": "Importar de Finanças",

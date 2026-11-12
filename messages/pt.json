@@ -830,7 +830,8 @@
       "ledger": "Rendas",
       "movements": "Movimentos",
       "expenses": "Despesas",
-      "reports": "Relatórios"
+      "reports": "Relatórios",
+      "shares": "Repartição"
     }
   },
   "leases": {
@@ -1538,6 +1539,45 @@
       "dateRequired": "Indique a data em que o dinheiro chegou.",
       "submit": "Registar pagamento",
       "recorded": "Pagamento registado."
+    },
+    "ownerShares": {
+      "income": "Rendas recebidas",
+      "expenses": "Despesas",
+      "net": "Líquido",
+      "outstanding": "Por pagar",
+      "paid": "Pago",
+      "balance": "Saldo",
+      "colOwner": "Proprietário",
+      "colProperties": "Imóveis",
+      "emptyTitle": "Nenhum imóvel tem proprietários registados em {year}",
+      "emptyDescription": "Adicione os proprietários e as suas quotas na página do imóvel. As rendas recebidas, menos as despesas do imóvel, são depois repartidas aqui entre eles, e pode registar o que paga a cada um.",
+      "byOwner": "Por proprietário",
+      "byProperty": "Por imóvel",
+      "ownerLine": "{count, plural, one {# imóvel} other {# imóveis}} · quota {net}",
+      "paidLine": "pago {amount}",
+      "toPay": "A pagar {amount}",
+      "owesBack": "Deve devolver {amount}",
+      "settled": "Liquidado",
+      "recordPayout": "Registar pagamento",
+      "reimbursedLine": "Inclui {amount} de despesas que este proprietário pagou do seu bolso.",
+      "payouts": "Pagamentos",
+      "noPayouts": "Ainda nada foi pago relativo a este ano.",
+      "removePayout": "Remover o pagamento de {date}",
+      "removeTitle": "Remover este pagamento?",
+      "removeDescription": "O pagamento de {amount} a {name} em {date} será removido, e o que ainda lhe é devido sobe esse valor.",
+      "remove": "Remover",
+      "removed": "Pagamento removido",
+      "propertyLine": "Recebido {income} · despesas {expenses}",
+      "sharesChanged": "As quotas mudaram durante o ano: cada mês é repartido pelas quotas em vigor nesse mês.",
+      "unassigned": "{amount} cai em dias em que as quotas deste imóvel somam menos de 100%, por isso não é atribuído a ninguém. Complete as quotas na página do imóvel.",
+      "payoutTitle": "Pagamento a {name}",
+      "payoutDescription": "Dinheiro que entregou das rendas de {year}. Em dívida antes deste pagamento: {amount}.",
+      "amount": "Valor",
+      "date": "Data do pagamento",
+      "note": "Nota (opcional)",
+      "amountRequired": "Indique um valor maior que zero.",
+      "dateRequired": "Indique o dia em que foi pago.",
+      "recorded": "Pagamento registado"
     }
   },
   "propertyDetail": {
@@ -2091,7 +2131,9 @@
     "createInvitation": "Pessoa convidada",
     "revokeInvitation": "Convite retirado",
     "signUpSettingChange": "Definição de registo alterada",
-    "changeAccountRole": "Função da conta alterada"
+    "changeAccountRole": "Função da conta alterada",
+    "recordOwnerPayout": "Pagamento a proprietário registado",
+    "deleteOwnerPayout": "Pagamento a proprietário removido"
   },
   "financasImport": {
     "title": "Importar das Finanças",

@@ -35,6 +35,7 @@ vi.mock("./bank-movements-inbox", () => ({ BankMovementsInbox: () => <p>bank pan
 vi.mock("./tax-connector-dashboard", () => ({ TaxConnectorDashboard: () => null }));
 vi.mock("./financials-view", () => ({ FinancialsView: () => <p>figures panel</p> }));
 vi.mock("./expenses-view", () => ({ ExpensesView: () => <p>expenses panel</p> }));
+vi.mock("./owner-shares-view", () => ({ OwnerSharesView: () => <p>owner shares panel</p> }));
 
 let address: ReturnType<typeof createFakeAddress>;
 
@@ -52,7 +53,7 @@ describe("FinancialsContainer", () => {
   });
   afterEach(() => localStorage.clear());
 
-  it("has four tabs, and opens on the ledger", async () => {
+  it("has five tabs, and opens on the ledger", async () => {
     render(<FinancialsContainer />);
 
     expect(await screen.findByText("rent matrix panel")).toBeInTheDocument();
@@ -60,6 +61,7 @@ describe("FinancialsContainer", () => {
       "Ledger",
       "Movements",
       "Expenses",
+      "Owners' shares",
       "Reports",
     ]);
   });

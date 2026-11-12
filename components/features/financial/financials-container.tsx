@@ -16,11 +16,12 @@ import { YearlyRentMatrix } from "./yearly-rent-matrix";
 import { BankMovementsInbox } from "./bank-movements-inbox";
 import { TaxConnectorDashboard } from "./tax-connector-dashboard";
 import { FinancialsView } from "./financials-view";
+import { OwnerSharesView } from "./owner-shares-view";
 import { RecordPaymentDialog } from "./record-payment-dialog";
-import { BarChart3, Grid3X3, Landmark, Plus, Wallet } from "lucide-react";
+import { BarChart3, Grid3X3, Landmark, PieChart, Plus, Wallet } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-const PAYMENT_TABS = ["ledger", "movements", "expenses", "reports"] as const;
+const PAYMENT_TABS = ["ledger", "movements", "expenses", "shares", "reports"] as const;
 type PaymentTab = (typeof PAYMENT_TABS)[number];
 
 /**
@@ -115,6 +116,8 @@ export function FinancialsContainer() {
       badge: bankSummary?.toReview || undefined,
     },
     { value: "expenses", label: t("tabs.expenses"), icon: Wallet },
+    // What each co-owner is due from the rent collected for the properties they share.
+    { value: "shares", label: t("tabs.shares"), icon: PieChart },
     { value: "reports", label: t("tabs.reports"), icon: BarChart3 },
   ];
   // A tab stored under an old name is read as the tab it became; one that names nothing would
@@ -186,6 +189,10 @@ export function FinancialsContainer() {
 
         <TabsContent value="expenses" className="mt-0">
           <ExpensesView />
+        </TabsContent>
+
+        <TabsContent value="shares" className="mt-0">
+          <OwnerSharesView />
         </TabsContent>
 
         {/* What has happened, to read and to file: the period's figures, the receipts register

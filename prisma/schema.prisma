@@ -65,6 +65,7 @@ model User {
   leases                 Lease[]
   leaseParties           LeaseParty[]
   rentIncreases          RentIncrease[]
+  ownerPayouts           OwnerPayout[]
   owners                 Owner[]
   emailLogs              EmailLog[]
   documents              Document[]
@@ -128,6 +129,7 @@ model Owner {
   properties          PropertyOwner[]
   documents           Document[]
   incomeDistributions IncomeDistributionShare[]
+  payouts             OwnerPayout[]
 
   @@unique([userId, email])
   @@map("owners")
@@ -958,6 +960,29 @@ model IncomeDistributionShare {
   owner        Owner              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@map("income_distribution_shares")
+}
+
+// Money handed to a co-owner out of the rent the account collects for a property they share.
+// A payout counts against one year's share (`year`): what a co-owner is still owed for a year is
+// their part of that year's net income, worked out from the ledger and the dated shares
+// (lib/services/owner-payouts/), less the payouts recorded for it. Nothing about the share is
+// stored, so a payment that arrives or an expense entered after a payout moves the balance.
+model OwnerPayout {
+  id        String   @id @default(cuid())
+  userId    String
+  ownerId   String
+  year      Int // The year whose net income this settles
+  amount    Float
+  paidAt    DateTime
+  note      String?
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  owner Owner @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([userId, year])
+  @@index([ownerId])
+  @@map("owner_payouts")
 }
 
 // User Settings (preferences)

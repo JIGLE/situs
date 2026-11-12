@@ -286,8 +286,8 @@ export async function proxy(request: NextRequest) {
     seedCsrfCookie = !request.cookies.get("csrf-token")?.value;
   }
 
-  // Preserve the Finance tabs the page reads: its four (Ledger, Movements, Expenses, Reports) and
-  // the four names they replaced, which the page itself reads as the tab each became
+  // Preserve the Finance tabs the page reads: its five (Ledger, Movements, Expenses, Shares,
+  // Reports) and the four names they replaced, which the page itself reads as the tab each became
   // (`financials-container.tsx`). `expenses` was a legacy alias for the tax tab until Expenses
   // became a tab of its own; mapped here, it sent every Expenses link to Reports.
   const isFinancialsPath = appPath === "/financials";
@@ -295,6 +295,7 @@ export async function proxy(request: NextRequest) {
     "ledger",
     "movements",
     "expenses",
+    "shares",
     "reports",
     "receipts",
     "rent-matrix",

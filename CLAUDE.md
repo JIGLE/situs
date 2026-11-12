@@ -167,6 +167,14 @@ e2e/                    # Playwright E2E tests
   adds them up. A new share closes the old row and opens one; removing an owner closes their row.
   A same-day change corrects the row in place. Screens read the current rows (`CURRENT_SHARES`);
   an AT receipt names the landlords in force on the first day of the month it pays (`isInForceOn`).
+- **Co-owners' shares** (`lib/services/owner-payouts/`, Finance › Owners' shares, `/api/owner-payouts`):
+  the account collects a shared property's whole rent and pays the other owners later. `split.ts` (pure)
+  splits a year's income (receipts dated in the year that `countsAsIncome`, each on the first day of
+  its `referenceMonth`, else its date) less the property's expenses dated in the year by the shares in
+  force on that day, rounding per property so the parts add up to the cent; days whose shares add up
+  to less than 100% stay `unassigned`, never given to anyone. Only payouts are stored (`OwnerPayout`:
+  owner, year, amount, day), so a balance is the live share less them. An owner with payouts is kept
+  (`owner_has_history`).
 - **Optional contacts**: `Tenant.email` and `phone`, `Owner.email`, `Property.bedrooms` and
   `bathrooms` are nullable, since Finanças names a person by NIF and name and gives a property no
   rooms. A blank is NULL, never `""` (`blankToNull`, `lib/schemas/tax-identity.ts`; undefined leaves a

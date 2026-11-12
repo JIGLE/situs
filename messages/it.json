@@ -830,7 +830,8 @@
       "ledger": "Canoni",
       "movements": "Movimenti",
       "expenses": "Spese",
-      "reports": "Report"
+      "reports": "Report",
+      "shares": "Ripartizione"
     }
   },
   "leases": {
@@ -1538,6 +1539,45 @@
       "dateRequired": "Inserisci la data in cui è arrivato il denaro.",
       "submit": "Registra pagamento",
       "recorded": "Pagamento registrato."
+    },
+    "ownerShares": {
+      "income": "Affitti incassati",
+      "expenses": "Spese",
+      "net": "Netto",
+      "outstanding": "Da pagare",
+      "paid": "Pagato",
+      "balance": "Saldo",
+      "colOwner": "Proprietario",
+      "colProperties": "Immobili",
+      "emptyTitle": "Nessun immobile ha proprietari registrati nel {year}",
+      "emptyDescription": "Aggiungi i proprietari e le loro quote nella pagina dell'immobile. Gli affitti incassati, meno le spese dell'immobile, vengono poi ripartiti qui tra loro, e puoi registrare quanto paghi a ciascuno.",
+      "byOwner": "Per proprietario",
+      "byProperty": "Per immobile",
+      "ownerLine": "{count, plural, one {# immobile} other {# immobili}} · quota {net}",
+      "paidLine": "pagato {amount}",
+      "toPay": "Da pagare {amount}",
+      "owesBack": "Deve restituire {amount}",
+      "settled": "Saldato",
+      "recordPayout": "Registra pagamento",
+      "reimbursedLine": "Include {amount} di spese che questo proprietario ha pagato di tasca propria.",
+      "payouts": "Pagamenti",
+      "noPayouts": "Ancora nulla pagato per quest'anno.",
+      "removePayout": "Rimuovi il pagamento del {date}",
+      "removeTitle": "Rimuovere questo pagamento?",
+      "removeDescription": "Il pagamento di {amount} a {name} del {date} verrà rimosso, e quanto gli è ancora dovuto aumenta di tale importo.",
+      "remove": "Rimuovi",
+      "removed": "Pagamento rimosso",
+      "propertyLine": "Incassato {income} · spese {expenses}",
+      "sharesChanged": "Le quote sono cambiate durante l'anno: ogni mese è ripartito secondo le quote in vigore allora.",
+      "unassigned": "{amount} cade in giorni in cui le quote di questo immobile sommano meno del 100%, quindi non è assegnato a nessuno. Completa le quote nella pagina dell'immobile.",
+      "payoutTitle": "Pagamento a {name}",
+      "payoutDescription": "Denaro consegnato dagli affitti del {year}. Dovuto prima di questo pagamento: {amount}.",
+      "amount": "Importo",
+      "date": "Data del pagamento",
+      "note": "Nota (facoltativa)",
+      "amountRequired": "Inserisci un importo maggiore di zero.",
+      "dateRequired": "Inserisci il giorno del pagamento.",
+      "recorded": "Pagamento registrato"
     }
   },
   "propertyDetail": {
@@ -2091,7 +2131,9 @@
     "createInvitation": "Persona invitata",
     "revokeInvitation": "Invito ritirato",
     "signUpSettingChange": "Impostazione di registrazione modificata",
-    "changeAccountRole": "Ruolo dell'account modificato"
+    "changeAccountRole": "Ruolo dell'account modificato",
+    "recordOwnerPayout": "Pagamento al proprietario registrato",
+    "deleteOwnerPayout": "Pagamento al proprietario rimosso"
   },
   "financasImport": {
     "title": "Importa da Finanças",
