@@ -81,14 +81,16 @@ export function tenancyFromContract(
   if (contract.monthlyRent == null) warnings.push("no_rent");
   if (contract.rentNotMonthly) warnings.push("rent_not_monthly");
   if (!contract.startDate) warnings.push("no_start");
-  if (contract.endDate && contract.endDate < today) warnings.push("term_passed");
+  const termPassed = !!contract.endDate && contract.endDate < today;
+  if (termPassed) warnings.push("term_passed");
 
   return {
     propertyId: matches.length === 1 ? matches[0].id : null,
     tenant,
     coTenants: others.map((p) => ({ name: titleCase(p.name), taxId: p.taxId })),
     startDate: contract.startDate,
-    endDate: contract.endDate,
+    // A lapsed term is no end date for a tenancy still running: the warning quotes it instead.
+    endDate: termPassed ? null : contract.endDate,
     monthlyRent: contract.monthlyRent,
     atContractNumber: contract.contractNumber,
     warnings,
