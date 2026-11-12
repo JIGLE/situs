@@ -48,8 +48,8 @@ test.describe("Critical Path: Lease management", () => {
    * whose triggers expose role=combobox; the property's is the first in the sheet.
    */
   const openSheet = async (page: import("@playwright/test").Page) => {
-    await page.goto("/leases");
-    await expect(page).toHaveURL(/\/leases/);
+    await page.goto("/portfolio?tab=leases");
+    await expect(page).toHaveURL(/tab=leases/);
     await page
       .getByRole("button", { name: /new tenancy/i })
       .first()

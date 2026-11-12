@@ -127,7 +127,7 @@ export function OverviewView({
   const navigate = (href: string) => router.push(href);
   const handleAddProperty = () =>
     onAddProperty?.() ?? navigate("/portfolio?action=create-property");
-  const handleAddLease = () => onAddLease?.() ?? navigate("/leases?action=create");
+  const handleAddLease = () => onAddLease?.() ?? navigate("/portfolio?tab=leases&action=create");
   const handleConnectBank = () => onConnectBank?.() ?? navigate("/settings?tab=integrations");
 
   // Add a property, start a tenancy, connect the bank. Recording a payment by hand was a step;

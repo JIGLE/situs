@@ -82,7 +82,7 @@
       "notifications": "Notifiche",
       "security": "Sicurezza e privacy",
       "integrations": "Integrazioni",
-      "system": "Sistema",
+      "system": "Amministrazione",
       "heading": "Impostazioni",
       "subtitle": "Gestisci le tue preferenze e l'account",
       "sectionsLabel": "Sezioni delle impostazioni",
@@ -169,7 +169,7 @@
       "taxYearRemindersHelp": "Ricevi un promemoria a gennaio per generare i moduli fiscali",
       "incomeAlerts": "Avvisi di distribuzione delle entrate",
       "incomeAlertsHelp": "Avvisa quando le distribuzioni vengono calcolate",
-      "systemStatus": "Stato del sistema",
+      "adminHelp": "Lo stato dell'istanza, chi può accedere e il ruolo di ogni account. Solo un amministratore può aprirle.",
       "systemStatusDescription": "Salute di server, database e servizi",
       "database": "Database",
       "uptime": "Tempo di attività",
@@ -236,8 +236,6 @@
       "bankNoProviderTitle": "Connessione bancaria non configurata",
       "bankNoProviderBody": "Questa istanza non ha credenziali Enable Banking, quindi i movimenti non possono essere importati automaticamente. Imposta ENABLE_BANKING_APPLICATION_ID e ENABLE_BANKING_PRIVATE_KEY_FILE che punta al .pem montato, poi riavvia.",
       "bankNoProviderManual": "Nel frattempo non arrivano movimenti bancari. Un pagamento si può comunque registrare a mano, in Finanza › Ricevute.",
-      "systemStatusMovedHelp": "Lo stato dell'istanza è passato all'area di amministrazione, separata dall'app.",
-      "openAdmin": "Apri amministrazione",
       "bankConsentUntil": "Consenso valido fino al {date}",
       "bankConsentEnding": "Il consenso scade il {date}: rinnova l'accesso prima per continuare a sincronizzare",
       "bankConsentEnded": "Il consenso è scaduto il {date}",
@@ -1694,28 +1692,6 @@
         "auditNote": "Ogni passaggio del flusso è registrato"
       }
     }
-  },
-  "tenantDetail": {
-    "reviewPayments": "Rivedi pagamenti",
-    "documents": "Documenti",
-    "contact": "Contatta",
-    "edit": "Modifica",
-    "activeLease": "Contratto attivo",
-    "ends": "Termina il {date}",
-    "lease": "Contratto",
-    "deposit": "Cauzione",
-    "tabs": {
-      "overview": "Panoramica",
-      "lease": "Contratto",
-      "payments": "Pagamenti"
-    },
-    "monthlyRent": "Canone mensile",
-    "totalPaid": "Totale pagato",
-    "leasePeriod": "Periodo del contratto",
-    "notes": "Note",
-    "paymentHistory": "Storico pagamenti",
-    "notFound": "Inquilino non trovato",
-    "backToTenants": "Torna agli inquilini"
   },
   "tenants": {
     "dialogCreateTitle": "Aggiungi inquilino",

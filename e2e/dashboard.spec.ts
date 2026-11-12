@@ -1,7 +1,6 @@
 import { test, expect } from "@playwright/test";
 import en from "../messages/en.json";
 import pt from "../messages/pt.json";
-import { revealPortfolioLink } from "./helpers/nav";
 import { settle } from "./helpers/wait";
 
 test.use({ storageState: "playwright/.auth/user.json" });
@@ -49,7 +48,6 @@ test.describe("Dashboard", () => {
     await page.goto("/dashboard");
     await settle(page);
 
-    await revealPortfolioLink(page);
     const portfolioLink = page.getByRole("link", { name: /portfolio/i }).first();
     await expect(portfolioLink).toBeVisible();
     await portfolioLink.click();
@@ -58,16 +56,16 @@ test.describe("Dashboard", () => {
     await expect(page).toHaveURL((url) => url.pathname === "/portfolio");
   });
 
-  // Leases was hidden from both layouts, so the screen where leases are created had no way in.
-  test("should navigate to Leases section", async ({ page }) => {
+  // Leases is Portfolio's Leases tab: the menu has no entry of its own for it any more.
+  test("should reach Leases through Portfolio", async ({ page }) => {
     await page.goto("/dashboard");
     await settle(page);
 
-    const leasesLink = page.getByRole("link", { name: "Leases", exact: true }).first();
-    await expect(leasesLink).toBeVisible();
-    await leasesLink.click();
+    await page.getByRole("link", { name: "Portfolio", exact: true }).first().click();
+    await expect(page).toHaveURL((url) => url.pathname === "/portfolio");
+    await page.getByRole("tab", { name: "Leases", exact: true }).click();
 
-    await expect(page).toHaveURL((url) => url.pathname === "/leases");
+    await expect(page).toHaveURL((url) => url.searchParams.get("tab") === "leases");
   });
 
   test("should navigate to People section", async ({ page }) => {

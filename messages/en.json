@@ -82,7 +82,7 @@
       "notifications": "Notifications",
       "security": "Security & privacy",
       "integrations": "Integrations",
-      "system": "System",
+      "system": "Administration",
       "heading": "Settings",
       "subtitle": "Manage your preferences and account settings",
       "sectionsLabel": "Settings sections",
@@ -169,7 +169,7 @@
       "taxYearRemindersHelp": "Get reminded in January to generate tax forms",
       "incomeAlerts": "Income distribution alerts",
       "incomeAlertsHelp": "Notify when distributions are calculated",
-      "systemStatus": "System status",
+      "adminHelp": "The instance's health, who may sign in, and each account's role. Only an administrator can open them.",
       "systemStatusDescription": "Server, database and service health",
       "database": "Database",
       "uptime": "Uptime",
@@ -236,8 +236,6 @@
       "bankNoProviderTitle": "Bank connection not configured",
       "bankNoProviderBody": "This instance has no Enable Banking credentials, so movements cannot be imported automatically. Set ENABLE_BANKING_APPLICATION_ID and ENABLE_BANKING_PRIVATE_KEY_FILE pointing at the mounted .pem, then restart.",
       "bankNoProviderManual": "Until then no bank movements arrive. A payment can still be recorded by hand, in Finance › Receipts.",
-      "systemStatusMovedHelp": "Instance health moved to the admin area, which is separate from the app.",
-      "openAdmin": "Open admin",
       "bankConsentUntil": "Consent valid until {date}",
       "bankConsentEnding": "Consent ends {date}: renew access before then to keep syncing",
       "bankConsentEnded": "Consent ended {date}",
@@ -1694,28 +1692,6 @@
         "auditNote": "Every workflow step recorded"
       }
     }
-  },
-  "tenantDetail": {
-    "reviewPayments": "Review payments",
-    "documents": "Documents",
-    "contact": "Contact",
-    "edit": "Edit",
-    "activeLease": "Active lease",
-    "ends": "Ends {date}",
-    "lease": "Lease",
-    "deposit": "Deposit",
-    "tabs": {
-      "overview": "Overview",
-      "lease": "Lease",
-      "payments": "Payments"
-    },
-    "monthlyRent": "Monthly rent",
-    "totalPaid": "Total paid",
-    "leasePeriod": "Lease period",
-    "notes": "Notes",
-    "paymentHistory": "Payment history",
-    "notFound": "Tenant not found",
-    "backToTenants": "Back to tenants"
   },
   "tenants": {
     "dialogCreateTitle": "Add New Tenant",

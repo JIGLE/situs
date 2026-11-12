@@ -15,7 +15,7 @@ test.use({ storageState: "playwright/.auth/user.json" });
 const SCREENS = [
   "/dashboard",
   "/portfolio",
-  "/leases",
+  "/portfolio?tab=leases",
   "/financials",
   "/people",
   "/settings",

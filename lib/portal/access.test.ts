@@ -187,19 +187,34 @@ describe("every page under (main) passes the portal access guard", () => {
  * Leases was a `hidden` item, "reached from" pages that no longer linked to it, so the screen
  * where leases are created and edited had no way in on either layout.
  */
-describe("where Leases sits in the navigation", () => {
-  it("has a row in the rail, after Portfolio", () => {
-    const keys = getPortalNavigation().flatMap((group) => group.items.map((item) => item.key));
-    expect(keys.indexOf("leases")).toBe(keys.indexOf("properties") + 1);
+/**
+ * Five entries: Home, Portfolio, Finance, People and Settings. Leases became Portfolio's Leases
+ * tab and Administration a Settings section; both routes stay permitted, since links and
+ * bookmarks still reach them.
+ */
+describe("the navigation", () => {
+  it("has five entries", () => {
+    expect(getPortalNavigation().flatMap((group) => group.items.map((item) => item.key))).toEqual([
+      "dashboard",
+      "properties",
+      "financials",
+      "people",
+      "settings",
+    ]);
   });
 
-  it("takes Portfolio's place in the phone's bottom bar, with Portfolio under More", () => {
+  it("puts the four daily ones in the phone's bottom bar, and Settings under More", () => {
     expect(getPrimaryMobileNavigation().map((item) => item.key)).toEqual([
       "dashboard",
-      "leases",
+      "properties",
       "financials",
       "people",
     ]);
-    expect(getSecondaryMobileNavigation().map((item) => item.key)).toContain("properties");
+    expect(getSecondaryMobileNavigation().map((item) => item.key)).toEqual(["settings"]);
+  });
+
+  it("still lets /leases and /admin through", () => {
+    expect(canAccessPortalPath("/leases")).toBe(true);
+    expect(canAccessPortalPath("/admin/access")).toBe(true);
   });
 });

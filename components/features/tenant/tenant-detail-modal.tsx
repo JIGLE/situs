@@ -134,7 +134,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
         label: t("modal.renewLease"),
         onClick: () => {
           onClose();
-          router.push(`/leases?action=renew&id=${activeLease.id}`);
+          router.push(`/portfolio?tab=leases&action=renew&id=${activeLease.id}`);
         },
         icon: Calendar,
         variant: "default" as const,
@@ -145,7 +145,7 @@ export function TenantDetailModal({ tenantId, onClose }: TenantDetailModalProps)
         label: t("modal.addLease"),
         onClick: () => {
           onClose();
-          router.push(`/leases?action=create&tenantId=${tenant.id}`);
+          router.push(`/portfolio?tab=leases&action=create&tenantId=${tenant.id}`);
         },
         icon: Wrench,
         variant: "default" as const,

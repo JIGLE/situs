@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils/utils";
 /** Where each step's work is done. */
 const LINKS = {
   rentMatrix: "/financials?tab=ledger",
-  leases: "/leases",
+  leases: "/portfolio?tab=leases",
   integrations: "/settings?tab=integrations",
   complete: "/complete",
 } as const;
@@ -184,7 +184,7 @@ export function LateList({ late }: { late: DashboardMonth["late"] }) {
         {late.map((entry) => (
           <li key={entry.leaseId}>
             <Link
-              href={`/leases?detail=lease:${entry.leaseId}`}
+              href={`/portfolio?tab=leases&detail=lease:${entry.leaseId}`}
               className="flex min-h-11 items-center justify-between gap-3 px-4 py-3 hover:bg-[var(--color-muted)]"
             >
               <span className="min-w-0">

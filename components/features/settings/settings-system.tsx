@@ -1,36 +1,43 @@
 "use client";
 
+import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { ShieldCheck } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Panel } from "@/components/shared/panel";
-import { Button } from "@/components/ui/button";
+
+/** Admin's sections, as its own tab bar names them (`admin-shell-nav.tsx`). */
+const ADMIN_SECTIONS = [
+  { key: "overview", href: "/admin" },
+  { key: "status", href: "/admin/status" },
+  { key: "access", href: "/admin/access" },
+] as const;
 
 /**
- * Settings › System.
- *
- * This panel used to render a second system-status readout — database latency, uptime,
- * environment, email provider — fetched from `/api/health`. That duplicated `/admin` in a
- * user-facing screen, with a thinner and slightly different set of checks, so the two could
- * disagree and the one a non-admin saw was the less accurate of them.
- *
- * Instance health now lives in the admin area, which has its own shell precisely because it is
- * not part of the app. What remains here is a way across for anyone who came looking for the
- * status they remember.
+ * Settings › Administration: the way into the instance's administration, which used to be an
+ * entry of its own in the menu. Admin keeps its pages, since they are opened when the app itself
+ * is broken and read nothing the app loads; this lists them where the instance's other settings
+ * are. The admin APIs refuse anyone but an administrator, whatever reaches the pages.
  */
 export function SettingsSystem() {
   const t = useTranslations("settings.panel");
-  const router = useRouter();
+  const tAdmin = useTranslations("admin.shell");
 
   return (
-    <div className="space-y-6">
-      <Panel title={t("systemStatus")} description={t("systemStatusMovedHelp")} padded>
-        <Button variant="outline" size="sm" onClick={() => router.push("/admin")}>
-          <ShieldCheck className="h-4 w-4 mr-1.5" />
-          {t("openAdmin")}
-        </Button>
-      </Panel>
-    </div>
+    <Panel title={tAdmin("title")} description={t("adminHelp")}>
+      <ul className="divide-y divide-[var(--color-border)]">
+        {ADMIN_SECTIONS.map((section) => (
+          <li key={section.key}>
+            <Link
+              href={section.href}
+              className="flex min-h-11 items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-[var(--color-muted)]"
+            >
+              {tAdmin(`nav.${section.key}`)}
+              <ChevronRight className="h-4 w-4 shrink-0 text-[var(--color-muted-foreground)]" />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </Panel>
   );
 }
 

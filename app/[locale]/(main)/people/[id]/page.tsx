@@ -1,24 +1,15 @@
-import { Suspense } from "react";
-import { TenantDetailView } from "@/components/features/tenant/tenant-detail-view";
-import { GenericPageSkeleton } from "@/components/ui/page-skeletons";
-import { navigationTitle } from "@/lib/i18n/page-title";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
-  return navigationTitle("people", params);
-}
-
+/**
+ * A tenant has one screen: the detail that opens over People (`?detail=tenant:<id>`,
+ * `tenant-detail-modal.tsx`). This address had a second, full-page view of its own with fewer
+ * tabs and actions; it now opens the same one.
+ */
 export default async function PersonDetailPage({
   params,
 }: {
   params: Promise<{ locale: string; id: string }>;
 }) {
   const { id } = await params;
-
-  return (
-    <Suspense fallback={<GenericPageSkeleton />}>
-      <TenantDetailView tenantId={id} />
-    </Suspense>
-  );
+  redirect(`/people?detail=tenant:${encodeURIComponent(id)}`);
 }

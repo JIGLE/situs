@@ -569,7 +569,9 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                           size="sm"
                           variant="ghost"
                           className="h-5 px-2 text-xs text-[var(--color-warning)] hover:bg-[var(--color-warning-muted)] hover:text-[var(--color-warning)]"
-                          onClick={() => router.push(`/leases?action=renew&id=${lease.id}`)}
+                          onClick={() =>
+                            router.push(`/portfolio?tab=leases&action=renew&id=${lease.id}`)
+                          }
                         >
                           {t("renew")}
                         </Button>
