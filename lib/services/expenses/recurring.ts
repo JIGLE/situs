@@ -48,6 +48,8 @@ export async function generateDueRecurringExpenses(
           isDeductible: template.isDeductible,
           vendorName: template.vendorName,
           vendorVat: template.vendorVat,
+          // A co-owner who pays the condomínio pays every month of it.
+          paidByOwnerId: template.paidByOwnerId,
           isRecurring: false,
           parentExpenseId: template.id,
         })),

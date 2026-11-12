@@ -16,6 +16,7 @@ const { requireAuthMock, prismaMock } = vi.hoisted(() => ({
     // against this user before writing. Defaults to "owned"; the refusal case sets it
     // to null explicitly.
     property: { findFirst: vi.fn() },
+    propertyOwner: { findFirst: vi.fn() },
   },
 }));
 
@@ -151,5 +152,44 @@ describe("POST /api/expenses from a bank movement", () => {
 
     expect(res.status).toBe(409);
     expect(prismaMock.expense.delete).toHaveBeenCalledWith({ where: { id: "exp-1" } });
+  });
+});
+
+describe("POST /api/expenses paid by a co-owner", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    requireAuthMock.mockResolvedValue({ userId: "user-123" });
+    prismaMock.property.findFirst.mockResolvedValue({ id: "prop-1" });
+    prismaMock.expense.create.mockResolvedValue({
+      id: "exp-1",
+      amount: 120.5,
+      paidByOwnerId: "rui",
+      property: { name: "Rua Augusta 12" },
+    });
+  });
+
+  it("keeps who paid it when they have a share in the property", async () => {
+    prismaMock.propertyOwner.findFirst.mockResolvedValue({ id: "share-1" });
+
+    const res = await POST(postRequest({ ...validExpense, paidByOwnerId: "rui" }));
+
+    expect(res.status).toBe(201);
+    expect(prismaMock.propertyOwner.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { ownerId: "rui", propertyId: "prop-1", owner: { userId: "user-123" } },
+      }),
+    );
+    expect(prismaMock.expense.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ paidByOwnerId: "rui" }) }),
+    );
+  });
+
+  it("refuses an owner with no share in it, or not the caller's, and writes nothing", async () => {
+    prismaMock.propertyOwner.findFirst.mockResolvedValue(null);
+
+    const res = await POST(postRequest({ ...validExpense, paidByOwnerId: "someone" }));
+
+    expect(res.status).toBe(400);
+    expect(prismaMock.expense.create).not.toHaveBeenCalled();
   });
 });

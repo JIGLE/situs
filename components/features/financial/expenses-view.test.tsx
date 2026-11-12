@@ -6,6 +6,7 @@ import pt from "@/messages/pt.json";
 const { app } = vi.hoisted(() => ({
   app: {
     expenses: [] as Record<string, unknown>[],
+    owners: [] as Record<string, unknown>[],
     addExpense: vi.fn(async (data: Record<string, unknown>) => ({ id: "exp-new", ...data })),
     updateExpense: vi.fn(async () => undefined),
     deleteExpense: vi.fn(async () => undefined),
@@ -16,6 +17,7 @@ vi.mock("@/lib/contexts/app-context", () => ({
   useApp: () => ({
     state: {
       expenses: app.expenses,
+      owners: app.owners,
       properties: [
         { id: "prop-1", name: "Rua Augusta 12" },
         { id: "prop-2", name: "Rua do Ouro 3" },
@@ -73,6 +75,7 @@ beforeAll(() => {
 beforeEach(() => {
   vi.clearAllMocks();
   app.expenses = [];
+  app.owners = [];
 });
 
 /** The property page's case: the property is fixed, so the form does not ask for it. */
@@ -152,6 +155,44 @@ describe("ExpensesView", () => {
     await waitFor(() =>
       expect(app.addExpense).toHaveBeenCalledWith(expect.objectContaining({ amount: 3200.5 })),
     );
+  });
+
+  it("asks who paid only for a property with co-owners, and gives it back to the one chosen", async () => {
+    app.owners = [
+      { id: "jose", name: "José", properties: [{ propertyId: "prop-2", ownershipPercentage: 50 }] },
+      { id: "rui", name: "Rui", properties: [{ propertyId: "prop-2", ownershipPercentage: 50 }] },
+      { id: "ana", name: "Ana", properties: [{ propertyId: "prop-1", ownershipPercentage: 100 }] },
+    ];
+    const user = userEvent.setup();
+    renderWithProviders(<PropertyExpense />, { initialLocale: "pt" });
+
+    await user.click(screen.getByRole("button", { name: "open" }));
+    await user.type(await screen.findByLabelText(/Valor/), "200");
+    const paidBy = screen.getByRole("combobox", { name: fin.expenseForm.paidBy });
+    expect(paidBy).toHaveTextContent(fin.expenseForm.paidByAccount);
+    await user.click(paidBy);
+    // The property's owners only: Ana owns another one.
+    expect(screen.queryByRole("option", { name: "Ana" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("option", { name: "Rui" }));
+    await user.click(screen.getByRole("button", { name: fin.expenseForm.submit }));
+
+    await waitFor(() =>
+      expect(app.addExpense).toHaveBeenCalledWith(
+        expect.objectContaining({ amount: 200, paidByOwnerId: "rui" }),
+      ),
+    );
+  });
+
+  it("does not ask who paid for a property with one owner", async () => {
+    app.owners = [
+      { id: "ana", name: "Ana", properties: [{ propertyId: "prop-2", ownershipPercentage: 100 }] },
+    ];
+    const user = userEvent.setup();
+    renderWithProviders(<PropertyExpense />, { initialLocale: "pt" });
+
+    await user.click(screen.getByRole("button", { name: "open" }));
+    await screen.findByLabelText(/Valor/);
+    expect(screen.queryByText(fin.expenseForm.paidBy)).not.toBeInTheDocument();
   });
 
   it("opens a recorded expense to change it", async () => {

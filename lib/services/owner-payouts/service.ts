@@ -63,7 +63,7 @@ export async function getOwnerPayoutYear(
     }),
     prisma.expense.findMany({
       where: { userId, date: range },
-      select: { propertyId: true, amount: true, date: true },
+      select: { propertyId: true, amount: true, date: true, paidByOwnerId: true },
     }),
     prisma.ownerPayout.findMany({
       where: { userId, year, owner: { userId } },
@@ -102,9 +102,11 @@ export async function getOwnerPayoutYear(
     });
   }
   for (const expense of expenses) {
-    properties
-      .get(expense.propertyId)
-      ?.expenses.push({ amount: expense.amount, day: expense.date });
+    properties.get(expense.propertyId)?.expenses.push({
+      amount: expense.amount,
+      day: expense.date,
+      paidByOwnerId: expense.paidByOwnerId,
+    });
   }
 
   return splitYear(year, [...properties.values()], payouts, { ...options, collectors });

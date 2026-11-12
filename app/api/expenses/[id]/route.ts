@@ -130,6 +130,10 @@ async function handlePut(
       leaseId: existing.leaseId,
       documentId:
         validatedData.documentId !== undefined ? validatedData.documentId : existing.documentId,
+      paidByOwnerId:
+        validatedData.paidByOwnerId !== undefined
+          ? validatedData.paidByOwnerId
+          : existing.paidByOwnerId,
     });
 
     const updateData = expenseWriteData(validatedData);

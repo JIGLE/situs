@@ -133,6 +133,7 @@ model Owner {
   documents           Document[]
   incomeDistributions IncomeDistributionShare[]
   payouts             OwnerPayout[]
+  expensesPaid        Expense[]                 @relation("ExpensesPaid")
 
   @@unique([userId, email])
   @@map("owners")
@@ -654,16 +655,20 @@ model Expense {
   // The last date a copy was made for, so a copy the owner deleted is not made again
   // (lib/services/expenses/recurring.ts). NULL: none yet; copies start after `date`.
   recurrenceGeneratedThrough DateTime?
+  // The co-owner who paid it from their own pocket, to be given it back in the year's shares
+  // (lib/services/owner-payouts/split.ts). NULL: paid from the account that collects the rent.
+  paidByOwnerId              String?
   createdAt                  DateTime  @default(now())
   updatedAt                  DateTime  @updatedAt
 
   // Relations
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  lease         Lease?    @relation(fields: [leaseId], references: [id], onDelete: SetNull)
-  parentExpense Expense?  @relation("RecurringExpenses", fields: [parentExpenseId], references: [id], onDelete: SetNull)
-  childExpenses Expense[] @relation("RecurringExpenses")
-  document      Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property        Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  lease           Lease?           @relation(fields: [leaseId], references: [id], onDelete: SetNull)
+  parentExpense   Expense?         @relation("RecurringExpenses", fields: [parentExpenseId], references: [id], onDelete: SetNull)
+  childExpenses   Expense[]        @relation("RecurringExpenses")
+  document        Document?        @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  paidBy          Owner?           @relation("ExpensesPaid", fields: [paidByOwnerId], references: [id], onDelete: SetNull)
   // The bank movement that paid it, when one did.
   bankTransaction BankTransaction?
 

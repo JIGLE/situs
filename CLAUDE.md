@@ -178,7 +178,9 @@ e2e/                    # Playwright E2E tests
   owner, year, amount, day), so a balance is the live share less them. `Owner.collectsRent` marks the one owner who
   collects the rent (`PUT /api/owner-payouts/collector`; marking one unmarks the last): their balance
   is what they keep, so it is left out of `outstanding` and has no payout to record. An owner with payouts is kept
-  (`owner_has_history`).
+  (`owner_has_history`). An expense a co-owner paid from their own pocket names them (`Expense.paidByOwnerId`,
+  "Pago por", only offered for a property with more than one owner, and refused for an owner with no share in it):
+  it still comes off everyone's share, and the payer is credited the whole amount on top (`reimbursed`).
 - **Optional contacts**: `Tenant.email` and `phone`, `Owner.email`, `Property.bedrooms` and
   `bathrooms` are nullable, since Finanças names a person by NIF and name and gives a property no
   rooms. A blank is NULL, never `""` (`blankToNull`, `lib/schemas/tax-identity.ts`; undefined leaves a

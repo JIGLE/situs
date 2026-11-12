@@ -77,6 +77,7 @@ async function handlePost(request: NextRequest): Promise<Response> {
     propertyId: body.propertyId,
     leaseId: body.leaseId,
     documentId: body.documentId,
+    paidByOwnerId: body.paidByOwnerId,
   });
 
   const expense = await prisma.expense.create({

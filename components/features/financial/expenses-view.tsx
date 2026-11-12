@@ -223,6 +223,13 @@ export function ExpensesView() {
                             expense.description,
                             isDeductible(expense) ? null : t("notDeductible"),
                             expense.bankTransactionId ? t("paidFromBank") : null,
+                            expense.paidByOwnerId
+                              ? t("paidByOwner", {
+                                  name:
+                                    state.owners.find((o) => o.id === expense.paidByOwnerId)
+                                      ?.name ?? "—",
+                                })
+                              : null,
                           ]
                             .filter(Boolean)
                             .join(" · ")}

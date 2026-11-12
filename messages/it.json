@@ -1545,7 +1545,10 @@
       "vendorVat": "Partita IVA del fornitore",
       "optional": "facoltativo",
       "fromBank": "Dalla banca: {payee} · {date}",
-      "fromBankHint": "Salvando, il movimento resta collegato alla spesa: conta una sola volta ed esce dalla casella."
+      "fromBankHint": "Salvando, il movimento resta collegato alla spesa: conta una sola volta ed esce dalla casella.",
+      "paidBy": "Pagato da",
+      "paidByAccount": "Il conto degli affitti",
+      "paidByHint": "Se un comproprietario l'ha pagata di tasca propria, la ripartizione dell'anno gliela restituisce."
     },
     "matrix": {
       "cellLabel": "{month}: {status}, pagati {paid} su {due}",
@@ -1671,7 +1674,8 @@
       "label": "Fattura"
     },
     "paidFromBank": "Pagato dalla banca",
-    "notSeenInBank": "Non visto in banca"
+    "notSeenInBank": "Non visto in banca",
+    "paidByOwner": "Pagato da {name}"
   },
   "propertyDetail": {
     "tabs": {

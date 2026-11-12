@@ -1545,7 +1545,10 @@
       "vendorVat": "NIF do fornecedor",
       "optional": "opcional",
       "fromBank": "Do banco: {payee} · {date}",
-      "fromBankHint": "Ao guardar, o movimento fica ligado à despesa: conta uma só vez e sai da caixa de entrada."
+      "fromBankHint": "Ao guardar, o movimento fica ligado à despesa: conta uma só vez e sai da caixa de entrada.",
+      "paidBy": "Pago por",
+      "paidByAccount": "A conta das rendas",
+      "paidByHint": "Se um coproprietário pagou do seu bolso, a repartição do ano devolve-lho."
     },
     "matrix": {
       "cellLabel": "{month}: {status}, pagos {paid} de {due}",
@@ -1671,7 +1674,8 @@
       "label": "Fatura"
     },
     "paidFromBank": "Pago pelo banco",
-    "notSeenInBank": "Não visto no banco"
+    "notSeenInBank": "Não visto no banco",
+    "paidByOwner": "Pago por {name}"
   },
   "propertyDetail": {
     "tabs": {
