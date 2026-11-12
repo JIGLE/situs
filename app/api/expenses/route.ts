@@ -6,6 +6,8 @@ import { isMockMode } from "@/lib/config/data-mode";
 import { createSuccessResponse, parseJsonBody, withErrorHandler } from "@/lib/utils/error-handling";
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { assertExpenseLinks } from "@/lib/services/database/expense-links";
+import { generateDueRecurringExpenses } from "@/lib/services/expenses/recurring";
+import { expenseWriteData } from "@/lib/services/expenses/write-data";
 
 async function handleGet(request: NextRequest): Promise<Response> {
   if (isMockMode) {
@@ -16,6 +18,10 @@ async function handleGet(request: NextRequest): Promise<Response> {
 
   const { userId } = authResult;
   const prisma = getPrismaClient();
+
+  // The copies of a recurring expense that fell due since the last read, so the list is whole
+  // even where no daily cron runs.
+  await generateDueRecurringExpenses(userId);
 
   const expenses = await prisma.expense.findMany({
     where: { userId },
@@ -56,9 +62,9 @@ async function handlePost(request: NextRequest): Promise<Response> {
 
   const expense = await prisma.expense.create({
     data: {
-      ...body,
-      userId,
+      ...expenseWriteData(body),
       date: new Date(body.date),
+      userId,
     },
     include: {
       property: {

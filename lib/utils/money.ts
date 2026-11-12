@@ -34,3 +34,24 @@ export function round2(n: number): number {
 export function sumMoney(values: number[]): number {
   return round2(values.reduce((total, value) => total + value, 0));
 }
+
+/**
+ * An amount as typed, in any of the app's locales: "3200,00", "3.200,00", "3,200.00", "3200.5",
+ * "3.200" or "3 200". With both separators the last one is the decimal point; a lone comma is one too,
+ * since Portuguese, Spanish and Italian write it so. NaN for anything else. A `type="number"`
+ * field could not take "3200,00" in every browser, which is how the owner writes it.
+ */
+export function parseAmountInput(raw: string): number {
+  const text = raw.replace(/[\s €]/g, "");
+  if (!/^\d[\d.,]*$/.test(text)) return Number.NaN;
+  const lastComma = text.lastIndexOf(",");
+  const lastDot = text.lastIndexOf(".");
+  // A dot with no comma and three digits after it is Portuguese thousands ("3.200"), since
+  // nobody writes 3,2 € with three decimals.
+  const dotIsThousands = lastComma < 0 && lastDot >= 0 && /\.\d{3}$/.test(text);
+  const decimal = lastComma > lastDot || dotIsThousands ? "," : ".";
+  const thousands = decimal === "," ? "." : ",";
+  const [whole, ...fraction] = text.split(thousands).join("").split(decimal);
+  if (fraction.length > 1) return Number.NaN;
+  return Number(fraction.length ? `${whole}.${fraction[0]}` : whole);
+}

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Plus } from "lucide-react";
+import { Plus, Repeat } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
@@ -16,14 +16,17 @@ import {
 } from "@/components/ui/select";
 import { useApp } from "@/lib/contexts/app-context";
 import { useCurrency } from "@/lib/contexts/currency-context";
+import type { Expense } from "@/lib/types";
 import { expenseCategoryKey } from "@/lib/utils/expense-labels";
+import { nextOccurrence } from "@/lib/utils/expense-recurrence";
 import { formatDate } from "@/lib/utils/format-date";
 import { ExpenseDialog, useExpenseDialog } from "./expense-dialog";
 
 const ALL = "all";
 
 /**
- * Finance › Expenses: every cost recorded, newest first, with **Add expense**. Expenses used to sit
+ * Finance › Expenses: every cost recorded, newest first, with **Add expense**. A row opens the
+ * expense in the same form, to change or delete it. Expenses used to sit
  * at the bottom of the Tax summary tab, under the income list, and only that tab could add one.
  */
 export function ExpensesView() {
@@ -49,6 +52,17 @@ export function ExpensesView() {
   const categoryLabel = (category: string) => {
     const key = expenseCategoryKey(category);
     return key ? tCategories(key) : category;
+  };
+
+  // A recurring expense says when its next copy is due, so the owner can see it repeats.
+  const repeatLine = (expense: Expense) => {
+    const next = nextOccurrence(expense);
+    return next
+      ? t("expenseForm.repeats", {
+          rule: expense.recurrenceRule ?? "monthly",
+          date: formatDate(next, locale),
+        })
+      : t("expenseForm.repeatEnded");
   };
 
   if (loading) return <LoadingState variant="cards" count={4} />;
@@ -95,20 +109,40 @@ export function ExpensesView() {
       ) : (
         <ul className="panel divide-y divide-[var(--color-border)]">
           {shown.map((expense) => (
-            <li key={expense.id} className="flex items-center justify-between gap-3 px-4 py-3">
-              <div className="min-w-0">
-                {/* Wraps rather than truncates: at phone width the property, date and note do not
-                    fit on one line, and an ellipsis hides the part that tells two costs apart. */}
-                <p className="text-sm font-medium break-words">{categoryLabel(expense.category)}</p>
-                <p className="text-xs break-words text-[var(--color-muted-foreground)]">
-                  {expense.propertyName ?? t("unknownProperty")} ·{" "}
-                  {formatDate(expense.date, locale)}
-                  {expense.description ? ` · ${expense.description}` : ""}
-                </p>
-              </div>
-              <span className="shrink-0 text-sm font-medium tabular-nums">
-                {formatCurrency(expense.amount)}
-              </span>
+            <li key={expense.id}>
+              {/* The whole row opens the expense, to change or delete it: there was no way to. */}
+              <button
+                type="button"
+                onClick={() => dialog.openExpense(expense)}
+                className="flex min-h-11 w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--color-surface-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:outline-none"
+              >
+                <div className="min-w-0">
+                  {/* Wraps rather than truncates: at phone width the property, date and note do
+                      not fit on one line, and an ellipsis hides the part that tells two apart. */}
+                  <p className="flex items-center gap-1.5 text-sm font-medium break-words">
+                    {categoryLabel(expense.category)}
+                    {expense.isRecurring || expense.parentExpenseId ? (
+                      <Repeat
+                        className="h-3.5 w-3.5 shrink-0 text-[var(--color-muted-foreground)]"
+                        aria-hidden
+                      />
+                    ) : null}
+                  </p>
+                  <p className="text-xs break-words text-[var(--color-muted-foreground)]">
+                    {expense.propertyName ?? t("unknownProperty")} ·{" "}
+                    {formatDate(expense.date, locale)}
+                    {expense.description ? ` · ${expense.description}` : ""}
+                  </p>
+                  {expense.isRecurring ? (
+                    <p className="text-xs text-[var(--color-muted-foreground)]">
+                      {repeatLine(expense)}
+                    </p>
+                  ) : null}
+                </div>
+                <span className="shrink-0 text-sm font-medium tabular-nums">
+                  {formatCurrency(expense.amount)}
+                </span>
+              </button>
             </li>
           ))}
         </ul>

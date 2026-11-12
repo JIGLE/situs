@@ -1507,7 +1507,13 @@
       "selectFrequency": "Select frequency",
       "submit": "Create Expense",
       "toastCreated": "Expense recorded",
-      "toastUpdated": "Expense updated"
+      "toastUpdated": "Expense updated",
+      "editTitle": "Edit expense",
+      "deleteTitle": "Delete this expense?",
+      "deleteDescription": "{amount} on {date} will no longer count in your totals.",
+      "toastDeleted": "Expense deleted",
+      "repeats": "{rule, select, monthly {Repeats monthly} quarterly {Repeats every 3 months} other {Repeats yearly}} · next {date}",
+      "repeatEnded": "No longer repeats"
     },
     "matrix": {
       "cellLabel": "{month}: {status}, {paid} of {due} paid",
