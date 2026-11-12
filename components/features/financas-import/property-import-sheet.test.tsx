@@ -16,6 +16,7 @@ vi.mock("@/lib/contexts/app-context", () => ({
   useApp: () => ({
     state: {
       properties: [{ id: "p1", name: "Loja da rua", cadasterReference: "374", fraction: "LJ B" }],
+      owners: [{ id: "o1", name: "José Exemplo", taxIdentificationNumber: "123456789" }],
     },
     refreshData: app.refreshData,
   }),
@@ -61,7 +62,14 @@ describe("PropertyImportSheet", () => {
 
   it("creates the units the owner keeps ticked, and leaves out one already there", async () => {
     readCaderneta.mockResolvedValueOnce({
-      document: { kind: "urbana", article: "374" },
+      document: {
+        kind: "urbana",
+        article: "374",
+        holders: [
+          { taxId: "123456789", name: "JOSÉ EXEMPLO", share: "1/2", kind: "full" },
+          { taxId: "287654320", name: "ANA DA SILVA", share: "1/2", kind: "full" },
+        ],
+      },
       drafts: [draft({ name: "Loja", fraction: "LJ B", type: "commercial" }), draft({})],
     });
     const user = userEvent.setup();
@@ -76,13 +84,26 @@ describe("PropertyImportSheet", () => {
     );
 
     await screen.findByText(t.alreadyHave.replace("{name}", "Loja da rua"));
+    expect(
+      screen.getAllByText(t.owners.replace("{list}", "José Exemplo 50% · Ana da Silva 50%")),
+    ).toHaveLength(2);
     await user.click(screen.getByRole("button", { name: "Criar 1 imóvel" }));
 
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
-    expect(apiFetch).toHaveBeenCalledTimes(1);
-    const body = JSON.parse(
-      (apiFetch.mock.calls[0] as unknown as [string, { body: string }])[1].body,
+    // The property, then its owners: José is known, Ana is added first.
+    const calls = (apiFetch.mock.calls as unknown as [string, { body: string }][]).map(
+      ([url, init]) => [url, JSON.parse(init.body)],
     );
+    expect(calls.map(([url]) => url)).toEqual([
+      "/api/properties",
+      "/api/property-owners",
+      "/api/owners",
+      "/api/property-owners",
+    ]);
+    expect(calls[1][1]).toEqual({ propertyId: "new", ownerId: "o1", ownershipPercentage: 50 });
+    expect(calls[2][1]).toEqual({ name: "Ana da Silva", taxIdentificationNumber: "287654320" });
+    expect(calls[3][1]).toEqual({ propertyId: "new", ownerId: "new", ownershipPercentage: 50 });
+    const body = calls[0][1];
     expect(body).toMatchObject({
       name: "Rua Capitão Leitão 9, 2º ES",
       zipCode: "2800-051",

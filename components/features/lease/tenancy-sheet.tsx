@@ -40,6 +40,12 @@ import {
 } from "@/lib/utils/lease-defaults";
 import { tenancyFromContract, type TenancyWarning } from "@/lib/services/financas-import/match";
 import { readContractProof } from "@/components/features/financas-import/read-document";
+import { applyShares, hasOwners } from "@/components/features/financas-import/apply-shares";
+import {
+  describeShares,
+  planShares,
+  type PlannedShare,
+} from "@/lib/services/financas-import/landlords";
 import { cn } from "@/lib/utils/utils";
 import { formatDate } from "@/lib/utils/format-date";
 import { uploadContract } from "./lease-contract";
@@ -160,6 +166,8 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
         article: string;
         fraction: string;
         endDate: string;
+        /** The landlords on the proof, for the property when it has no owners yet. */
+        shares: PlannedShare[];
       }
     | { failed: true }
     | null
@@ -271,6 +279,7 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
         article: contract.article ?? "",
         fraction: contract.fraction ?? "",
         endDate: contract.endDate ?? "",
+        shares: planShares(contract.landlords, state.owners ?? []),
       });
     } catch {
       setProof({ failed: true });
@@ -347,6 +356,21 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
           error(t("toast.contractUploadFailed"));
         }
       }
+      // The proof's landlords become the property's owners, unless it already has some: Situs keeps
+      // landlords on the property, with dated shares, and an import never rewrites them.
+      if (
+        !lease &&
+        proof &&
+        !("failed" in proof) &&
+        proof.shares.length > 0 &&
+        !hasOwners(state.owners, form.propertyId)
+      ) {
+        try {
+          await applyShares(form.propertyId, proof.shares, new Map());
+        } catch {
+          error(tImport("ownersFailed"));
+        }
+      }
       // The tenant's property, rent and dates are read from the lease, so read them again.
       await refreshData();
       success(lease ? t("toast.updated") : t("sheet.created"));
@@ -414,6 +438,13 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
                         ? tImport("filled", { number: proof.number })
                         : tImport("filledNoNumber")}
                     </p>
+                    {proof.shares.length > 0 && (
+                      <p className="text-[var(--color-muted-foreground)]">
+                        {form.propertyId && hasOwners(state.owners, form.propertyId)
+                          ? tImport("landlordsKept")
+                          : tImport("landlords", { list: describeShares(proof.shares, locale) })}
+                      </p>
+                    )}
                     {proof.warnings.length > 0 && (
                       <ul className="list-disc space-y-1 pl-5 text-[var(--color-warning)]">
                         {proof.warnings.map((warning) => (

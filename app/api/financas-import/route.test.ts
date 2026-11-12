@@ -75,7 +75,7 @@ describe("POST /api/financas-import", () => {
     const { data } = await res.json();
     expect(data.document).toMatchObject({ article: "1234", parishCode: "110664" });
     expect(data.document.holders).toEqual([
-      { taxId: "123456789", name: "JOSÉ EXEMPLO", share: "1/1" },
+      { taxId: "123456789", name: "JOSÉ EXEMPLO", share: "1/1", kind: "full" },
     ]);
     expect(data.drafts).toEqual([
       expect.objectContaining({

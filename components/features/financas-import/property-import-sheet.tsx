@@ -28,6 +28,12 @@ import { MAX_CONTRACT_BYTES } from "@/lib/utils/contract-file";
 import type { PropertyDraft } from "@/lib/services/financas-import/caderneta";
 import { propertiesMatching } from "@/lib/services/financas-import/match";
 import { articleKey, fractionKey } from "@/lib/services/financas-import/text";
+import {
+  describeShares,
+  planShares,
+  type PlannedShare,
+} from "@/lib/services/financas-import/landlords";
+import { applyShares } from "./apply-shares";
 import { failureStatus, readCaderneta } from "./read-document";
 
 type Failure = "notPdf" | "tooLarge" | "noText" | "notCaderneta" | "rustica" | "failed";
@@ -38,6 +44,8 @@ interface Row {
   selected: boolean;
   /** The name of the property already in Situs with this article and fraction. */
   existing: string | null;
+  /** Its owners and shares, from the caderneta's titulares, set once the property is created. */
+  shares: PlannedShare[];
   /** Set when creating it failed, so it stays listed for another try. */
   failed?: boolean;
 }
@@ -110,6 +118,7 @@ export function PropertyImportSheet({ open, onOpenChange }: PropertyImportSheetP
             draft,
             selected: !existing,
             existing: existing?.name ?? null,
+            shares: planShares(document.holders, state.owners ?? []),
           });
         });
       } catch (err) {
@@ -155,11 +164,15 @@ export function PropertyImportSheet({ open, onOpenChange }: PropertyImportSheetP
   const handleCreate = async () => {
     setSaving(true);
     let created = 0;
+    let ownersFailed = 0;
     const failedKeys = new Set<string>();
+    // Owners added by this import, by NIF: one person on many cadernetas is added once.
+    const addedOwners = new Map<string, string>();
     for (const row of chosen) {
       const { draft } = row;
+      let property: { id: string };
       try {
-        await apiFetch("/api/properties", {
+        property = await apiFetch<{ id: string }>("/api/properties", {
           method: "POST",
           body: JSON.stringify({
             name: draft.name.trim(),
@@ -180,10 +193,18 @@ export function PropertyImportSheet({ open, onOpenChange }: PropertyImportSheetP
         created += 1;
       } catch {
         failedKeys.add(row.key);
+        continue;
+      }
+      try {
+        await applyShares(property.id, row.shares, addedOwners);
+      } catch {
+        // The property is there; its owners can be set on its page.
+        ownersFailed += 1;
       }
     }
     await refreshData();
     setSaving(false);
+    if (ownersFailed > 0) error(t("ownersFailed", { count: ownersFailed }));
     if (failedKeys.size === 0) {
       success(t("created", { count: created }));
       onOpenChange(false);
@@ -294,6 +315,11 @@ export function PropertyImportSheet({ open, onOpenChange }: PropertyImportSheetP
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
+                    {row.shares.length > 0 && (
+                      <p className="text-xs">
+                        {t("owners", { list: describeShares(row.shares, locale) })}
+                      </p>
+                    )}
                     {row.existing && (
                       <p className="text-xs text-[var(--color-warning)]">
                         {t("alreadyHave", { name: row.existing })}

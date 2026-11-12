@@ -21,6 +21,11 @@ export interface CadernetaHolder {
   name: string;
   /** Their part, as printed ("1/1", "1/2"). */
   share: string | null;
+  /**
+   * "Tipo de titular": full ownership, a usufruct (who receives the rent), or bare ownership
+   * (who does not, while a usufruct lasts). Null when not printed.
+   */
+  kind: "full" | "usufruct" | "bare" | null;
 }
 
 export interface CadernetaUnit {
@@ -178,10 +183,18 @@ function holdersOf(text: string): CadernetaHolder[] {
     const nextHolder = after.search(/Identifica[çc][ãa]o fiscal/i);
     const own = nextHolder >= 0 ? after.slice(0, nextHolder) : after;
     const share = /Parte ?: ?(\d+ ?\/ ?\d+)/i.exec(own);
+    const type = /Tipo de titular ?: ?([A-Za-zÀ-ú]+)/i.exec(own)?.[1].toLowerCase() ?? "";
     holders.push({
       taxId: match[1],
       name: match[2].trim(),
       share: share ? share[1].replace(/\s/g, "") : null,
+      kind: type.startsWith("usufru")
+        ? "usufruct"
+        : type.startsWith("nua")
+          ? "bare"
+          : type.startsWith("propriedade")
+            ? "full"
+            : null,
     });
   }
   return holders;

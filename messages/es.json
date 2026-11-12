@@ -2072,7 +2072,12 @@
         "rent_not_monthly": "Finanças indica esta renta para menos de un mes. Indique el importe mensual.",
         "no_start": "No se encontró la fecha de inicio. Revise el plazo abajo.",
         "term_passed": "El plazo en Finanças terminó el {date}. Si el contrato se renovó, indique la fecha de fin actual."
-      }
-    }
+      },
+      "landlords": "Arrendadores, definidos como propietarios del inmueble al guardar: {list}",
+      "landlordsKept": "Este inmueble ya tiene propietarios en Situs. Se mantienen como están.",
+      "ownersFailed": "El arrendamiento se guardó, pero no se pudieron definir los propietarios del inmueble. Añádalos en su página."
+    },
+    "owners": "Propietarios: {list}",
+    "ownersFailed": "{count, plural, one {No se pudieron definir los propietarios de # inmueble. Añádalos en su página.} other {No se pudieron definir los propietarios de # inmuebles. Añádalos en la página de cada uno.}}"
   }
 }
