@@ -84,6 +84,7 @@ export const AUDIT_ACTION_KEY = {
   REMOVE_PROPERTY_OWNER: "removePropertyOwner",
   RECORD_OWNER_PAYOUT: "recordOwnerPayout",
   DELETE_OWNER_PAYOUT: "deleteOwnerPayout",
+  SET_RENT_COLLECTOR: "setRentCollector",
   CREATE_ACCOUNT: "createAccount",
   CREATE_INVITATION: "createInvitation",
   REVOKE_INVITATION: "revokeInvitation",

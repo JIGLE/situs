@@ -17,3 +17,9 @@ export const ownerPayoutSchema = z.object({
 });
 
 export type OwnerPayoutInput = z.infer<typeof ownerPayoutSchema>;
+
+/** Marks or unmarks the owner who collects the rent and keeps their share of it. */
+export const rentCollectorSchema = z.object({
+  ownerId: z.string().min(1, "Owner is required"),
+  collects: z.boolean(),
+});

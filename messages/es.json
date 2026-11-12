@@ -1613,7 +1613,13 @@
       "dateRequired": "Indique el día en que se pagó.",
       "recorded": "Pago registrado",
       "showAll": "Todos los inmuebles",
-      "soleOwnerHidden": "{count, plural, one {# inmueble de un solo propietario no aparece.} other {# inmuebles de un solo propietario no aparecen.}}"
+      "soleOwnerHidden": "{count, plural, one {# inmueble de un solo propietario no aparece.} other {# inmuebles de un solo propietario no aparecen.}}",
+      "keeps": "Se queda con {amount}",
+      "collectorBadge": "cobra las rentas",
+      "markCollector": "Marcar como quien cobra las rentas",
+      "unmarkCollector": "Desmarcar como quien cobra las rentas",
+      "collectorHint": "¿Quién cobra las rentas? Abra ese propietario en la lista y márquelo: su parte aparecerá como «se queda con» en lugar de «a pagar».",
+      "collectorSaved": "Guardado"
     }
   },
   "propertyDetail": {
@@ -2170,6 +2176,7 @@
     "changeAccountRole": "Rol de la cuenta cambiado",
     "recordOwnerPayout": "Pago a propietario registrado",
     "deleteOwnerPayout": "Pago a propietario eliminado",
+    "setRentCollector": "Cobrador de las rentas cambiado",
     "uploadFinancasReceipt": "Recibo cargado de Finanças"
   },
   "financasImport": {

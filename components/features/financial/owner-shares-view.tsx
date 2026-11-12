@@ -140,12 +140,28 @@ export function OwnerSharesView(): React.ReactElement {
   const detailHref = (propertyId: string) =>
     withEntityDetail(pathname, searchParams.toString(), "property", propertyId);
 
+  async function setCollector(owner: Statement, collects: boolean) {
+    try {
+      await apiFetch("/api/owner-payouts/collector", csrfToken, "PUT", {
+        ownerId: owner.ownerId,
+        collects,
+      });
+      toast.success(t("collectorSaved"));
+      await load(year, showAll, true);
+    } catch (err) {
+      if (!wasReported(err)) toast.error(apiError(err));
+    }
+  }
+
+  // The collector's balance is what they keep: the rent is already in their hands.
   const balanceLabel = (owner: Statement) =>
-    owner.balance > 0.004
-      ? t("toPay", { amount: formatEuro(owner.balance) })
-      : owner.balance < -0.004
-        ? t("owesBack", { amount: formatEuro(-owner.balance) })
-        : t("settled");
+    owner.collects
+      ? t("keeps", { amount: formatEuro(owner.balance) })
+      : owner.balance > 0.004
+        ? t("toPay", { amount: formatEuro(owner.balance) })
+        : owner.balance < -0.004
+          ? t("owesBack", { amount: formatEuro(-owner.balance) })
+          : t("settled");
 
   const exportRows = (data?.owners ?? []).map((owner) => ({
     owner: owner.ownerName,
@@ -234,6 +250,9 @@ export function OwnerSharesView(): React.ReactElement {
             <span className="font-medium tabular-nums text-[var(--color-foreground)]">
               {formatEuro(data.outstanding)}
             </span>
+            {data.owners.length > 1 && !data.owners.some((owner) => owner.collects) ? (
+              <span className="mt-1 block text-xs">{t("collectorHint")}</span>
+            ) : null}
           </p>
         ) : null}
       </div>
@@ -285,6 +304,7 @@ export function OwnerSharesView(): React.ReactElement {
                               count: owner.propertyIds.length,
                               net: formatEuro(owner.net),
                             })}
+                            {owner.collects ? ` · ${t("collectorBadge")}` : ""}
                             {owner.paid > 0
                               ? ` · ${t("paidLine", { amount: formatEuro(owner.paid) })}`
                               : ""}
@@ -295,16 +315,18 @@ export function OwnerSharesView(): React.ReactElement {
                         <span
                           className={cn(
                             "text-sm tabular-nums",
-                            owner.balance > 0.004
+                            owner.balance > 0.004 && !owner.collects
                               ? "font-medium text-[var(--color-foreground)]"
                               : "text-[var(--color-muted-foreground)]",
                           )}
                         >
                           {balanceLabel(owner)}
                         </span>
-                        <Button size="sm" variant="outline" onClick={() => setPaying(owner)}>
-                          {t("recordPayout")}
-                        </Button>
+                        {owner.collects ? null : (
+                          <Button size="sm" variant="outline" onClick={() => setPaying(owner)}>
+                            {t("recordPayout")}
+                          </Button>
+                        )}
                       </div>
                     </div>
                     {expanded ? (
@@ -386,6 +408,14 @@ export function OwnerSharesView(): React.ReactElement {
                             </ul>
                           )}
                         </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          aria-pressed={owner.collects}
+                          onClick={() => void setCollector(owner, !owner.collects)}
+                        >
+                          {owner.collects ? t("unmarkCollector") : t("markCollector")}
+                        </Button>
                       </div>
                     ) : null}
                   </li>

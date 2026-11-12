@@ -45,7 +45,7 @@ export async function getOwnerPayoutYear(
         ownershipPercentage: true,
         validFrom: true,
         validTo: true,
-        owner: { select: { name: true } },
+        owner: { select: { name: true, collectsRent: true } },
         property: { select: { name: true } },
       },
     }),
@@ -72,7 +72,9 @@ export async function getOwnerPayoutYear(
   ]);
 
   const properties = new Map<string, PropertyMoney>();
+  const collectors = new Set<string>();
   for (const share of shares) {
+    if (share.owner.collectsRent) collectors.add(share.ownerId);
     let property = properties.get(share.propertyId);
     if (!property) {
       property = {
@@ -105,7 +107,7 @@ export async function getOwnerPayoutYear(
       ?.expenses.push({ amount: expense.amount, day: expense.date });
   }
 
-  return splitYear(year, [...properties.values()], payouts, options);
+  return splitYear(year, [...properties.values()], payouts, { ...options, collectors });
 }
 
 export interface PayoutInput {
@@ -143,4 +145,29 @@ export async function deleteOwnerPayout(userId: string, id: string) {
   if (!payout) throw new ResourceNotFoundError("Payout not found");
   await prisma.ownerPayout.delete({ where: { id: payout.id } });
   return payout;
+}
+
+/**
+ * Marks the owner who collects the rent, or unmarks them. One owner collects: marking one unmarks
+ * whoever did before. Scoped: another account's owner is not found.
+ */
+export async function setRentCollector(userId: string, ownerId: string, collects: boolean) {
+  const prisma = getPrismaClient();
+  const owner = await prisma.owner.findFirst({
+    where: { id: ownerId, userId },
+    select: { id: true, name: true },
+  });
+  if (!owner) throw new ResourceNotFoundError("Owner not found");
+  await prisma.$transaction([
+    ...(collects
+      ? [
+          prisma.owner.updateMany({
+            where: { userId, collectsRent: true, id: { not: owner.id } },
+            data: { collectsRent: false },
+          }),
+        ]
+      : []),
+    prisma.owner.update({ where: { id: owner.id }, data: { collectsRent: collects } }),
+  ]);
+  return owner;
 }

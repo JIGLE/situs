@@ -79,6 +79,8 @@ export async function seedDemoData(userId: string): Promise<void> {
       // A made-up number that passes the check digit, so a receipt review in the demo is not
       // stopped at its first step.
       taxIdentificationNumber: "502000007",
+      // It collects the rent, so its share in Finance › Owners' shares reads as kept, not to pay.
+      collectsRent: true,
     },
   });
 

@@ -1613,7 +1613,13 @@
       "dateRequired": "Indique o dia em que foi pago.",
       "recorded": "Entrega registada",
       "showAll": "Todos os imóveis",
-      "soleOwnerHidden": "{count, plural, one {# imóvel com um só proprietário não aparece.} other {# imóveis com um só proprietário não aparecem.}}"
+      "soleOwnerHidden": "{count, plural, one {# imóvel com um só proprietário não aparece.} other {# imóveis com um só proprietário não aparecem.}}",
+      "keeps": "Fica com {amount}",
+      "collectorBadge": "recebe as rendas",
+      "markCollector": "Marcar como quem recebe as rendas",
+      "unmarkCollector": "Deixar de marcar como quem recebe as rendas",
+      "collectorHint": "Quem recebe as rendas? Abra esse proprietário na lista e marque-o: a parte dele passa a aparecer como «fica com» em vez de «a pagar».",
+      "collectorSaved": "Guardado"
     }
   },
   "propertyDetail": {
@@ -2170,6 +2176,7 @@
     "changeAccountRole": "Função da conta alterada",
     "recordOwnerPayout": "Pagamento a proprietário registado",
     "deleteOwnerPayout": "Pagamento a proprietário removido",
+    "setRentCollector": "Quem recebe as rendas alterado",
     "uploadFinancasReceipt": "Recibo carregado das Finanças"
   },
   "financasImport": {
