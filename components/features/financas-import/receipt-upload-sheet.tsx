@@ -189,6 +189,7 @@ export function ReceiptUploadSheet({
       row.leaseId &&
       /^\d{4}-\d{2}$/.test(row.month) &&
       outcome !== "duplicate" &&
+      outcome !== "paid" &&
       outcome !== "no_month"
     );
   });
@@ -200,7 +201,7 @@ export function ReceiptUploadSheet({
       try {
         const result = await registerRentReceipt(row.file, row.leaseId, row.month);
         change(row.key, { done: result.outcome, error: undefined });
-        if (result.outcome !== "duplicate") registered += 1;
+        if (result.outcome === "create" || result.outcome === "attach") registered += 1;
       } catch (err) {
         change(row.key, { error: apiError(err) });
       }
@@ -219,6 +220,9 @@ export function ReceiptUploadSheet({
 
   const describe = (row: Row): { text: string; tone: "plain" | "warn" | "done" } | null => {
     if (row.done === "duplicate") return { text: t("outcome.duplicate"), tone: "done" };
+    if (row.done === "paid") {
+      return { text: t("outcome.paid", { month: monthLabel(row.month) }), tone: "done" };
+    }
     if (row.done) return { text: t("done", { month: monthLabel(row.month) }), tone: "done" };
     if (!row.leaseId) return { text: t("pickContract"), tone: "warn" };
     if (!row.month) return { text: t("pickMonth"), tone: "warn" };
@@ -227,6 +231,7 @@ export function ReceiptUploadSheet({
     if (outcome === "create") return { text: t("outcome.create", { month }), tone: "plain" };
     if (outcome === "attach") return { text: t("outcome.attach", { month }), tone: "plain" };
     if (outcome === "duplicate") return { text: t("outcome.duplicate"), tone: "done" };
+    if (outcome === "paid") return { text: t("outcome.paid", { month }), tone: "done" };
     if (outcome === "no_month") return { text: t("outcome.noMonth", { month }), tone: "warn" };
     return { text: t("outcome.chosen", { month }), tone: "plain" };
   };

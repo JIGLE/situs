@@ -2190,7 +2190,8 @@
         "attach": "Aggiunge la ricevuta al pagamento già registrato di {month}",
         "duplicate": "Già registrata: non cambia nulla",
         "noMonth": "Questo contratto non ha affitto in {month}. Scegli un altro mese o contratto.",
-        "chosen": "Sarà registrata in {month}"
+        "chosen": "Sarà registrata in {month}",
+        "paid": "{month} è già pagato: non cambia nulla"
       }
     }
   }

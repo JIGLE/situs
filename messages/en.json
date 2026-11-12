@@ -2190,7 +2190,8 @@
         "attach": "Adds the recibo to the payment already recorded for {month}",
         "duplicate": "Already registered: nothing changes",
         "noMonth": "This contract has no rent in {month}. Choose another month or contract.",
-        "chosen": "Will be registered in {month}"
+        "chosen": "Will be registered in {month}",
+        "paid": "{month} is already paid: nothing changes"
       }
     }
   }

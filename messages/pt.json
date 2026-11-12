@@ -2190,7 +2190,8 @@
         "attach": "Junta o recibo ao pagamento já registado de {month}",
         "duplicate": "Já registado: nada muda",
         "noMonth": "Este contrato não tem renda em {month}. Escolha outro mês ou contrato.",
-        "chosen": "Será registado em {month}"
+        "chosen": "Será registado em {month}",
+        "paid": "{month} já está pago: nada muda"
       }
     }
   }

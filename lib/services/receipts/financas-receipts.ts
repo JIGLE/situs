@@ -36,7 +36,12 @@ import { readablePII } from "@/lib/utils/pii-encryption";
 import { MONEY_EPSILON } from "@/lib/utils/money";
 import { ConflictError, ResourceNotFoundError } from "@/lib/utils/error-handling";
 
-export type ReceiptUploadOutcome = "create" | "attach" | "duplicate" | "no_month";
+/**
+ * `paid`: the month is already paid by money with no receipt to take the recibo's number, so
+ * nothing changes. A recibo never adds money to a month that owes nothing: the engine would carry
+ * it to another month the recibo does not name.
+ */
+export type ReceiptUploadOutcome = "create" | "attach" | "duplicate" | "paid" | "no_month";
 
 export interface ReceiptLeaseOption {
   leaseId: string;
@@ -159,7 +164,7 @@ async function monthState(
   }
   const period = await prisma.rentPeriod.findFirst({
     where: { userId, leaseId, year: month.year, month: month.month },
-    select: { id: true, status: true, dueAmount: true },
+    select: { id: true, status: true, dueAmount: true, allocatedAmount: true },
   });
   if (!period) {
     return { outcome: "no_month", periodId: null, dueAmount: null, waived: false, unnumbered: [] };
@@ -176,7 +181,10 @@ async function monthState(
     dueAmount: period.dueAmount,
     waived: period.status === "waived",
   };
-  if (paying.length === 0) return { ...base, outcome: "create", unnumbered: [] };
+  if (paying.length === 0) {
+    const settled = period.allocatedAmount >= period.dueAmount - MONEY_EPSILON;
+    return { ...base, outcome: settled && !base.waived ? "paid" : "create", unnumbered: [] };
+  }
   const unnumbered = [
     ...new Map(paying.filter((r) => !r.financasNumber).map((r) => [r.id, r])).values(),
   ].map(({ id, lifecycle }) => ({ id, lifecycle }));
@@ -240,7 +248,9 @@ export async function registerReceipt(
   if (state.outcome === "no_month") {
     throw new ConflictError("The contract has no rent for that month", "receipt_month_untracked");
   }
-  if (state.outcome === "duplicate") return { outcome: "duplicate", receiptIds: [] };
+  if (state.outcome === "duplicate" || state.outcome === "paid") {
+    return { outcome: state.outcome, receiptIds: [] };
+  }
 
   const archive = (receiptId: string) =>
     documentService.create(userId, {
