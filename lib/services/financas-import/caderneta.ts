@@ -75,7 +75,9 @@ export interface ParsedCaderneta {
 /** Section headings, which end any value before them. */
 const SECTIONS = [
   /IDENTIFICA[ÇC][ÃA]O DO PR[ÉE]DIO/,
-  /LOCALIZA[ÇC][ÃA]O DO/,
+  /LOCALIZA[ÇC][ÃA]O D[OA]/,
+  /FRA[CÇ]{1,2}[ÃA]O AUT[ÓO]NOMA ?:/,
+  /Descrito na C\.R\.P/i,
   /DESCRI[ÇC][ÃA]O DO PR[ÉE]DIO/,
   /CONFRONTA[ÇC][ÕO]ES/,
   /[ÁA]REAS \(em/i,
@@ -127,12 +129,34 @@ function withoutOrigins(text: string): string {
 }
 
 function addressOf(text: string): { street: string | null; doorNumber: string | null } {
-  const street = valueAfter(text, ADDRESS_LABELS[0], [...ADDRESS_LABELS.slice(1), ...SECTIONS]);
-  const doorNumber = valueAfter(text, /(?:^|\s)N[ºo°] ?(?:de pol[íi]cia)? ?:/i, [
+  // Read from the street label on: a "Nº:" before it is another number ("sob o registo nº: 318",
+  // the land registry's), never the door's.
+  const at = text.search(ADDRESS_LABELS[0]);
+  if (at < 0) return { street: null, doorNumber: null };
+  const line = text.slice(at);
+  const street = valueAfter(line, ADDRESS_LABELS[0], [...ADDRESS_LABELS.slice(1), ...SECTIONS]);
+  const doorNumber = valueAfter(line, /(?:^|\s)N[ºo°] ?(?:de pol[íi]cia)? ?:/i, [
     ...ADDRESS_LABELS.slice(2),
     ...SECTIONS,
   ]);
   return { street, doorNumber };
+}
+
+/**
+ * A fração's own location ("LOCALIZAÇÃO DA FRACÇÃO"), when the caderneta prints one. A building in
+ * propriedade horizontal can list a dozen addresses (one per entrance, as each was registered over
+ * the years), and only this one is the fraction's.
+ */
+function fractionLocation(text: string): string | null {
+  const start = text.search(/LOCALIZA[ÇC][ÃA]O DA FRA[CÇ]{1,2}[ÃA]O/);
+  if (start < 0) return null;
+  const after = text.slice(start + 12);
+  let end = after.length;
+  for (const stop of [/ELEMENTOS D[OA]/, /DESCRI[ÇC][ÃA]O D[OA]/, /TITULARES/, /[ÁA]REAS \(em/i]) {
+    const hit = stop.exec(after);
+    if (hit && hit.index < end) end = hit.index;
+  }
+  return after.slice(0, end);
 }
 
 function bedroomsOf(layout: string | null): number | null {
@@ -231,7 +255,7 @@ export function parseCaderneta(pages: string[] | string): ParsedCaderneta {
 
   // The building's location: the first LOCALIZAÇÃO block, before any unit.
   const firstUnit = text.search(UNIT_HEADING);
-  const head = firstUnit >= 0 ? text.slice(0, firstUnit) : text;
+  const head = fractionLocation(text) ?? (firstUnit >= 0 ? text.slice(0, firstUnit) : text);
   const { street, doorNumber } = addressOf(head);
   const place = valueAfter(head, /Lugar ?:/i, [/C[óo]digo Postal/i, ...SECTIONS]);
   const postal = /C[óo]digo Postal ?: ?(\d{4}) ?- ?(\d{3})/i.exec(head);
@@ -278,7 +302,9 @@ export function parseCaderneta(pages: string[] | string): ParsedCaderneta {
       / [^ :]+ ?:/,
       ...SECTIONS,
     ]);
-    units.push(unitFrom(text, horizontalFraction(text), floor?.trim() || null));
+    const unit = unitFrom(text, horizontalFraction(text), floor?.trim() || null);
+    // The fraction's own street and door, not the first of the building's many.
+    units.push(head === text ? unit : { ...unit, street, doorNumber });
   }
 
   return {
