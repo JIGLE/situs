@@ -137,7 +137,7 @@ export function PropertyYearStrip({
       </div>
 
       <div
-        className={`mt-3 grid grid-cols-6 gap-2 sm:grid-cols-12 ${loading ? "opacity-50 transition-opacity" : ""}`}
+        className={`mt-3 grid grid-cols-6 gap-0.5 sm:grid-cols-12 sm:gap-2 ${loading ? "opacity-50 transition-opacity" : ""}`}
       >
         {MONTHS.map((month) => {
           const label = formatMonth(year, month, locale);

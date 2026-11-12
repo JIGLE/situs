@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
+import { useCurrency } from "@/lib/contexts/currency-context";
 import { countryLabel } from "@/lib/design/country-themes";
 import { cn } from "@/lib/utils/utils";
 import type { Building, Lease, Property, Tenant } from "@/lib/types";
@@ -62,6 +63,9 @@ export function PortfolioTree({
   highlightedPropertyId,
 }: PortfolioTreeProps): React.ReactElement {
   const t = useTranslations("portfolioTree");
+  const tStatus = useTranslations("propertyDetail.status");
+  const tLeases = useTranslations("leases");
+  const { formatCurrency } = useCurrency();
   const locale = useLocale();
 
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set());
@@ -218,7 +222,24 @@ export function PortfolioTree({
                                 : "border-transparent hover:bg-[var(--color-hover)]",
                             )}
                           >
-                            <span className="min-w-0 flex-1 truncate text-sm">{property.name}</span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm">{property.name}</span>
+                              {/* Below `lg` the tree is the whole list, not a rail beside the
+                                  detail, so a bare name told a phone nothing. One muted line
+                                  says how much it lets for and how it stands. Overdue takes the
+                                  place of "occupied", which it implies, and names the dot a phone
+                                  has no hover to explain. */}
+                              <span className="block truncate text-xs text-[var(--color-muted-foreground)] lg:hidden">
+                                {tLeases("perMonth", { amount: formatCurrency(property.rent) })} ·{" "}
+                                {overdue ? (
+                                  <span className="text-[var(--semantic-danger-readable)]">
+                                    {t("dotOverdue")}
+                                  </span>
+                                ) : (
+                                  tStatus(property.status)
+                                )}
+                              </span>
+                            </span>
                             {/* Attention strip — square semantic dots, quiet when healthy */}
                             <span className="flex shrink-0 items-center gap-1">
                               {overdue && (

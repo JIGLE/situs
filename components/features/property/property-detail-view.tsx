@@ -295,15 +295,16 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
             <div className="p-3 lg:p-4 bg-[var(--color-info-muted)]">
               <Building2 className="h-8 w-8 lg:h-10 lg:w-10 text-[var(--color-info)]" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="text-2xl lg:text-3xl font-bold text-[var(--color-foreground)]">
                 {property.name}
               </h1>
               <div className="flex items-center gap-2 mt-1 text-sm text-[var(--color-muted-foreground)]">
-                <MapPin className="h-4 w-4" />
+                <MapPin className="h-4 w-4 shrink-0" />
                 <span>{property.address}</span>
               </div>
-              <div className="flex items-center gap-3 mt-2">
+              {/* Wraps: at 360px the status, rooms and rent ran 14px past the screen edge. */}
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <StatusMark {...propertyStatus(property.status)}>
                   {t(`status.${property.status}`) || property.status}
                 </StatusMark>

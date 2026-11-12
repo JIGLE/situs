@@ -31,8 +31,9 @@
  * encrypted path. `.github/actions/start-app` now takes a generated key for that reason.
  *
  * Usage:
- *   node scripts/audit-server.mjs                  # both viewports (default)
+ *   node scripts/audit-server.mjs                  # every viewport (default)
  *   node scripts/audit-server.mjs --mobile         # 390x844 only
+ *   node scripts/audit-server.mjs --narrow         # 360x780 only (Galaxy S24 class)
  *   node scripts/audit-server.mjs --desktop        # 1440x900 only
  *   node scripts/audit-server.mjs --only portfolio # filter, passed to the harness
  *   node scripts/audit-server.mjs --keep           # leave the scratch database in place
@@ -70,8 +71,11 @@ const opt = (n) => {
   return i >= 0 && args[i + 1] ? args[i + 1] : null;
 };
 
-const wantMobile = has("mobile") || !has("desktop");
-const wantDesktop = has("desktop") || !has("mobile");
+// No viewport flag runs every pass; naming one or more runs only those.
+const anyViewport = has("mobile") || has("narrow") || has("desktop");
+const wantMobile = has("mobile") || !anyViewport;
+const wantNarrow = has("narrow") || !anyViewport;
+const wantDesktop = has("desktop") || !anyViewport;
 const only = opt("only");
 
 /**
@@ -269,6 +273,9 @@ async function main() {
 
   const passes = [];
   if (wantMobile) passes.push({ dir: "audit-mobile", width: 390, height: 844 });
+  // The narrow end of current Android flagships (Galaxy S2x at its default display zoom is
+  // 360 CSS px wide). 30px less than the pass above is enough to wrap a header or a tab row.
+  if (wantNarrow) passes.push({ dir: "audit-narrow", width: 360, height: 780 });
   if (wantDesktop) passes.push({ dir: "audit-desktop", width: 1440, height: 900 });
 
   try {

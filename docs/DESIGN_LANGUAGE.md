@@ -30,7 +30,7 @@ fails when a row names a guard that does not exist or a design guard is missing 
 
 ## What is measured, not asserted
 
-`npm run audit:local` opens every owner-facing page in light and dark at 390px and counts touch
+`npm run audit:local` opens every owner-facing page in light and dark at 390px and 360px and counts touch
 targets under 44px, clipped containers, page overflow and text under 12px. CI runs it as a blocking
 ratchet against `BASELINE` in `scripts/mobile-audit.mjs`; a number never goes up.
 

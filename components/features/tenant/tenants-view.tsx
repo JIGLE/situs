@@ -528,7 +528,12 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
                   },
                 ]}
               />
-              <DataViewToggle mode={dataViewMode} onChange={handleViewModeChange} />
+              {/* Both modes are cards below `md`, so the switch only takes a row there. */}
+              <DataViewToggle
+                mode={dataViewMode}
+                onChange={handleViewModeChange}
+                className="max-md:hidden"
+              />
             </div>
 
             {dataViewMode === "table" ? (
@@ -737,11 +742,23 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
                                     hover. Above `md` the row is column-aligned and a wrap would
                                     break the alignment, so truncation is right there. */}
                                 <p
-                                  className="break-words text-xs text-[var(--color-muted-foreground)] md:truncate"
+                                  className="break-words text-xs text-[var(--color-muted-foreground)] max-sm:hidden md:truncate"
                                   title={tenant.email ?? undefined}
                                 >
                                   {tenant.email ? <BreakableEmail email={tenant.email} /> : "—"}
                                 </p>
+                                {/* Below `sm` the row has no room for a status column: at 360px
+                                    it squeezed the name to 82px ("Sophia Du…") and broke the
+                                    email over three lines. The phone row reads name, then where
+                                    they live and how they stand; the email is in the detail. */}
+                                <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[var(--color-muted-foreground)] sm:hidden">
+                                  <span className="min-w-0 truncate">
+                                    {properties.find((p) => p.id === tenant.propertyId)?.name ||
+                                      tenant.propertyName ||
+                                      t("unassigned")}
+                                  </span>
+                                  {getPaymentStatusBadge(tenant.paymentStatus)}
+                                </div>
                               </div>
                             </div>
 
@@ -782,8 +799,8 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
                               {formatCurrency(Number(activeLease?.monthlyRent ?? tenant.rent))}
                             </div>
 
-                            {/* Status badge */}
-                            <div className="shrink-0">
+                            {/* Status badge — under the name below `sm` */}
+                            <div className="shrink-0 max-sm:hidden">
                               {getPaymentStatusBadge(tenant.paymentStatus)}
                             </div>
 
