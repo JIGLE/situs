@@ -226,6 +226,19 @@ export function NotificationBell({ className }: { className?: string } = {}): Re
             </ul>
           )}
         </div>
+        {/* The bell holds reminders; payments to confirm and receipts to issue wait in Home's
+            inbox. An empty bell said "all caught up" while that inbox had work in it, so the
+            bell says where the work is and leads there. */}
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            router.push("/dashboard");
+          }}
+          className="flex min-h-11 w-full items-center justify-center border-t border-[var(--color-border)] px-4 py-2.5 text-sm text-[var(--color-primary)] hover:bg-[var(--color-hover)]"
+        >
+          {t("openInbox")}
+        </button>
       </Popover.Content>
     </Popover.Root>
   );

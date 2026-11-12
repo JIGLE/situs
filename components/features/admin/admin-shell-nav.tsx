@@ -1,7 +1,9 @@
 "use client";
 
 import { PageHeader } from "@/components/shared/page-header";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { TabLink, TabNav } from "@/components/ui/tabs";
@@ -25,11 +27,21 @@ const SECTIONS = [
 
 export function AdminShellNav() {
   const t = useTranslations("admin.shell");
+  const tNav = useTranslations("navigation");
   const pathname = usePathname();
   const current = pathname.replace(/\/$/, "") || "/admin";
 
   return (
     <div className="space-y-4">
+      {/* Administration is a section of Settings, which is where these pages are reached from and
+          what the rail lights up while one is open: this is the way back to it. */}
+      <Link
+        href="/settings?tab=system"
+        className="-mb-2 inline-flex min-h-11 items-center gap-1 text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] md:min-h-0"
+      >
+        <ChevronLeft aria-hidden className="h-4 w-4" />
+        {tNav("settings")}
+      </Link>
       <PageHeader title={t("title")} />
       <TabNav aria-label={t("sections")}>
         {SECTIONS.map((section) => (

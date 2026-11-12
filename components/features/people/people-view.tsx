@@ -92,13 +92,34 @@ export function PeopleView(): React.ReactElement {
             columns={exportConfig.columns}
           />
         )}
+        {/* The create action sits in the header beside Export, as on Finance: it was on the tab
+            row here and in the header there. */}
+        {activeTab === "tenants" && (
+          <Button
+            onClick={() => tenantsViewRef.current?.openDialog()}
+            className="flex shrink-0 items-center gap-2"
+            aria-label={t("addTenant")}
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">{t("addTenant")}</span>
+          </Button>
+        )}
+        {activeTab === "owners" && (
+          <Button
+            onClick={() => ownersViewRef.current?.openDialog()}
+            className="flex shrink-0 items-center gap-2"
+            aria-label={t("addOwner")}
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">{t("addOwner")}</span>
+          </Button>
+        )}
       </PageHeader>
 
       {/* Tab Navigation - Tenants and Owners */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="flex items-center gap-2">
-          {/* The select takes the bar's place below `md`, in the same row, so the adjacent
-              create button stays on the line it has always been on. */}
+          {/* The select takes the bar's place below `md`. */}
           <TabsMobileSelect
             className="min-w-0 flex-1 md:hidden"
             value={activeTab}
@@ -128,26 +149,6 @@ export function PeopleView(): React.ReactElement {
               </span>
             </TabsTrigger>
           </TabsList>
-          {activeTab === "tenants" && (
-            <Button
-              onClick={() => tenantsViewRef.current?.openDialog()}
-              className="flex shrink-0 items-center gap-2"
-              aria-label={t("addTenant")}
-            >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("addTenant")}</span>
-            </Button>
-          )}
-          {activeTab === "owners" && (
-            <Button
-              onClick={() => ownersViewRef.current?.openDialog()}
-              className="flex shrink-0 items-center gap-2"
-              aria-label={t("addOwner")}
-            >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("addOwner")}</span>
-            </Button>
-          )}
         </div>
 
         <TabsContent value="tenants" className="mt-0">

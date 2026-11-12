@@ -46,14 +46,19 @@ export function SettingsAppearance({ settings, updateSetting }: SettingsAppearan
   const setLanguage = useSetLanguage();
 
   return (
-    <Panel title={t("appearance")} description={t("appearanceDescription")} padded>
+    <Panel title={t("appearance")} padded>
       <div className="space-y-2">
-        <Label>{t("theme")}</Label>
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <Label id="settings-theme-label">{t("theme")}</Label>
+        <div
+          role="group"
+          aria-labelledby="settings-theme-label"
+          className="flex flex-col gap-2 sm:flex-row"
+        >
           {THEME_OPTIONS.map((option) => (
             <Button
               key={option.value}
               variant={settings.theme === option.value ? "default" : "outline"}
+              aria-pressed={settings.theme === option.value}
               size="sm"
               onClick={() => {
                 const value = option.value as UserSettings["theme"];
@@ -72,14 +77,14 @@ export function SettingsAppearance({ settings, updateSetting }: SettingsAppearan
       </div>
 
       <div className="space-y-2">
-        <Label>{t("countryPalette")}</Label>
+        <Label htmlFor="settings-palette">{t("countryPalette")}</Label>
         <Select
           value={country}
           onValueChange={(value) => {
             if (isCountryCode(value)) setCountry(value);
           }}
         >
-          <SelectTrigger className="max-w-xs">
+          <SelectTrigger id="settings-palette" className="max-w-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

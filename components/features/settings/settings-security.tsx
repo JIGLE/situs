@@ -7,13 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslations } from "next-intl";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useToast } from "@/lib/contexts/toast-context";
 import { useCsrf } from "@/lib/contexts/csrf-context";
-import { apiFetch } from "@/lib/utils/api-client";
-import { httpError, useApiError } from "@/lib/utils/api-error";
-import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
-import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { httpError } from "@/lib/utils/api-error";
 import { PasskeysPanel } from "./passkeys-panel";
 
 export function SettingsSecurity() {
@@ -21,52 +18,7 @@ export function SettingsSecurity() {
   const { token: csrfToken } = useCsrf();
   const t = useTranslations("settings.panel");
   const tActions = useTranslations("actions");
-  const apiError = useApiError();
   const { update: updateSession } = useSession();
-  const confirmDialog = useConfirmDialog();
-
-  const exportData = async () => {
-    try {
-      const res = await fetch("/api/user/export-data", {
-        method: "POST",
-        headers: { "X-CSRF-Token": csrfToken || "" },
-      });
-      if (!res.ok) throw new Error("Export failed");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "situs-data.json";
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      showError(t("exportFailed"));
-    }
-  };
-
-  /** Was a native `window.confirm`, which cannot be translated and is the one pattern the
-   *  rest of the app routes through ConfirmationDialog instead. */
-  const requestDelete = () => {
-    confirmDialog.confirm(
-      {
-        title: t("deleteConfirmTitle"),
-        description: t("deleteConfirmDescription"),
-        confirmLabel: t("deleteConfirmLabel"),
-        variant: "destructive",
-      },
-      async () => {
-        try {
-          await apiFetch("/api/user/delete-data", csrfToken, "POST");
-          // The session's token outlives the account for up to a day, and the sign-in page sends a
-          // visitor who still has one on to the dashboard: end the session before leaving.
-          await signOut({ callbackUrl: "/auth/signin" });
-        } catch (err) {
-          // The only administrator is told why, in words: "the instance needs an administrator".
-          showError(apiError(err));
-        }
-      },
-    );
-  };
 
   const [totpEnabled, setTotpEnabled] = useState(false);
   const [totpLoading, setTotpLoading] = useState(true);
@@ -326,27 +278,6 @@ export function SettingsSecurity() {
           </div>
         ) : null}
       </Panel>
-
-      {/* GDPR data rights. These sat under Account, which also held identity fields and the
-          appearance controls; they belong with the other account-level risk surface. */}
-      <Panel title={t("dataRights")} description={t("dataRightsDescription")} padded>
-        <div className="space-y-2">
-          <p className="text-sm font-medium">{t("exportTitle")}</p>
-          <p className="text-xs text-muted-foreground">{t("exportHelp")}</p>
-          <Button variant="outline" size="sm" onClick={exportData}>
-            {t("exportTitle")}
-          </Button>
-        </div>
-        <p className="text-xs text-muted-foreground">{t("retention")}</p>
-      </Panel>
-
-      <Panel tone="danger" title={t("deleteTitle")} description={t("deleteHelp")} padded>
-        <Button variant="destructive" size="sm" onClick={requestDelete}>
-          {t("deleteTitle")}
-        </Button>
-      </Panel>
-
-      <ConfirmationDialog dialog={confirmDialog} />
     </div>
   );
 }

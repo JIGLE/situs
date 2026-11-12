@@ -61,14 +61,15 @@ export function Panel({
             TONES[tone],
           )}
         >
-          <h2 className="truncate text-xs font-semibold text-[var(--color-muted-foreground)]">
-            {title}
-          </h2>
+          {/* The title is the strong line and the description the quiet one. It was the other way
+              round, a small grey title over a larger, brighter description, so the eye read the
+              explanation before the name of the thing. */}
+          <h2 className="truncate text-sm font-semibold text-[var(--color-foreground)]">{title}</h2>
           {action}
         </header>
       )}
       {description && (
-        <p className="px-4 pt-3 text-sm leading-relaxed text-[var(--color-muted-foreground)]">
+        <p className="px-4 pt-3 text-xs leading-relaxed text-[var(--color-muted-foreground)]">
           {description}
         </p>
       )}

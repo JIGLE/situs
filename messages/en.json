@@ -80,21 +80,17 @@
     "nav": {
       "account": "Account",
       "notifications": "Notifications",
-      "security": "Security & privacy",
-      "integrations": "Integrations",
+      "security": "Security",
+      "integrations": "Connections",
       "system": "Administration",
       "heading": "Settings",
       "subtitle": "Manage your preferences and account settings",
       "sectionsLabel": "Settings sections",
-      "toastSaved": "Settings saved",
+      "toastSaved": "Saved",
       "loadFailed": "Couldn't load your settings.",
       "toastSaveFailed": "Couldn't save your settings.",
       "appearance": "Appearance",
-      "groups": {
-        "personal": "Personal",
-        "workspace": "Workspace",
-        "system": "System"
-      }
+      "data": "My data"
     },
     "panel": {
       "accountInfo": "Account Information",
@@ -104,14 +100,14 @@
       "notAvailable": "Not available",
       "notSet": "Not set",
       "residenceCountry": "Country of tax residence",
-      "residenceCountryHelp": "Shown under your name in the side bar, after the language.",
+      "residenceCountryHelp": "Shown under your name in the menu, after the language.",
       "version": "Situs v{version}",
       "appearance": "Appearance",
       "appearanceDescription": "How the app looks on this device",
       "theme": "Theme",
-      "themeMatchedNormal": "Matched normal",
-      "themeMatchedDark": "Matched dark",
-      "themeSystem": "System",
+      "themeMatchedNormal": "Light",
+      "themeMatchedDark": "Dark",
+      "themeSystem": "Automatic",
       "countryPalette": "Country palette",
       "countryPaletteHelp": "Sets the Situs Portal logo colours and the interface accent to your country's flag palette. Readability-first: the accent is contrast-adjusted, and status colours stay the same across every country.",
       "language": "Language",
@@ -177,7 +173,7 @@
       "emailService": "Email service",
       "refresh": "Refresh",
       "systemUnavailable": "Couldn't fetch system information.",
-      "bankConnectionsHelp": "Accounts feeding the Finance › Bank Movements inbox",
+      "bankConnectionsHelp": "Accounts feeding Finance › Movements",
       "noBankConnection": "No bank connected yet.",
       "uptimeValue": "{hours}h {minutes}m",
       "bankConnectCta": "Connect a bank",
@@ -235,13 +231,13 @@
       },
       "bankNoProviderTitle": "Bank connection not configured",
       "bankNoProviderBody": "This instance has no Enable Banking credentials, so movements cannot be imported automatically. Set ENABLE_BANKING_APPLICATION_ID and ENABLE_BANKING_PRIVATE_KEY_FILE pointing at the mounted .pem, then restart.",
-      "bankNoProviderManual": "Until then no bank movements arrive. A payment can still be recorded by hand, in Finance › Receipts.",
+      "bankNoProviderManual": "Until then no bank movements arrive. A payment can still be recorded by hand, with Record payment in Finance.",
       "bankConsentUntil": "Consent valid until {date}",
       "bankConsentEnding": "Consent ends {date}: renew access before then to keep syncing",
       "bankConsentEnded": "Consent ended {date}",
       "integrationTabs": {
         "banks": "Banks",
-        "at": "Finanças"
+        "at": "Portal das Finanças (AT)"
       },
       "passkeysTitle": "Passkeys",
       "passkeysDescription": "Sign in with your phone's fingerprint, face or screen lock instead of typing a code. The authenticator app stays as your fallback.",
@@ -269,7 +265,8 @@
       "passkeyErrLimit": "You have reached the limit of 10 passkeys. Remove one first.",
       "passkeyErrTooMany": "Too many attempts. Wait a moment and try again.",
       "passkeyErrGeneric": "Couldn't save the passkey. Try again.",
-      "passkeyRemoveFailed": "Couldn't remove the passkey."
+      "passkeyRemoveFailed": "Couldn't remove the passkey.",
+      "bankManualNote": "Movements recorded by hand. Nothing syncs here."
     },
     "at": {
       "description": "Situs signs in to AT as a Portal sub-user, with the certificate AT signed for this instance.",
@@ -577,7 +574,24 @@
     "startTenancyAction": "New tenancy",
     "connectBankLabel": "Connect your bank",
     "connectBankDesc": "Payments then arrive on their own, ready to confirm. You can also record one by hand.",
-    "connectBankAction": "Connect bank"
+    "connectBankAction": "Connect bank",
+    "monthReceivedOf": "{received} of {expected}",
+    "monthOutstanding": "{amount} outstanding",
+    "monthAllIn": "All received",
+    "monthEmpty": "No rent this month.",
+    "tenancyPaidOn": "Paid {date}",
+    "tenancyDueOn": "Due {date}",
+    "tenancyPartial": "{received} of {due}",
+    "tenancyOverdue": "Overdue since {date}",
+    "yearLine": "{year}: {received} received · {expenses} expenses · {net} net",
+    "bankSynced": "{bank} · synced {when}",
+    "bankNotSynced": "{bank} · not synced yet",
+    "upcomingTitle": "Coming up",
+    "upcomingRent": "Rent from {name}",
+    "upcomingIncrease": "Rent increase for {name}",
+    "upcomingRenews": "{name}'s contract renews",
+    "upcomingEnds": "{name}'s contract ends",
+    "lateSince": "since {month}"
   },
   "completion": {
     "title": "What is missing",
@@ -1613,8 +1627,8 @@
     "unread": "Unread ({count})",
     "noUnreadNotifications": "No unread notifications",
     "noNotifications": "No notifications",
-    "allCaughtUp": "You're all caught up!",
-    "notificationsWillAppear": "Notifications will appear here",
+    "allCaughtUp": "No reminders",
+    "notificationsWillAppear": "Payments to confirm and receipts to issue are in the Home inbox.",
     "clearAll": "Clear all",
     "clearAllLabel": "Clear all notifications",
     "settings": "Settings",
@@ -1630,7 +1644,8 @@
       "medium": "Medium",
       "high": "High",
       "urgent": "Urgent"
-    }
+    },
+    "openInbox": "Open the inbox"
   },
   "portfolioTree": {
     "title": "Structural portfolio inventory",

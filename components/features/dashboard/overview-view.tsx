@@ -2,20 +2,10 @@
 
 import { PageHeader } from "@/components/shared/page-header";
 import { type ElementType, type ReactElement, useCallback, useEffect, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import {
-  BadgeEuro,
-  Building2,
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-  Home,
-  Landmark,
-  UserRound,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { BadgeEuro, Building2, FileText, Home, Landmark, UserRound } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   OnboardingChecklist,
@@ -24,14 +14,15 @@ import {
 import {
   AttentionList,
   LateList,
-  MonthFigures,
+  MonthBlock,
   StatusLine,
+  UpcomingList,
+  YearLine,
 } from "@/components/features/dashboard/month-glance";
 import { HomeInbox } from "@/components/features/dashboard/home-inbox";
 import { useApp } from "@/lib/contexts/app-context";
 import { useDashboardMonth } from "@/lib/hooks/use-dashboard-month";
 import { useApiError } from "@/lib/utils/api-error";
-import { formatMonthYear } from "@/lib/utils/format-date";
 
 export interface OverviewViewProps {
   onAddProperty?: () => void;
@@ -101,7 +92,6 @@ export function OverviewView({
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const locale = useLocale();
   const t = useTranslations("dashboard");
   const apiError = useApiError();
 
@@ -210,33 +200,17 @@ export function OverviewView({
     <div className="space-y-5 motion-safe:animate-fade-in">
       {showChecklist && <OnboardingChecklist steps={onboardingSteps} />}
 
-      <PageHeader title={greeting ?? ""} titleOnMobile titleTestId="greeting">
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={t("previousMonth")}
-            onClick={() => selectMonth(shiftMonth(selected, -1))}
-          >
-            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-          </Button>
-          <p
-            className="min-w-36 text-center text-sm font-medium first-letter:uppercase"
-            aria-live="polite"
-            data-testid="dashboard-month"
-          >
-            {formatMonthYear(selected.year, selected.month, locale)}
-          </p>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={t("nextMonth")}
-            onClick={() => selectMonth(shiftMonth(selected, 1))}
-          >
-            <ChevronRight className="h-4 w-4" aria-hidden="true" />
-          </Button>
-        </div>
-      </PageHeader>
+      {/* On a phone the top bar already says Início, so the greeting is the desktop's heading
+          only: one heading per screen. */}
+      <div className="space-y-1">
+        <PageHeader title={greeting ?? ""} titleTestId="greeting" />
+        {month ? (
+          <div className="space-y-0.5">
+            <YearLine year={month.year} totals={month.yearTotals} />
+            <StatusLine status={month.status} />
+          </div>
+        ) : null}
+      </div>
 
       {error ? (
         <p
@@ -248,13 +222,27 @@ export function OverviewView({
       ) : null}
 
       {month ? (
-        <>
-          <StatusLine status={month.status} />
-          <MonthFigures figures={month.figures} />
-          <HomeInbox onChanged={reload} />
-          <LateList late={month.late} />
-          <AttentionList attention={month.attention} />
-        </>
+        // Two columns on a wide screen: this month and what waits on the left, who is late and
+        // what comes next on the right. One column, in that order, on a phone.
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+          <div className="min-w-0 space-y-5">
+            {/* The label follows the choice at once; the rows follow when the month arrives. */}
+            <MonthBlock
+              year={selected.year}
+              month={selected.month}
+              figures={month.figures}
+              tenancies={month.tenancies}
+              onPrevious={() => selectMonth(shiftMonth(selected, -1))}
+              onNext={() => selectMonth(shiftMonth(selected, 1))}
+            />
+            <HomeInbox onChanged={reload} />
+          </div>
+          <div className="min-w-0 space-y-5">
+            <LateList late={month.late} />
+            <UpcomingList upcoming={month.upcoming} />
+            <AttentionList attention={month.attention} />
+          </div>
+        </div>
       ) : error ? null : (
         <div className="h-40 animate-pulse bg-[var(--color-muted)]/30" />
       )}

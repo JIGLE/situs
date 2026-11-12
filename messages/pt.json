@@ -80,21 +80,17 @@
     "nav": {
       "account": "Conta",
       "notifications": "Notificações",
-      "security": "Segurança e privacidade",
-      "integrations": "Integrações",
+      "security": "Segurança",
+      "integrations": "Ligações",
       "system": "Administração",
       "heading": "Definições",
       "subtitle": "Faça a gestão das suas preferências e da conta",
       "sectionsLabel": "Secções das definições",
-      "toastSaved": "Definições guardadas",
+      "toastSaved": "Guardado",
       "loadFailed": "Não foi possível carregar as definições.",
       "toastSaveFailed": "Não foi possível guardar as definições.",
       "appearance": "Aparência",
-      "groups": {
-        "personal": "Pessoal",
-        "workspace": "Espaço de trabalho",
-        "system": "Sistema"
-      }
+      "data": "Os meus dados"
     },
     "panel": {
       "accountInfo": "Informação da conta",
@@ -104,14 +100,14 @@
       "notAvailable": "Indisponível",
       "notSet": "Por definir",
       "residenceCountry": "País de residência fiscal",
-      "residenceCountryHelp": "Aparece por baixo do seu nome na barra lateral, depois do idioma.",
+      "residenceCountryHelp": "Aparece por baixo do seu nome no menu, depois do idioma.",
       "version": "Situs v{version}",
       "appearance": "Aparência",
       "appearanceDescription": "Como a aplicação se apresenta neste dispositivo",
       "theme": "Tema",
-      "themeMatchedNormal": "Normal do país",
-      "themeMatchedDark": "Escuro do país",
-      "themeSystem": "Sistema",
+      "themeMatchedNormal": "Claro",
+      "themeMatchedDark": "Escuro",
+      "themeSystem": "Automático",
       "countryPalette": "Paleta do país",
       "countryPaletteHelp": "Define as cores do logótipo Situs Portal e o acento da interface com a paleta da bandeira do seu país. A legibilidade vem primeiro: o acento é ajustado ao contraste e as cores de estado mantêm-se iguais em todos os países.",
       "language": "Idioma",
@@ -177,7 +173,7 @@
       "emailService": "Serviço de e-mail",
       "refresh": "Atualizar",
       "systemUnavailable": "Não foi possível obter a informação do sistema.",
-      "bankConnectionsHelp": "Contas que alimentam a caixa Finanças › Movimentos bancários",
+      "bankConnectionsHelp": "Contas que alimentam Finanças › Movimentos",
       "noBankConnection": "Ainda não há nenhum banco ligado.",
       "uptimeValue": "{hours} h {minutes} m",
       "bankConnectCta": "Ligar um banco",
@@ -235,13 +231,13 @@
       },
       "bankNoProviderTitle": "Ligação bancária não configurada",
       "bankNoProviderBody": "Esta instância não tem credenciais Enable Banking, por isso os movimentos não podem ser importados automaticamente. Defina ENABLE_BANKING_APPLICATION_ID e ENABLE_BANKING_PRIVATE_KEY_FILE a apontar para o .pem montado e reinicie.",
-      "bankNoProviderManual": "Até lá não chegam movimentos bancários. Um pagamento pode ainda ser registado à mão, em Finanças › Recibos.",
+      "bankNoProviderManual": "Até lá não chegam movimentos bancários. Um pagamento pode ainda ser registado à mão, com Registar pagamento em Finanças.",
       "bankConsentUntil": "Consentimento válido até {date}",
       "bankConsentEnding": "O consentimento termina a {date}: renove o acesso antes disso para continuar a sincronizar",
       "bankConsentEnded": "O consentimento terminou a {date}",
       "integrationTabs": {
         "banks": "Bancos",
-        "at": "Finanças"
+        "at": "Portal das Finanças (AT)"
       },
       "passkeysTitle": "Passkeys",
       "passkeysDescription": "Entre com a impressão digital, o rosto ou o bloqueio de ecrã do telemóvel em vez de escrever um código. A aplicação de autenticação continua como alternativa.",
@@ -269,7 +265,8 @@
       "passkeyErrLimit": "Atingiu o limite de 10 passkeys. Remova uma primeiro.",
       "passkeyErrTooMany": "Demasiadas tentativas. Aguarde um momento e tente novamente.",
       "passkeyErrGeneric": "Não foi possível guardar a passkey. Tente novamente.",
-      "passkeyRemoveFailed": "Não foi possível remover a passkey."
+      "passkeyRemoveFailed": "Não foi possível remover a passkey.",
+      "bankManualNote": "Movimentos registados à mão. Não sincroniza."
     },
     "at": {
       "description": "O Situs entra na AT como um subutilizador do Portal, com o certificado que a AT assinou para esta instância.",
@@ -577,7 +574,24 @@
     "startTenancyAction": "Novo arrendamento",
     "connectBankLabel": "Ligar o seu banco",
     "connectBankDesc": "Os pagamentos passam a chegar sozinhos, prontos a confirmar. Também pode registar um à mão.",
-    "connectBankAction": "Ligar banco"
+    "connectBankAction": "Ligar banco",
+    "monthReceivedOf": "{received} de {expected}",
+    "monthOutstanding": "{amount} em falta",
+    "monthAllIn": "Tudo recebido",
+    "monthEmpty": "Sem rendas neste mês.",
+    "tenancyPaidOn": "Pago a {date}",
+    "tenancyDueOn": "Vence a {date}",
+    "tenancyPartial": "{received} de {due}",
+    "tenancyOverdue": "Em atraso desde {date}",
+    "yearLine": "{year}: {received} recebidos · {expenses} despesas · {net} líquido",
+    "bankSynced": "{bank} · sincronizado {when}",
+    "bankNotSynced": "{bank} · ainda não sincronizou",
+    "upcomingTitle": "A seguir",
+    "upcomingRent": "Renda de {name}",
+    "upcomingIncrease": "Aumento da renda de {name}",
+    "upcomingRenews": "Contrato de {name} renova-se",
+    "upcomingEnds": "Contrato de {name} termina",
+    "lateSince": "desde {month}"
   },
   "completion": {
     "title": "O que falta",
@@ -1613,8 +1627,8 @@
     "unread": "Por ler ({count})",
     "noUnreadNotifications": "Sem notificações por ler",
     "noNotifications": "Sem notificações",
-    "allCaughtUp": "Está tudo em dia!",
-    "notificationsWillAppear": "As notificações aparecerão aqui",
+    "allCaughtUp": "Sem lembretes",
+    "notificationsWillAppear": "Os pagamentos por confirmar e os recibos por emitir estão na caixa de entrada do Início.",
     "clearAll": "Limpar tudo",
     "clearAllLabel": "Limpar todas as notificações",
     "settings": "Definições",
@@ -1630,7 +1644,8 @@
       "medium": "Média",
       "high": "Alta",
       "urgent": "Urgente"
-    }
+    },
+    "openInbox": "Abrir a caixa de entrada"
   },
   "portfolioTree": {
     "title": "Inventário estrutural da carteira",

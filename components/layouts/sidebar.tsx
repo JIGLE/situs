@@ -6,7 +6,7 @@ import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, Globe, LogOut, Settings } from "lucide-react";
 
 import { SitusPortalMark } from "@/components/shared/situs-portal-logo";
 import { NotificationBell } from "@/components/shared/notification-bell";
@@ -16,6 +16,20 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { usePortalAccess } from "@/lib/contexts/portal-context";
 import { useUserSettings } from "@/lib/contexts/user-settings-context";
 import { countryName } from "@/lib/utils/countries";
+import { locales, localeNames, type Locale } from "@/lib/i18n/locales";
+import { useSetLanguage } from "@/lib/i18n/use-set-language";
+import type { PortalNavItem } from "@/lib/portal/access";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // ── Nav Item Type ──────────────────────────────────────
 interface SidebarProps {
@@ -25,20 +39,36 @@ interface SidebarProps {
 
 const SIDEBAR_COLLAPSE_KEY = "situs.sidebar.collapsed";
 
-// ── Sidebar Footer ─────────────────────────────────────
+// ── Account menu ───────────────────────────────────────
 interface SidebarFooterProps {
   collapsed: boolean;
   onToggleCollapsed: () => void;
   user?: { name?: string | null; email?: string | null; image?: string | null };
+  /** Entries reached from the account (Settings), from the navigation's `accountMenu` items. */
+  items: PortalNavItem[];
+  pathname: string;
 }
 
+/**
+ * The owner's row at the foot of the rail, and the menu it opens.
+ *
+ * Settings used to be a rail entry of its own, alone under a "Sistema" heading in the middle of
+ * the rail, while this row opened Settings too: two ways in that looked like two places. Now the
+ * row is the one way in, as the avatar is on the phone: it opens a menu with Settings, the
+ * language and sign-out, the same three things as the phone's More sheet. The row lights up in
+ * the accent while a page it leads to is open, since no rail entry does then.
+ */
 function SidebarFooter({
   collapsed,
   onToggleCollapsed,
   user,
+  items,
+  pathname,
 }: SidebarFooterProps): React.ReactElement {
   const tNav = useTranslations("navigation");
-  const locale = useLocale();
+  const tLanguage = useTranslations("language");
+  const locale = useLocale() as Locale;
+  const setLanguage = useSetLanguage();
   const { settings } = useUserSettings();
   const initials =
     user?.name
@@ -46,57 +76,113 @@ function SidebarFooter({
       .map((n) => n[0])
       .join("")
       .toUpperCase() || "U";
+  const active = items.some((item) => isItemActive(item, pathname));
+
+  const avatar = (
+    <Avatar className="w-8 h-8 shrink-0 ring-2 ring-[var(--color-inner-border)]">
+      <AvatarImage src={user?.image || ""} alt={user?.name || "User"} />
+      <AvatarFallback className="bg-[var(--color-primary)] text-[var(--color-primary-foreground)] text-xs font-semibold">
+        {initials}
+      </AvatarFallback>
+    </Avatar>
+  );
+
+  const menu = (
+    <DropdownMenuContent
+      side={collapsed ? "right" : "top"}
+      align={collapsed ? "end" : "start"}
+      className="w-56"
+    >
+      <DropdownMenuLabel className="min-w-0 font-normal">
+        <p className="truncate text-sm font-medium text-[var(--color-foreground)]">
+          {user?.name || "Portal User"}
+        </p>
+        {user?.email && (
+          <p className="truncate text-xs text-[var(--color-muted-foreground)]">{user.email}</p>
+        )}
+      </DropdownMenuLabel>
+      <DropdownMenuSeparator />
+      {items.map((item) => {
+        const Icon = item.icon;
+        return (
+          <DropdownMenuItem key={item.key} asChild className="cursor-pointer gap-2">
+            <Link href={item.href} aria-current={isItemActive(item, pathname) ? "page" : undefined}>
+              <Icon className="h-4 w-4 text-[var(--color-muted-foreground)]" />
+              {tNav(item.labelKey.replace("navigation.", "") as Parameters<typeof tNav>[0])}
+            </Link>
+          </DropdownMenuItem>
+        );
+      })}
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger className="cursor-pointer gap-2">
+          <Globe className="h-4 w-4 text-[var(--color-muted-foreground)]" />
+          <span className="flex-1">{tLanguage("label")}</span>
+          <span className="text-xs text-[var(--color-muted-foreground)]">
+            {localeNames[locale]}
+          </span>
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          {locales.map((option) => (
+            <DropdownMenuItem
+              key={option}
+              onClick={() => void setLanguage(option)}
+              className={cn("cursor-pointer", option === locale && "font-medium")}
+            >
+              {localeNames[option]}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        onClick={() => signOut({ callbackUrl: "/" })}
+        className="cursor-pointer gap-2 text-[var(--color-destructive)] focus:text-[var(--color-destructive)]"
+      >
+        <LogOut className="h-4 w-4" />
+        {tNav("signOut")}
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  );
 
   if (!collapsed) {
     return (
-      // One row, not two. The footer used to stack three lines of text — name, email, then
-      // `country · mode` on a row of its own next to the sign-out button — which made the
-      // bottom of the sidebar as tall as a whole nav group for what is one identity.
-      //
-      // The email is the line that goes: it is the least glanceable of the three, and it is
-      // already on the account page this row opens. `country · mode` stays because it is live
-      // app state you want to see without clicking.
-      //
-      // The sign-out button is a sibling of the link rather than inside it — an anchor cannot
-      // contain a button, and the previous layout only avoided that by giving the button its
-      // own row.
-      <div className="flex items-center gap-1">
-        {/* The name is the way into the account. It used to be an inert <div>, so the only
-            route to account settings was a nav row of its own; that row is gone now. */}
-        <Link
-          href={"/settings?tab=account"}
-          className="flex min-h-11 min-w-0 flex-1 items-center gap-3 px-2 py-2 transition-colors hover:bg-[var(--color-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--country-highlight-readable)]"
-          title={tNav("account")}
-        >
-          <Avatar className="w-8 h-8 ring-2 ring-[var(--color-inner-border)]">
-            <AvatarImage src={user?.image || ""} alt={user?.name || "User"} />
-            <AvatarFallback className="bg-[var(--color-primary)] text-[var(--color-primary-foreground)] text-xs font-semibold">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-[var(--color-foreground)] truncate">
-              {user?.name || "Portal User"}
-            </p>
-            <p className="mono-label truncate" title={tNav("languageAndResidence")}>
-              {/* The language on screen, then the country of tax residence named in it. This line
-                  used to read `PT · Escuro`: the colour palette and the theme, both of which the
-                  screen already shows. A missing row reads Portugal, the column's default. */}
-              {`${locale.toUpperCase()} · ${countryName(settings?.residenceCountry ?? "PT", locale)}`}
-            </p>
-          </div>
-        </Link>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => signOut({ callbackUrl: "/" })}
-          className="h-8 w-8 shrink-0 p-0 hover:bg-[var(--color-error-muted)] hover:text-[var(--color-destructive)]"
-          title={tNav("signOut")}
-          aria-label={tNav("signOut")}
-        >
-          <LogOut className="h-4 w-4" />
-        </Button>
-      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            title={tNav("account")}
+            aria-label={tNav("account")}
+            className={cn(
+              "flex min-h-11 w-full min-w-0 items-center gap-3 border-l-2 px-2 py-2 text-left transition-colors hover:bg-[var(--color-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--country-highlight-readable)]",
+              active
+                ? "border-[var(--country-highlight-readable)] bg-[var(--color-sidebar-active)]"
+                : "border-transparent",
+            )}
+          >
+            {avatar}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-[var(--color-foreground)] truncate">
+                {user?.name || "Portal User"}
+              </p>
+              <p className="mono-label truncate" title={tNav("languageAndResidence")}>
+                {/* The language on screen, then the country of tax residence named in it. A
+                    missing row reads Portugal, the column's default. */}
+                {`${locale.toUpperCase()} · ${countryName(settings?.residenceCountry ?? "PT", locale)}`}
+              </p>
+            </div>
+            <Settings
+              aria-hidden="true"
+              className={cn(
+                "h-4 w-4 shrink-0",
+                active
+                  ? "text-[var(--country-highlight-readable)]"
+                  : "text-[var(--color-muted-foreground)]",
+              )}
+            />
+          </button>
+        </DropdownMenuTrigger>
+        {menu}
+      </DropdownMenu>
     );
   }
 
@@ -105,18 +191,22 @@ function SidebarFooter({
   return (
     <div className="flex flex-col items-center gap-2">
       <NotificationBell className="h-8 w-8" />
-      <Link
-        href={"/settings?tab=account"}
-        className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--country-highlight-readable)]"
-        title={tNav("account")}
-      >
-        <Avatar className="w-8 h-8 ring-2 ring-[var(--color-inner-border)]">
-          <AvatarImage src={user?.image || ""} alt={user?.name || "User"} />
-          <AvatarFallback className="bg-[var(--color-primary)] text-[var(--color-primary-foreground)] text-xs font-semibold">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
-      </Link>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--country-highlight-readable)]",
+              active && "ring-2 ring-[var(--country-highlight-readable)]",
+            )}
+            title={tNav("account")}
+            aria-label={tNav("account")}
+          >
+            {avatar}
+          </button>
+        </DropdownMenuTrigger>
+        {menu}
+      </DropdownMenu>
       <Button
         variant="ghost"
         size="sm"
@@ -128,6 +218,13 @@ function SidebarFooter({
         <ChevronRight className="h-4 w-4" />
       </Button>
     </div>
+  );
+}
+
+/** Whether `item` is the page open now: its own route, or one it stands for (`activeFor`). */
+function isItemActive(item: PortalNavItem, pathname: string): boolean {
+  return [item.href, ...(item.activeFor ?? [])].some(
+    (href) => pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`)),
   );
 }
 
@@ -149,8 +246,14 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
     }
   }, []);
 
-  // Build menu from config
-  const menuItems = navigation;
+  // The rail lists the daily sections; an entry reached from the account (Settings) is in the
+  // menu under the owner's name instead, so a group left empty by that is dropped too.
+  const menuItems = navigation
+    .map((group) => ({ ...group, items: group.items.filter((item) => !item.accountMenu) }))
+    .filter((group) => group.items.length > 0);
+  const accountItems = navigation.flatMap((group) =>
+    group.items.filter((item) => item.accountMenu),
+  );
 
   const handleToggleCollapsed = useCallback(() => {
     setCollapsed((prev) => {
@@ -232,9 +335,7 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
             <div className="space-y-0.5" role="list">
               {group.items.map((item) => {
                 const Icon = item.icon;
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));
+                const isActive = isItemActive(item, pathname);
 
                 const translatedLabel = t(
                   item.labelKey.replace("navigation.", "") as Parameters<typeof t>[0],
@@ -296,6 +397,8 @@ export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
             collapsed={collapsed}
             onToggleCollapsed={handleToggleCollapsed}
             user={user}
+            items={accountItems}
+            pathname={pathname}
           />
         </div>
       )}

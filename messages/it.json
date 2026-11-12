@@ -80,21 +80,17 @@
     "nav": {
       "account": "Account",
       "notifications": "Notifiche",
-      "security": "Sicurezza e privacy",
-      "integrations": "Integrazioni",
+      "security": "Sicurezza",
+      "integrations": "Collegamenti",
       "system": "Amministrazione",
       "heading": "Impostazioni",
       "subtitle": "Gestisci le tue preferenze e l'account",
       "sectionsLabel": "Sezioni delle impostazioni",
-      "toastSaved": "Impostazioni salvate",
+      "toastSaved": "Salvato",
       "loadFailed": "Impossibile caricare le impostazioni.",
       "toastSaveFailed": "Impossibile salvare le impostazioni.",
       "appearance": "Aspetto",
-      "groups": {
-        "personal": "Personale",
-        "workspace": "Area di lavoro",
-        "system": "Sistema"
-      }
+      "data": "I miei dati"
     },
     "panel": {
       "accountInfo": "Informazioni dell'account",
@@ -104,14 +100,14 @@
       "notAvailable": "Non disponibile",
       "notSet": "Non impostato",
       "residenceCountry": "Paese di residenza fiscale",
-      "residenceCountryHelp": "Compare sotto il suo nome nella barra laterale, dopo la lingua.",
+      "residenceCountryHelp": "Compare sotto il suo nome nel menu, dopo la lingua.",
       "version": "Situs v{version}",
       "appearance": "Aspetto",
       "appearanceDescription": "Come appare l'app su questo dispositivo",
       "theme": "Tema",
-      "themeMatchedNormal": "Normale del paese",
-      "themeMatchedDark": "Scuro del paese",
-      "themeSystem": "Sistema",
+      "themeMatchedNormal": "Chiaro",
+      "themeMatchedDark": "Scuro",
+      "themeSystem": "Automatico",
       "countryPalette": "Palette del paese",
       "countryPaletteHelp": "Imposta i colori del logo Situs Portal e l'accento dell'interfaccia sulla palette della bandiera del tuo paese. La leggibilità viene prima: l'accento è regolato sul contrasto e i colori di stato restano uguali in ogni paese.",
       "language": "Lingua",
@@ -177,7 +173,7 @@
       "emailService": "Servizio e-mail",
       "refresh": "Aggiorna",
       "systemUnavailable": "Impossibile recuperare le informazioni di sistema.",
-      "bankConnectionsHelp": "Conti che alimentano la casella Finanze › Movimenti bancari",
+      "bankConnectionsHelp": "Conti che alimentano Finanza › Movimenti",
       "noBankConnection": "Nessuna banca ancora collegata.",
       "uptimeValue": "{hours} h {minutes} min",
       "bankConnectCta": "Collega una banca",
@@ -235,13 +231,13 @@
       },
       "bankNoProviderTitle": "Connessione bancaria non configurata",
       "bankNoProviderBody": "Questa istanza non ha credenziali Enable Banking, quindi i movimenti non possono essere importati automaticamente. Imposta ENABLE_BANKING_APPLICATION_ID e ENABLE_BANKING_PRIVATE_KEY_FILE che punta al .pem montato, poi riavvia.",
-      "bankNoProviderManual": "Nel frattempo non arrivano movimenti bancari. Un pagamento si può comunque registrare a mano, in Finanza › Ricevute.",
+      "bankNoProviderManual": "Nel frattempo non arrivano movimenti bancari. Un pagamento si può comunque registrare a mano, con Registra pagamento in Finanza.",
       "bankConsentUntil": "Consenso valido fino al {date}",
       "bankConsentEnding": "Il consenso scade il {date}: rinnova l'accesso prima per continuare a sincronizzare",
       "bankConsentEnded": "Il consenso è scaduto il {date}",
       "integrationTabs": {
         "banks": "Banche",
-        "at": "Finanças"
+        "at": "Portal das Finanças (AT)"
       },
       "passkeysTitle": "Passkey",
       "passkeysDescription": "Accedi con l'impronta, il volto o il blocco schermo del telefono invece di digitare un codice. L'app di autenticazione resta come alternativa.",
@@ -269,7 +265,8 @@
       "passkeyErrLimit": "Hai raggiunto il limite di 10 passkey. Rimuovine una prima.",
       "passkeyErrTooMany": "Troppi tentativi. Attendi un momento e riprova.",
       "passkeyErrGeneric": "Impossibile salvare la passkey. Riprova.",
-      "passkeyRemoveFailed": "Impossibile rimuovere la passkey."
+      "passkeyRemoveFailed": "Impossibile rimuovere la passkey.",
+      "bankManualNote": "Movimenti registrati a mano. Non si sincronizza."
     },
     "at": {
       "description": "Situs accede all'AT come sottoutente del Portal, con il certificato che l'AT ha firmato per questa istanza.",
@@ -577,7 +574,24 @@
     "startTenancyAction": "Nuova locazione",
     "connectBankLabel": "Collega la tua banca",
     "connectBankDesc": "I pagamenti arrivano da soli, pronti da confermare. Puoi anche registrarne uno a mano.",
-    "connectBankAction": "Collega banca"
+    "connectBankAction": "Collega banca",
+    "monthReceivedOf": "{received} di {expected}",
+    "monthOutstanding": "{amount} da incassare",
+    "monthAllIn": "Tutto incassato",
+    "monthEmpty": "Nessun canone questo mese.",
+    "tenancyPaidOn": "Pagato il {date}",
+    "tenancyDueOn": "Scade il {date}",
+    "tenancyPartial": "{received} di {due}",
+    "tenancyOverdue": "In ritardo dal {date}",
+    "yearLine": "{year}: {received} incassati · {expenses} spese · {net} netto",
+    "bankSynced": "{bank} · sincronizzato {when}",
+    "bankNotSynced": "{bank} · non ancora sincronizzato",
+    "upcomingTitle": "In arrivo",
+    "upcomingRent": "Canone di {name}",
+    "upcomingIncrease": "Aumento del canone di {name}",
+    "upcomingRenews": "Il contratto di {name} si rinnova",
+    "upcomingEnds": "Il contratto di {name} termina",
+    "lateSince": "da {month}"
   },
   "completion": {
     "title": "Cosa manca",
@@ -1613,8 +1627,8 @@
     "unread": "Non lette ({count})",
     "noUnreadNotifications": "Nessuna notifica non letta",
     "noNotifications": "Nessuna notifica",
-    "allCaughtUp": "Sei in regola!",
-    "notificationsWillAppear": "Le notifiche appariranno qui",
+    "allCaughtUp": "Nessun promemoria",
+    "notificationsWillAppear": "I pagamenti da confermare e le ricevute da emettere sono nella casella della Home.",
     "clearAll": "Cancella tutto",
     "clearAllLabel": "Cancella tutte le notifiche",
     "settings": "Impostazioni",
@@ -1630,7 +1644,8 @@
       "medium": "Media",
       "high": "Alta",
       "urgent": "Urgente"
-    }
+    },
+    "openInbox": "Apri la casella"
   },
   "portfolioTree": {
     "title": "Inventario strutturale del portafoglio",

@@ -1,26 +1,20 @@
 "use client";
 
 import { PageHeader } from "@/components/shared/page-header";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { Save } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils/utils";
 import { useToast } from "@/lib/contexts/toast-context";
 import { useCsrf } from "@/lib/contexts/csrf-context";
 import { useTheme } from "@/lib/contexts/theme-context";
 import { useUserSettings } from "@/lib/contexts/user-settings-context";
+import { LegalLinks } from "@/components/shared/legal-links";
 import { SettingsAccount } from "./settings-account";
 import { SettingsAppearance } from "./settings-appearance";
+import { SettingsData } from "./settings-data";
 import { SettingsNotifications } from "./settings-notifications";
 import { SettingsSecurity } from "./settings-security";
 import { SettingsSystem } from "./settings-system";
@@ -28,40 +22,37 @@ import { SettingsIntegrations } from "./settings-integrations";
 import { defaultSettings, type UserSettings } from "./settings-types";
 
 /**
- * Section ids only — labels resolve against `settings.nav` at render.
+ * Section ids, in order. Labels resolve against `settings.nav` at render.
  *
- * Each entry used to carry a role list, because a tenant reached Settings for the Account
- * section but had no tax rules, integrations or billing to configure. The scope cutdown
- * removed tenant access, so every section is an owner section.
+ * One subject each: the account and how the app looks for it, the sign-in factor, the e-mails, the
+ * outside connections, the owner's own data, and the instance. They were grouped under "Pessoal"
+ * and "Sistema" headings, which repeated the menu's own "Sistema" and split the account's two
+ * country settings (tax residence, palette) across two sections. Administration is listed only for
+ * an administrator, who is the only one its APIs answer.
  */
 const SECTIONS = [
-  // Grouped by whose settings they are: what belongs to YOU, and what belongs to the INSTANCE.
-  // Equal-weight entries in arrival order made a reader scan them all to find one; short groups
-  // make most lookups stop at the heading.
-  { id: "account", group: "personal" },
-  { id: "security", group: "personal" },
-  { id: "appearance", group: "personal" },
-  { id: "notifications", group: "personal" },
-  { id: "integrations", group: "system" },
-  { id: "system", group: "system" },
-] as const satisfies readonly {
-  id: string;
-  group: SectionGroup;
-}[];
+  "account",
+  "security",
+  "notifications",
+  "integrations",
+  "data",
+  "system",
+] as const;
+type SectionValue = (typeof SECTIONS)[number];
 
-/** Group order is the render order. */
-const GROUPS = ["personal", "system"] as const;
-type SectionGroup = (typeof GROUPS)[number];
+function isSection(value: string | null): value is SectionValue {
+  return (SECTIONS as readonly (string | null)[]).includes(value);
+}
 
-type SectionValue = (typeof SECTIONS)[number]["id"];
+/** How long after the last change a save goes out, so a run of switches is one request. */
+const SAVE_DELAY_MS = 600;
 
 export function SettingsView(): React.ReactElement {
   const { data: session } = useSession();
   const { success, error: showError } = useToast();
   const t = useTranslations("settings.nav");
   const tNav = useTranslations("navigation");
-  const tForms = useTranslations("forms");
-  const tActions = useTranslations("actions");
+  const tPanel = useTranslations("settings.panel");
   const { token: csrfToken } = useCsrf();
   const { setTheme } = useTheme();
   const { refresh: refreshAccount } = useUserSettings();
@@ -69,38 +60,31 @@ export function SettingsView(): React.ReactElement {
 
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
   const [appVersion, setAppVersion] = useState<string>("");
 
-  const sections: readonly SectionValue[] = SECTIONS.map((s) => s.id);
-  const groupedSections = GROUPS.map((group) => ({
-    group,
-    ids: SECTIONS.filter((s) => s.group === group).map((s) => s.id),
-  }));
+  const isAdmin = session?.user?.role === "ADMIN";
+  const sections: readonly SectionValue[] = SECTIONS.filter((s) => s !== "system" || isAdmin);
 
-  // A `?tab=` the current role can't see (a stale link, or an owner URL opened by a tenant)
-  // falls back to the first section rather than rendering an empty panel.
-  const requestedTab = searchParams.get("tab") as SectionValue | null;
-  const [activeSection, setActiveSection] = useState<SectionValue>(
-    requestedTab && (SECTIONS as readonly { id: string }[]).some((s) => s.id === requestedTab)
-      ? requestedTab
-      : "account",
-  );
-  const visibleSection = sections.includes(activeSection) ? activeSection : sections[0];
-
-  const sectionLabel = (value: SectionValue) => t(value);
+  // `?tab=` opens a section. Old links name `appearance`, now part of Account. On a phone, no
+  // `?tab=` shows the list of sections rather than the first one, as phone settings do.
+  const requestedTab = searchParams.get("tab");
+  const initial: SectionValue | null =
+    requestedTab === "appearance" ? "account" : isSection(requestedTab) ? requestedTab : null;
+  const [activeSection, setActiveSection] = useState<SectionValue | null>(initial);
+  const visibleSection: SectionValue =
+    activeSection && sections.includes(activeSection) ? activeSection : "account";
 
   // The open section is kept in the URL, so a reload opens it again. So does a language switch:
-  // the page is rendered afresh under the new locale, and choosing Português in Appearance would
-  // otherwise land on Account.
-  const selectSection = (section: SectionValue) => {
+  // the page is rendered afresh under the new locale.
+  const selectSection = (section: SectionValue | null) => {
     setActiveSection(section);
     const params = new URLSearchParams(searchParams.toString());
-    params.set("tab", section);
-    // `view` is a tab inside one section (Integrations); it means nothing in another.
+    if (section) params.set("tab", section);
+    else params.delete("tab");
+    // `view` is a tab inside one section (Connections); it means nothing in another.
     params.delete("view");
-    window.history.replaceState(null, "", `?${params.toString()}`);
+    const query = params.toString();
+    window.history.replaceState(null, "", query ? `?${query}` : window.location.pathname);
   };
 
   useEffect(() => {
@@ -132,35 +116,54 @@ export function SettingsView(): React.ReactElement {
     }
   };
 
-  const updateSetting = <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-    setHasChanges(true);
-  };
+  // Every change saves itself. There was a Guardar button that appeared at the top once something
+  // changed, while 2FA, the bank and the language took effect at once: leaving the page dropped an
+  // unsaved switch without a word. Changes within SAVE_DELAY_MS go out as one request, and one
+  // still waiting when the page closes is sent then.
+  const pending = useRef<UserSettings | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const saveSettings = async () => {
-    setSaving(true);
-    try {
-      const response = await fetch("/api/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken || "" },
-        body: JSON.stringify(settings),
-      });
-
-      if (response.ok) {
+  const save = useCallback(
+    async (next: UserSettings) => {
+      try {
+        const response = await fetch("/api/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken || "" },
+          body: JSON.stringify(next),
+          keepalive: true,
+        });
+        if (!response.ok) throw new Error(String(response.status));
         success(t("toastSaved"));
-        setHasChanges(false);
-        setTheme(settings.theme);
         // The rail's line under the owner's name reads the account's row: re-read it, so a new
         // country of residence shows there at once.
         void refreshAccount();
-      } else {
+      } catch {
         showError(t("toastSaveFailed"));
       }
-    } catch {
-      showError(t("toastSaveFailed"));
-    } finally {
-      setSaving(false);
-    }
+    },
+    [csrfToken, refreshAccount, showError, success, t],
+  );
+
+  const flush = useCallback(() => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+    const next = pending.current;
+    pending.current = null;
+    if (next) void save(next);
+  }, [save]);
+
+  // Leaving Settings sends whatever is still waiting.
+  useEffect(() => flush, [flush]);
+
+  const updateSetting = <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => {
+    setSettings((prev) => {
+      const next = { ...prev, [key]: value };
+      pending.current = next;
+      return next;
+    });
+    if (key === "theme") setTheme(value as UserSettings["theme"]);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(flush, SAVE_DELAY_MS);
   };
 
   if (loading) {
@@ -171,105 +174,94 @@ export function SettingsView(): React.ReactElement {
     );
   }
 
+  const about = (
+    <div className="space-y-1 px-3 pt-4 text-xs text-[var(--color-muted-foreground)]">
+      {appVersion && (
+        <p className="flex items-center gap-1.5">
+          <Info className="h-3.5 w-3.5" aria-hidden />
+          {tPanel("version", { version: appVersion })}
+        </p>
+      )}
+      <LegalLinks className="-ml-1 justify-start" />
+    </div>
+  );
+
   return (
     <div className="space-y-6">
-      <PageHeader title={tNav("settings")}>
-        {hasChanges && (
-          <Button onClick={saveSettings} disabled={saving}>
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? tForms("saving") : tActions("save")}
-          </Button>
-        )}
-      </PageHeader>
+      <PageHeader title={tNav("settings")} />
 
       <div className="grid gap-6 md:grid-cols-[clamp(180px,16vw,260px)_minmax(0,1fr)]">
-        {/* Desktop vertical section nav.
-
-            This used to borrow the main sidebar's language exactly — `border-l-2` in the country
-            accent, the same active fill, the same `.mono-label` group headings — on the reasoning
-            that Settings should read as its own mini nav. At 1440 the result is two vertical
-            navigations sitting side by side in identical dress, and the eye ranks them equally
-            when one of them is the app and the other is one page of it.
-
-            So the accent bar goes. It is the sidebar's signature for "where you are in the app",
-            and a section rail one level down should not claim it. Weight and foreground colour
-            carry the active state instead, which is enough at this size and leaves the sidebar
-            as the only thing in the viewport wearing the accent.
-
-            The group headings stay. They are not decoration: eight equal-weight entries in
-            arrival order made a reader scan all eight, and three short groups stop most lookups
-            at the heading — see the SECTIONS comment above. */}
-        <nav aria-label={t("sectionsLabel")} className="hidden md:block">
-          <div className="space-y-3">
-            {groupedSections.map(({ group, ids }) => (
-              <div key={group} className="space-y-0.5">
-                <h3 className="mono-label px-3 pb-0.5">{t(`groups.${group}`)}</h3>
-                {ids.map((section) => (
-                  <button
-                    key={section}
-                    type="button"
-                    onClick={() => selectSection(section)}
-                    aria-current={visibleSection === section ? "page" : undefined}
-                    className={cn(
-                      "flex w-full items-center px-3 py-1.5 text-left text-sm transition-colors",
-                      visibleSection === section
-                        ? "bg-[var(--color-hover)] font-medium text-[var(--color-foreground)]"
-                        : "text-[var(--color-muted-foreground)] hover:bg-[var(--color-hover)] hover:text-[var(--color-foreground)]",
-                    )}
-                  >
-                    {sectionLabel(section)}
-                  </button>
-                ))}
-              </div>
-            ))}
+        {/* The sections, once: a rail beside the open section on a computer, and on a phone the
+            screen Settings opens on, a list whose rows each open one section (a dropdown showing
+            "Conta ▾" hid what else Settings holds). Weight and colour mark the open section on
+            the rail, not the accent bar, which is the main menu's "where you are". */}
+        <nav
+          aria-label={t("sectionsLabel")}
+          className={cn(activeSection !== null && "max-md:hidden")}
+        >
+          <div className="max-md:divide-y max-md:divide-[var(--color-border)] max-md:border max-md:border-[var(--color-inner-border)] max-md:bg-[var(--color-surface-solid)] md:space-y-0.5">
+            {sections.map((section) => {
+              const current = visibleSection === section;
+              return (
+                <button
+                  key={section}
+                  type="button"
+                  onClick={() => selectSection(section)}
+                  aria-current={current ? "page" : undefined}
+                  className={cn(
+                    "flex w-full items-center justify-between gap-3 text-left text-sm transition-colors",
+                    "max-md:min-h-12 max-md:px-4 max-md:py-3 md:px-3 md:py-1.5",
+                    current
+                      ? "md:bg-[var(--color-hover)] md:font-medium md:text-[var(--color-foreground)]"
+                      : "md:text-[var(--color-muted-foreground)] md:hover:bg-[var(--color-hover)] md:hover:text-[var(--color-foreground)]",
+                  )}
+                >
+                  {t(section)}
+                  <ChevronRight
+                    aria-hidden
+                    className="h-4 w-4 shrink-0 text-[var(--color-muted-foreground)] md:hidden"
+                  />
+                </button>
+              );
+            })}
           </div>
+          {about}
         </nav>
 
-        {/* Mobile section picker */}
-        <div className="md:hidden">
-          <Select
-            value={visibleSection}
-            onValueChange={(value: string) => selectSection(value as SectionValue)}
+        {activeSection !== null && (
+          <button
+            type="button"
+            onClick={() => selectSection(null)}
+            className="-mt-2 -ml-1 flex min-h-11 items-center gap-1 text-sm text-[var(--color-muted-foreground)] md:hidden"
           >
-            {/* The desktop rail above is a labelled <nav>; this is its below-`md` substitute and
-                needs its own name. Without one it announced nothing at all — `SelectValue` is the
-                trigger's only content and it renders no accessible text until a value resolves,
-                so the primary way to move around Settings on a phone was anonymous. Found by the
-                first run of the mobile-chrome Playwright project. */}
-            <SelectTrigger aria-label={t("sectionsLabel")}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {sections.map((section) => (
-                <SelectItem key={section} value={section}>
-                  {sectionLabel(section)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+            <ChevronLeft aria-hidden className="h-4 w-4" />
+            {tNav("settings")}
+          </button>
+        )}
 
-        {/* Capped, not full-bleed. The panel column runs ~900px at 1440, and what sits in it is
-            label-over-value pairs and single-column forms — so every field was a short string
-            floating at the left edge of a very wide bordered box, which is what made Settings
-            read as heavy while being mostly empty. `3xl` is wide enough for the two-column
-            grids inside Appearance and narrow enough that a value stays near its label. */}
-        <div className="min-w-0 max-w-3xl">
-          {visibleSection === "account" && (
-            <SettingsAccount
-              appVersion={appVersion}
-              settings={settings}
-              updateSetting={updateSetting}
-            />
+        <div
+          className={cn(
+            "min-w-0 space-y-6",
+            // Forms stay near their labels; Administration's panels sit side by side, so it
+            // takes the column's width.
+            visibleSection !== "system" && "max-w-3xl",
+            activeSection === null && "max-md:hidden",
           )}
+        >
+          {/* On a phone the open section names itself, since the list that named it is gone. */}
+          <h2 className="text-lg font-semibold md:hidden">{t(visibleSection)}</h2>
+          {visibleSection === "account" && (
+            <>
+              <SettingsAccount settings={settings} updateSetting={updateSetting} />
+              <SettingsAppearance settings={settings} updateSetting={updateSetting} />
+            </>
+          )}
+          {visibleSection === "security" && <SettingsSecurity />}
           {visibleSection === "notifications" && (
             <SettingsNotifications settings={settings} updateSetting={updateSetting} />
           )}
-          {visibleSection === "appearance" && (
-            <SettingsAppearance settings={settings} updateSetting={updateSetting} />
-          )}
-          {visibleSection === "security" && <SettingsSecurity />}
           {visibleSection === "integrations" && <SettingsIntegrations />}
+          {visibleSection === "data" && <SettingsData />}
           {visibleSection === "system" && <SettingsSystem />}
         </div>
       </div>

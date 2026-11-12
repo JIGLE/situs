@@ -138,10 +138,75 @@ export function PortfolioTree({
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [properties, buildings, tenants, leases, t, locale]);
 
+  /** One property's row; `indent` places its label under its cluster's, or flush when flat. */
+  const renderAsset = ({ property, overdue, renewalDue }: AssetNode, indent: string) => {
+    const highlighted = property.id === highlightedPropertyId;
+    return (
+      <button
+        key={property.id}
+        type="button"
+        role="treeitem"
+        onClick={() => onSelectProperty?.(property.id)}
+        title={property.name}
+        className={cn(
+          "flex w-full items-center gap-2 border-l-2 py-1.5 pr-2 text-left transition-colors max-md:min-h-11",
+          indent,
+          highlighted
+            ? "border-[var(--country-highlight-readable)] bg-[var(--color-hover)]"
+            : "border-transparent hover:bg-[var(--color-hover)]",
+        )}
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm">{property.name}</span>
+          {/* Below `lg` the tree is the whole list, not a rail beside the
+                detail, so a bare name told a phone nothing. One muted line
+                says how much it lets for and how it stands. Overdue takes the
+                place of "occupied", which it implies, and names the dot a phone
+                has no hover to explain. */}
+          <span className="block truncate text-xs text-[var(--color-muted-foreground)] lg:hidden">
+            {tLeases("perMonth", { amount: formatCurrency(property.rent) })} ·{" "}
+            {overdue ? (
+              <span className="text-[var(--semantic-danger-readable)]">{t("dotOverdue")}</span>
+            ) : (
+              tStatus(property.status)
+            )}
+          </span>
+        </span>
+        {/* Attention strip — square semantic dots, quiet when healthy */}
+        <span className="flex shrink-0 items-center gap-1">
+          {overdue && (
+            <span
+              className="status-dot status-dot-danger"
+              title={t("dotOverdue")}
+              aria-label={t("dotOverdue")}
+            />
+          )}
+          {renewalDue && (
+            <span
+              className="status-dot status-dot-info"
+              title={t("dotLease")}
+              aria-label={t("dotLease")}
+            />
+          )}
+        </span>
+      </button>
+    );
+  };
+
   if (properties.length === 0) {
     return (
       <div className="px-4 py-10 text-center">
         <p className="text-sm text-[var(--color-muted-foreground)]">{t("empty")}</p>
+      </div>
+    );
+  }
+
+  // One country and one group (no buildings, one city or none): the two heading rows above the
+  // properties said nothing, so the list is shown flat.
+  if (tree.length === 1 && tree[0].clusters.length === 1) {
+    return (
+      <div role="tree" aria-label={t("title")} className="py-2">
+        {tree[0].clusters[0].assets.map((asset) => renderAsset(asset, "pl-3"))}
       </div>
     );
   }
@@ -206,60 +271,7 @@ export function PortfolioTree({
                     {/* Asset rows — label at 56px, one step past its cluster's label so the
                         hierarchy survives without a chevron of its own to mark the level. */}
                     {!clusterNodeCollapsed &&
-                      cluster.assets.map(({ property, overdue, renewalDue }) => {
-                        const highlighted = property.id === highlightedPropertyId;
-                        return (
-                          <button
-                            key={property.id}
-                            type="button"
-                            role="treeitem"
-                            onClick={() => onSelectProperty?.(property.id)}
-                            title={property.name}
-                            className={cn(
-                              "flex w-full items-center gap-2 border-l-2 py-1.5 pl-14 pr-2 text-left transition-colors max-md:min-h-11",
-                              highlighted
-                                ? "border-[var(--country-highlight-readable)] bg-[var(--color-hover)]"
-                                : "border-transparent hover:bg-[var(--color-hover)]",
-                            )}
-                          >
-                            <span className="min-w-0 flex-1">
-                              <span className="block truncate text-sm">{property.name}</span>
-                              {/* Below `lg` the tree is the whole list, not a rail beside the
-                                  detail, so a bare name told a phone nothing. One muted line
-                                  says how much it lets for and how it stands. Overdue takes the
-                                  place of "occupied", which it implies, and names the dot a phone
-                                  has no hover to explain. */}
-                              <span className="block truncate text-xs text-[var(--color-muted-foreground)] lg:hidden">
-                                {tLeases("perMonth", { amount: formatCurrency(property.rent) })} ·{" "}
-                                {overdue ? (
-                                  <span className="text-[var(--semantic-danger-readable)]">
-                                    {t("dotOverdue")}
-                                  </span>
-                                ) : (
-                                  tStatus(property.status)
-                                )}
-                              </span>
-                            </span>
-                            {/* Attention strip — square semantic dots, quiet when healthy */}
-                            <span className="flex shrink-0 items-center gap-1">
-                              {overdue && (
-                                <span
-                                  className="status-dot status-dot-danger"
-                                  title={t("dotOverdue")}
-                                  aria-label={t("dotOverdue")}
-                                />
-                              )}
-                              {renewalDue && (
-                                <span
-                                  className="status-dot status-dot-info"
-                                  title={t("dotLease")}
-                                  aria-label={t("dotLease")}
-                                />
-                              )}
-                            </span>
-                          </button>
-                        );
-                      })}
+                      cluster.assets.map((asset) => renderAsset(asset, "pl-14"))}
                   </div>
                 );
               })}
