@@ -17,7 +17,13 @@ import {
 import { useApp } from "@/lib/contexts/app-context";
 import { useCurrency } from "@/lib/contexts/currency-context";
 import type { Expense } from "@/lib/types";
-import { expenseCategoryKey } from "@/lib/utils/expense-labels";
+import {
+  EXPENSE_CATEGORY_GROUP_KEYS,
+  type ExpenseCategoryGroup,
+  expenseCategoryGroup,
+  expenseCategoryKey,
+} from "@/lib/utils/expense-labels";
+import { expenseYears, isDeductible, summariseYear } from "@/lib/utils/expense-year";
 import { nextOccurrence } from "@/lib/utils/expense-recurrence";
 import { formatDate } from "@/lib/utils/format-date";
 import { ExpenseDialog, useExpenseDialog } from "./expense-dialog";
@@ -25,13 +31,15 @@ import { ExpenseDialog, useExpenseDialog } from "./expense-dialog";
 const ALL = "all";
 
 /**
- * Finance › Expenses: every cost recorded, newest first, with **Add expense**. A row opens the
- * expense in the same form, to change or delete it. Expenses used to sit
- * at the bottom of the Tax summary tab, under the income list, and only that tab could add one.
+ * Finance › Expenses, one year at a time: the year's total and its deductible part, the months
+ * newest first with each month's total, and each property's totals for the IRS Anexo F. A row opens
+ * the expense in the same form, to change or delete it. Expenses used to be one undated list with
+ * a single total across every year, and only a property could narrow it.
  */
 export function ExpensesView() {
   const t = useTranslations("financial");
   const tCategories = useTranslations("financial.categories");
+  const tGroups = useTranslations("financial.categoryGroups");
   const tForms = useTranslations("forms");
   const locale = useLocale();
   const { formatCurrency } = useCurrency();
@@ -39,15 +47,25 @@ export function ExpensesView() {
   const { expenses, properties, loading } = state;
   const dialog = useExpenseDialog();
   const [propertyId, setPropertyId] = useState(ALL);
+  const [group, setGroup] = useState<ExpenseCategoryGroup | typeof ALL>(ALL);
+  const years = useMemo(() => expenseYears(expenses), [expenses]);
+  const [year, setYear] = useState(() => new Date().getFullYear());
 
-  const shown = useMemo(
+  const filtered = useMemo(
     () =>
-      expenses
-        .filter((expense) => propertyId === ALL || expense.propertyId === propertyId)
-        .sort((a, b) => b.date.localeCompare(a.date)),
-    [expenses, propertyId],
+      expenses.filter(
+        (expense) =>
+          (propertyId === ALL || expense.propertyId === propertyId) &&
+          (group === ALL || expenseCategoryGroup(expense.category) === group),
+      ),
+    [expenses, propertyId, group],
   );
-  const total = shown.reduce((sum, expense) => sum + expense.amount, 0);
+  const summary = useMemo(() => summariseYear(filtered, year), [filtered, year]);
+
+  const monthName = (month: number) =>
+    new Intl.DateTimeFormat(locale, { month: "long", timeZone: "UTC" }).format(
+      new Date(Date.UTC(year, month - 1, 1)),
+    );
 
   const categoryLabel = (category: string) => {
     const key = expenseCategoryKey(category);
@@ -72,80 +90,160 @@ export function ExpensesView() {
     <div className="space-y-4" data-testid="expenses-view">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-[var(--color-muted-foreground)]">
-          {t("expensesSummary", { count: shown.length, total: formatCurrency(total) })}
+          {t("expensesYearSummary", {
+            count: summary.count,
+            total: formatCurrency(summary.total),
+            deductible: formatCurrency(summary.deductible),
+          })}
         </p>
-        <div className="flex flex-wrap items-center gap-2">
-          {properties.length > 1 ? (
-            <Select value={propertyId} onValueChange={setPropertyId}>
-              <SelectTrigger
-                className="w-auto min-w-[10rem]"
-                aria-label={t("expenseForm.property")}
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>{tForms("allProperties")}</SelectItem>
-                {properties.map((property) => (
-                  <SelectItem key={property.id} value={property.id}>
-                    {property.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null}
-          <Button onClick={dialog.openDialog} className="gap-2">
-            <Plus className="h-4 w-4" />
-            {t("addExpense")}
-          </Button>
-        </div>
+        <Button onClick={dialog.openDialog} className="gap-2">
+          <Plus className="h-4 w-4" />
+          {t("addExpense")}
+        </Button>
       </div>
 
-      {shown.length === 0 ? (
+      {/* Three dropdowns fit inline (density rule 3); below that they wrap. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Select value={String(year)} onValueChange={(value) => setYear(Number(value))}>
+          <SelectTrigger className="w-auto min-w-[6.5rem]" aria-label={t("expenseYear")}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {years.map((option) => (
+              <SelectItem key={option} value={String(option)}>
+                {option}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {properties.length > 1 ? (
+          <Select value={propertyId} onValueChange={setPropertyId}>
+            <SelectTrigger className="w-auto min-w-[10rem]" aria-label={t("expenseForm.property")}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>{tForms("allProperties")}</SelectItem>
+              {properties.map((property) => (
+                <SelectItem key={property.id} value={property.id}>
+                  {property.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : null}
+        <Select
+          value={group}
+          onValueChange={(value) => setGroup(value as ExpenseCategoryGroup | typeof ALL)}
+        >
+          <SelectTrigger className="w-auto min-w-[10rem]" aria-label={t("expenseForm.category")}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>{t("allCategories")}</SelectItem>
+            {EXPENSE_CATEGORY_GROUP_KEYS.map((key) => (
+              <SelectItem key={key} value={key}>
+                {tGroups(key)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {summary.count === 0 ? (
         <EmptyStateIllustration
           type="expenses"
           title={t("noExpenseRecords")}
           description={t("addExpenseDesc")}
         />
       ) : (
-        <ul className="panel divide-y divide-[var(--color-border)]">
-          {shown.map((expense) => (
-            <li key={expense.id}>
-              {/* The whole row opens the expense, to change or delete it: there was no way to. */}
-              <button
-                type="button"
-                onClick={() => dialog.openExpense(expense)}
-                className="flex min-h-11 w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--color-surface-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:outline-none"
-              >
-                <div className="min-w-0">
-                  {/* Wraps rather than truncates: at phone width the property, date and note do
-                      not fit on one line, and an ellipsis hides the part that tells two apart. */}
-                  <p className="flex items-center gap-1.5 text-sm font-medium break-words">
-                    {categoryLabel(expense.category)}
-                    {expense.isRecurring || expense.parentExpenseId ? (
-                      <Repeat
-                        className="h-3.5 w-3.5 shrink-0 text-[var(--color-muted-foreground)]"
-                        aria-hidden
-                      />
-                    ) : null}
-                  </p>
-                  <p className="text-xs break-words text-[var(--color-muted-foreground)]">
-                    {expense.propertyName ?? t("unknownProperty")} ·{" "}
-                    {formatDate(expense.date, locale)}
-                    {expense.description ? ` · ${expense.description}` : ""}
-                  </p>
-                  {expense.isRecurring ? (
-                    <p className="text-xs text-[var(--color-muted-foreground)]">
-                      {repeatLine(expense)}
-                    </p>
-                  ) : null}
-                </div>
-                <span className="shrink-0 text-sm font-medium tabular-nums">
-                  {formatCurrency(expense.amount)}
+        <>
+          {summary.months.map((month) => (
+            <section key={month.month} className="space-y-2">
+              <div className="flex items-baseline justify-between gap-3 px-1">
+                <h3 className="text-sm font-medium first-letter:uppercase">
+                  {monthName(month.month)}
+                </h3>
+                <span className="text-sm tabular-nums text-[var(--color-muted-foreground)]">
+                  {formatCurrency(month.total)}
                 </span>
-              </button>
-            </li>
+              </div>
+              <ul className="panel divide-y divide-[var(--color-border)]">
+                {month.items.map((expense) => (
+                  <li key={expense.id}>
+                    {/* The whole row opens the expense, to change or delete it. */}
+                    <button
+                      type="button"
+                      onClick={() => dialog.openExpense(expense)}
+                      className="flex min-h-11 w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--color-surface-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:outline-none"
+                    >
+                      <div className="min-w-0">
+                        {/* Wraps rather than truncates: at phone width the property, date and
+                            note do not fit on one line, and an ellipsis hides what tells two
+                            apart. */}
+                        <p className="flex items-center gap-1.5 text-sm font-medium break-words">
+                          {categoryLabel(expense.category)}
+                          {expense.isRecurring || expense.parentExpenseId ? (
+                            <Repeat
+                              className="h-3.5 w-3.5 shrink-0 text-[var(--color-muted-foreground)]"
+                              aria-hidden
+                            />
+                          ) : null}
+                        </p>
+                        <p className="text-xs break-words text-[var(--color-muted-foreground)]">
+                          {[
+                            expense.propertyName ?? t("unknownProperty"),
+                            formatDate(expense.date, locale),
+                            expense.vendorName,
+                            expense.description,
+                            isDeductible(expense) ? null : t("notDeductible"),
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                        {expense.isRecurring ? (
+                          <p className="text-xs text-[var(--color-muted-foreground)]">
+                            {repeatLine(expense)}
+                          </p>
+                        ) : null}
+                      </div>
+                      <span className="shrink-0 text-sm font-medium tabular-nums">
+                        {formatCurrency(expense.amount)}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+
+          {/* What the IRS Anexo F asks for, property by property. */}
+          <section className="space-y-2 pt-2">
+            <div className="px-1">
+              <h3 className="text-sm font-medium">{t("expensesByProperty")}</h3>
+              <p className="text-xs text-[var(--color-muted-foreground)]">
+                {t("expensesByPropertyHint")}
+              </p>
+            </div>
+            <ul className="panel divide-y divide-[var(--color-border)]">
+              {summary.byProperty.map((property) => (
+                <li
+                  key={property.propertyId}
+                  className="flex items-center justify-between gap-3 px-4 py-3"
+                >
+                  <span className="min-w-0 text-sm break-words">
+                    {property.propertyName ?? t("unknownProperty")}
+                  </span>
+                  <span className="shrink-0 text-right text-sm tabular-nums">
+                    {formatCurrency(property.total)}
+                    <span className="block text-xs text-[var(--color-muted-foreground)]">
+                      {formatCurrency(property.deductible)} {t("deductibleShort")}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </>
       )}
 
       <ExpenseDialog dialog={dialog} />

@@ -1507,7 +1507,6 @@
     "noFinancialData": "No financial data yet",
     "noFinancialDataDesc": "Start by adding receipts or expenses to track your cash flow",
     "noExpenseRecords": "No expense records found",
-    "expensesSummary": "{count, plural, =0 {No expenses} one {# expense} other {# expenses}} · {total}",
     "expenseForm": {
       "property": "Property",
       "selectProperty": "Select property",
@@ -1526,7 +1525,10 @@
       "deleteDescription": "{amount} on {date} will no longer count in your totals.",
       "toastDeleted": "Expense deleted",
       "repeats": "{rule, select, monthly {Repeats monthly} quarterly {Repeats every 3 months} other {Repeats yearly}} · next {date}",
-      "repeatEnded": "No longer repeats"
+      "repeatEnded": "No longer repeats",
+      "vendorName": "Supplier",
+      "vendorVat": "Supplier NIF",
+      "optional": "optional"
     },
     "matrix": {
       "cellLabel": "{month}: {status}, {paid} of {due} paid",
@@ -1620,7 +1622,24 @@
       "unmarkCollector": "Unmark as the one who collects the rent",
       "collectorHint": "Who collects the rent? Open that owner in the list and mark them: their part then reads as kept rather than to pay.",
       "collectorSaved": "Saved"
-    }
+    },
+    "categoryGroups": {
+      "taxes": "Taxes",
+      "insurance": "Insurance",
+      "condominium": "Condominium",
+      "works": "Works and repairs",
+      "utilities": "Utilities",
+      "fees": "Fees and interest",
+      "other": "Other"
+    },
+    "categoryGroupFrequent": "Most used",
+    "allCategories": "All categories",
+    "expensesYearSummary": "{count, plural, =0 {No expenses} one {# expense} other {# expenses}} · {total} · {deductible} deductible",
+    "expensesByProperty": "By property",
+    "expensesByPropertyHint": "For the IRS Anexo F: each property's total and its deductible part.",
+    "deductibleShort": "deductible",
+    "notDeductible": "Not deductible",
+    "expenseYear": "Year"
   },
   "propertyDetail": {
     "tabs": {

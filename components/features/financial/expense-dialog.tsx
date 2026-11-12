@@ -18,7 +18,9 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -30,11 +32,16 @@ import { useToast } from "@/lib/contexts/toast-context";
 import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { useFormDialog, type UseFormDialogReturn } from "@/lib/hooks/use-form-dialog";
 import type { Expense } from "@/lib/types";
-import { expenseCategoryKey } from "@/lib/utils/expense-labels";
+import {
+  EXPENSE_CATEGORY_GROUPS,
+  EXPENSE_CATEGORY_GROUP_KEYS,
+  expenseCategoryKey,
+  frequentCategories,
+} from "@/lib/utils/expense-labels";
 import { formatDate } from "@/lib/utils/format-date";
 import { parseAmountInput } from "@/lib/utils/money";
 import {
-  EXPENSE_CATEGORIES,
+  isDefaultDeductible,
   RECURRENCE_RULES,
   expenseSchema,
   type ExpenseFormData,
@@ -55,6 +62,8 @@ function toFormData(expense: Expense): ExpenseFormData {
     category: expenseCategoryKey(expense.category) ?? "other",
     description: expense.description ?? "",
     isDeductible: expense.isDeductible ?? true,
+    vendorName: expense.vendorName ?? "",
+    vendorVat: expense.vendorVat ?? "",
     isRecurring: !!expense.isRecurring,
     recurrenceRule: expense.recurrenceRule ?? undefined,
     recurrenceDay: expense.recurrenceDay ?? undefined,
@@ -81,7 +90,7 @@ export function useExpenseDialog(propertyId?: string): ExpenseDialogState {
       date: new Date().toISOString().split("T")[0],
       category: "other",
       description: "",
-      isDeductible: true,
+      isDeductible: isDefaultDeductible("other"),
       isRecurring: false,
       recurrenceDay: 1,
       recurrenceEnd: null,
@@ -139,6 +148,7 @@ export function ExpenseDialog({
   const t = useTranslations("financial");
   const tCategories = useTranslations("financial.categories");
   const tActions = useTranslations("actions");
+  const tGroups = useTranslations("financial.categoryGroups");
   const locale = useLocale();
   const { state, deleteExpense } = useApp();
   const { currencySymbol, formatCurrency } = useCurrency();
@@ -147,6 +157,7 @@ export function ExpenseDialog({
   const { formData, formErrors, updateFormData, editingItem } = dialog;
   // A copy a recurring expense made is one month's cost: it does not repeat itself.
   const isCopy = !!editingItem?.parentExpenseId;
+  const frequent = useMemo(() => frequentCategories(state.expenses), [state.expenses]);
   // The amount as typed ("3200,00"), read on every keystroke; the field is keyed by the expense
   // so that opening another one starts it from that expense's amount.
   const amountDefault = formData.amount
@@ -224,18 +235,42 @@ export function ExpenseDialog({
                   <Label htmlFor="expense-category">{t("expenseForm.category")}</Label>
                   <Select
                     value={formData.category}
-                    onValueChange={(value) =>
-                      updateFormData({ category: value as ExpenseFormData["category"] })
-                    }
+                    onValueChange={(value) => {
+                      const category = value as ExpenseFormData["category"];
+                      // Each category says whether it usually counts for IRS; the owner can
+                      // still change it below.
+                      updateFormData({ category, isDeductible: isDefaultDeductible(category) });
+                    }}
                   >
                     <SelectTrigger id="expense-category" className={invalid("category")}>
                       <SelectValue placeholder={t("expenseForm.selectCategory")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {EXPENSE_CATEGORIES.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {tCategories(category)}
-                        </SelectItem>
+                      {/* The owner's usual costs first, then every category under its heading:
+                          one column of 26 was a long scroll on a phone. A frequent category is
+                          listed twice; Radix shows the one that is chosen as checked in both. */}
+                      {frequent.length > 0 ? (
+                        <SelectGroup>
+                          <SelectLabel>{t("categoryGroupFrequent")}</SelectLabel>
+                          {frequent.map((category) => (
+                            <SelectItem key={`frequent-${category}`} value={category}>
+                              {tCategories(category)}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      ) : null}
+                      {EXPENSE_CATEGORY_GROUP_KEYS.map((group) => (
+                        <SelectGroup key={group}>
+                          {/* "Outro" alone needs no heading over it. */}
+                          {group === "other" ? null : <SelectLabel>{tGroups(group)}</SelectLabel>}
+                          {EXPENSE_CATEGORY_GROUPS[group]
+                            .filter((category) => !frequent.includes(category))
+                            .map((category) => (
+                              <SelectItem key={category} value={category}>
+                                {tCategories(category)}
+                              </SelectItem>
+                            ))}
+                        </SelectGroup>
                       ))}
                     </SelectContent>
                   </Select>
@@ -279,6 +314,56 @@ export function ExpenseDialog({
                   value={formData.description || ""}
                   onChange={(e) => updateFormData({ description: e.target.value })}
                   placeholder={t("expenseForm.descriptionPlaceholder")}
+                />
+              </div>
+
+              {/* Who was paid, for the invoice record the IRS asks a landlord to keep. */}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="expense-vendor">
+                    {t("expenseForm.vendorName")}{" "}
+                    <span className="font-normal text-[var(--color-muted-foreground)]">
+                      ({t("expenseForm.optional")})
+                    </span>
+                  </Label>
+                  <Input
+                    id="expense-vendor"
+                    autoComplete="off"
+                    value={formData.vendorName ?? ""}
+                    onChange={(e) => updateFormData({ vendorName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="expense-vendor-vat">
+                    {t("expenseForm.vendorVat")}{" "}
+                    <span className="font-normal text-[var(--color-muted-foreground)]">
+                      ({t("expenseForm.optional")})
+                    </span>
+                  </Label>
+                  <Input
+                    id="expense-vendor-vat"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    maxLength={20}
+                    value={formData.vendorVat ?? ""}
+                    onChange={(e) => updateFormData({ vendorVat: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <Label htmlFor="expense-deductible" className="text-sm font-medium">
+                    {t("deductibleLabel")}
+                  </Label>
+                  <p className="text-xs text-[var(--color-muted-foreground)]">
+                    {t("expenseDeductibilityNote")}
+                  </p>
+                </div>
+                <Switch
+                  id="expense-deductible"
+                  checked={formData.isDeductible !== false}
+                  onCheckedChange={(checked) => updateFormData({ isDeductible: checked })}
                 />
               </div>
 

@@ -1507,7 +1507,6 @@
     "noFinancialData": "Ancora nessun dato finanziario",
     "noFinancialDataDesc": "Inizia aggiungendo ricevute o spese per monitorare il flusso di cassa",
     "noExpenseRecords": "Nessuna spesa registrata",
-    "expensesSummary": "{count, plural, =0 {Nessuna spesa} one {# spesa} other {# spese}} · {total}",
     "expenseForm": {
       "property": "Immobile",
       "selectProperty": "Seleziona immobile",
@@ -1526,7 +1525,10 @@
       "deleteDescription": "{amount} del {date} non conterà più nei totali.",
       "toastDeleted": "Spesa eliminata",
       "repeats": "{rule, select, monthly {Si ripete ogni mese} quarterly {Si ripete ogni 3 mesi} other {Si ripete ogni anno}} · prossima {date}",
-      "repeatEnded": "Non si ripete più"
+      "repeatEnded": "Non si ripete più",
+      "vendorName": "Fornitore",
+      "vendorVat": "Partita IVA del fornitore",
+      "optional": "facoltativo"
     },
     "matrix": {
       "cellLabel": "{month}: {status}, pagati {paid} su {due}",
@@ -1620,7 +1622,24 @@
       "unmarkCollector": "Non segnare più come chi incassa gli affitti",
       "collectorHint": "Chi incassa gli affitti? Apri quel proprietario nell'elenco e segnalo: la sua parte apparirà come «trattiene» invece che «da pagare».",
       "collectorSaved": "Salvato"
-    }
+    },
+    "categoryGroups": {
+      "taxes": "Imposte",
+      "insurance": "Assicurazioni",
+      "condominium": "Condominio",
+      "works": "Lavori e riparazioni",
+      "utilities": "Utenze",
+      "fees": "Onorari e interessi",
+      "other": "Altro"
+    },
+    "categoryGroupFrequent": "Più usate",
+    "allCategories": "Tutte le categorie",
+    "expensesYearSummary": "{count, plural, =0 {Nessuna spesa} one {# spesa} other {# spese}} · {total} · {deductible} deducibile",
+    "expensesByProperty": "Per immobile",
+    "expensesByPropertyHint": "Per l'IRS (Anexo F): il totale di ogni immobile e la parte deducibile.",
+    "deductibleShort": "deducibile",
+    "notDeductible": "Non deducibile",
+    "expenseYear": "Anno"
   },
   "propertyDetail": {
     "tabs": {

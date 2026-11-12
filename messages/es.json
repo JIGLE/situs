@@ -1507,7 +1507,6 @@
     "noFinancialData": "Aún no hay datos financieros",
     "noFinancialDataDesc": "Empieza añadiendo recibos o gastos para seguir tu flujo de caja",
     "noExpenseRecords": "Sin registros de gastos",
-    "expensesSummary": "{count, plural, =0 {Sin gastos} one {# gasto} other {# gastos}} · {total}",
     "expenseForm": {
       "property": "Inmueble",
       "selectProperty": "Seleccionar inmueble",
@@ -1526,7 +1525,10 @@
       "deleteDescription": "{amount} del {date} dejará de contar en los totales.",
       "toastDeleted": "Gasto eliminado",
       "repeats": "{rule, select, monthly {Se repite cada mes} quarterly {Se repite cada 3 meses} other {Se repite cada año}} · próximo {date}",
-      "repeatEnded": "Ya no se repite"
+      "repeatEnded": "Ya no se repite",
+      "vendorName": "Proveedor",
+      "vendorVat": "NIF del proveedor",
+      "optional": "opcional"
     },
     "matrix": {
       "cellLabel": "{month}: {status}, pagados {paid} de {due}",
@@ -1620,7 +1622,24 @@
       "unmarkCollector": "Desmarcar como quien cobra las rentas",
       "collectorHint": "¿Quién cobra las rentas? Abra ese propietario en la lista y márquelo: su parte aparecerá como «se queda con» en lugar de «a pagar».",
       "collectorSaved": "Guardado"
-    }
+    },
+    "categoryGroups": {
+      "taxes": "Impuestos",
+      "insurance": "Seguros",
+      "condominium": "Comunidad",
+      "works": "Obras y reparaciones",
+      "utilities": "Suministros",
+      "fees": "Honorarios e intereses",
+      "other": "Otro"
+    },
+    "categoryGroupFrequent": "Más usadas",
+    "allCategories": "Todas las categorías",
+    "expensesYearSummary": "{count, plural, =0 {Sin gastos} one {# gasto} other {# gastos}} · {total} · {deductible} deducible",
+    "expensesByProperty": "Por inmueble",
+    "expensesByPropertyHint": "Para el IRS (Anexo F): el total de cada inmueble y su parte deducible.",
+    "deductibleShort": "deducible",
+    "notDeductible": "No deducible",
+    "expenseYear": "Año"
   },
   "propertyDetail": {
     "tabs": {
