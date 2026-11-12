@@ -2118,8 +2118,7 @@
         "no_tenant": "No se encontró ningún inquilino en el PDF. Indíquelo abajo.",
         "no_rent": "No se encontró la renta. Indíquela abajo.",
         "rent_not_monthly": "Finanças indica esta renta para menos de un mes. Indique el importe mensual.",
-        "no_start": "No se encontró la fecha de inicio. Revise el plazo abajo.",
-        "term_passed": "El plazo en Finanças terminó el {date}. Si el contrato se renovó, indique la fecha de fin actual."
+        "no_start": "No se encontró la fecha de inicio. Revise el plazo abajo."
       },
       "landlords": "Arrendadores, definidos como propietarios del inmueble al guardar: {list}",
       "landlordsKept": "Este inmueble ya tiene propietarios en Situs. Se mantienen como están.",

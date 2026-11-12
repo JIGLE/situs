@@ -246,9 +246,10 @@ describe("TenancySheet", () => {
     await screen.findByText(
       warning.property_not_found.replace("{article}", "777").replace("{fraction}", "-"),
     );
-    expect(
-      screen.getByText((text: string) => text.startsWith(warning.term_passed.split("{date}")[0])),
-    ).toBeInTheDocument();
+    // The term Finanças shows as ended has renewed since: it runs to the next 31 December.
+    const end = (document.getElementById("tenancy-end") as HTMLInputElement).value;
+    expect(end).toMatch(/-12-31$/);
+    expect(end >= new Date().toISOString().slice(0, 10)).toBe(true);
 
     await user.upload(input, file);
     await screen.findByText(ptMessages.financasImport.tenancy.failed);

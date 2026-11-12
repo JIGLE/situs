@@ -2118,8 +2118,7 @@
         "no_tenant": "Não foi encontrado nenhum inquilino no PDF. Indique-o abaixo.",
         "no_rent": "Não foi encontrada a renda. Indique-a abaixo.",
         "rent_not_monthly": "As Finanças indicam esta renda para menos de um mês. Indique o valor mensal.",
-        "no_start": "Não foi encontrada a data de início. Confirme o prazo abaixo.",
-        "term_passed": "O prazo nas Finanças terminou em {date}. Se o contrato foi renovado, indique a data de fim atual."
+        "no_start": "Não foi encontrada a data de início. Confirme o prazo abaixo."
       },
       "landlords": "Senhorios, definidos como proprietários do imóvel ao guardar: {list}",
       "landlordsKept": "Este imóvel já tem proprietários no Situs. Ficam como estão.",
