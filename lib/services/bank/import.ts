@@ -258,6 +258,7 @@ async function createReceiptAndAllocate(
   userId: string,
   leaseId: string,
   txn: { id: string; amount: number; bookingDate: Date; counterpartyName?: string | null },
+  referenceMonth?: string,
 ): Promise<string> {
   const prisma = getPrismaClient();
   const lease = await prisma.lease.findUniqueOrThrow({
@@ -276,6 +277,8 @@ async function createReceiptAndAllocate(
       status: "paid",
       lifecycle: "draft", // the PR-8 receipt queue reviews automation drafts
       source: "automation",
+      // A month the owner named: allocation fills it first (`startAt`).
+      ...(referenceMonth ? { referenceMonth } : {}),
       description: txn.counterpartyName
         ? `Bank movement — ${txn.counterpartyName}`
         : "Bank movement",
@@ -611,6 +614,11 @@ export interface TransactionActionOptions {
   receiptId?: string;
   /** `confirm` and `reassign`: the owner says this is a new payment, whatever they recorded. */
   newPayment?: boolean;
+  /**
+   * `confirm` and `reassign`: the month ("YYYY-MM") the owner assigned the movement to, from that
+   * month in the rent matrix. The payment fills it first rather than the oldest open month.
+   */
+  referenceMonth?: string;
 }
 
 export interface TransactionActionResult {
@@ -892,12 +900,17 @@ export async function applyTransactionAction(
     }
   }
   if (!receiptId) {
-    receiptId = await createReceiptAndAllocate(userId, targetLeaseId, {
-      id: txn.id,
-      amount: txn.amount,
-      bookingDate: txn.bookingDate,
-      counterpartyName: txn.counterpartyName,
-    });
+    receiptId = await createReceiptAndAllocate(
+      userId,
+      targetLeaseId,
+      {
+        id: txn.id,
+        amount: txn.amount,
+        bookingDate: txn.bookingDate,
+        counterpartyName: txn.counterpartyName,
+      },
+      options.referenceMonth,
+    );
   }
 
   const overridden = txn.suggestedLeaseId && txn.suggestedLeaseId !== targetLeaseId;

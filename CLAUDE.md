@@ -131,7 +131,9 @@ e2e/                    # Playwright E2E tests
   status is read through `periodStatusAt` (`lib/services/allocation/rent-matrix.ts`), never off the
   column; `waived` is the one stored decision and is in the `RentPeriodStatus` union.
   Waterfall invariant: fill the oldest not-fully-allocated period first
-  (`lib/services/allocation/engine.ts`, pure). Only an `active` lease has months generated, and only
+  (`lib/services/allocation/engine.ts`, pure), except that a receipt whose `referenceMonth` is set
+  before it is allocated (an uploaded recibo, a movement assigned from a month) fills that month and
+  the ones after it first (`startAt`). Only an `active` lease has months generated, and only
   a `paid` receipt is allocated, inside the transaction that writes it. A lease edit runs
   `syncLeasePeriods` in its own transaction: months outside the term go (waived if they carry
   reversed history, kept if they carry live money), future unpaid months take the new rent, and a
@@ -245,7 +247,12 @@ e2e/                    # Playwright E2E tests
   Reports).
 - **Import from Finanças**: the Portal exports no list, so setup reads its PDFs
   (`lib/services/financas-import/`, pure readers over `unpdf`'s text; `POST /api/financas-import`
-  reads and stores nothing). Cadernetas prediais become properties the owner ticks in Portfolio ›
+  reads and stores nothing). **Recibos de renda** (`rent-receipt.ts`) are uploaded from the rent
+  matrix, one or many: matched to a lease by a tenant's NIF, they go on the ledger through
+  `POST /api/receipts/financas` (`lib/services/receipts/financas-receipts.ts`), which pays the month
+  when nothing did, gives its number to the payment already there otherwise, and files the PDF as
+  the receipt's archive. `Receipt.financasNumber` set is the matrix's deeper green, "recibo on
+  file"; a hand-recorded receipt's default `emitted` lifecycle does not count as one. Cadernetas prediais become properties the owner ticks in Portfolio ›
   New asset › Import from Finanças; a contract proof fills the New tenancy sheet, which saves as
   usual. The filled Modelo 2 form draws its values after all its labels, so it is read by position
   (`contract-form.ts`, over `readPdf`'s items), not as text. A value is read from its label to the next known label, never to a line end, and the

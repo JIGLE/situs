@@ -746,7 +746,8 @@
     "processing": "A processar…",
     "exportCsv": "Exportar como CSV",
     "exportJson": "Exportar como JSON",
-    "discard": "Descartar"
+    "discard": "Descartar",
+    "close": "Fechar"
   },
   "errors": {
     "notFound": {
@@ -810,7 +811,9 @@
       "rentIncreasePending": "Este contrato já tem uma atualização de renda à espera de começar. Cancele-a primeiro para marcar outra.",
       "rentIncreaseNotAhead": "A nova renda tem de começar num mês que ainda não começou. Para mudar a renda deste mês, edite o contrato.",
       "rentIncreaseApplied": "Esta atualização já entrou em vigor. Altere a renda no contrato.",
-      "leaseNotActive": "Só um contrato ativo pode ter a renda atualizada."
+      "leaseNotActive": "Só um contrato ativo pode ter a renda atualizada.",
+      "receiptMonthUntracked": "Este contrato não tem renda nesse mês: ainda não tinha começado, ou já tinha acabado. Escolha outro mês.",
+      "receiptAmountUnknown": "Não foi possível ler o valor deste recibo. Registe o pagamento à mão."
     }
   },
   "payments": {
@@ -1531,7 +1534,23 @@
       "viaBankOn": "Movimento bancário de {date}",
       "recordedByHand": "Registado à mão",
       "coversOlderFirst": "Um pagamento registado agora cobre primeiro {month}, o mês mais antigo por pagar.",
-      "recordPayment": "Registar pagamento"
+      "recordPayment": "Registar pagamento",
+      "reciboOnFile": "recibo carregado",
+      "legendRecibo": "Pago, com recibo",
+      "uploadRecibos": "Carregar recibos",
+      "uploadRecibo": "Carregar recibo",
+      "fromRecibo": "Do recibo de renda",
+      "reciboNumber": "Recibo de renda n.º {number}",
+      "movements": {
+        "title": "Movimentos bancários por associar",
+        "open": "Associar movimento bancário",
+        "loading": "A carregar movimentos…",
+        "none": "Não há movimentos de entrada por associar.",
+        "assign": "Associar",
+        "recorded": "Este contrato já tem um pagamento de {amount} registado à mão a {date}. Este movimento é esse pagamento?",
+        "samePayment": "É esse pagamento",
+        "newPayment": "É outro pagamento"
+      }
     },
     "recordPayment": {
       "title": "Registar pagamento",
@@ -2097,7 +2116,8 @@
     "createInvitation": "Pessoa convidada",
     "revokeInvitation": "Convite retirado",
     "signUpSettingChange": "Definição de registo alterada",
-    "changeAccountRole": "Função da conta alterada"
+    "changeAccountRole": "Função da conta alterada",
+    "uploadFinancasReceipt": "Recibo carregado das Finanças"
   },
   "financasImport": {
     "title": "Importar das Finanças",
@@ -2152,6 +2172,33 @@
       "ownersFailed": "O arrendamento foi guardado, mas não foi possível definir os proprietários do imóvel. Adicione-os na página do imóvel."
     },
     "owners": "Proprietários: {list}",
-    "ownersFailed": "{count, plural, one {Não foi possível definir os proprietários de # imóvel. Adicione-os na página do imóvel.} other {Não foi possível definir os proprietários de # imóveis. Adicione-os na página de cada um.}}"
+    "ownersFailed": "{count, plural, one {Não foi possível definir os proprietários de # imóvel. Adicione-os na página do imóvel.} other {Não foi possível definir os proprietários de # imóveis. Adicione-os na página de cada um.}}",
+    "receipts": {
+      "title": "Carregar recibos de renda",
+      "description": "Cada recibo marca o seu mês como pago no contrato respetivo. Confirme o contrato e o mês antes de registar.",
+      "where": "No Portal das Finanças, abra Arrendamento › Recibos de renda e descarregue cada recibo em PDF. Pode escolher vários de uma vez.",
+      "choose": "Escolher PDFs dos recibos",
+      "addMore": "Adicionar mais PDFs",
+      "reading": "A ler…",
+      "notReceipt": "isto não parece um recibo de renda.",
+      "number": "Recibo n.º {number}",
+      "contract": "Contrato",
+      "month": "Mês",
+      "pickContract": "Escolha o contrato",
+      "pickMonth": "Escolha o mês",
+      "ambiguous": "Há mais de um contrato com este inquilino. Confirme que é o certo.",
+      "amountDiffers": "A renda desse mês é {due}.",
+      "register": "{count, plural, =0 {Registar recibos} one {Registar # recibo} other {Registar # recibos}}",
+      "registered": "{count, plural, one {# recibo registado} other {# recibos registados}}",
+      "done": "Registado em {month}",
+      "outcome": {
+        "create": "Marca {month} como pago",
+        "attach": "Junta o recibo ao pagamento já registado de {month}",
+        "duplicate": "Já registado: nada muda",
+        "noMonth": "Este contrato não tem renda em {month}. Escolha outro mês ou contrato.",
+        "chosen": "Será registado em {month}",
+        "paid": "Já pago em {month}: nada muda"
+      }
+    }
   }
 }

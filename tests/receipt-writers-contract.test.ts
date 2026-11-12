@@ -8,12 +8,14 @@ import { join } from "node:path";
  * "Gerar recibos do mês" (`POST /api/receipts/bulk`) wrote a `paid` receipt at the full rent for
  * every active lease without one that month, and allocated it to the rent ledger. One click, with
  * no confirmation, and a tenant who had paid nothing read as paid: on the ledger, in the rent
- * matrix and in every total. The button and the route are gone. Three places create a receipt now,
+ * matrix and in every total. The button and the route are gone. Four places create a receipt now,
  * each behind a payment:
  *
  * - `lib/services/database/receipt/service.ts`: the owner records a payment they received
  *   ("Registar pagamento"), through `POST /api/receipts`, the one caller of its `create`;
  * - `lib/services/bank/import.ts`: a bank movement matched to a lease, as a draft for review;
+ * - `lib/services/receipts/financas-receipts.ts`: a recibo de renda the owner uploaded from the
+ *   Portal das Finanças, which is Finanças' own record that the rent was received;
  * - `lib/demo-seed.ts`: the demo instance's sample data.
  *
  * The guard sits over the source, as `bank-rawdata-redaction-contract.test.ts` does: the change to
@@ -34,6 +36,7 @@ const DELEGATE_WRITERS = [
   "lib/demo-seed.ts",
   "lib/services/bank/import.ts",
   "lib/services/database/receipt/service.ts",
+  "lib/services/receipts/financas-receipts.ts",
 ];
 const SERVICE_CALLERS = ["app/api/receipts/route.ts"];
 

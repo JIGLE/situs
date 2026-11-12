@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Plus } from "lucide-react";
+import { FileUp, Landmark, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,8 +19,10 @@ import { formatEuro } from "@/lib/utils/currency";
 import { formatDate, formatMonthYear } from "@/lib/utils/format-date";
 import { receiptLifecycleKey } from "@/lib/utils/receipt-labels";
 import { rentPeriodStatusKey } from "@/lib/utils/rent-period-labels";
+import { ReceiptUploadSheet } from "@/components/features/financas-import/receipt-upload-sheet";
+import { MonthMovementPicker } from "./month-movement-picker";
 import { RecordPaymentDialog } from "./record-payment-dialog";
-import { CELL_STYLES } from "./rent-status-styles";
+import { RECIBO_ICON, cellLook } from "./rent-status-styles";
 
 /** `?month=<leaseId>:<yyyy-mm>`: the month sheet's address, so a link or the audit can open it. */
 export interface MonthRef {
@@ -63,6 +65,8 @@ export function RentMonthSheet({ monthRef, open, onClose, onChanged }: Props) {
   const [data, setData] = useState<RentMonth | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [pickingMovement, setPickingMovement] = useState(false);
 
   const load = useCallback(
     async (ref: MonthRef) => {
@@ -86,14 +90,25 @@ export function RentMonthSheet({ monthRef, open, onClose, onChanged }: Props) {
   useEffect(() => {
     if (!monthRef) return;
     setData(null);
+    setPickingMovement(false);
     void load(monthRef);
   }, [monthRef, load]);
+
+  const reload = () => {
+    if (monthRef) void load(monthRef);
+    onChanged();
+  };
 
   const period = data?.period ?? null;
   const statusKey = rentPeriodStatusKey(period?.status);
   const owed = period ? period.outstanding : 0;
   const canRecord = Boolean(data && owed > 0);
-
+  // Every payment on the month has its recibo from Finanças on file.
+  const receiptOnFile = Boolean(
+    data?.payments.length && data.payments.every((p) => p.receipt?.financasNumber != null),
+  );
+  const canUpload = Boolean(period) && !receiptOnFile;
+  const look = period ? cellLook(period.status, receiptOnFile) : null;
   return (
     <>
       <Sheet open={open && monthRef !== null} onOpenChange={(next) => !next && onClose()}>
@@ -117,10 +132,9 @@ export function RentMonthSheet({ monthRef, open, onClose, onChanged }: Props) {
               <p className="text-sm text-[var(--color-muted-foreground)]">{t("noPeriod")}</p>
             ) : (
               <>
-                <span
-                  className={`inline-block px-2 py-1 text-sm font-medium ${CELL_STYLES[period.status] ?? ""}`}
-                >
+                <span className={`inline-block px-2 py-1 text-sm font-medium ${look?.style ?? ""}`}>
                   {statusKey ? tPeriod(statusKey) : period.status}
+                  {receiptOnFile ? ` · ${t("reciboOnFile")}` : ""}
                 </span>
 
                 <dl className="grid grid-cols-3 gap-3 text-sm">
@@ -166,7 +180,11 @@ export function RentMonthSheet({ monthRef, open, onClose, onChanged }: Props) {
                             .join(" · "),
                         );
                         if (origins.length === 0 && payment.receipt?.source === "manual") {
-                          origins.push(t("recordedByHand"));
+                          origins.push(
+                            payment.receipt.financasNumber != null
+                              ? t("fromRecibo")
+                              : t("recordedByHand"),
+                          );
                         }
                         return (
                           <li key={payment.receipt?.id ?? index} className="py-2">
@@ -182,6 +200,14 @@ export function RentMonthSheet({ monthRef, open, onClose, onChanged }: Props) {
                               </span>
                               <span className="tabular-nums">{formatEuro(payment.amount)}</span>
                             </div>
+                            {payment.receipt?.financasNumber != null ? (
+                              <p className="mt-0.5 flex items-center gap-1 text-xs text-[var(--semantic-success-readable)]">
+                                <RECIBO_ICON className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                                {payment.receipt.financasNumber
+                                  ? t("reciboNumber", { number: payment.receipt.financasNumber })
+                                  : t("reciboOnFile")}
+                              </p>
+                            ) : null}
                             {origins.map((origin, line) => (
                               <p
                                 key={line}
@@ -197,7 +223,25 @@ export function RentMonthSheet({ monthRef, open, onClose, onChanged }: Props) {
                   )}
                 </section>
 
-                {canRecord && data.olderUnpaid ? (
+                {pickingMovement && canRecord ? (
+                  <section className="space-y-2">
+                    <h3 className="text-sm font-medium text-[var(--color-foreground)]">
+                      {t("movements.title")}
+                    </h3>
+                    <MonthMovementPicker
+                      leaseId={data.lease.id}
+                      year={period.year}
+                      month={period.month}
+                      owed={owed}
+                      onAssigned={() => {
+                        setPickingMovement(false);
+                        reload();
+                      }}
+                    />
+                  </section>
+                ) : null}
+
+                {canRecord && data.olderUnpaid && !pickingMovement ? (
                   <p className="text-sm text-[var(--semantic-warning-readable)]">
                     {t("coversOlderFirst", {
                       month: formatMonthYear(data.olderUnpaid.year, data.olderUnpaid.month, locale),
@@ -208,12 +252,34 @@ export function RentMonthSheet({ monthRef, open, onClose, onChanged }: Props) {
             )}
           </div>
 
-          {canRecord ? (
-            <div className="border-t border-[var(--color-border)] px-5 py-4">
-              <Button className="w-full md:w-auto" onClick={() => setRecording(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t("recordPayment")}
-              </Button>
+          {canRecord || canUpload ? (
+            <div className="flex flex-col gap-2 border-t border-[var(--color-border)] px-5 py-4 md:flex-row md:flex-wrap">
+              {canRecord ? (
+                <Button className="w-full md:w-auto" onClick={() => setRecording(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t("recordPayment")}
+                </Button>
+              ) : null}
+              {canRecord && !pickingMovement ? (
+                <Button
+                  variant="outline"
+                  className="w-full md:w-auto"
+                  onClick={() => setPickingMovement(true)}
+                >
+                  <Landmark className="mr-2 h-4 w-4" />
+                  {t("movements.open")}
+                </Button>
+              ) : null}
+              {canUpload ? (
+                <Button
+                  variant="outline"
+                  className="w-full md:w-auto"
+                  onClick={() => setUploading(true)}
+                >
+                  <FileUp className="mr-2 h-4 w-4" />
+                  {t("uploadRecibo")}
+                </Button>
+              ) : null}
             </div>
           ) : null}
         </SheetContent>
@@ -223,10 +289,14 @@ export function RentMonthSheet({ monthRef, open, onClose, onChanged }: Props) {
         open={recording}
         onOpenChange={setRecording}
         preset={data ? { leaseId: data.lease.id, amount: owed || undefined } : undefined}
-        onRecorded={() => {
-          if (monthRef) void load(monthRef);
-          onChanged();
-        }}
+        onRecorded={reload}
+      />
+
+      <ReceiptUploadSheet
+        open={uploading}
+        onOpenChange={setUploading}
+        preset={monthRef ?? undefined}
+        onRegistered={reload}
       />
     </>
   );

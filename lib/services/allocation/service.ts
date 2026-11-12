@@ -244,7 +244,19 @@ export async function auditLeasePeriodSync(
 }
 
 /**
- * Allocate a rent Receipt to reference months via the waterfall. Idempotent:
+ * The month a receipt says it pays, written on it before it is allocated: an uploaded recibo
+ * (`lib/services/receipts/financas-receipts.ts`) or a movement the owner assigned to a month.
+ */
+function namedMonth(referenceMonth: string | null): { year: number; month: number } | undefined {
+  const match = referenceMonth ? /^(\d{4})-(\d{2})$/.exec(referenceMonth) : null;
+  if (!match) return undefined;
+  const month = Number(match[2]);
+  return month >= 1 && month <= 12 ? { year: Number(match[1]), month } : undefined;
+}
+
+/**
+ * Allocate a rent Receipt to reference months via the waterfall. A receipt that already names its
+ * `referenceMonth` fills that month first (`startAt`). Idempotent:
  * a receipt with live (non-reversed) allocations is skipped. Returns the plan
  * that was applied, or null when skipped/not applicable.
  *
@@ -311,6 +323,7 @@ export async function allocateReceipt(receiptId: string): Promise<AllocationPlan
       payment: { id: receipt.id, amount: receipt.amount, bookingDate: receipt.date },
       periods: snapshots,
       horizonMonths: HORIZON_MONTHS,
+      startAt: namedMonth(receipt.referenceMonth),
     });
     if (plan.entries.length === 0) return { plan, lease: null, created };
 

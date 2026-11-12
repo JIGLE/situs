@@ -746,7 +746,8 @@
     "processing": "Processing…",
     "exportCsv": "Export as CSV",
     "exportJson": "Export as JSON",
-    "discard": "Discard"
+    "discard": "Discard",
+    "close": "Close"
   },
   "errors": {
     "notFound": {
@@ -810,7 +811,9 @@
       "rentIncreasePending": "This lease already has a rent increase waiting to start. Cancel it first to set another.",
       "rentIncreaseNotAhead": "The new rent has to start in a month that hasn't begun yet. To change this month's rent, edit the lease.",
       "rentIncreaseApplied": "This increase has already taken effect. Change the rent on the lease instead.",
-      "leaseNotActive": "Only an active lease can have its rent updated."
+      "leaseNotActive": "Only an active lease can have its rent updated.",
+      "receiptMonthUntracked": "This contract has no rent for that month: it had not started yet, or had already ended. Choose another month.",
+      "receiptAmountUnknown": "The amount on this recibo could not be read. Record the payment by hand instead."
     }
   },
   "payments": {
@@ -1531,7 +1534,23 @@
       "viaBankOn": "Bank movement of {date}",
       "recordedByHand": "Recorded by hand",
       "coversOlderFirst": "A payment recorded now settles {month} first: the oldest month still owed.",
-      "recordPayment": "Record payment"
+      "recordPayment": "Record payment",
+      "reciboOnFile": "recibo on file",
+      "legendRecibo": "Paid, recibo on file",
+      "uploadRecibos": "Upload recibos",
+      "uploadRecibo": "Upload recibo",
+      "fromRecibo": "From the recibo de renda",
+      "reciboNumber": "Recibo de renda no. {number}",
+      "movements": {
+        "title": "Bank movements waiting",
+        "open": "Link a bank movement",
+        "loading": "Loading movements…",
+        "none": "No incoming bank movement is waiting to be matched.",
+        "assign": "Link",
+        "recorded": "This contract already has a payment of {amount} recorded by hand on {date}. Is this movement that payment?",
+        "samePayment": "Same payment",
+        "newPayment": "Another payment"
+      }
     },
     "recordPayment": {
       "title": "Record payment",
@@ -2097,7 +2116,8 @@
     "createInvitation": "Person invited",
     "revokeInvitation": "Invitation withdrawn",
     "signUpSettingChange": "Sign-up setting changed",
-    "changeAccountRole": "Account role changed"
+    "changeAccountRole": "Account role changed",
+    "uploadFinancasReceipt": "Recibo uploaded from Finanças"
   },
   "financasImport": {
     "title": "Import from Finanças",
@@ -2152,6 +2172,33 @@
       "ownersFailed": "The tenancy was saved, but the property's owners could not be set. Add them on its page."
     },
     "owners": "Owners: {list}",
-    "ownersFailed": "{count, plural, one {The owners of # property could not be set. Add them on its page.} other {The owners of # properties could not be set. Add them on each page.}}"
+    "ownersFailed": "{count, plural, one {The owners of # property could not be set. Add them on its page.} other {The owners of # properties could not be set. Add them on each page.}}",
+    "receipts": {
+      "title": "Upload recibos de renda",
+      "description": "Each recibo marks its month as paid on its contract. Check the contract and month before registering.",
+      "where": "On the Portal das Finanças, open Arrendamento › Recibos de renda and download each recibo as a PDF. You can choose several at once.",
+      "choose": "Choose recibo PDFs",
+      "addMore": "Add more PDFs",
+      "reading": "Reading…",
+      "notReceipt": "this doesn't look like a recibo de renda.",
+      "number": "Recibo no. {number}",
+      "contract": "Contract",
+      "month": "Month",
+      "pickContract": "Choose the contract",
+      "pickMonth": "Choose the month",
+      "ambiguous": "More than one contract has this tenant. Check it is the right one.",
+      "amountDiffers": "The rent for that month is {due}.",
+      "register": "{count, plural, =0 {Register recibos} one {Register # recibo} other {Register # recibos}}",
+      "registered": "{count, plural, one {# recibo registered} other {# recibos registered}}",
+      "done": "Registered in {month}",
+      "outcome": {
+        "create": "Marks {month} as paid",
+        "attach": "Adds the recibo to the payment already recorded for {month}",
+        "duplicate": "Already registered: nothing changes",
+        "noMonth": "This contract has no rent in {month}. Choose another month or contract.",
+        "chosen": "Will be registered in {month}",
+        "paid": "Already paid in {month}: nothing changes"
+      }
+    }
   }
 }

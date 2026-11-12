@@ -239,3 +239,37 @@ describe("deriveTenantStatus", () => {
     expect(deriveTenantStatus(["paid", "paid_late", "upcoming"])).toBe("paid");
   });
 });
+
+describe("planAllocation — a payment that names its month", () => {
+  it("fills the named month even when an older one is open", () => {
+    const periods = [period(2026, 3), period(2026, 4), period(2026, 5)];
+    const plan = planAllocation({
+      payment: payment(RENT),
+      periods,
+      startAt: { year: 2026, month: 5 },
+    });
+    expect(plan.entries).toEqual([
+      { period: { year: 2026, month: 5, id: "p-2026-5" }, amount: RENT, type: "rent" },
+    ]);
+  });
+
+  it("carries what is left to the months after it, then back to older ones", () => {
+    const periods = [period(2026, 3), period(2026, 4), period(2026, 5)];
+    const plan = planAllocation({
+      payment: payment(RENT * 3),
+      periods,
+      startAt: { year: 2026, month: 4 },
+    });
+    expect(plan.entries.map((e) => e.period.month)).toEqual([4, 5, 3]);
+  });
+
+  it("passes over a named month already paid, as the waterfall does", () => {
+    const periods = [period(2026, 3), period(2026, 4, RENT)];
+    const plan = planAllocation({
+      payment: payment(RENT),
+      periods,
+      startAt: { year: 2026, month: 4 },
+    });
+    expect(plan.entries.map((e) => e.period.month)).toEqual([3]);
+  });
+});
