@@ -1507,7 +1507,13 @@
       "selectFrequency": "Seleziona periodicità",
       "submit": "Crea spesa",
       "toastCreated": "Spesa registrata",
-      "toastUpdated": "Spesa aggiornata"
+      "toastUpdated": "Spesa aggiornata",
+      "editTitle": "Modifica spesa",
+      "deleteTitle": "Eliminare questa spesa?",
+      "deleteDescription": "{amount} del {date} non conterà più nei totali.",
+      "toastDeleted": "Spesa eliminata",
+      "repeats": "{rule, select, monthly {Si ripete ogni mese} quarterly {Si ripete ogni 3 mesi} other {Si ripete ogni anno}} · prossima {date}",
+      "repeatEnded": "Non si ripete più"
     },
     "matrix": {
       "cellLabel": "{month}: {status}, pagati {paid} su {due}",

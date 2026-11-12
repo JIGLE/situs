@@ -1507,7 +1507,13 @@
       "selectFrequency": "Seleccionar periodicidad",
       "submit": "Crear gasto",
       "toastCreated": "Gasto registrado",
-      "toastUpdated": "Gasto actualizado"
+      "toastUpdated": "Gasto actualizado",
+      "editTitle": "Editar gasto",
+      "deleteTitle": "¿Eliminar este gasto?",
+      "deleteDescription": "{amount} del {date} dejará de contar en los totales.",
+      "toastDeleted": "Gasto eliminado",
+      "repeats": "{rule, select, monthly {Se repite cada mes} quarterly {Se repite cada 3 meses} other {Se repite cada año}} · próximo {date}",
+      "repeatEnded": "Ya no se repite"
     },
     "matrix": {
       "cellLabel": "{month}: {status}, pagados {paid} de {due}",

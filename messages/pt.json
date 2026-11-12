@@ -1507,7 +1507,13 @@
       "selectFrequency": "Selecionar periodicidade",
       "submit": "Criar despesa",
       "toastCreated": "Despesa registada",
-      "toastUpdated": "Despesa atualizada"
+      "toastUpdated": "Despesa atualizada",
+      "editTitle": "Editar despesa",
+      "deleteTitle": "Eliminar esta despesa?",
+      "deleteDescription": "{amount} de {date} deixa de contar nos totais.",
+      "toastDeleted": "Despesa eliminada",
+      "repeats": "{rule, select, monthly {Repete todos os meses} quarterly {Repete a cada 3 meses} other {Repete todos os anos}} · próxima {date}",
+      "repeatEnded": "Já não se repete"
     },
     "matrix": {
       "cellLabel": "{month}: {status}, pagos {paid} de {due}",

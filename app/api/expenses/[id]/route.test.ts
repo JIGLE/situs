@@ -61,4 +61,39 @@ describe("PUT /api/expenses/[id]", () => {
       expect.objectContaining({ where: { id: "prop-2", userId: "user-1" } }),
     );
   });
+
+  it("takes the form's own fields, and an expense that stops repeating loses its rule", async () => {
+    const res = await put({ amount: 45, isDeductible: false, isRecurring: false });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.expense.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          amount: 45,
+          isDeductible: false,
+          isRecurring: false,
+          recurrenceRule: null,
+          recurrenceDay: null,
+          recurrenceEnd: null,
+        }),
+      }),
+    );
+  });
+
+  it("stores an end date as a date", async () => {
+    await put({ recurrenceEnd: "2027-06-30" });
+
+    const { data } = prismaMock.expense.update.mock.calls[0][0];
+    expect(data.recurrenceEnd).toEqual(new Date("2027-06-30"));
+    // Fields the request left out keep their stored values, not the new-expense defaults.
+    expect(data).not.toHaveProperty("isDeductible");
+    expect(data).not.toHaveProperty("isRecurring");
+  });
+
+  it("refuses a category that is not one of the list", async () => {
+    const res = await put({ category: "bribes" });
+
+    expect(res.status).toBe(400);
+    expect(prismaMock.expense.update).not.toHaveBeenCalled();
+  });
 });
