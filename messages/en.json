@@ -576,6 +576,7 @@
     "connectBankDesc": "Payments then arrive on their own, ready to confirm. You can also record one by hand.",
     "connectBankAction": "Connect bank",
     "monthReceivedOf": "{received} of {expected}",
+    "monthOf": "of {expected}",
     "monthOutstanding": "{amount} outstanding",
     "monthAllIn": "All received",
     "monthEmpty": "No rent this month.",

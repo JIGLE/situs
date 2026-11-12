@@ -576,6 +576,7 @@
     "connectBankDesc": "Los pagos llegan solos, listos para confirmar. También puede registrar uno a mano.",
     "connectBankAction": "Conectar banco",
     "monthReceivedOf": "{received} de {expected}",
+    "monthOf": "de {expected}",
     "monthOutstanding": "{amount} pendiente",
     "monthAllIn": "Todo cobrado",
     "monthEmpty": "Sin rentas este mes.",

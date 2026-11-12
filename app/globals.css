@@ -124,6 +124,10 @@
 
   /* Inner border system — collapses to the single 1px border language */
   --color-inner-border: #e4e0d8;
+  /* Panels and the rows inside them: a lighter line than --color-border, which form fields keep
+     (design study D1). Swapped per country by resolveThemeVars like the rest. */
+  --color-hairline: #f0eeea;
+  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 16px -10px rgba(0, 0, 0, 0.12);
   --color-inner-border-hover: rgba(0, 0, 0, 0.24);
   --color-inner-border-active: #006600;
 
@@ -301,6 +305,8 @@
   --color-sidebar-active: rgba(71, 145, 71, 0.12);
 
   --color-inner-border: #263428;
+  --color-hairline: #202d22;
+  --shadow-panel: none;
   --color-inner-border-hover: rgba(255, 255, 255, 0.24);
   --color-inner-border-active: #479147;
 
@@ -385,8 +391,9 @@ body {
    ============================================ */
 
 .panel {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-hairline);
+  box-shadow: var(--shadow-panel);
 }
 
 .glass-sidebar {

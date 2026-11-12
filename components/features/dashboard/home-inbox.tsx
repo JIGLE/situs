@@ -17,6 +17,7 @@ import { useApiError } from "@/lib/utils/api-error";
 import { INBOX_FILTER_QUERY, formatMovementAmount } from "@/lib/utils/bank-inbox";
 import { formatDate, formatMonthYear } from "@/lib/utils/format-date";
 import { isIssuable, receiptMonth } from "@/lib/utils/receipt-months";
+import { BlockHeading } from "@/components/shared/panel";
 
 /** A bank movement waiting for the owner, as `GET /api/bank/transactions` gives it. */
 interface Movement {
@@ -147,123 +148,125 @@ export function HomeInbox({ onChanged }: { onChanged?: () => void }) {
   const count = movements.length + receipts.length;
 
   return (
-    <section className="panel" data-testid="home-inbox" aria-labelledby="home-inbox-label">
-      <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] px-4 py-3">
-        <p id="home-inbox-label" className="mono-label">
-          {t("title", { count })}
-        </p>
-        {receipts.length > 1 ? (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={busy !== null}
-            onClick={() => void markIssued(receipts)}
+    <section className="space-y-2" data-testid="home-inbox" aria-labelledby="home-inbox-label">
+      <BlockHeading
+        id="home-inbox-label"
+        title={t("title", { count })}
+        action={
+          receipts.length > 1 ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy !== null}
+              onClick={() => void markIssued(receipts)}
+            >
+              {t("markAllIssued", { count: receipts.length })}
+            </Button>
+          ) : null
+        }
+      />
+      <div className="panel">
+        {error ? (
+          <p
+            role="alert"
+            className="border-b border-[var(--color-hairline)] px-4 py-2 text-sm text-[var(--semantic-danger-readable)]"
           >
-            {t("markAllIssued", { count: receipts.length })}
-          </Button>
+            {error}
+          </p>
         ) : null}
-      </div>
 
-      {error ? (
-        <p
-          role="alert"
-          className="border-b border-[var(--color-border)] px-4 py-2 text-sm text-[var(--semantic-danger-readable)]"
-        >
-          {error}
-        </p>
-      ) : null}
-
-      {count === 0 ? (
-        <p className="px-4 py-3 text-sm text-[var(--color-muted-foreground)]">{t("empty")}</p>
-      ) : (
-        <ul className="divide-y divide-[var(--color-border)]">
-          {movements.map((movement) => {
-            // A card settles only the plain case: one suggested tenant, nothing recorded by hand.
-            const simple =
-              movement.suggestedLease !== null && (movement.recordedPayments?.length ?? 0) === 0;
-            return (
+        {count === 0 ? (
+          <p className="px-4 py-3 text-sm text-[var(--color-muted-foreground)]">{t("empty")}</p>
+        ) : (
+          <ul className="divide-y divide-[var(--color-hairline)]">
+            {movements.map((movement) => {
+              // A card settles only the plain case: one suggested tenant, nothing recorded by hand.
+              const simple =
+                movement.suggestedLease !== null && (movement.recordedPayments?.length ?? 0) === 0;
+              return (
+                <li
+                  key={movement.id}
+                  className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">
+                      {t("paymentFrom", {
+                        amount: formatMovementAmount(movement.amount, movement.currency),
+                        payer: movement.counterpartyName ?? t("unknownPayer"),
+                      })}
+                    </p>
+                    <p className="text-xs text-[var(--color-muted-foreground)]">
+                      {movement.suggestedLease
+                        ? t("paymentFor", {
+                            tenant: movement.suggestedLease.tenantName,
+                            property: movement.suggestedLease.propertyName,
+                          })
+                        : tBank("noSuggestion")}
+                      {" · "}
+                      {formatDate(movement.bookingDate, locale)}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {simple ? (
+                      <Button
+                        size="sm"
+                        disabled={busy !== null}
+                        onClick={() => void act(movement, "confirm")}
+                      >
+                        <Check className="mr-1.5 h-3.5 w-3.5" />
+                        {tBank("confirm")}
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="outline" asChild>
+                        <Link href={BANK}>{t("review")}</Link>
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={busy !== null}
+                      onClick={() => void act(movement, "ignore")}
+                    >
+                      {tBank("ignore")}
+                    </Button>
+                  </div>
+                </li>
+              );
+            })}
+            {receipts.map((receipt) => (
               <li
-                key={movement.id}
+                key={receipt.id}
                 className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center"
               >
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">
-                    {t("paymentFrom", {
-                      amount: formatMovementAmount(movement.amount, movement.currency),
-                      payer: movement.counterpartyName ?? t("unknownPayer"),
+                    {t("receiptReady", {
+                      tenant: receipt.tenantName,
+                      amount: formatCurrency(receipt.amount),
                     })}
                   </p>
                   <p className="text-xs text-[var(--color-muted-foreground)]">
-                    {movement.suggestedLease
-                      ? t("paymentFor", {
-                          tenant: movement.suggestedLease.tenantName,
-                          property: movement.suggestedLease.propertyName,
-                        })
-                      : tBank("noSuggestion")}
-                    {" · "}
-                    {formatDate(movement.bookingDate, locale)}
+                    {receipt.propertyName} · {monthOf(receipt)}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  {simple ? (
-                    <Button
-                      size="sm"
-                      disabled={busy !== null}
-                      onClick={() => void act(movement, "confirm")}
-                    >
-                      <Check className="mr-1.5 h-3.5 w-3.5" />
-                      {tBank("confirm")}
-                    </Button>
-                  ) : (
-                    <Button size="sm" variant="outline" asChild>
-                      <Link href={BANK}>{t("review")}</Link>
-                    </Button>
-                  )}
                   <Button
                     size="sm"
-                    variant="ghost"
                     disabled={busy !== null}
-                    onClick={() => void act(movement, "ignore")}
+                    onClick={() => void markIssued([receipt])}
                   >
-                    {tBank("ignore")}
+                    <FileCheck2 className="mr-1.5 h-3.5 w-3.5" />
+                    {t("markIssued")}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setReviewing([receipt])}>
+                    {t("portalDetails")}
                   </Button>
                 </div>
               </li>
-            );
-          })}
-          {receipts.map((receipt) => (
-            <li
-              key={receipt.id}
-              className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">
-                  {t("receiptReady", {
-                    tenant: receipt.tenantName,
-                    amount: formatCurrency(receipt.amount),
-                  })}
-                </p>
-                <p className="text-xs text-[var(--color-muted-foreground)]">
-                  {receipt.propertyName} · {monthOf(receipt)}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <Button
-                  size="sm"
-                  disabled={busy !== null}
-                  onClick={() => void markIssued([receipt])}
-                >
-                  <FileCheck2 className="mr-1.5 h-3.5 w-3.5" />
-                  {t("markIssued")}
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => setReviewing([receipt])}>
-                  {t("portalDetails")}
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+            ))}
+          </ul>
+        )}
+      </div>
 
       {reviewing ? (
         <AtReceiptsSheet

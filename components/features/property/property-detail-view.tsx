@@ -887,7 +887,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                     </div>
                     <span
                       className={cn(
-                        "font-mono tabular-nums",
+                        "tabular-nums",
                         entry.reversedAt
                           ? "text-[var(--color-muted-foreground)] line-through"
                           : "text-[var(--color-foreground)]",

@@ -576,6 +576,7 @@
     "connectBankDesc": "I pagamenti arrivano da soli, pronti da confermare. Puoi anche registrarne uno a mano.",
     "connectBankAction": "Collega banca",
     "monthReceivedOf": "{received} di {expected}",
+    "monthOf": "di {expected}",
     "monthOutstanding": "{amount} da incassare",
     "monthAllIn": "Tutto incassato",
     "monthEmpty": "Nessun canone questo mese.",

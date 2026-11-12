@@ -3,8 +3,8 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 /**
- * The language is square and flat: no corner radius but the circle, no shadow but the modal's, no
- * press-down scale.
+ * The language is square and flat: no corner radius but the circle, no shadow but the modal's and
+ * the panel's, no press-down scale.
  *
  * Every `--radius-*` step is 0 in `globals.css`, so `rounded-lg` already draws square, and the
  * source said otherwise: 150 `rounded-*` and 35 `shadow-*` classes read as a rounded, raised design
@@ -13,7 +13,8 @@ import { join, relative } from "node:path";
  * say what the screen shows; this keeps it so.
  *
  * What stays is named: `rounded-full` is the deliberate circle (dots, avatars, spinners), and the
- * PWA banner keeps `--shadow-modal`, the one depth the language has.
+ * PWA banner keeps `--shadow-modal`. `Panel` keeps `--shadow-panel`, a faint lift that replaced the
+ * full-strength border when its line became a hairline (design study D1, chosen 12 Nov 2026).
  *
  * This reads the source and names file and line.
  */
@@ -47,9 +48,12 @@ const RULES: { name: string; pattern: RegExp; allowed?: Record<string, RegExp> }
     pattern: new RegExp(`${CLASS}rounded(?:-(?!full${END})[a-z0-9\\[][^\\s"'\`]*)?${END}`),
   },
   {
-    name: "a shadow other than the modal's (`shadow-[var(--shadow-modal)]`)",
+    name: "a shadow other than the modal's and the panel's",
     pattern: new RegExp(`${CLASS}shadow(?:-[^\\s"'\`]+)?${END}`),
-    allowed: { "components/shared/pwa-register.tsx": /shadow-\[var\(--shadow-modal\)\]/ },
+    allowed: {
+      "components/shared/pwa-register.tsx": /shadow-\[var\(--shadow-modal\)\]/,
+      "components/shared/panel.tsx": /shadow-\[var\(--shadow-panel\)\]/,
+    },
   },
   {
     name: "a scale transform on press or hover",

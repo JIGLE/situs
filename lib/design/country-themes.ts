@@ -250,6 +250,12 @@ export function resolveThemeVars(country: CountryCode, mode: ThemeMode): Record<
     // themes — below AA, and below the 4.89:1 the hand-tuned globals.css value already reached.
     "--color-muted-foreground": readableHighlight(theme.muted, mutedSurface),
     "--color-border": theme.border,
+    // Panels and their rows draw a lighter line than form fields (design study D1).
+    "--color-hairline": mixWith(
+      theme.border,
+      theme.surfaceSolid,
+      isDark(theme.canvas) ? 0.3 : 0.45,
+    ),
     "--color-hover": theme.hover,
     "--ui-accent": theme.accent,
     "--country-highlight-readable": highlight,

@@ -298,7 +298,8 @@ describe("AdminAccessView: who can create an account", () => {
 
     expect(screen.getByText(title)).toBeInTheDocument();
     // A state that lets a person nobody named in is tinted as a warning; the others are not.
-    const card = screen.getByText(title).closest("section");
+    // The tone is the panel box's border, below its heading.
+    const card = screen.getByText(title).closest("section")?.lastElementChild;
     const warning = "border-[var(--semantic-warning-readable)]";
     if (open_) expect(card).toHaveClass(warning);
     else expect(card).not.toHaveClass(warning);

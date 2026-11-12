@@ -12,6 +12,7 @@ import { formatDate, formatMonthYear } from "@/lib/utils/format-date";
 import { rentPeriodStatusKey } from "@/lib/utils/rent-period-labels";
 import { CELL_ICONS, CELL_STYLES } from "@/components/features/financial/rent-status-styles";
 import { Button } from "@/components/ui/button";
+import { BlockHeading } from "@/components/shared/panel";
 import { cn } from "@/lib/utils/utils";
 
 /** Where each step's work is done. */
@@ -21,13 +22,26 @@ const LINKS = {
   complete: "/complete",
 } as const;
 
-/** A section's label: one heading per screen, so these are labels, not headings. */
-function SectionLabel({ children, action }: { children: ReactNode; action?: ReactNode }) {
+/**
+ * One of Home's blocks: its heading above, its rows in a box below (design study D2). The heading
+ * sat inside the box as a small grey label over a rule, where it read as a caption.
+ */
+function Block({
+  title,
+  action,
+  testId,
+  children,
+}: {
+  title: ReactNode;
+  action?: ReactNode;
+  testId: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
-      <p className="mono-label">{children}</p>
-      {action}
-    </div>
+    <section className="space-y-2" data-testid={testId}>
+      <BlockHeading title={title} action={action} />
+      <div className="panel">{children}</div>
+    </section>
   );
 }
 
@@ -108,9 +122,8 @@ export function AttentionList({ attention }: { attention: DashboardMonth["attent
   if (items.length === 0) return null;
 
   return (
-    <div className="panel" data-testid="dashboard-attention">
-      <SectionLabel>{t("attentionTitle")}</SectionLabel>
-      <ul className="divide-y divide-[var(--color-border)]">
+    <Block title={t("attentionTitle")} testId="dashboard-attention">
+      <ul className="divide-y divide-[var(--color-hairline)]">
         {items.map((item) => (
           <li key={item.key}>
             <Link
@@ -127,7 +140,7 @@ export function AttentionList({ attention }: { attention: DashboardMonth["attent
           </li>
         ))}
       </ul>
-    </div>
+    </Block>
   );
 }
 
@@ -142,11 +155,12 @@ export function LateList({ late }: { late: DashboardMonth["late"] }) {
   if (late.length === 0) return null;
 
   return (
-    <div className="panel" data-testid="dashboard-late">
-      <SectionLabel action={<SeeAll href={LINKS.rentMatrix}>{t("lateSeeAll")}</SeeAll>}>
-        {t("lateTitle")}
-      </SectionLabel>
-      <ul className="divide-y divide-[var(--color-border)]">
+    <Block
+      title={t("lateTitle")}
+      action={<SeeAll href={LINKS.rentMatrix}>{t("lateSeeAll")}</SeeAll>}
+      testId="dashboard-late"
+    >
+      <ul className="divide-y divide-[var(--color-hairline)]">
         {late.map((entry) => (
           <li key={entry.leaseId}>
             <Link
@@ -168,7 +182,7 @@ export function LateList({ late }: { late: DashboardMonth["late"] }) {
           </li>
         ))}
       </ul>
-    </div>
+    </Block>
   );
 }
 
@@ -228,126 +242,128 @@ export function MonthBlock({
   const share = figures.expected > 0 ? Math.min(1, figures.received / figures.expected) : 0;
 
   return (
-    <section className="panel" data-testid="dashboard-month-block">
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-[var(--color-border)] px-2 py-1.5">
-        <div className="flex items-center">
-          <Button variant="ghost" size="icon" aria-label={t("previousMonth")} onClick={onPrevious}>
-            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-          </Button>
-          <p
-            className="min-w-32 text-center text-sm font-medium first-letter:uppercase"
-            aria-live="polite"
-            data-testid="dashboard-month"
-          >
-            {formatMonthYear(year, month, locale)}
-          </p>
-          <Button variant="ghost" size="icon" aria-label={t("nextMonth")} onClick={onNext}>
-            <ChevronRight className="h-4 w-4" aria-hidden="true" />
-          </Button>
-        </div>
+    <section className="space-y-2" data-testid="dashboard-month-block">
+      {/* The month is the block's heading, with its arrows, since they change only this block. */}
+      <div className="flex min-h-8 items-center">
+        <Button variant="ghost" size="icon" aria-label={t("previousMonth")} onClick={onPrevious}>
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+        </Button>
+        <h2
+          className="min-w-32 text-center text-reading font-semibold first-letter:uppercase"
+          aria-live="polite"
+          data-testid="dashboard-month"
+        >
+          {formatMonthYear(year, month, locale)}
+        </h2>
+        <Button variant="ghost" size="icon" aria-label={t("nextMonth")} onClick={onNext}>
+          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+        </Button>
+      </div>
+
+      <div className="panel">
         {figures.expected > 0 && (
-          <p className="px-2 text-sm tabular-nums" data-testid="dashboard-figures">
-            <span className="font-medium">
-              {t("monthReceivedOf", {
+          <div className="space-y-2 px-4 pt-4">
+            {/* The one figure the month is about, large (design study D3). */}
+            <p className="tabular-nums" data-testid="dashboard-figures">
+              <span className="text-2xl font-semibold tracking-tight">
+                {formatCurrency(figures.received)}
+              </span>{" "}
+              <span className="text-base font-medium text-[var(--color-muted-foreground)]">
+                {t("monthOf", { expected: formatCurrency(figures.expected) })}
+              </span>
+            </p>
+            <div
+              className="h-1.5 w-full bg-[var(--color-muted)]"
+              role="img"
+              aria-label={t("monthReceivedOf", {
                 received: formatCurrency(figures.received),
                 expected: formatCurrency(figures.expected),
               })}
-            </span>
-          </p>
-        )}
-      </div>
-
-      {figures.expected > 0 && (
-        <div className="space-y-1.5 px-4 pt-3">
-          <div
-            className="h-1.5 w-full bg-[var(--color-muted)]"
-            role="img"
-            aria-label={t("monthReceivedOf", {
-              received: formatCurrency(figures.received),
-              expected: formatCurrency(figures.expected),
-            })}
-          >
-            <div
-              className="h-full bg-[var(--semantic-success)]"
-              style={{ width: `${Math.round(share * 100)}%` }}
-            />
+            >
+              <div
+                className="h-full bg-[var(--semantic-success)]"
+                style={{ width: `${Math.round(share * 100)}%` }}
+              />
+            </div>
+            <p
+              className={cn(
+                "text-xs tabular-nums",
+                figures.outstanding > 0
+                  ? "text-[var(--semantic-danger-readable)]"
+                  : "text-[var(--semantic-success-readable)]",
+              )}
+            >
+              {figures.outstanding > 0
+                ? t("monthOutstanding", { amount: formatCurrency(figures.outstanding) })
+                : t("monthAllIn")}
+            </p>
           </div>
-          <p
-            className={cn(
-              "text-xs tabular-nums",
-              figures.outstanding > 0
-                ? "text-[var(--semantic-danger-readable)]"
-                : "text-[var(--semantic-success-readable)]",
-            )}
-          >
-            {figures.outstanding > 0
-              ? t("monthOutstanding", { amount: formatCurrency(figures.outstanding) })
-              : t("monthAllIn")}
-          </p>
-        </div>
-      )}
+        )}
 
-      {tenancies.length === 0 ? (
-        <p className="px-4 py-4 text-sm text-[var(--color-muted-foreground)]">{t("monthEmpty")}</p>
-      ) : (
-        <ul className="mt-2 divide-y divide-[var(--color-border)] border-t border-[var(--color-border)]">
-          {tenancies.map((row) => {
-            const Icon = CELL_ICONS[row.status] ?? CircleDot;
-            const statusKey = rentPeriodStatusKey(row.status);
-            const paid = row.status === "paid" || row.status === "paid_late";
-            const detail = paid
-              ? t("tenancyPaidOn", { date: dayMonth(row.paidAt ?? row.dueDate, locale) })
-              : row.status === "partially_paid"
-                ? t("tenancyPartial", {
-                    received: formatCurrency(row.allocatedAmount),
-                    due: formatCurrency(row.dueAmount),
-                  })
-                : row.status === "overdue"
-                  ? t("tenancyOverdue", { date: dayMonth(row.dueDate, locale) })
-                  : t("tenancyDueOn", { date: dayMonth(row.dueDate, locale) });
-            return (
-              <li key={row.leaseId}>
-                <Link
-                  href={monthSheetHref(row.leaseId, yearMonth)}
-                  className="flex min-h-11 items-center gap-3 px-4 py-2.5 hover:bg-[var(--color-muted)]"
-                >
-                  <span
-                    className={cn(
-                      "flex h-6 w-6 shrink-0 items-center justify-center",
-                      CELL_STYLES[row.status],
-                    )}
-                    title={statusKey ? tStatus(statusKey) : undefined}
+        {tenancies.length === 0 ? (
+          <p className="px-4 py-4 text-sm text-[var(--color-muted-foreground)]">
+            {t("monthEmpty")}
+          </p>
+        ) : (
+          <ul className="mt-3 divide-y divide-[var(--color-hairline)] border-t border-[var(--color-hairline)]">
+            {tenancies.map((row) => {
+              const Icon = CELL_ICONS[row.status] ?? CircleDot;
+              const statusKey = rentPeriodStatusKey(row.status);
+              const paid = row.status === "paid" || row.status === "paid_late";
+              const detail = paid
+                ? t("tenancyPaidOn", { date: dayMonth(row.paidAt ?? row.dueDate, locale) })
+                : row.status === "partially_paid"
+                  ? t("tenancyPartial", {
+                      received: formatCurrency(row.allocatedAmount),
+                      due: formatCurrency(row.dueAmount),
+                    })
+                  : row.status === "overdue"
+                    ? t("tenancyOverdue", { date: dayMonth(row.dueDate, locale) })
+                    : t("tenancyDueOn", { date: dayMonth(row.dueDate, locale) });
+              return (
+                <li key={row.leaseId}>
+                  <Link
+                    href={monthSheetHref(row.leaseId, yearMonth)}
+                    className="flex min-h-11 items-center gap-3 px-4 py-2.5 hover:bg-[var(--color-muted)]"
                   >
-                    <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-                    {statusKey && <span className="sr-only">{tStatus(statusKey)}</span>}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">{row.tenantName}</span>
-                    <span className="block truncate text-xs text-[var(--color-muted-foreground)]">
-                      {row.propertyName}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-right">
-                    <span className="block text-sm tabular-nums">
-                      {formatCurrency(row.dueAmount)}
-                    </span>
                     <span
                       className={cn(
-                        "block text-xs",
-                        row.status === "overdue"
-                          ? "text-[var(--semantic-danger-readable)]"
-                          : "text-[var(--color-muted-foreground)]",
+                        "flex h-6 w-6 shrink-0 items-center justify-center",
+                        CELL_STYLES[row.status],
                       )}
+                      title={statusKey ? tStatus(statusKey) : undefined}
                     >
-                      {detail}
+                      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                      {statusKey && <span className="sr-only">{tStatus(statusKey)}</span>}
                     </span>
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium">{row.tenantName}</span>
+                      <span className="block truncate text-xs text-[var(--color-muted-foreground)]">
+                        {row.propertyName}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-right">
+                      <span className="block text-sm tabular-nums">
+                        {formatCurrency(row.dueAmount)}
+                      </span>
+                      <span
+                        className={cn(
+                          "block text-xs",
+                          row.status === "overdue"
+                            ? "text-[var(--semantic-danger-readable)]"
+                            : "text-[var(--color-muted-foreground)]",
+                        )}
+                      >
+                        {detail}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     </section>
   );
 }
@@ -383,9 +399,8 @@ export function UpcomingList({ upcoming }: { upcoming: DashboardMonth["upcoming"
   if (upcoming.length === 0) return null;
 
   return (
-    <div className="panel" data-testid="dashboard-upcoming">
-      <SectionLabel>{t("upcomingTitle")}</SectionLabel>
-      <ul className="divide-y divide-[var(--color-border)]">
+    <Block title={t("upcomingTitle")} testId="dashboard-upcoming">
+      <ul className="divide-y divide-[var(--color-hairline)]">
         {upcoming.slice(0, 8).map((item) => {
           const text =
             item.kind === "rent"
@@ -417,6 +432,6 @@ export function UpcomingList({ upcoming }: { upcoming: DashboardMonth["upcoming"
           );
         })}
       </ul>
-    </div>
+    </Block>
   );
 }

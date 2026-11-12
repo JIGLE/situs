@@ -278,9 +278,7 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
               · {row.suggestedLease.propertyName}
             </span>
             {row.matchConfidence !== null ? (
-              <span className="ml-1 font-mono tabular-nums">
-                {Math.round(row.matchConfidence * 100)}%
-              </span>
+              <span className="ml-1 tabular-nums">{Math.round(row.matchConfidence * 100)}%</span>
             ) : null}
           </span>
         ) : (
@@ -308,7 +306,8 @@ export function BankMovementsInbox({ summary = null, onChanged }: Props): React.
   const renderAmount = (row: InboxRow) => (
     <span
       className={cn(
-        "font-mono tabular-nums",
+        // Amounts share the app's one number style (design study D3); mono is for references.
+        "font-medium tabular-nums",
         row.amount < 0 && "text-[var(--semantic-danger-readable)]",
       )}
     >
