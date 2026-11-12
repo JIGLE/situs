@@ -69,7 +69,16 @@
       "submit": "Criar edifício"
     },
     "importFinancas": "Importar das Finanças",
-    "importFinancasHint": "PDF das cadernetas"
+    "importFinancasHint": "PDF das cadernetas",
+    "map": {
+      "label": "Mapa do portefólio",
+      "zoomIn": "Aproximar",
+      "zoomOut": "Afastar",
+      "placing": "A localizar {count, plural, one {# imóvel} other {# imóveis}} no mapa…",
+      "unplaced": "{count, plural, one {# imóvel} other {# imóveis}} fora do mapa",
+      "unplacedHint": "A morada não foi encontrada. Edite o imóvel e escolha a morada nas sugestões para o colocar no mapa.",
+      "closeDetail": "Fechar e ver o mapa"
+    }
   },
   "settings": {
     "title": "Configurações",

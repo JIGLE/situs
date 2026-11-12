@@ -11,14 +11,14 @@ const { prismaMock } = vi.hoisted(() => ({
     // Read by derived-state: no lease and no rent month, so the stored values stand.
     lease: { findMany: vi.fn(async () => []) },
     rentPeriod: { findMany: vi.fn(async () => []) },
-    property: { create: vi.fn(), update: vi.fn() },
+    property: { create: vi.fn(), update: vi.fn(), findUnique: vi.fn(async () => null) },
     building: { findFirst: vi.fn() },
   },
 }));
 
 vi.mock("@/lib/services/database/database", () => ({ getPrismaClient: () => prismaMock }));
 
-import { propertyService } from "./service";
+import { coordinatesAfterEdit, propertyService } from "./service";
 
 const property = {
   name: "Rua Augusta 12",
@@ -93,6 +93,54 @@ describe("propertyService", () => {
     expect(prismaMock.property.update.mock.calls[0][0].data).toMatchObject({
       cadasterReference: "2321-A",
       fraction: "",
+    });
+  });
+});
+
+// The Portfolio map places a property from its coordinates. An edit that changed the address and
+// sent back the old coordinates left the pin at the old address for good.
+describe("coordinatesAfterEdit", () => {
+  const stored = {
+    address: "Rua de Angola 25, 2º ESQ, 1170-020 Lisboa",
+    streetAddress: "Rua de Angola 25",
+    city: "Lisboa",
+    zipCode: "1170-020",
+    latitude: 38.72,
+    longitude: -9.13,
+  };
+
+  it("clears the coordinates when the address changes and the place does not", () => {
+    expect(
+      coordinatesAfterEdit(stored, {
+        address: "Rua Augusta 12, Lisboa",
+        streetAddress: "Rua Augusta 12",
+        latitude: 38.72,
+        longitude: -9.13,
+      }),
+    ).toEqual({ latitude: null, longitude: null });
+  });
+
+  it("writes a new place picked with the new address", () => {
+    expect(
+      coordinatesAfterEdit(stored, {
+        address: "Rua Augusta 12, Lisboa",
+        latitude: 38.71,
+        longitude: -9.137,
+      }),
+    ).toEqual({ latitude: 38.71, longitude: -9.137 });
+  });
+
+  it("leaves the coordinates alone when the address is unchanged", () => {
+    expect(
+      coordinatesAfterEdit(stored, {
+        address: ` ${stored.address} `,
+        latitude: 38.72,
+        longitude: -9.13,
+      }),
+    ).toEqual({ latitude: 38.72, longitude: -9.13 });
+    expect(coordinatesAfterEdit(stored, { name: "x" } as never)).toEqual({
+      latitude: undefined,
+      longitude: undefined,
     });
   });
 });

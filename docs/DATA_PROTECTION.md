@@ -144,11 +144,18 @@ clear here.
 
 A self-hosted instance shares data with a service only when that service is configured.
 
-| Recipient      | Receives                                                                                        | When                           | Location     |
-| -------------- | ----------------------------------------------------------------------------------------------- | ------------------------------ | ------------ |
-| Enable Banking | Bank authorisation; returns account and transaction data                                        | Only where a bank is connected | EEA          |
-| Brevo          | Recipient address and message body of transactional mail we send                                | Only where email is configured | France (EEA) |
-| Portuguese AT  | Test service only: the Portal login, receipt numbers to fetch, and the receipts the owner tests | On a check, a fetch or a test  | Portugal     |
+| Recipient      | Receives                                                                                          | When                           | Location     |
+| -------------- | ------------------------------------------------------------------------------------------------- | ------------------------------ | ------------ |
+| Enable Banking | Bank authorisation; returns account and transaction data                                          | Only where a bank is connected | EEA          |
+| Brevo          | Recipient address and message body of transactional mail we send                                  | Only where email is configured | France (EEA) |
+| Portuguese AT  | Test service only: the Portal login, receipt numbers to fetch, and the receipts the owner tests   | On a check, a fetch or a test  | Portugal     |
+| OpenStreetMap  | A property's street, postal code and city (Nominatim); the browser's map tiles for the area shown | Property form, Portfolio map   | UK / EU      |
+
+**OpenStreetMap** places properties on the Portfolio map. The server asks its geocoder, Nominatim,
+for the coordinates of a property that has an address and none (`lib/services/geocoding/`); the
+request carries the street, postal code and city, never a name, NIF or rent. The property form asks
+Nominatim from the browser as the owner types an address. The map's tiles are fetched by the browser
+from OpenStreetMap's tile servers, which see the viewer's IP address and the area on screen.
 
 **Filings to AT are still simulated.** In the test mode Situs reaches only AT's test service,
 where nothing counts. There it does three things:

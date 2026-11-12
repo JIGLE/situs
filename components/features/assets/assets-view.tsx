@@ -143,7 +143,8 @@ export function AssetsView(): React.ReactElement {
             ref={propertiesViewRef}
             density="compact"
             showPageHeader={false}
-            workspaceDefault={<PortfolioSummary />}
+            map
+            workspaceDefault={(select) => <PortfolioSummary onSelectProperty={select} />}
             treeActions={
               <>
                 <DropdownMenu>

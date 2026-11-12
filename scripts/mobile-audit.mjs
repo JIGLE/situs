@@ -366,6 +366,10 @@ function measure({ touchFail, touchWarn, minFontPx, tolerance }) {
     const r = el.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) continue;
     if (isVisuallyHidden(el)) continue;
+    // A slippy map clips by design: its tiles and panes run past the frame in every direction,
+    // and dragging is how the rest is reached. Only the map element itself is exempt
+    // (`data-audit-map`, the Portfolio map), never what sits inside or around it.
+    if (el.hasAttribute("data-audit-map")) continue;
     containerOverflow.push({
       ...describe(el),
       amount: Math.round(amount),
