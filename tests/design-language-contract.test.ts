@@ -18,6 +18,7 @@ const NOT_DESIGN = new Set([
   "api-envelope-contract.test.ts",
   "bank-rawdata-redaction-contract.test.ts",
   "error-copy-contract.test.ts",
+  "node-version-contract.test.ts",
   "legal-pages-contract.test.ts",
   "page-metadata-contract.test.ts",
   "pii-backfill-contract.test.ts",
