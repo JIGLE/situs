@@ -49,7 +49,20 @@ describe("POST /api/receipts/financas", () => {
         month: { year: 2026, month: 4 },
         fileName: "recibo.pdf",
         parsed: expect.objectContaining({ number: "31", rent: 700 }),
+        allowTermChange: false,
       }),
+    );
+  });
+
+  it("moves the contract's dates only when the owner ticked it", async () => {
+    await send("leaseId=lease-1&month=2026-04&name=recibo.pdf&allowTermChange=1");
+
+    expect(registerReceipt).toHaveBeenCalledWith(
+      "user-1",
+      expect.objectContaining({ allowTermChange: true }),
+    );
+    expect((await send("leaseId=lease-1&month=2026-04&name=x&allowTermChange=yes")).status).toBe(
+      400,
     );
   });
 

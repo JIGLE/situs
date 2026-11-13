@@ -14,6 +14,7 @@ const querySchema = z.object({
   leaseId: z.string().min(1).max(64),
   month: z.string().regex(/^\d{4}-(?:0[1-9]|1[0-2])$/),
   name: z.string().max(200),
+  allowTermChange: z.enum(["0", "1"]),
 });
 
 /**
@@ -21,7 +22,8 @@ const querySchema = z.object({
  * the ledger, for the contract and month the owner confirmed. The body is the PDF; it is read again
  * here rather than trusted from the screen, so the amount, dates and number are the recibo's own.
  * Answers what it did: `create` (the recibo paid the month), `attach` (a payment already there
- * took its number) or `duplicate` (already on file).
+ * took its number) or `duplicate` (already on file). `allowTermChange=1` is the owner's tick to move
+ * the contract's dates to take a month outside them; without it such a month is a 409.
  */
 async function handlePost(request: NextRequest): Promise<Response> {
   const authResult = await requireOwnerAccess(request);
@@ -34,6 +36,7 @@ async function handlePost(request: NextRequest): Promise<Response> {
       leaseId: params.get("leaseId") ?? "",
       month: params.get("month") ?? "",
       name: params.get("name") ?? "",
+      allowTermChange: params.get("allowTermChange") ?? "0",
     },
     querySchema,
   );
@@ -48,6 +51,7 @@ async function handlePost(request: NextRequest): Promise<Response> {
     parsed: parseRentReceipt(upload.pdf.pages),
     pdf: upload.bytes,
     fileName: query.name,
+    allowTermChange: query.allowTermChange === "1",
   });
   return createSuccessResponse(result);
 }

@@ -257,7 +257,7 @@ describe("recibos de renda uploaded — real Prisma client + real SQLite file", 
     expect(await prisma.receipt.count({ where: { leaseId: w.lease.id } })).toBe(0);
   });
 
-  it("moves an active contract's start back to an older recibo's month, waiving the months between", async () => {
+  it("moves an active contract's start back to an older recibo's month only when the owner ticks it", async () => {
     const w = await world("before-start");
 
     const proposal = await lib.proposeReceipt(w.user.id, recibo("2025-10", { rent: 700 }));
@@ -265,7 +265,22 @@ describe("recibos de renda uploaded — real Prisma client + real SQLite file", 
       leaseId: w.lease.id,
       outcome: "extend",
       term: { startDate: "2025-10-01", endDate: null },
+      leaseStart: "2026-01-01",
     });
+
+    // Without the owner's tick, nothing about the contract changes.
+    await expect(
+      lib.registerReceipt(w.user.id, {
+        leaseId: w.lease.id,
+        month: { year: 2025, month: 10 },
+        parsed: recibo("2025-10", { rent: 700, received: 700 }),
+        pdf: PDF,
+        fileName: "recibo.pdf",
+      }),
+    ).rejects.toMatchObject({ reason: "receipt_month_untracked" });
+    const untouched = await prisma.lease.findUniqueOrThrow({ where: { id: w.lease.id } });
+    expect(untouched.startDate.toISOString().slice(0, 10)).toBe("2026-01-01");
+    expect(await prisma.receipt.count({ where: { leaseId: w.lease.id } })).toBe(0);
 
     const result = await lib.registerReceipt(w.user.id, {
       leaseId: w.lease.id,
@@ -273,6 +288,7 @@ describe("recibos de renda uploaded — real Prisma client + real SQLite file", 
       parsed: recibo("2025-10", { rent: 700, received: 700 }),
       pdf: PDF,
       fileName: "recibo.pdf",
+      allowTermChange: true,
     });
 
     expect(result.outcome).toBe("create");
@@ -311,7 +327,7 @@ describe("recibos de renda uploaded — real Prisma client + real SQLite file", 
     expect(await prisma.receipt.count({ where: { leaseId: w.lease.id } })).toBe(2);
   });
 
-  it("carries a lapsed term forward a year at a time to take a later recibo", async () => {
+  it("carries a lapsed term forward a year at a time, with no tick: the contract renews on its own", async () => {
     const w = await world("after-end");
 
     expect((await lib.proposeReceipt(w.user.id, recibo("2027-02"))).term).toEqual({
