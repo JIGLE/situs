@@ -36,8 +36,12 @@ export interface Property {
   latitude?: number;
   longitude?: number;
   addressVerified?: boolean;
+  /** How exactly the coordinates place it; "area" is only its postal code or town. */
+  locationPrecision?: "exact" | "street" | "area" | "pinned" | null;
   // Building grouping
-  buildingId?: string;
+  buildingId?: string | null;
+  /** The fração's permilagem (‰) in its building, what a building expense is split by. */
+  permilage?: number | null;
   buildingName?: string;
 
   type: "apartment" | "house" | "condo" | "townhouse" | "commercial" | "other";
@@ -227,6 +231,9 @@ export interface Expense {
   bankTransactionId?: string | null;
   /** A recurring month the bank should have shown being paid by now, and did not. */
   notSeenInBank?: boolean;
+  /** The building expense this is one unit's part of; it is changed through the building. */
+  buildingExpenseId?: string | null;
+  building?: { id: string; name: string; totalAmount: number } | null;
   createdAt: string;
   updatedAt: string;
 }

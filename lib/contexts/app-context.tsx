@@ -20,7 +20,8 @@ export type { AppState, AppAction } from "./app-reducer";
 interface AppContextValue {
   state: AppState;
   dispatch: React.Dispatch<AppAction>;
-  addBuilding: (data: Partial<Building>) => Promise<void>;
+  /** Creates a building and answers it, so the screen can open it to choose its units. */
+  addBuilding: (data: Partial<Building>) => Promise<Building>;
   updateBuilding: (id: string, data: Partial<Building>) => Promise<void>;
   deleteBuilding: (id: string) => Promise<void>;
   addProperty: (data: Partial<Property>) => Promise<void>;
@@ -85,7 +86,7 @@ export function AppProvider({ children }: { children: ReactNode }): React.ReactE
     () => ({
       state,
       dispatch,
-      addBuilding: (d) => buildingActions.add(d) as unknown as Promise<void>,
+      addBuilding: (d) => buildingActions.add(d) as unknown as Promise<Building>,
       updateBuilding: (id, d) => buildingActions.update(id, d) as unknown as Promise<void>,
       deleteBuilding: (id) => buildingActions.remove(id),
       addProperty: (d) => propertyActions.add(d) as unknown as Promise<void>,

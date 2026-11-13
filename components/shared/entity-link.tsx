@@ -15,7 +15,7 @@ const STATUS_TONE: Record<NonNullable<EntityLinkProps["statusVariant"]>, StatusT
   default: "neutral",
 };
 
-type EntityType = "property" | "tenant" | "owner" | "lease" | "document" | "receipt";
+type EntityType = "property" | "building" | "tenant" | "owner" | "lease" | "document" | "receipt";
 
 /**
  * Entities with `overlay: true` open the shared `?detail=<type>:<id>` overlay
@@ -33,6 +33,7 @@ const ENTITY_CONFIG: Record<
   }
 > = {
   property: { icon: Building2, overlay: true, color: "text-[var(--color-muted-foreground)]" },
+  building: { icon: Building2, overlay: true, color: "text-[var(--color-muted-foreground)]" },
   tenant: { icon: Users, overlay: true, color: "text-[var(--color-muted-foreground)]" },
   owner: { icon: UserCircle, overlay: true, color: "text-[var(--color-muted-foreground)]" },
   lease: { icon: FileText, overlay: true, color: "text-[var(--color-muted-foreground)]" },

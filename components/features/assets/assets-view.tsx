@@ -94,7 +94,7 @@ export function AssetsView(): React.ReactElement {
     if (!buildingForm.name.trim()) return;
     setBuildingSubmitting(true);
     try {
-      await addBuilding({
+      const created = await addBuilding({
         name: buildingForm.name.trim(),
         address: buildingForm.address.trim(),
         city: buildingForm.city.trim(),
@@ -104,6 +104,8 @@ export function AssetsView(): React.ReactElement {
       success(t("toastBuildingCreated"));
       setBuildingDialogOpen(false);
       setBuildingForm({ name: "", address: "", city: "" });
+      // Straight on to its units: a building is made to hold frações.
+      if (created?.id) router.push(`/portfolio?detail=building:${created.id}`);
     } catch {
       // The action has already reported the failure; the dialog stays open for another try.
     } finally {

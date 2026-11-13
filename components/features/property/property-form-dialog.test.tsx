@@ -13,6 +13,7 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders, screen, waitFor } from "@/tests/helpers/render-with-providers";
 import ptMessages from "@/messages/pt.json";
 import { PropertyFormDialog, type PropertyFormDialogRef } from "./property-form-dialog";
+import { lookupAddress } from "./address-lookup";
 
 const { app, toast } = vi.hoisted(() => ({
   app: { addProperty: vi.fn(), updateProperty: vi.fn() },
@@ -20,6 +21,8 @@ const { app, toast } = vi.hoisted(() => ({
 }));
 
 beforeAll(() => {
+  // The address box scrolls itself into view on focus; jsdom has no layout to scroll.
+  Element.prototype.scrollIntoView ??= () => {};
   // The maintenance switch (Radix) measures itself, which jsdom does not implement.
   if (typeof globalThis.ResizeObserver !== "function") {
     globalThis.ResizeObserver = class {
@@ -31,6 +34,18 @@ beforeAll(() => {
 });
 
 vi.mock("@/lib/contexts/app-context", () => ({ useApp: () => app }));
+// The map is out of reach in a test: the form saves, as it does when the geocoder is down.
+vi.mock("./address-lookup", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./address-lookup")>()),
+  lookupAddress: vi.fn().mockResolvedValue({ state: "unreachable" }),
+}));
+// Suggestions as the owner types come from the browser; none in a test.
+vi.mock("@/lib/utils/address-verification", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/utils/address-verification")>();
+  actual.AddressVerificationService.searchAddresses = async () => [];
+  return actual;
+});
+vi.mock("@/lib/contexts/csrf-context", () => ({ useCsrf: () => ({ token: "csrf" }) }));
 vi.mock("@/lib/contexts/toast-context", () => ({ useToast: () => toast }));
 vi.mock("@/lib/contexts/currency-context", () => ({
   useCurrency: () => ({ currencySymbol: "€", formatCurrency: (n: number) => `€${n}` }),
@@ -145,5 +160,52 @@ describe("PropertyFormDialog", () => {
         /Add New Property|Address \*|Verified|Edit manually|Monthly Rent|Add details/,
       ),
     ).not.toBeInTheDocument();
+  });
+
+  // An address the map cannot place was saved as it was, and never appeared on the map.
+  it("refuses an address it typed that the map cannot find, and opens the map", async () => {
+    vi.mocked(lookupAddress).mockResolvedValue({ state: "notFound" });
+    const ref = createRef<PropertyFormDialogRef>();
+    const user = userEvent.setup();
+    renderWithProviders(<PropertyFormDialog ref={ref} />, { initialLocale: "pt" });
+    act(() => {
+      ref.current!.openDialog({ name: "Casa", rent: 500 });
+    });
+    await user.type(
+      await screen.findByLabelText(`${ptMessages.forms.address} *`),
+      "Rua que não existe 99",
+    );
+    await user.click(screen.getByRole("button", { name: ptMessages.actions.create }));
+
+    expect(await screen.findByText(ptMessages.properties.location.notFoundError)).toBeVisible();
+    expect(app.addProperty).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", { name: ptMessages.properties.location.hideMap }),
+    ).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("saves the place the map found for the address", async () => {
+    vi.mocked(lookupAddress).mockResolvedValue({
+      state: "found",
+      found: { latitude: 38.71, longitude: -9.137, precision: "exact", displayName: "x" },
+    });
+    const ref = createRef<PropertyFormDialogRef>();
+    const user = userEvent.setup();
+    renderWithProviders(<PropertyFormDialog ref={ref} />, { initialLocale: "pt" });
+    act(() => {
+      ref.current!.openDialog({ name: "Casa", rent: 500 });
+    });
+    await user.type(
+      await screen.findByLabelText(`${ptMessages.forms.address} *`),
+      "Rua Augusta 12, Lisboa",
+    );
+    await user.click(screen.getByRole("button", { name: ptMessages.actions.create }));
+
+    await waitFor(() => expect(app.addProperty).toHaveBeenCalledTimes(1));
+    expect(app.addProperty.mock.calls[0][0]).toMatchObject({
+      latitude: 38.71,
+      longitude: -9.137,
+      locationPrecision: "exact",
+    });
   });
 });

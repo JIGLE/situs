@@ -37,7 +37,9 @@ export function EntityDetailOverlay({
       <SheetContent side="center" className="p-0">
         <SheetTitle className="sr-only">{title}</SheetTitle>
         <SheetDescription className="sr-only">{description}</SheetDescription>
-        <div className="flex flex-col h-full">
+        {/* Capped as the sheet is: under `md:h-auto` the sheet's own ceiling does not reach a
+            child's `h-full`, so a long detail ran past the frame instead of scrolling inside it. */}
+        <div className="flex h-full flex-col md:max-h-[calc(100dvh-6.5rem)]">
           {fullPageHref && (
             <div className="flex justify-start px-6 pt-4">
               <Link
@@ -48,7 +50,7 @@ export function EntityDetailOverlay({
               </Link>
             </div>
           )}
-          <div className="overflow-y-auto flex-1">
+          <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="mx-auto w-full max-w-5xl p-6 h-full">{children}</div>
           </div>
         </div>

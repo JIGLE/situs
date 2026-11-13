@@ -11,6 +11,7 @@ import { apiFetch } from "@/lib/utils/api-client";
 import { useCsrf } from "@/lib/contexts/csrf-context";
 import { useTheme } from "@/lib/contexts/theme-context";
 import { groupPins, type Pin } from "./portfolio-map-pins";
+import { PORTUGAL_CENTER, TILE_FILTER, TILE_URL } from "./map-tiles";
 
 /**
  * The Portfolio's map: every property with a place, as a pin, behind the workspace on desktop.
@@ -23,16 +24,8 @@ import { groupPins, type Pin } from "./portfolio-map-pins";
  * Leaflet is loaded in the browser only: it reads `window` as it is imported.
  */
 
-const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
-/** Portugal's mainland, for a portfolio with nothing placed yet. */
-const PORTUGAL_CENTER: [number, number] = [39.6, -8.0];
 /** Close enough to read the street names around the selected property. */
 const SELECTED_ZOOM = 16;
-
-const TILE_FILTER = {
-  normal: "grayscale(1) contrast(0.92) brightness(1.04)",
-  dark: "grayscale(1) invert(1) contrast(0.85) brightness(0.82)",
-} as const;
 
 export interface PortfolioMapProps {
   properties: Property[];

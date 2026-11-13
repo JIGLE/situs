@@ -1,5 +1,5 @@
 import { getPrismaClient } from "@/lib/services/database/database";
-import { alreadyFailed, geocode, type GeocodeDeps } from "./nominatim";
+import { alreadyFailed, locate, type GeocodeDeps, type LocationPrecision } from "./nominatim";
 
 /** How many properties one request places: Nominatim's one a second keeps a request short. */
 export const GEOCODE_BATCH = 4;
@@ -8,6 +8,7 @@ export interface PlacedProperty {
   id: string;
   latitude: number;
   longitude: number;
+  precision: LocationPrecision;
 }
 
 export interface GeocodeBatchResult {
@@ -39,15 +40,26 @@ export async function placeMissingProperties(
 
   const placed: PlacedProperty[] = [];
   for (const property of batch) {
-    const found = await geocode(property, deps);
+    const found = await locate(property, deps);
     if (!found) continue;
     // Scoped by owner as well as id, and only while still unplaced: an address the owner picked in
     // the form while this ran is not overwritten.
     const { count } = await prisma.property.updateMany({
       where: { id: property.id, userId, latitude: null },
-      data: { latitude: found.latitude, longitude: found.longitude },
+      data: {
+        latitude: found.latitude,
+        longitude: found.longitude,
+        locationPrecision: found.precision,
+      },
     });
-    if (count === 1) placed.push({ id: property.id, ...found });
+    if (count === 1) {
+      placed.push({
+        id: property.id,
+        latitude: found.latitude,
+        longitude: found.longitude,
+        precision: found.precision,
+      });
+    }
   }
 
   const remaining = candidates.slice(batch.length).length;

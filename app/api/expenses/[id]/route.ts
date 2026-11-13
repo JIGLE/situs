@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { assertNotBuildingPart } from "@/lib/services/buildings/expenses";
 import { requireAuth, handleOptions } from "@/lib/services/auth/auth-middleware";
 import {
   createErrorResponse,
@@ -103,6 +104,8 @@ async function handlePut(
     if (!existing) {
       return createErrorResponse(new Error("Expense not found"), 404, request);
     }
+    // A unit's part of a building expense is changed through the building, which splits it again.
+    assertNotBuildingPart(existing);
 
     const body = await readJsonObject(request);
 
@@ -205,6 +208,8 @@ async function handleDelete(
     if (!existing) {
       return createErrorResponse(new Error("Expense not found"), 404, request);
     }
+    // A unit's part of a building expense is changed through the building, which splits it again.
+    assertNotBuildingPart(existing);
 
     // The movement that paid it goes back to the inbox, rather than reading as dealt with.
     await prisma.$transaction([

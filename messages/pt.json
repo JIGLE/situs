@@ -827,7 +827,10 @@
       "bankMovementNotOutgoing": "Só dinheiro que sai pode ser registado como despesa.",
       "bankMovementLinked": "Este movimento já está ligado. Desligue-o primeiro.",
       "bankMovementNotLinked": "Este movimento não está ligado a nenhuma despesa.",
-      "expenseAlreadyLinked": "Essa despesa já está paga por outro movimento."
+      "expenseAlreadyLinked": "Essa despesa já está paga por outro movimento.",
+      "buildingHasExpenses": "Este prédio tem despesas partilhadas. Elimine-as primeiro.",
+      "expenseFromBuilding": "Esta despesa é a parte de uma fração numa despesa do prédio. Altere-a no prédio.",
+      "buildingExpenseLinked": "Um movimento do banco pagou parte desta despesa. Desligue-o primeiro."
     }
   },
   "payments": {
@@ -1245,7 +1248,35 @@
     "editManually": "Editar manualmente",
     "hideFields": "Ocultar campos",
     "addDetails": "Adicionar detalhes (quartos, casas de banho, descrição)",
-    "hideDetails": "Ocultar detalhes"
+    "hideDetails": "Ocultar detalhes",
+    "location": {
+      "mapLabel": "Mapa para marcar o imóvel",
+      "pinTitle": "Local do imóvel",
+      "looking": "A procurar no mapa…",
+      "onMap": "Encontrada no mapa",
+      "onMapStreet": "Encontrada a rua, não a porta. Confirme o pino no mapa.",
+      "approximate": "Só encontrámos o código postal ou a localidade. Marque a porta no mapa.",
+      "notFound": "Morada não encontrada no mapa. Corrija-a ou marque o local no mapa.",
+      "unreachable": "Não foi possível consultar o mapa agora.",
+      "notPlaced": "Ainda não está no mapa.",
+      "pinned": "Marcado por si no mapa",
+      "pickOnMap": "Marcar no mapa",
+      "moveOnMap": "Ver no mapa",
+      "hideMap": "Fechar mapa",
+      "pinHint": "Toque no mapa para pôr o pino, ou arraste-o até à porta.",
+      "atPin": "Neste ponto: {address}",
+      "useAddress": "Usar esta morada",
+      "notFoundError": "O mapa não encontra esta morada. Corrija-a ou marque o local no mapa.",
+      "approximateError": "O mapa só encontra o código postal ou a localidade. Corrija a rua ou marque a porta no mapa.",
+      "zoomIn": "Aproximar",
+      "zoomOut": "Afastar"
+    },
+    "building": {
+      "label": "Prédio",
+      "none": "Nenhum (imóvel isolado)",
+      "permilage": "Permilagem (‰)",
+      "permilageHint": "Do título constitutivo ou da caderneta. Reparte as despesas do prédio."
+    }
   },
   "financial": {
     "title": "Financeiro",
@@ -1676,7 +1707,8 @@
     },
     "paidFromBank": "Pago pelo banco",
     "notSeenInBank": "Não visto no banco",
-    "paidByOwner": "Pago por {name}"
+    "paidByOwner": "Pago por {name}",
+    "buildingPart": "Parte de uma despesa de {building} ({total})"
   },
   "propertyDetail": {
     "tabs": {
@@ -1760,7 +1792,12 @@
       "description": "“{name}” será removido. Um imóvel com contratos, recibos ou despesas não pode ser eliminado.",
       "confirmLabel": "Eliminar",
       "done": "“{name}” eliminado"
-    }
+    },
+    "location": {
+      "notOnMap": "Não está no mapa. Marcar no mapa",
+      "approximate": "No mapa só pelo código postal. Marcar a porta"
+    },
+    "building": "Prédio"
   },
   "notificationCenter": {
     "title": "Notificações",
@@ -1807,7 +1844,8 @@
     "collapse": "Recolher painel",
     "expand": "Expandir painel",
     "closeWorkspace": "Fechar",
-    "flyoutDescription": "Selecione um ativo para abrir a sua área de trabalho"
+    "flyoutDescription": "Selecione um ativo para abrir a sua área de trabalho",
+    "openBuilding": "Abrir o prédio {name}"
   },
   "entityOverlay": {
     "openFullPage": "Abrir página completa",
@@ -1831,6 +1869,10 @@
     "document": {
       "title": "Detalhes do documento",
       "description": "Detalhes do documento {name}"
+    },
+    "building": {
+      "title": "Prédio",
+      "description": "Frações e despesas de {name}"
     }
   },
   "language": {
@@ -2320,6 +2362,61 @@
         "chosen": "Será registado em {month}",
         "paid": "Já pago em {month}: nada muda"
       }
+    }
+  },
+  "buildings": {
+    "notFound": "Prédio não encontrado.",
+    "summary": "{count, plural, =0 {Sem frações} one {# fração} other {# frações}}",
+    "edit": "Editar",
+    "delete": "Eliminar prédio",
+    "toastSaved": "Prédio atualizado",
+    "deleteTitle": "Eliminar o prédio?",
+    "deleteDescription": "{name} deixa de existir. {count, plural, =0 {} one {A fração fica como imóvel isolado.} other {As # frações ficam como imóveis isolados.}}",
+    "fields": {
+      "name": "Nome",
+      "address": "Morada",
+      "city": "Localidade"
+    },
+    "units": {
+      "title": "Frações",
+      "choose": "Escolher frações",
+      "empty": "Ainda sem frações. Escolha os imóveis que fazem parte deste prédio.",
+      "hint": "Marque os imóveis deste prédio e escreva a permilagem de cada um, se a souber.",
+      "inOther": "Agora em {building}",
+      "permilageOf": "Permilagem de {unit}",
+      "invalid": "A permilagem é um número entre 0 e 1000.",
+      "noneChosen": "Nenhum imóvel marcado.",
+      "total": "Soma das permilagens: {total}‰. As despesas do prédio repartem-se por elas.",
+      "equalFallback": "Falta a permilagem de alguma fração: as despesas do prédio repartem-se em partes iguais.",
+      "save": "Guardar {count, plural, one {# fração} other {# frações}}",
+      "toastSaved": "{count, plural, =0 {Prédio sem frações} one {# fração no prédio} other {# frações no prédio}}"
+    },
+    "expenses": {
+      "title": "Despesas do prédio",
+      "add": "Registar despesa",
+      "hint": "Uma despesa do prédio (condomínio, luz da escada, seguro, obras) reparte-se pelas frações e cada parte pelos coproprietários da fração, pelas suas percentagens.",
+      "empty": "Sem despesas do prédio.",
+      "category": "Categoria",
+      "amount": "Valor total (€)",
+      "amountRequired": "Indique o valor.",
+      "date": "Data",
+      "vendor": "Fornecedor",
+      "description": "Descrição",
+      "deductible": "Dedutível no IRS (Anexo F)",
+      "sharedBy": "Repartida por",
+      "noUnits": "Marque pelo menos uma fração.",
+      "byPermilage": "Repartida pela permilagem de cada fração.",
+      "byEqualParts": "Repartida em partes iguais: falta a permilagem de alguma fração.",
+      "basisPermilage": "por permilagem",
+      "basisEqual": "em partes iguais",
+      "notDeductible": "não dedutível",
+      "edit": "Editar despesa",
+      "delete": "Eliminar despesa",
+      "deleteTitle": "Eliminar a despesa do prédio?",
+      "deleteDescription": "{amount} e a {count, plural, one {parte de # fração} other {parte de cada uma das # frações}} são eliminados.",
+      "toastCreated": "Despesa do prédio registada",
+      "toastUpdated": "Despesa do prédio atualizada",
+      "toastDeleted": "Despesa do prédio eliminada"
     }
   }
 }

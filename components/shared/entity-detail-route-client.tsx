@@ -6,6 +6,7 @@ import { PropertyDetailOverlayClient } from "@/components/features/property/prop
 import { TenantDetailOverlayClient } from "@/components/features/tenant/tenant-detail-overlay-client";
 import { OwnerDetailOverlayClient } from "@/components/features/owner/owner-detail-overlay-client";
 import { LeaseDetailOverlayClient } from "@/components/features/lease/lease-detail-overlay-client";
+import { BuildingDetailOverlayClient } from "@/components/features/building/building-detail-overlay-client";
 
 /**
  * Mounted once in the authenticated shell (`app/[locale]/(main)/layout.tsx`),
@@ -28,6 +29,8 @@ export function EntityDetailRouteClient() {
       return <OwnerDetailOverlayClient id={detail.id} />;
     case "lease":
       return <LeaseDetailOverlayClient id={detail.id} />;
+    case "building":
+      return <BuildingDetailOverlayClient id={detail.id} />;
     default:
       return null;
   }

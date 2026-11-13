@@ -26,6 +26,7 @@ function toProperty(row: PropertyRow, status: Property["status"] | undefined): P
     latitude: p.latitude || undefined,
     longitude: p.longitude || undefined,
     addressVerified: p.addressVerified || false,
+    locationPrecision: (p.locationPrecision as Property["locationPrecision"]) ?? null,
     buildingId: p.buildingId || undefined,
     buildingName: building?.name || p.buildingName || undefined,
     description: p.description || undefined,
@@ -47,6 +48,7 @@ const ADDRESS_SELECT = {
   zipCode: true,
   latitude: true,
   longitude: true,
+  locationPrecision: true,
 } as const;
 
 type StoredAddress = Prisma.PropertyGetPayload<{ select: typeof ADDRESS_SELECT }>;
@@ -60,9 +62,22 @@ type StoredAddress = Prisma.PropertyGetPayload<{ select: typeof ADDRESS_SELECT }
 export function coordinatesAfterEdit(
   existing: StoredAddress,
   data: Partial<
-    Pick<Property, "address" | "streetAddress" | "city" | "zipCode" | "latitude" | "longitude">
+    Pick<
+      Property,
+      | "address"
+      | "streetAddress"
+      | "city"
+      | "zipCode"
+      | "latitude"
+      | "longitude"
+      | "locationPrecision"
+    >
   >,
-): { latitude: number | null | undefined; longitude: number | null | undefined } {
+): {
+  latitude: number | null | undefined;
+  longitude: number | null | undefined;
+  locationPrecision: Property["locationPrecision"] | undefined;
+} {
   const norm = (v: string | null | undefined) => (v ?? "").trim();
   const changed = (["address", "streetAddress", "city", "zipCode"] as const).some(
     (field) => data[field] !== undefined && norm(data[field]) !== norm(existing[field]),
@@ -71,8 +86,16 @@ export function coordinatesAfterEdit(
     data.latitude !== undefined &&
     data.longitude !== undefined &&
     (data.latitude !== existing.latitude || data.longitude !== existing.longitude);
-  if (changed && !newPlace) return { latitude: null, longitude: null };
-  return { latitude: data.latitude, longitude: data.longitude };
+  // The owner's own pin stays where they put it while they correct the words of the address.
+  const pinned = (data.locationPrecision ?? existing.locationPrecision) === "pinned";
+  if (changed && !newPlace && !pinned) {
+    return { latitude: null, longitude: null, locationPrecision: null };
+  }
+  return {
+    latitude: data.latitude,
+    longitude: data.longitude,
+    locationPrecision: data.locationPrecision,
+  };
 }
 
 export const propertyService = {
@@ -115,8 +138,10 @@ export const propertyService = {
         zipCode: data.zipCode,
         latitude: data.latitude,
         longitude: data.longitude,
+        locationPrecision: data.latitude != null ? (data.locationPrecision ?? null) : null,
         addressVerified: data.addressVerified,
         buildingId: data.buildingId,
+        permilage: data.permilage ?? null,
         buildingName: data.buildingName,
         type: data.type as PropertyType,
         // Unknown is NULL: Finanças does not say how many rooms a property has.
@@ -150,7 +175,11 @@ export const propertyService = {
     });
     const coordinates = existing
       ? coordinatesAfterEdit(existing, data)
-      : { latitude: data.latitude, longitude: data.longitude };
+      : {
+          latitude: data.latitude,
+          longitude: data.longitude,
+          locationPrecision: data.locationPrecision,
+        };
 
     const property = await getPrismaClient().property.update({
       where: { id, userId },
@@ -162,8 +191,10 @@ export const propertyService = {
         zipCode: data.zipCode,
         latitude: coordinates.latitude,
         longitude: coordinates.longitude,
+        locationPrecision: coordinates.locationPrecision,
         addressVerified: data.addressVerified,
         buildingId: data.buildingId,
+        permilage: data.permilage,
         buildingName: data.buildingName,
         type: data.type as PropertyType,
         bedrooms: data.bedrooms,

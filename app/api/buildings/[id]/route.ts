@@ -9,6 +9,7 @@ import {
 } from "@/lib/utils/error-handling";
 import { getPrismaClient } from "@/lib/services/database/database";
 import { buildingSchema } from "@/lib/schemas/building.schema";
+import { ConflictError } from "@/lib/utils/error-handling";
 
 async function handlePut(
   request: NextRequest,
@@ -60,6 +61,17 @@ async function handleDelete(
 
   const existing = await prisma.building.findFirst({ where: { id, userId } });
   if (!existing) return createErrorResponse(new Error("Building not found"), 404, request);
+
+  // Its shared expenses are on the units' books: deleting the building would orphan the record of
+  // how they were split, so they are deleted first, by hand (`building_expenses` restricts).
+  const expenses = await prisma.buildingExpense.count({ where: { buildingId: id, userId } });
+  if (expenses > 0) {
+    return createErrorResponse(
+      new ConflictError("The building has shared expenses", "building_has_expenses"),
+      409,
+      request,
+    );
+  }
 
   await prisma.building.delete({ where: { id } });
 

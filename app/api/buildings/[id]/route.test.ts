@@ -8,17 +8,21 @@ import { NextRequest } from "next/server";
  * through `parseBody`, like every other route.
  */
 
-const { requireAuthMock, findFirstMock, updateMock, deleteMock } = vi.hoisted(() => ({
-  requireAuthMock: vi.fn(),
-  findFirstMock: vi.fn(),
-  updateMock: vi.fn(),
-  deleteMock: vi.fn(),
-}));
+const { requireAuthMock, findFirstMock, updateMock, deleteMock, countExpensesMock } = vi.hoisted(
+  () => ({
+    countExpensesMock: vi.fn().mockResolvedValue(0),
+    requireAuthMock: vi.fn(),
+    findFirstMock: vi.fn(),
+    updateMock: vi.fn(),
+    deleteMock: vi.fn(),
+  }),
+);
 
 vi.mock("@/lib/services/auth/auth-middleware", () => ({ requireAuth: requireAuthMock }));
 vi.mock("@/lib/services/database/database", () => ({
   getPrismaClient: () => ({
     building: { findFirst: findFirstMock, update: updateMock, delete: deleteMock },
+    buildingExpense: { count: countExpensesMock },
   }),
 }));
 
@@ -100,6 +104,17 @@ describe("DELETE /api/buildings/[id]", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     requireAuthMock.mockResolvedValue({ userId: "user-1" });
     findFirstMock.mockResolvedValue({ id: "b1", userId: "user-1" });
+    countExpensesMock.mockResolvedValue(0);
+  });
+
+  it("keeps a building with shared expenses, whose parts are on its units' books", async () => {
+    countExpensesMock.mockResolvedValue(2);
+
+    const res = await DELETE(request("DELETE"), context);
+
+    expect(res.status).toBe(409);
+    expect((await res.json()).reason).toBe("building_has_expenses");
+    expect(deleteMock).not.toHaveBeenCalled();
   });
 
   it("removes the caller's building, found by its id and their own", async () => {

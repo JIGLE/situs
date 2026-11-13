@@ -1,5 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { geocode, geocodeQueries, resetGeocoderForTests, alreadyFailed } from "./nominatim";
+import {
+  alreadyFailed,
+  geocode,
+  geocodeQueries,
+  locate,
+  precisionOf,
+  resetGeocoderForTests,
+  reverseGeocode,
+  toReverseAddress,
+} from "./nominatim";
 
 /** What an import from a caderneta writes (`lib/services/financas-import/caderneta.ts`). */
 const IMPORTED = {
@@ -72,5 +81,85 @@ describe("geocode", () => {
     const fetch = vi.fn().mockResolvedValue(answer({}, 429));
     await expect(geocode(IMPORTED, { fetch, wait })).rejects.toThrow("429");
     expect(alreadyFailed(IMPORTED)).toBe(false);
+  });
+});
+
+describe("precisionOf", () => {
+  it("reads a house as the door, a road as the street, anything wider as the area", () => {
+    const street = { street: "Rua de Angola 25", city: "Lisboa" };
+    expect(precisionOf(30, street)).toBe("exact");
+    expect(precisionOf(26, street)).toBe("street");
+    expect(precisionOf(21, street)).toBe("area");
+    expect(precisionOf(undefined, street)).toBe("area");
+  });
+
+  it("calls whatever a postal code or a town finds an area, however precise its rank", () => {
+    expect(precisionOf(30, { postalcode: "1170-020" })).toBe("area");
+    expect(precisionOf(30, { city: "Lisboa" })).toBe("area");
+  });
+});
+
+describe("locate", () => {
+  beforeEach(() => resetGeocoderForTests());
+  const wait = async () => {};
+
+  it("says the postal-code fallback is only an area", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(answer([]))
+      .mockResolvedValueOnce(answer([]))
+      .mockResolvedValueOnce(
+        answer([{ lat: "38.73", lon: "-9.13", place_rank: 25, display_name: "1170-020, Lisboa" }]),
+      );
+    await expect(locate(IMPORTED, { fetch, wait })).resolves.toEqual({
+      latitude: 38.73,
+      longitude: -9.13,
+      precision: "area",
+      displayName: "1170-020, Lisboa",
+    });
+  });
+
+  it("says a house found by its street is the door", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(answer([{ lat: "38.7", lon: "-9.1", place_rank: 30, display_name: "x" }]));
+    await expect(locate(IMPORTED, { fetch, wait })).resolves.toMatchObject({ precision: "exact" });
+  });
+});
+
+describe("reverseGeocode", () => {
+  beforeEach(() => resetGeocoderForTests());
+
+  it("splits the address at a point as the form keeps it", async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      answer({
+        display_name: "25, Rua de Angola, Arroios, Lisboa, 1170-020, Portugal",
+        address: { house_number: "25", road: "Rua de Angola", postcode: "1170020", city: "Lisboa" },
+      }),
+    );
+    await expect(
+      reverseGeocode({ latitude: 38.7, longitude: -9.1 }, { fetch, wait: async () => {} }),
+    ).resolves.toEqual({
+      streetAddress: "Rua de Angola 25",
+      zipCode: "1170-020",
+      city: "Lisboa",
+      displayName: "25, Rua de Angola, Arroios, Lisboa, 1170-020, Portugal",
+    });
+    expect(String(fetch.mock.calls[0][0])).toContain("/reverse?");
+  });
+
+  it("answers null where Nominatim names nothing", async () => {
+    const fetch = vi.fn().mockResolvedValue(answer({ error: "Unable to geocode" }));
+    await expect(
+      reverseGeocode({ latitude: 0, longitude: 0 }, { fetch, wait: async () => {} }),
+    ).resolves.toBeNull();
+  });
+
+  it("takes the town where there is no city", () => {
+    expect(toReverseAddress({ road: "Rua Direita", town: "Óbidos" }, "")).toMatchObject({
+      streetAddress: "Rua Direita",
+      city: "Óbidos",
+      zipCode: "",
+    });
   });
 });

@@ -827,7 +827,10 @@
       "bankMovementNotOutgoing": "Solo el dinero que sale puede registrarse como gasto.",
       "bankMovementLinked": "Este movimiento ya está vinculado. Desvincúlalo primero.",
       "bankMovementNotLinked": "Este movimiento no está vinculado a ningún gasto.",
-      "expenseAlreadyLinked": "Ese gasto ya está pagado por otro movimiento."
+      "expenseAlreadyLinked": "Ese gasto ya está pagado por otro movimiento.",
+      "buildingHasExpenses": "Este edificio tiene gastos compartidos. Elimínelos primero.",
+      "expenseFromBuilding": "Este gasto es la parte de una unidad en un gasto del edificio. Cámbielo en el edificio.",
+      "buildingExpenseLinked": "Un movimiento bancario pagó parte de este gasto. Desvincúlelo primero."
     }
   },
   "payments": {
@@ -1245,7 +1248,35 @@
     "editManually": "Editar manualmente",
     "hideFields": "Ocultar campos",
     "addDetails": "Añadir detalles (dormitorios, baños, descripción)",
-    "hideDetails": "Ocultar detalles"
+    "hideDetails": "Ocultar detalles",
+    "location": {
+      "mapLabel": "Mapa para marcar el inmueble",
+      "pinTitle": "Ubicación del inmueble",
+      "looking": "Buscando en el mapa…",
+      "onMap": "Encontrada en el mapa",
+      "onMapStreet": "Encontrada la calle, no el portal. Revise el pin en el mapa.",
+      "approximate": "Solo encontramos el código postal o la localidad. Marque el portal en el mapa.",
+      "notFound": "Dirección no encontrada en el mapa. Corríjala o marque el lugar en el mapa.",
+      "unreachable": "No se pudo consultar el mapa ahora.",
+      "notPlaced": "Aún no está en el mapa.",
+      "pinned": "Marcado por usted en el mapa",
+      "pickOnMap": "Marcar en el mapa",
+      "moveOnMap": "Ver en el mapa",
+      "hideMap": "Cerrar mapa",
+      "pinHint": "Toque el mapa para poner el pin, o arrástrelo hasta el portal.",
+      "atPin": "En este punto: {address}",
+      "useAddress": "Usar esta dirección",
+      "notFoundError": "El mapa no encuentra esta dirección. Corríjala o marque el lugar en el mapa.",
+      "approximateError": "El mapa solo encuentra el código postal o la localidad. Corrija la calle o marque el portal en el mapa.",
+      "zoomIn": "Acercar",
+      "zoomOut": "Alejar"
+    },
+    "building": {
+      "label": "Edificio",
+      "none": "Ninguno (independiente)",
+      "permilage": "Coeficiente (‰)",
+      "permilageHint": "De la escritura de división horizontal. Reparte los gastos del edificio."
+    }
   },
   "financial": {
     "title": "Finanzas",
@@ -1676,7 +1707,8 @@
     },
     "paidFromBank": "Pagado por el banco",
     "notSeenInBank": "No visto en el banco",
-    "paidByOwner": "Pagado por {name}"
+    "paidByOwner": "Pagado por {name}",
+    "buildingPart": "Parte de un gasto de {building} ({total})"
   },
   "propertyDetail": {
     "tabs": {
@@ -1760,7 +1792,12 @@
       "description": "“{name}” se eliminará. Un inmueble con contratos, recibos o gastos no se puede eliminar.",
       "confirmLabel": "Eliminar",
       "done": "“{name}” eliminado"
-    }
+    },
+    "location": {
+      "notOnMap": "No está en el mapa. Marcar en el mapa",
+      "approximate": "En el mapa solo por código postal. Marcar el portal"
+    },
+    "building": "Edificio"
   },
   "notificationCenter": {
     "title": "Notificaciones",
@@ -1807,7 +1844,8 @@
     "collapse": "Contraer panel",
     "expand": "Expandir panel",
     "closeWorkspace": "Cerrar",
-    "flyoutDescription": "Seleccione un activo para abrir su espacio de trabajo"
+    "flyoutDescription": "Seleccione un activo para abrir su espacio de trabajo",
+    "openBuilding": "Abrir el edificio {name}"
   },
   "entityOverlay": {
     "openFullPage": "Abrir página completa",
@@ -1831,6 +1869,10 @@
     "document": {
       "title": "Detalles del documento",
       "description": "Detalles del documento {name}"
+    },
+    "building": {
+      "title": "Edificio",
+      "description": "Unidades y gastos de {name}"
     }
   },
   "language": {
@@ -2320,6 +2362,61 @@
         "chosen": "Se registrará en {month}",
         "paid": "Ya pagado en {month}: nada cambia"
       }
+    }
+  },
+  "buildings": {
+    "notFound": "Edificio no encontrado.",
+    "summary": "{count, plural, =0 {Sin unidades} one {# unidad} other {# unidades}}",
+    "edit": "Editar",
+    "delete": "Eliminar edificio",
+    "toastSaved": "Edificio actualizado",
+    "deleteTitle": "¿Eliminar el edificio?",
+    "deleteDescription": "{name} se eliminará. {count, plural, =0 {} one {Su unidad queda como inmueble independiente.} other {Sus # unidades quedan como inmuebles independientes.}}",
+    "fields": {
+      "name": "Nombre",
+      "address": "Dirección",
+      "city": "Localidad"
+    },
+    "units": {
+      "title": "Unidades",
+      "choose": "Elegir unidades",
+      "empty": "Aún sin unidades. Elija los inmuebles que forman parte de este edificio.",
+      "hint": "Marque los inmuebles de este edificio y escriba el coeficiente de cada uno si lo sabe.",
+      "inOther": "Ahora en {building}",
+      "permilageOf": "Coeficiente de {unit}",
+      "invalid": "El coeficiente es un número entre 0 y 1000.",
+      "noneChosen": "Ningún inmueble marcado.",
+      "total": "Los coeficientes suman {total}‰. Los gastos del edificio se reparten por ellos.",
+      "equalFallback": "Falta el coeficiente de alguna unidad: los gastos del edificio se reparten a partes iguales.",
+      "save": "Guardar {count, plural, one {# unidad} other {# unidades}}",
+      "toastSaved": "{count, plural, =0 {Edificio sin unidades} one {# unidad en el edificio} other {# unidades en el edificio}}"
+    },
+    "expenses": {
+      "title": "Gastos del edificio",
+      "add": "Registrar gasto",
+      "hint": "Un gasto del edificio (comunidad, luz de escalera, seguro, obras) se reparte entre las unidades, y cada parte entre los copropietarios de la unidad según sus porcentajes.",
+      "empty": "Sin gastos del edificio.",
+      "category": "Categoría",
+      "amount": "Importe total (€)",
+      "amountRequired": "Indique el importe.",
+      "date": "Fecha",
+      "vendor": "Proveedor",
+      "description": "Descripción",
+      "deductible": "Deducible en el IRS (Anexo F)",
+      "sharedBy": "Repartido entre",
+      "noUnits": "Marque al menos una unidad.",
+      "byPermilage": "Repartido por el coeficiente de cada unidad.",
+      "byEqualParts": "Repartido a partes iguales: falta el coeficiente de alguna unidad.",
+      "basisPermilage": "por coeficiente",
+      "basisEqual": "a partes iguales",
+      "notDeductible": "no deducible",
+      "edit": "Editar gasto",
+      "delete": "Eliminar gasto",
+      "deleteTitle": "¿Eliminar el gasto del edificio?",
+      "deleteDescription": "Se eliminan {amount} y {count, plural, one {la parte de # unidad} other {la parte de cada una de las # unidades}}.",
+      "toastCreated": "Gasto del edificio registrado",
+      "toastUpdated": "Gasto del edificio actualizado",
+      "toastDeleted": "Gasto del edificio eliminado"
     }
   }
 }

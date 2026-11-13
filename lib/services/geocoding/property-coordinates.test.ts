@@ -42,10 +42,10 @@ describe("placeMissingProperties", () => {
     });
     expect(prismaMock.property.updateMany).toHaveBeenCalledWith({
       where: { id: "p1", userId: "user-1", latitude: null },
-      data: { latitude: 38.71, longitude: -9.137 },
+      data: { latitude: 38.71, longitude: -9.137, locationPrecision: "area" },
     });
     expect(result).toEqual({
-      placed: [{ id: "p1", latitude: 38.71, longitude: -9.137 }],
+      placed: [{ id: "p1", latitude: 38.71, longitude: -9.137, precision: "area" }],
       remaining: 0,
     });
   });

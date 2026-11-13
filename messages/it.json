@@ -827,7 +827,10 @@
       "bankMovementNotOutgoing": "Solo il denaro in uscita può essere registrato come spesa.",
       "bankMovementLinked": "Questo movimento è già collegato. Scollegalo prima.",
       "bankMovementNotLinked": "Questo movimento non è collegato a nessuna spesa.",
-      "expenseAlreadyLinked": "Quella spesa è già pagata da un altro movimento."
+      "expenseAlreadyLinked": "Quella spesa è già pagata da un altro movimento.",
+      "buildingHasExpenses": "Questo edificio ha spese condivise. Eliminale prima.",
+      "expenseFromBuilding": "Questa spesa è la quota di un'unità in una spesa dell'edificio. Modificala nell'edificio.",
+      "buildingExpenseLinked": "Un movimento bancario ha pagato parte di questa spesa. Scollegalo prima."
     }
   },
   "payments": {
@@ -1245,7 +1248,35 @@
     "editManually": "Modifica manualmente",
     "hideFields": "Nascondi campi",
     "addDetails": "Aggiungi dettagli (camere, bagni, descrizione)",
-    "hideDetails": "Nascondi dettagli"
+    "hideDetails": "Nascondi dettagli",
+    "location": {
+      "mapLabel": "Mappa per segnare l'immobile",
+      "pinTitle": "Posizione dell'immobile",
+      "looking": "Ricerca sulla mappa…",
+      "onMap": "Trovato sulla mappa",
+      "onMapStreet": "Trovata la via, non il civico. Controlla il segnaposto sulla mappa.",
+      "approximate": "Trovati solo il CAP o la località. Segna il civico sulla mappa.",
+      "notFound": "Indirizzo non trovato sulla mappa. Correggilo o segna il punto sulla mappa.",
+      "unreachable": "Impossibile consultare la mappa ora.",
+      "notPlaced": "Non ancora sulla mappa.",
+      "pinned": "Segnato da te sulla mappa",
+      "pickOnMap": "Segna sulla mappa",
+      "moveOnMap": "Vedi sulla mappa",
+      "hideMap": "Chiudi mappa",
+      "pinHint": "Tocca la mappa per mettere il segnaposto, o trascinalo fino al civico.",
+      "atPin": "In questo punto: {address}",
+      "useAddress": "Usa questo indirizzo",
+      "notFoundError": "La mappa non trova questo indirizzo. Correggilo o segna il punto sulla mappa.",
+      "approximateError": "La mappa trova solo il CAP o la località. Correggi la via o segna il civico sulla mappa.",
+      "zoomIn": "Ingrandisci",
+      "zoomOut": "Riduci"
+    },
+    "building": {
+      "label": "Edificio",
+      "none": "Nessuno (indipendente)",
+      "permilage": "Millesimi (‰)",
+      "permilageHint": "Dalla tabella millesimale. Ripartisce le spese dell'edificio."
+    }
   },
   "financial": {
     "title": "Finanze",
@@ -1676,7 +1707,8 @@
     },
     "paidFromBank": "Pagato dalla banca",
     "notSeenInBank": "Non visto in banca",
-    "paidByOwner": "Pagato da {name}"
+    "paidByOwner": "Pagato da {name}",
+    "buildingPart": "Quota di una spesa di {building} ({total})"
   },
   "propertyDetail": {
     "tabs": {
@@ -1760,7 +1792,12 @@
       "description": "“{name}” sarà rimosso. Un immobile con contratti, ricevute o spese non può essere eliminato.",
       "confirmLabel": "Elimina",
       "done": "“{name}” eliminato"
-    }
+    },
+    "location": {
+      "notOnMap": "Non è sulla mappa. Segnalo sulla mappa",
+      "approximate": "Sulla mappa solo per CAP. Segna il civico"
+    },
+    "building": "Edificio"
   },
   "notificationCenter": {
     "title": "Notifiche",
@@ -1807,7 +1844,8 @@
     "collapse": "Comprimi pannello",
     "expand": "Espandi pannello",
     "closeWorkspace": "Chiudi",
-    "flyoutDescription": "Seleziona un asset per aprire il suo spazio di lavoro"
+    "flyoutDescription": "Seleziona un asset per aprire il suo spazio di lavoro",
+    "openBuilding": "Apri l'edificio {name}"
   },
   "entityOverlay": {
     "openFullPage": "Apri pagina intera",
@@ -1831,6 +1869,10 @@
     "document": {
       "title": "Dettagli documento",
       "description": "Dettagli documento {name}"
+    },
+    "building": {
+      "title": "Edificio",
+      "description": "Unità e spese di {name}"
     }
   },
   "language": {
@@ -2320,6 +2362,61 @@
         "chosen": "Sarà registrata in {month}",
         "paid": "Già pagato in {month}: non cambia nulla"
       }
+    }
+  },
+  "buildings": {
+    "notFound": "Edificio non trovato.",
+    "summary": "{count, plural, =0 {Nessuna unità} one {# unità} other {# unità}}",
+    "edit": "Modifica",
+    "delete": "Elimina edificio",
+    "toastSaved": "Edificio aggiornato",
+    "deleteTitle": "Eliminare l'edificio?",
+    "deleteDescription": "{name} verrà eliminato. {count, plural, =0 {} one {La sua unità resta un immobile indipendente.} other {Le sue # unità restano immobili indipendenti.}}",
+    "fields": {
+      "name": "Nome",
+      "address": "Indirizzo",
+      "city": "Località"
+    },
+    "units": {
+      "title": "Unità",
+      "choose": "Scegli unità",
+      "empty": "Ancora nessuna unità. Scegli gli immobili che fanno parte di questo edificio.",
+      "hint": "Spunta gli immobili di questo edificio e scrivi i millesimi di ciascuno, se li conosci.",
+      "inOther": "Ora in {building}",
+      "permilageOf": "Millesimi di {unit}",
+      "invalid": "I millesimi sono un numero tra 0 e 1000.",
+      "noneChosen": "Nessun immobile spuntato.",
+      "total": "I millesimi sommano {total}‰. Le spese dell'edificio si ripartiscono in base a essi.",
+      "equalFallback": "Manca i millesimi di un'unità: le spese dell'edificio si ripartiscono in parti uguali.",
+      "save": "Salva {count, plural, one {# unità} other {# unità}}",
+      "toastSaved": "{count, plural, =0 {Edificio senza unità} one {# unità nell'edificio} other {# unità nell'edificio}}"
+    },
+    "expenses": {
+      "title": "Spese dell'edificio",
+      "add": "Registra spesa",
+      "hint": "Una spesa dell'edificio (condominio, luce scale, assicurazione, lavori) si ripartisce tra le unità, e ogni quota tra i comproprietari dell'unità secondo le loro percentuali.",
+      "empty": "Nessuna spesa dell'edificio.",
+      "category": "Categoria",
+      "amount": "Importo totale (€)",
+      "amountRequired": "Indica l'importo.",
+      "date": "Data",
+      "vendor": "Fornitore",
+      "description": "Descrizione",
+      "deductible": "Deducibile IRS (Anexo F)",
+      "sharedBy": "Ripartita tra",
+      "noUnits": "Spunta almeno un'unità.",
+      "byPermilage": "Ripartita per i millesimi di ciascuna unità.",
+      "byEqualParts": "Ripartita in parti uguali: manca i millesimi di un'unità.",
+      "basisPermilage": "per millesimi",
+      "basisEqual": "in parti uguali",
+      "notDeductible": "non deducibile",
+      "edit": "Modifica spesa",
+      "delete": "Elimina spesa",
+      "deleteTitle": "Eliminare la spesa dell'edificio?",
+      "deleteDescription": "{amount} e {count, plural, one {la quota di # unità} other {le quote delle # unità}} verranno eliminate.",
+      "toastCreated": "Spesa dell'edificio registrata",
+      "toastUpdated": "Spesa dell'edificio aggiornata",
+      "toastDeleted": "Spesa dell'edificio eliminata"
     }
   }
 }

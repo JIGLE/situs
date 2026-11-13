@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { Building2, ChevronDown, ChevronRight } from "lucide-react";
 
 import { useCurrency } from "@/lib/contexts/currency-context";
 import { countryLabel } from "@/lib/design/country-themes";
@@ -32,6 +32,8 @@ interface PortfolioTreeProps {
   tenants: Tenant[];
   leases?: Lease[];
   onSelectProperty?: (propertyId: string) => void;
+  /** Opens a building: its units, their permilagens and its shared expenses. */
+  onOpenBuilding?: (buildingId: string) => void;
   highlightedPropertyId?: string;
 }
 
@@ -44,6 +46,8 @@ interface AssetNode {
 interface ClusterNode {
   key: string;
   label: string;
+  /** Set when the cluster is a building rather than a town. */
+  buildingId?: string;
   assets: AssetNode[];
 }
 
@@ -60,6 +64,7 @@ export function PortfolioTree({
   tenants,
   leases = [],
   onSelectProperty,
+  onOpenBuilding,
   highlightedPropertyId,
 }: PortfolioTreeProps): React.ReactElement {
   const t = useTranslations("portfolioTree");
@@ -110,13 +115,31 @@ export function PortfolioTree({
       }
       let cluster = clusters.get(clusterKey);
       if (!cluster) {
-        cluster = { key: clusterKey, label: clusterLabel, assets: [] };
+        cluster = { key: clusterKey, label: clusterLabel, buildingId: building?.id, assets: [] };
         clusters.set(clusterKey, cluster);
       }
       cluster.assets.push({
         property,
         overdue: overdueByProperty.has(property.id),
         renewalDue: renewalDueByProperty.has(property.id),
+      });
+    }
+
+    // A building with no unit yet is listed too, so it can be opened to choose its units.
+    const placedBuildings = new Set(properties.map((p) => p.buildingId).filter(Boolean));
+    for (const building of buildings) {
+      if (placedBuildings.has(building.id)) continue;
+      const code = (building.country || "PT").toUpperCase().slice(0, 2);
+      let clusters = countries.get(code);
+      if (!clusters) {
+        clusters = new Map();
+        countries.set(code, clusters);
+      }
+      clusters.set(`b:${building.id}`, {
+        key: `b:${building.id}`,
+        label: building.name,
+        buildingId: building.id,
+        assets: [],
       });
     }
 
@@ -193,7 +216,7 @@ export function PortfolioTree({
     );
   };
 
-  if (properties.length === 0) {
+  if (properties.length === 0 && buildings.length === 0) {
     return (
       <div className="px-4 py-10 text-center">
         <p className="text-sm text-[var(--color-muted-foreground)]">{t("empty")}</p>
@@ -203,7 +226,7 @@ export function PortfolioTree({
 
   // One country and one group (no buildings, one city or none): the two heading rows above the
   // properties said nothing, so the list is shown flat.
-  if (tree.length === 1 && tree[0].clusters.length === 1) {
+  if (tree.length === 1 && tree[0].clusters.length === 1 && !tree[0].clusters[0].buildingId) {
     return (
       <div role="tree" aria-label={t("title")} className="py-2">
         {tree[0].clusters[0].assets.map((asset) => renderAsset(asset, "pl-3"))}
@@ -245,28 +268,42 @@ export function PortfolioTree({
                 const clusterNodeCollapsed = collapsedNodes.has(clusterKey);
                 return (
                   <div key={cluster.key} role="treeitem" aria-expanded={!clusterNodeCollapsed}>
-                    {/* Cluster row — chevron at 24px, label at 46px */}
-                    <button
-                      type="button"
-                      onClick={() => toggleNode(clusterKey)}
-                      className="flex w-full items-center gap-2 border-l-2 border-transparent py-1.5 pl-6 pr-2 text-left transition-colors hover:bg-[var(--color-hover)] max-md:min-h-11"
-                    >
-                      {clusterNodeCollapsed ? (
-                        <ChevronRight
-                          className="h-3.5 w-3.5 shrink-0 text-[var(--color-muted-foreground)]"
-                          aria-hidden="true"
-                        />
-                      ) : (
-                        <ChevronDown
-                          className="h-3.5 w-3.5 shrink-0 text-[var(--color-muted-foreground)]"
-                          aria-hidden="true"
-                        />
+                    {/* Cluster row — chevron at 24px, label at 46px. A building's row also opens
+                        the building, beside the toggle rather than inside it. */}
+                    <div className="flex items-stretch">
+                      <button
+                        type="button"
+                        onClick={() => toggleNode(clusterKey)}
+                        className="flex min-w-0 flex-1 items-center gap-2 border-l-2 border-transparent py-1.5 pl-6 pr-2 text-left transition-colors hover:bg-[var(--color-hover)] max-md:min-h-11"
+                      >
+                        {clusterNodeCollapsed ? (
+                          <ChevronRight
+                            className="h-3.5 w-3.5 shrink-0 text-[var(--color-muted-foreground)]"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <ChevronDown
+                            className="h-3.5 w-3.5 shrink-0 text-[var(--color-muted-foreground)]"
+                            aria-hidden="true"
+                          />
+                        )}
+                        <span className="min-w-0 flex-1 truncate text-sm text-[var(--color-muted-foreground)]">
+                          {cluster.label}
+                        </span>
+                        <span className="mono-label">{cluster.assets.length}</span>
+                      </button>
+                      {cluster.buildingId && onOpenBuilding && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenBuilding(cluster.buildingId!)}
+                          aria-label={t("openBuilding", { name: cluster.label })}
+                          title={t("openBuilding", { name: cluster.label })}
+                          className="flex w-8 shrink-0 items-center justify-center text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-foreground)] max-md:min-h-11 max-md:w-11"
+                        >
+                          <Building2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
                       )}
-                      <span className="min-w-0 flex-1 truncate text-sm text-[var(--color-muted-foreground)]">
-                        {cluster.label}
-                      </span>
-                      <span className="mono-label">{cluster.assets.length}</span>
-                    </button>
+                    </div>
 
                     {/* Asset rows — label at 56px, one step past its cluster's label so the
                         hierarchy survives without a chevron of its own to mark the level. */}
