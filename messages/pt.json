@@ -2356,9 +2356,12 @@
       "done": "Registado em {month}",
       "outcome": {
         "create": "Marca {month} como pago",
+        "extendStart": "Marca {month} como pago e antecipa o início do contrato para esse mês",
+        "extendEnd": "Marca {month} como pago e prolonga o contrato até {end}",
         "attach": "Junta o recibo ao pagamento já registado de {month}",
         "duplicate": "Já registado: nada muda",
         "noMonth": "Este contrato não tem renda em {month}. Escolha outro mês ou contrato.",
+        "inactive": "Este contrato não está ativo, por isso não tem renda em {month}. Ative-o ou escolha outro contrato.",
         "chosen": "Será registado em {month}",
         "paid": "Já pago em {month}: nada muda"
       }

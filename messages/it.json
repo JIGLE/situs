@@ -2356,9 +2356,12 @@
       "done": "Registrata in {month}",
       "outcome": {
         "create": "Segna {month} come pagato",
+        "extendStart": "Segna {month} come pagato e anticipa l'inizio del contratto a quel mese",
+        "extendEnd": "Segna {month} come pagato e proroga il contratto fino al {end}",
         "attach": "Aggiunge la ricevuta al pagamento già registrato di {month}",
         "duplicate": "Già registrata: non cambia nulla",
         "noMonth": "Questo contratto non ha affitto in {month}. Scegli un altro mese o contratto.",
+        "inactive": "Questo contratto non è attivo, quindi non ha canone in {month}. Attivalo o scegli un altro contratto.",
         "chosen": "Sarà registrata in {month}",
         "paid": "Già pagato in {month}: non cambia nulla"
       }

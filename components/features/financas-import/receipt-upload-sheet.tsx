@@ -24,11 +24,11 @@ import {
 import { useApp } from "@/lib/contexts/app-context";
 import { useToast } from "@/lib/contexts/toast-context";
 import type { ParsedRentReceipt } from "@/lib/services/financas-import/rent-receipt";
-import type { ReceiptUploadOutcome } from "@/lib/services/receipts/financas-receipts";
+import type { ReceiptUploadOutcome, TermChange } from "@/lib/services/receipts/financas-receipts";
 import { useApiError } from "@/lib/utils/api-error";
 import { MAX_CONTRACT_BYTES } from "@/lib/utils/contract-file";
 import { formatEuro } from "@/lib/utils/currency";
-import { formatMonthYear } from "@/lib/utils/format-date";
+import { formatDate, formatMonthYear } from "@/lib/utils/format-date";
 import { failureStatus, readRentReceipt, registerRentReceipt } from "./read-document";
 
 type Failure = "notPdf" | "tooLarge" | "noText" | "notReceipt" | "failed";
@@ -41,7 +41,13 @@ interface Row {
   /** "YYYY-MM". */
   month: string;
   /** What the server said uploading it would do, for the contract and month it proposed. */
-  proposed: { leaseId: string; month: string; outcome: ReceiptUploadOutcome } | null;
+  proposed: {
+    leaseId: string;
+    month: string;
+    outcome: ReceiptUploadOutcome;
+    term: TermChange | null;
+    inactive: boolean;
+  } | null;
   /** The month's rent, when it differs from the recibo's. */
   dueAmount: number | null;
   /** Several contracts may be the one: the owner is asked to check. */
@@ -152,7 +158,13 @@ export function ReceiptUploadSheet({
           month,
           proposed:
             proposal.leaseId && proposal.month && proposal.outcome
-              ? { leaseId: proposal.leaseId, month, outcome: proposal.outcome }
+              ? {
+                  leaseId: proposal.leaseId,
+                  month,
+                  outcome: proposal.outcome,
+                  term: proposal.term,
+                  inactive: proposal.inactive,
+                }
               : null,
           dueAmount: proposal.dueAmount,
           ambiguous: proposal.candidates.length > 1,
@@ -229,9 +241,20 @@ export function ReceiptUploadSheet({
     const outcome = outcomeOf(row);
     const month = monthLabel(row.month);
     if (outcome === "create") return { text: t("outcome.create", { month }), tone: "plain" };
+    const term = row.proposed?.term;
+    if (outcome === "extend" && term?.startDate) {
+      return { text: t("outcome.extendStart", { month }), tone: "plain" };
+    }
+    if (outcome === "extend" && term?.endDate) {
+      const end = formatDate(term.endDate, locale);
+      return { text: t("outcome.extendEnd", { month, end }), tone: "plain" };
+    }
     if (outcome === "attach") return { text: t("outcome.attach", { month }), tone: "plain" };
     if (outcome === "duplicate") return { text: t("outcome.duplicate"), tone: "done" };
     if (outcome === "paid") return { text: t("outcome.paid", { month }), tone: "done" };
+    if (outcome === "no_month" && row.proposed?.inactive) {
+      return { text: t("outcome.inactive", { month }), tone: "warn" };
+    }
     if (outcome === "no_month") return { text: t("outcome.noMonth", { month }), tone: "warn" };
     return { text: t("outcome.chosen", { month }), tone: "plain" };
   };

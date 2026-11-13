@@ -15,13 +15,27 @@
  * as "recibo on file", the darker of its two greens.
  *
  * A month the owner waived (before they started tracking) comes back on the ledger when a recibo
- * for it is uploaded: it says that month was paid. A month the contract has no row for (before it
- * began, or past its end) is refused, since there is nothing on the ledger for it to pay.
+ * for it is uploaded: it says that month was paid, and the rent it states is what that month owed
+ * (the waived row only copied today's rent).
+ *
+ * - **extend**: an active contract has no month for it, because the recibo is older than the
+ *   contract's start in Situs (often typed as its latest renewal) or later than its end. A recibo
+ *   from Finanças proves the tenancy ran that month, so the term is moved to cover it: the start
+ *   back to that month, or the end forward a year at a time, as the contract renews (art. 1096 CC).
+ *   The months a new start adds before the old one were never tracked, so they are waived like
+ *   the months before "Track rent from" (`settleRentBefore`); a later recibo for one brings it back.
+ *   Then the recibo pays its month as in **create**.
+ *
+ * A contract that is not active has nothing generated, so a month it has no row for is refused.
  */
 
 import { getPrismaClient } from "@/lib/services/database/database";
 import { partiesByLease } from "@/lib/services/database/lease-parties";
-import { allocateReceipt } from "@/lib/services/allocation/service";
+import {
+  allocateReceipt,
+  auditLeasePeriodSync,
+  syncLeasePeriods,
+} from "@/lib/services/allocation/service";
 import { logAudit } from "@/lib/services/audit-log";
 import { documentService } from "@/lib/services/document-service";
 import { ARCHIVE_MARKER_PREFIX, transitionReceipt } from "@/lib/services/receipts/service";
@@ -41,7 +55,14 @@ import { ConflictError, ResourceNotFoundError } from "@/lib/utils/error-handling
  * nothing changes. A recibo never adds money to a month that owes nothing: the engine would carry
  * it to another month the recibo does not name.
  */
-export type ReceiptUploadOutcome = "create" | "attach" | "duplicate" | "paid" | "no_month";
+export type ReceiptUploadOutcome =
+  "create" | "extend" | "attach" | "duplicate" | "paid" | "no_month";
+
+/** The contract's new term, when the recibo's month lies outside it ("YYYY-MM-DD"). */
+export interface TermChange {
+  startDate: string | null;
+  endDate: string | null;
+}
 
 export interface ReceiptLeaseOption {
   leaseId: string;
@@ -60,6 +81,10 @@ export interface ReceiptProposal {
   outcome: ReceiptUploadOutcome | null;
   /** The month's rent, when it differs from the recibo's. */
   dueAmount: number | null;
+  /** `extend`: how the contract's term moves to take the month. */
+  term: TermChange | null;
+  /** `no_month`: the contract is not active, so it owes no rent at all. */
+  inactive: boolean;
 }
 
 interface LeaseRow extends ReceiptMatchLease {
@@ -137,16 +162,55 @@ interface MonthState {
   waived: boolean;
   /** The receipts already paying the month that have no recibo yet. */
   unnumbered: { id: string; lifecycle: string }[];
+  term?: TermChange;
+  inactive?: boolean;
+}
+
+interface TermLease {
+  id: string;
+  status: string;
+  startDate: Date;
+  endDate: Date;
+}
+
+const isoDay = (date: Date) => date.toISOString().slice(0, 10);
+
+/**
+ * How an active contract's term moves to take a month outside it: the start back to that month's
+ * first day, or the end forward a year at a time until it reaches the month's last day. Null when
+ * the month is inside the term.
+ */
+export function termToCover(
+  lease: Pick<TermLease, "startDate" | "endDate">,
+  month: ReceiptMonth,
+): TermChange | null {
+  const first = Date.UTC(month.year, month.month - 1, 1);
+  const start = lease.startDate;
+  const startMonth = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1);
+  if (first < startMonth) {
+    return { startDate: isoDay(new Date(first)), endDate: null };
+  }
+  const end = lease.endDate;
+  // A month's rent is due on its first day, so a term ending inside the month already owes it.
+  if (first <= end.getTime()) return null;
+  const day = end.getUTCDate();
+  for (let year = end.getUTCFullYear() + 1; year <= month.year + 1; year++) {
+    const lastOfMonth = new Date(Date.UTC(year, end.getUTCMonth() + 1, 0)).getUTCDate();
+    const next = Date.UTC(year, end.getUTCMonth(), Math.min(day, lastOfMonth));
+    if (next >= first) return { startDate: null, endDate: isoDay(new Date(next)) };
+  }
+  return null;
 }
 
 /** What a recibo would do to one lease's month. */
 async function monthState(
   userId: string,
-  leaseId: string,
+  lease: TermLease,
   month: ReceiptMonth,
   number: string | null,
 ): Promise<MonthState> {
   const prisma = getPrismaClient();
+  const leaseId = lease.id;
   if (number) {
     const same = await prisma.receipt.findFirst({
       where: { userId, leaseId, financasNumber: number, lifecycle: { not: "voided" } },
@@ -167,7 +231,10 @@ async function monthState(
     select: { id: true, status: true, dueAmount: true, allocatedAmount: true },
   });
   if (!period) {
-    return { outcome: "no_month", periodId: null, dueAmount: null, waived: false, unnumbered: [] };
+    const none = { periodId: null, dueAmount: null, waived: false, unnumbered: [] };
+    if (lease.status !== "active") return { ...none, outcome: "no_month", inactive: true };
+    const term = termToCover(lease, month);
+    return term ? { ...none, outcome: "extend", term } : { ...none, outcome: "no_month" };
   }
   const allocations = await prisma.paymentAllocation.findMany({
     where: { userId, rentPeriodId: period.id, reversedAt: null },
@@ -202,17 +269,34 @@ export async function proposeReceipt(
   const found = leasesForReceipt(parsed, leases);
   const month = receiptMonth(parsed);
   const leaseId = found.length === 1 ? found[0].id : null;
-  const state = leaseId && month ? await monthState(userId, leaseId, month, parsed.number) : null;
-  const due = state?.dueAmount ?? null;
+  const lease = leaseId ? found[0] : null;
+  const state =
+    lease && month
+      ? await monthState(
+          userId,
+          {
+            id: lease.id,
+            status: lease.status,
+            startDate: new Date(lease.startDate),
+            endDate: new Date(lease.endDate),
+          },
+          month,
+          parsed.number,
+        )
+      : null;
+  // A waived month takes the recibo's rent, so only a tracked month's rent can differ from it.
+  const due = state && !state.waived ? state.dueAmount : null;
   return {
     leaseId,
-    candidates: found.map((lease) => lease.option),
+    candidates: found.map((option) => option.option),
     month,
     outcome: state?.outcome ?? null,
     dueAmount:
       due !== null && parsed.rent !== null && Math.abs(due - parsed.rent) > MONEY_EPSILON
         ? due
         : null,
+    term: state?.term ?? null,
+    inactive: state?.inactive ?? false,
   };
 }
 
@@ -226,7 +310,7 @@ export interface RegisterReceiptInput {
 }
 
 export interface RegisterReceiptResult {
-  outcome: Exclude<ReceiptUploadOutcome, "no_month">;
+  outcome: Exclude<ReceiptUploadOutcome, "no_month" | "extend">;
   receiptIds: string[];
 }
 
@@ -239,12 +323,19 @@ export async function registerReceipt(
   const prisma = getPrismaClient();
   const lease = await prisma.lease.findFirst({
     where: { id: input.leaseId, userId },
-    select: { id: true, tenantId: true, propertyId: true },
+    select: {
+      id: true,
+      tenantId: true,
+      propertyId: true,
+      status: true,
+      startDate: true,
+      endDate: true,
+    },
   });
   if (!lease) throw new ResourceNotFoundError("Lease");
 
   const { parsed, month } = input;
-  const state = await monthState(userId, lease.id, month, parsed.number);
+  let state = await monthState(userId, lease, month, parsed.number);
   if (state.outcome === "no_month") {
     throw new ConflictError("The contract has no rent for that month", "receipt_month_untracked");
   }
@@ -296,12 +387,28 @@ export async function registerReceipt(
   if (!amount || amount <= MONEY_EPSILON) {
     throw new ConflictError("The recibo's amount could not be read", "receipt_amount_unknown");
   }
-  // A month waived when tracking began is owed again: the recibo says it was paid. Allocation
-  // writes its status afresh from what it owes and what fills it.
-  if (state.waived && state.periodId) {
+  // A month the term was moved to take was never tracked either.
+  let untracked = false;
+  if (state.outcome === "extend" && state.term) {
+    untracked = true;
+    await extendTerm(userId, lease, state.term, month, now);
+    state = await monthState(
+      userId,
+      { ...lease, ...termDates(lease, state.term) },
+      month,
+      parsed.number,
+    );
+    if (state.outcome !== "create" || !state.periodId) {
+      throw new ConflictError("The contract has no rent for that month", "receipt_month_untracked");
+    }
+  }
+  // A month waived when tracking began is owed again: the recibo says it was paid, and the rent it
+  // states is what the month owed (an untracked month only copied today's rent). Allocation writes
+  // its status afresh from what it owes and what fills it.
+  if ((state.waived || untracked) && state.periodId) {
     await prisma.rentPeriod.update({
       where: { id: state.periodId },
-      data: { status: "upcoming" },
+      data: { status: "upcoming", dueAmount: amount },
     });
   }
   const date = parsed.receivedOn ?? parsed.issuedOn ?? now.toISOString().slice(0, 10);
@@ -338,4 +445,59 @@ export async function registerReceipt(
     },
   });
   return { outcome: "create", receiptIds: [receipt.id] };
+}
+
+const termDates = (lease: Pick<TermLease, "startDate" | "endDate">, term: TermChange) => ({
+  startDate: term.startDate ? new Date(`${term.startDate}T00:00:00.000Z`) : lease.startDate,
+  endDate: term.endDate ? new Date(`${term.endDate}T00:00:00.000Z`) : lease.endDate,
+});
+
+/**
+ * Move an active contract's term to take a recibo's month, and write the months it now owes. The
+ * months a new start adds before the old one, other than the recibo's own, are waived: they were
+ * never tracked, as the months before "Track rent from" are not.
+ */
+async function extendTerm(
+  userId: string,
+  lease: TermLease,
+  term: TermChange,
+  month: ReceiptMonth,
+  now: Date,
+): Promise<void> {
+  const prisma = getPrismaClient();
+  const dates = termDates(lease, term);
+  const oldStart = Date.UTC(lease.startDate.getUTCFullYear(), lease.startDate.getUTCMonth(), 1);
+  const sync = await prisma.$transaction(async (tx) => {
+    const before = await tx.rentPeriod.findMany({
+      where: { leaseId: lease.id },
+      select: { id: true },
+    });
+    await tx.lease.update({ where: { id: lease.id }, data: dates });
+    const result = await syncLeasePeriods(lease.id, tx, now);
+    if (term.startDate) {
+      await tx.rentPeriod.updateMany({
+        where: {
+          leaseId: lease.id,
+          id: { notIn: before.map((p) => p.id) },
+          dueDate: { lt: new Date(oldStart) },
+          NOT: { year: month.year, month: month.month },
+        },
+        data: { status: "waived" },
+      });
+    }
+    return result;
+  });
+  await auditLeasePeriodSync(userId, lease.id, sync);
+  await logAudit({
+    userId,
+    action: "UPDATE_LEASE",
+    resourceType: "lease",
+    resourceId: lease.id,
+    details: {
+      reason: "financas_receipt",
+      month: monthKey(month),
+      from: { startDate: isoDay(lease.startDate), endDate: isoDay(lease.endDate) },
+      to: { startDate: isoDay(dates.startDate), endDate: isoDay(dates.endDate) },
+    },
+  });
 }
