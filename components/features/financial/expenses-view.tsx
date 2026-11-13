@@ -2,6 +2,9 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
+import { withEntityDetail } from "@/lib/utils/entity-detail-url";
 import { Plus, Repeat, ScanLine } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -46,6 +49,16 @@ export function ExpensesView() {
   const { state } = useApp();
   const { expenses, properties, loading } = state;
   const dialog = useExpenseDialog();
+  const router = useRouter();
+  const pathname = useRoutePathname();
+  const searchParams = useSearchParams();
+  // A unit's part of a building expense opens the building, where the whole cost is changed.
+  const openExpense = (expense: Expense) =>
+    expense.building
+      ? router.push(
+          withEntityDetail(pathname, searchParams.toString(), "building", expense.building.id),
+        )
+      : dialog.openExpense(expense);
   const invoiceInput = useRef<HTMLInputElement>(null);
   const [propertyId, setPropertyId] = useState(ALL);
   const [group, setGroup] = useState<ExpenseCategoryGroup | typeof ALL>(ALL);
@@ -199,7 +212,7 @@ export function ExpensesView() {
                     {/* The whole row opens the expense, to change or delete it. */}
                     <button
                       type="button"
-                      onClick={() => dialog.openExpense(expense)}
+                      onClick={() => openExpense(expense)}
                       className="flex min-h-11 w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--color-surface-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:outline-none"
                     >
                       <div className="min-w-0">
@@ -234,6 +247,14 @@ export function ExpensesView() {
                             .filter(Boolean)
                             .join(" · ")}
                         </p>
+                        {expense.building ? (
+                          <p className="text-xs text-[var(--color-muted-foreground)]">
+                            {t("buildingPart", {
+                              building: expense.building.name,
+                              total: formatCurrency(expense.building.totalAmount),
+                            })}
+                          </p>
+                        ) : null}
                         {expense.isRecurring ? (
                           <p className="text-xs text-[var(--color-muted-foreground)]">
                             {repeatLine(expense)}

@@ -352,6 +352,7 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
                       tenants={tenants}
                       leases={leases}
                       onSelectProperty={handleTreeSelect}
+                      onOpenBuilding={(id) => router.push(`/portfolio?detail=building:${id}`)}
                       highlightedPropertyId={workspacePropertyId ?? highlightedPropertyId}
                     />
                   </div>

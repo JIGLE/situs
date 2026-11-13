@@ -204,6 +204,20 @@ e2e/                    # Playwright E2E tests
   (`owner_has_history`). An expense a co-owner paid from their own pocket names them (`Expense.paidByOwnerId`,
   "Pago por", only offered for a property with more than one owner, and refused for an owner with no share in it):
   it still comes off everyone's share, and the payer is credited the whole amount on top (`reimbursed`).
+- **Buildings and their shared expenses** (`lib/services/buildings/`, `?detail=building:<id>`): a
+  property is a building's unit through `Property.buildingId`, with its `permilage` (‰). The
+  building sheet sets all its units at once (`PUT /api/buildings/[id]/properties`). A
+  `BuildingExpense` is stored once and written as one ordinary `Expense` per unit
+  (`Expense.buildingExpenseId`), split by permilagem when every unit sharing it has one, otherwise in
+  equal parts, to the cent (`split.ts`, pure). So the co-owners' shares, the year per property (Anexo F)
+  and deductibility read each part as any expense. A part is changed only through its building expense,
+  which rewrites every part (409 `expense_from_building` on the part itself); a building with shared
+  expenses is not deleted (409 `building_has_expenses`).
+- **Where a property is**: Nominatim, server side (`lib/services/geocoding/nominatim.ts`): `locate` for
+  an address, `reverseGeocode` for a pin. `Property.locationPrecision` says how exactly the coordinates
+  place it: `exact`, `street`, `area` (only its postal code or town), `pinned` (the owner's pin, kept
+  when the words of the address change). The property form refuses an address it changed that the map
+  cannot find or finds only as an area; the map out of reach refuses nothing.
 - **Optional contacts**: `Tenant.email` and `phone`, `Owner.email`, `Property.bedrooms` and
   `bathrooms` are nullable, since Finanças names a person by NIF and name and gives a property no
   rooms. A blank is NULL, never `""` (`blankToNull`, `lib/schemas/tax-identity.ts`; undefined leaves a

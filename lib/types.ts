@@ -231,6 +231,9 @@ export interface Expense {
   bankTransactionId?: string | null;
   /** A recurring month the bank should have shown being paid by now, and did not. */
   notSeenInBank?: boolean;
+  /** The building expense this is one unit's part of; it is changed through the building. */
+  buildingExpenseId?: string | null;
+  building?: { id: string; name: string; totalAmount: number } | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -38,6 +38,7 @@ const H1_ALLOWED: Record<string, string> = {
   "app/[locale]/terms/page.tsx": "a legal page, outside the app shell",
   "components/features/property/property-detail-view.tsx": "a record's own name",
   "components/features/lease/lease-detail-view.tsx": "a record's own name",
+  "components/features/building/building-detail-view.tsx": "a record's own name",
 };
 
 function walk(dir: string): string[] {

@@ -44,14 +44,21 @@ async function handleGet(request: NextRequest): Promise<Response> {
           },
         },
         bankTransaction: { select: { id: true } },
+        buildingExpense: {
+          select: { amount: true, building: { select: { id: true, name: true } } },
+        },
       },
     }),
     bankSeenSince(userId),
   ]);
 
   const now = new Date();
-  const transformedExpenses = expenses.map(({ bankTransaction, ...expense }) => ({
+  const transformedExpenses = expenses.map(({ bankTransaction, buildingExpense, ...expense }) => ({
     ...expense,
+    // A unit's part of a building's shared expense: which building, and the whole cost.
+    building: buildingExpense
+      ? { ...buildingExpense.building, totalAmount: buildingExpense.amount }
+      : null,
     propertyName: expense.property.name,
     bankTransactionId: bankTransaction?.id ?? null,
     notSeenInBank: notSeenInBank({ ...expense, linked: !!bankTransaction }, since, now),

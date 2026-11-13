@@ -50,6 +50,9 @@ const REASON_KEY = new Map<
   | "leaseHasPayments"
   | "receiptAllocated"
   | "ownerHasHistory"
+  | "buildingHasExpenses"
+  | "expenseFromBuilding"
+  | "buildingExpenseLinked"
   | "emailInUse"
   | "atPasswordRequired"
   | "atCredentialsNeedKey"
@@ -89,6 +92,9 @@ const REASON_KEY = new Map<
   ["lease_has_payments", "leaseHasPayments"],
   ["receipt_allocated", "receiptAllocated"],
   ["owner_has_history", "ownerHasHistory"],
+  ["building_has_expenses", "buildingHasExpenses"],
+  ["expense_from_building", "expenseFromBuilding"],
+  ["building_expense_linked", "buildingExpenseLinked"],
   ["email_in_use", "emailInUse"],
   ["at_password_required", "atPasswordRequired"],
   ["at_credentials_need_key", "atCredentialsNeedKey"],

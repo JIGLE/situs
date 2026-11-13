@@ -827,7 +827,10 @@
       "bankMovementNotOutgoing": "Only money going out can be recorded as an expense.",
       "bankMovementLinked": "This movement is already linked. Unlink it first.",
       "bankMovementNotLinked": "This movement is not linked to an expense.",
-      "expenseAlreadyLinked": "That expense is already paid by another movement."
+      "expenseAlreadyLinked": "That expense is already paid by another movement.",
+      "buildingHasExpenses": "This building has shared expenses. Delete them first.",
+      "expenseFromBuilding": "This expense is a unit's part of a building expense. Change it in the building.",
+      "buildingExpenseLinked": "A bank movement paid part of this expense. Unlink it first."
     }
   },
   "payments": {
@@ -1702,7 +1705,8 @@
     },
     "paidFromBank": "Paid from the bank",
     "notSeenInBank": "Not seen in the bank",
-    "paidByOwner": "Paid by {name}"
+    "paidByOwner": "Paid by {name}",
+    "buildingPart": "Part of a {building} building expense ({total})"
   },
   "propertyDetail": {
     "tabs": {
@@ -1790,7 +1794,8 @@
     "location": {
       "notOnMap": "Not on the map. Mark it on the map",
       "approximate": "On the map by postal code only. Mark the door"
-    }
+    },
+    "building": "Building"
   },
   "notificationCenter": {
     "title": "Notifications",
@@ -1837,7 +1842,8 @@
     "collapse": "Collapse rail",
     "expand": "Expand rail",
     "closeWorkspace": "Close",
-    "flyoutDescription": "Select an asset to open its workspace"
+    "flyoutDescription": "Select an asset to open its workspace",
+    "openBuilding": "Open building {name}"
   },
   "entityOverlay": {
     "openFullPage": "Open full page",
@@ -1861,6 +1867,10 @@
     "document": {
       "title": "Document details",
       "description": "Document details for {name}"
+    },
+    "building": {
+      "title": "Building",
+      "description": "Units and expenses of {name}"
     }
   },
   "language": {
@@ -2350,6 +2360,61 @@
         "chosen": "Will be registered in {month}",
         "paid": "Already paid in {month}: nothing changes"
       }
+    }
+  },
+  "buildings": {
+    "notFound": "Building not found.",
+    "summary": "{count, plural, =0 {No units} one {# unit} other {# units}}",
+    "edit": "Edit",
+    "delete": "Delete building",
+    "toastSaved": "Building updated",
+    "deleteTitle": "Delete the building?",
+    "deleteDescription": "{name} will be removed. {count, plural, =0 {} one {Its unit stays as a standalone property.} other {Its # units stay as standalone properties.}}",
+    "fields": {
+      "name": "Name",
+      "address": "Address",
+      "city": "Town"
+    },
+    "units": {
+      "title": "Units",
+      "choose": "Choose units",
+      "empty": "No units yet. Choose the properties that are part of this building.",
+      "hint": "Tick this building's properties and type each one's permilage if you know it.",
+      "inOther": "Now in {building}",
+      "permilageOf": "Permilage of {unit}",
+      "invalid": "Permilage is a number between 0 and 1000.",
+      "noneChosen": "No property ticked.",
+      "total": "Permilages add up to {total}‰. The building's expenses are split by them.",
+      "equalFallback": "A unit has no permilage: the building's expenses are split in equal parts.",
+      "save": "Save {count, plural, one {# unit} other {# units}}",
+      "toastSaved": "{count, plural, =0 {Building has no units} one {# unit in the building} other {# units in the building}}"
+    },
+    "expenses": {
+      "title": "Building expenses",
+      "add": "Record expense",
+      "hint": "A building expense (condominium, stair lighting, insurance, works) is split across the units, and each part among that unit's co-owners by their percentages.",
+      "empty": "No building expenses.",
+      "category": "Category",
+      "amount": "Total amount (€)",
+      "amountRequired": "Enter the amount.",
+      "date": "Date",
+      "vendor": "Supplier",
+      "description": "Description",
+      "deductible": "Deductible for IRS (Anexo F)",
+      "sharedBy": "Shared by",
+      "noUnits": "Tick at least one unit.",
+      "byPermilage": "Split by each unit's permilage.",
+      "byEqualParts": "Split in equal parts: a unit has no permilage.",
+      "basisPermilage": "by permilage",
+      "basisEqual": "in equal parts",
+      "notDeductible": "not deductible",
+      "edit": "Edit expense",
+      "delete": "Delete expense",
+      "deleteTitle": "Delete the building expense?",
+      "deleteDescription": "{amount} and {count, plural, one {its # unit's part} other {each of its # units' parts}} will be deleted.",
+      "toastCreated": "Building expense recorded",
+      "toastUpdated": "Building expense updated",
+      "toastDeleted": "Building expense deleted"
     }
   }
 }
