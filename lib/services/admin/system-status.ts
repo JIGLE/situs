@@ -124,7 +124,7 @@ async function schemaCheck(): Promise<StatusCheck> {
     // show that it happened, not to print the schema back.
     detail: `Missing: ${missing.slice(0, 8).join(", ")}${missing.length > 8 ? ` (+${missing.length - 8} more)` : ""}`,
     remedy:
-      "Run `npx prisma db push`. Deployed instances do this on start unless AUTO_DB_SCHEMA_SYNC is off.",
+      "Restart the app: it updates the database on start, after a backup, unless AUTO_DB_SCHEMA_SYNC is off. If it does not start, its [database] log lines say why. In development, run `npx prisma db push`.",
   };
 }
 

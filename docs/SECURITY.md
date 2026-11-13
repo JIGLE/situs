@@ -30,7 +30,7 @@ The container creates and syncs its own schema on start (`prestart`), so this en
 fallback. It runs `prisma db push` and `prisma generate`.
 
 - In production it answers 403 unless `INIT_SECRET` is set. Leave it unset unless you need it; on
-  TrueNAS, `docker exec … npx prisma db push` does the same job (see [truenas.md](truenas.md)).
+  TrueNAS, a restart does the same job (see [truenas.md](truenas.md)).
 - With `INIT_SECRET` set, a request needs a signed-in session and a CSRF token — `proxy.ts` checks
   both before the route runs — plus `Authorization: Bearer <INIT_SECRET>` or an HMAC signature in
   `X-Signature`.
