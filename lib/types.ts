@@ -36,8 +36,12 @@ export interface Property {
   latitude?: number;
   longitude?: number;
   addressVerified?: boolean;
+  /** How exactly the coordinates place it; "area" is only its postal code or town. */
+  locationPrecision?: "exact" | "street" | "area" | "pinned" | null;
   // Building grouping
-  buildingId?: string;
+  buildingId?: string | null;
+  /** The fração's permilagem (‰) in its building, what a building expense is split by. */
+  permilage?: number | null;
   buildingName?: string;
 
   type: "apartment" | "house" | "condo" | "townhouse" | "commercial" | "other";

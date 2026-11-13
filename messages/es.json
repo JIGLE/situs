@@ -1245,7 +1245,33 @@
     "editManually": "Editar manualmente",
     "hideFields": "Ocultar campos",
     "addDetails": "Añadir detalles (dormitorios, baños, descripción)",
-    "hideDetails": "Ocultar detalles"
+    "hideDetails": "Ocultar detalles",
+    "location": {
+      "mapLabel": "Mapa para marcar el inmueble",
+      "pinTitle": "Ubicación del inmueble",
+      "looking": "Buscando en el mapa…",
+      "onMap": "Encontrada en el mapa",
+      "onMapStreet": "Encontrada la calle, no el portal. Revise el pin en el mapa.",
+      "approximate": "Solo encontramos el código postal o la localidad. Marque el portal en el mapa.",
+      "notFound": "Dirección no encontrada en el mapa. Corríjala o marque el lugar en el mapa.",
+      "unreachable": "No se pudo consultar el mapa ahora.",
+      "notPlaced": "Aún no está en el mapa.",
+      "pinned": "Marcado por usted en el mapa",
+      "pickOnMap": "Marcar en el mapa",
+      "moveOnMap": "Ver en el mapa",
+      "hideMap": "Cerrar mapa",
+      "pinHint": "Toque el mapa para poner el pin, o arrástrelo hasta el portal.",
+      "atPin": "En este punto: {address}",
+      "useAddress": "Usar esta dirección",
+      "notFoundError": "El mapa no encuentra esta dirección. Corríjala o marque el lugar en el mapa.",
+      "approximateError": "El mapa solo encuentra el código postal o la localidad. Corrija la calle o marque el portal en el mapa."
+    },
+    "building": {
+      "label": "Edificio",
+      "none": "Ninguno (independiente)",
+      "permilage": "Coeficiente (‰)",
+      "permilageHint": "De la escritura de división horizontal. Reparte los gastos del edificio."
+    }
   },
   "financial": {
     "title": "Finanzas",
@@ -1760,6 +1786,10 @@
       "description": "“{name}” se eliminará. Un inmueble con contratos, recibos o gastos no se puede eliminar.",
       "confirmLabel": "Eliminar",
       "done": "“{name}” eliminado"
+    },
+    "location": {
+      "notOnMap": "No está en el mapa. Marcar en el mapa",
+      "approximate": "En el mapa solo por código postal. Marcar el portal"
     }
   },
   "notificationCenter": {

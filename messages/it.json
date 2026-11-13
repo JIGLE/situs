@@ -1245,7 +1245,33 @@
     "editManually": "Modifica manualmente",
     "hideFields": "Nascondi campi",
     "addDetails": "Aggiungi dettagli (camere, bagni, descrizione)",
-    "hideDetails": "Nascondi dettagli"
+    "hideDetails": "Nascondi dettagli",
+    "location": {
+      "mapLabel": "Mappa per segnare l'immobile",
+      "pinTitle": "Posizione dell'immobile",
+      "looking": "Ricerca sulla mappa…",
+      "onMap": "Trovato sulla mappa",
+      "onMapStreet": "Trovata la via, non il civico. Controlla il segnaposto sulla mappa.",
+      "approximate": "Trovati solo il CAP o la località. Segna il civico sulla mappa.",
+      "notFound": "Indirizzo non trovato sulla mappa. Correggilo o segna il punto sulla mappa.",
+      "unreachable": "Impossibile consultare la mappa ora.",
+      "notPlaced": "Non ancora sulla mappa.",
+      "pinned": "Segnato da te sulla mappa",
+      "pickOnMap": "Segna sulla mappa",
+      "moveOnMap": "Vedi sulla mappa",
+      "hideMap": "Chiudi mappa",
+      "pinHint": "Tocca la mappa per mettere il segnaposto, o trascinalo fino al civico.",
+      "atPin": "In questo punto: {address}",
+      "useAddress": "Usa questo indirizzo",
+      "notFoundError": "La mappa non trova questo indirizzo. Correggilo o segna il punto sulla mappa.",
+      "approximateError": "La mappa trova solo il CAP o la località. Correggi la via o segna il civico sulla mappa."
+    },
+    "building": {
+      "label": "Edificio",
+      "none": "Nessuno (indipendente)",
+      "permilage": "Millesimi (‰)",
+      "permilageHint": "Dalla tabella millesimale. Ripartisce le spese dell'edificio."
+    }
   },
   "financial": {
     "title": "Finanze",
@@ -1760,6 +1786,10 @@
       "description": "“{name}” sarà rimosso. Un immobile con contratti, ricevute o spese non può essere eliminato.",
       "confirmLabel": "Elimina",
       "done": "“{name}” eliminato"
+    },
+    "location": {
+      "notOnMap": "Non è sulla mappa. Segnalo sulla mappa",
+      "approximate": "Sulla mappa solo per CAP. Segna il civico"
     }
   },
   "notificationCenter": {

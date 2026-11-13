@@ -107,6 +107,7 @@ describe("coordinatesAfterEdit", () => {
     zipCode: "1170-020",
     latitude: 38.72,
     longitude: -9.13,
+    locationPrecision: "exact" as string | null,
   };
 
   it("clears the coordinates when the address changes and the place does not", () => {
@@ -117,7 +118,7 @@ describe("coordinatesAfterEdit", () => {
         latitude: 38.72,
         longitude: -9.13,
       }),
-    ).toEqual({ latitude: null, longitude: null });
+    ).toEqual({ latitude: null, longitude: null, locationPrecision: null });
   });
 
   it("writes a new place picked with the new address", () => {
@@ -127,7 +128,7 @@ describe("coordinatesAfterEdit", () => {
         latitude: 38.71,
         longitude: -9.137,
       }),
-    ).toEqual({ latitude: 38.71, longitude: -9.137 });
+    ).toMatchObject({ latitude: 38.71, longitude: -9.137 });
   });
 
   it("leaves the coordinates alone when the address is unchanged", () => {
@@ -137,10 +138,19 @@ describe("coordinatesAfterEdit", () => {
         latitude: 38.72,
         longitude: -9.13,
       }),
-    ).toEqual({ latitude: 38.72, longitude: -9.13 });
-    expect(coordinatesAfterEdit(stored, { name: "x" } as never)).toEqual({
+    ).toMatchObject({ latitude: 38.72, longitude: -9.13 });
+    expect(coordinatesAfterEdit(stored, { name: "x" } as never)).toMatchObject({
       latitude: undefined,
       longitude: undefined,
     });
+  });
+
+  it("keeps the owner's own pin while the words of the address change", () => {
+    expect(
+      coordinatesAfterEdit(
+        { ...stored, locationPrecision: "pinned" },
+        { address: "Rua de Angola 25, 2º Esq, 1170-020 Lisboa", latitude: 38.72, longitude: -9.13 },
+      ),
+    ).toEqual({ latitude: 38.72, longitude: -9.13, locationPrecision: undefined });
   });
 });

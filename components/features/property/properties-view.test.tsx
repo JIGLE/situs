@@ -31,6 +31,7 @@ vi.mock("@/lib/contexts/app-context", () => ({
   }),
 }));
 
+vi.mock("@/lib/contexts/csrf-context", () => ({ useCsrf: () => ({ token: "csrf" }) }));
 vi.mock("@/lib/contexts/toast-context", () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn() }),
 }));

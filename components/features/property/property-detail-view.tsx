@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef } from "react";
 import {
   Building2,
+  MapPinOff,
   MapPin,
   Bed,
   Bath,
@@ -310,6 +311,17 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                 <MapPin className="h-4 w-4 shrink-0" />
                 <span>{property.address}</span>
               </div>
+              {/* Not on the map, or only its postal code or town is: one tap to put the pin. */}
+              {(property.latitude == null || property.locationPrecision === "area") && (
+                <button
+                  type="button"
+                  onClick={() => editFormDialogRef.current?.openEditDialog(property, { map: true })}
+                  className="mt-1 inline-flex min-h-8 items-center gap-1.5 text-xs text-[var(--color-warning)] underline underline-offset-2 max-md:min-h-11"
+                >
+                  <MapPinOff className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  {property.latitude == null ? t("location.notOnMap") : t("location.approximate")}
+                </button>
+              )}
               {/* Wraps: at 360px the status, rooms and rent ran 14px past the screen edge. */}
               <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <StatusMark {...propertyStatus(property.status)}>

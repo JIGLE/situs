@@ -1245,7 +1245,33 @@
     "editManually": "Editar manualmente",
     "hideFields": "Ocultar campos",
     "addDetails": "Adicionar detalhes (quartos, casas de banho, descrição)",
-    "hideDetails": "Ocultar detalhes"
+    "hideDetails": "Ocultar detalhes",
+    "location": {
+      "mapLabel": "Mapa para marcar o imóvel",
+      "pinTitle": "Local do imóvel",
+      "looking": "A procurar no mapa…",
+      "onMap": "Encontrada no mapa",
+      "onMapStreet": "Encontrada a rua, não a porta. Confirme o pino no mapa.",
+      "approximate": "Só encontrámos o código postal ou a localidade. Marque a porta no mapa.",
+      "notFound": "Morada não encontrada no mapa. Corrija-a ou marque o local no mapa.",
+      "unreachable": "Não foi possível consultar o mapa agora.",
+      "notPlaced": "Ainda não está no mapa.",
+      "pinned": "Marcado por si no mapa",
+      "pickOnMap": "Marcar no mapa",
+      "moveOnMap": "Ver no mapa",
+      "hideMap": "Fechar mapa",
+      "pinHint": "Toque no mapa para pôr o pino, ou arraste-o até à porta.",
+      "atPin": "Neste ponto: {address}",
+      "useAddress": "Usar esta morada",
+      "notFoundError": "O mapa não encontra esta morada. Corrija-a ou marque o local no mapa.",
+      "approximateError": "O mapa só encontra o código postal ou a localidade. Corrija a rua ou marque a porta no mapa."
+    },
+    "building": {
+      "label": "Prédio",
+      "none": "Nenhum (imóvel isolado)",
+      "permilage": "Permilagem (‰)",
+      "permilageHint": "Do título constitutivo ou da caderneta. Reparte as despesas do prédio."
+    }
   },
   "financial": {
     "title": "Financeiro",
@@ -1760,6 +1786,10 @@
       "description": "“{name}” será removido. Um imóvel com contratos, recibos ou despesas não pode ser eliminado.",
       "confirmLabel": "Eliminar",
       "done": "“{name}” eliminado"
+    },
+    "location": {
+      "notOnMap": "Não está no mapa. Marcar no mapa",
+      "approximate": "No mapa só pelo código postal. Marcar a porta"
     }
   },
   "notificationCenter": {

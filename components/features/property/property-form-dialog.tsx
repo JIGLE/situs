@@ -1,8 +1,10 @@
 "use client";
 
-import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { ChevronDown } from "lucide-react";
+import { ZodError } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +34,28 @@ import {
   type AddressSuggestion,
 } from "@/lib/utils/address-verification";
 import type { Property } from "@/lib/types";
+import { useCsrf } from "@/lib/contexts/csrf-context";
+import {
+  composeAddress,
+  lookupAddress,
+  reverseLookup,
+  suggestionPrecision,
+  type ReverseAddress,
+} from "./address-lookup";
+import { LocationStatus, type LookupState } from "./location-status";
+
+/** The building Select's value for none: a Select item cannot be empty. */
+const NO_BUILDING = "none";
+
+// Leaflet reads `window` as it loads.
+const LocationPicker = dynamic(() => import("./location-picker"), { ssr: false });
+
+/** The address fields; a change to any of them asks the map again. */
+type AddressFields = Pick<PropertyFormData, "address" | "streetAddress" | "city" | "zipCode">;
+
+/** How long typing has to pause before the map is asked, and before suggestions are. */
+const LOOKUP_DELAY_MS = 1200;
+const SUGGEST_DELAY_MS = 400;
 
 const initialFormData: PropertyFormData = {
   name: "",
@@ -44,6 +68,8 @@ const initialFormData: PropertyFormData = {
   addressVerified: false,
   buildingId: undefined,
   buildingName: "",
+  locationPrecision: null,
+  permilage: null,
   type: "apartment",
   bedrooms: 1,
   bathrooms: 1,
@@ -55,7 +81,8 @@ const initialFormData: PropertyFormData = {
 export type PropertyFormDialogRef = {
   /** Opens the create form. `prefill` seeds fields (e.g. a building being added to). */
   openDialog: (prefill?: Partial<PropertyFormData>) => void;
-  openEditDialog: (property: Property) => void;
+  /** Opens the edit form; `map` opens it with the map shown, to put the property's pin. */
+  openEditDialog: (property: Property, options?: { map?: boolean }) => void;
 };
 
 /**
@@ -68,7 +95,9 @@ export type PropertyFormDialogRef = {
  */
 export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
   function PropertyFormDialog(_props, ref) {
-    const { addProperty, updateProperty } = useApp();
+    const { addProperty, updateProperty, state } = useApp();
+    const buildings = state?.buildings ?? [];
+    const { token: csrfToken } = useCsrf();
     const { currencySymbol } = useCurrency();
     const t = useTranslations("properties");
     const tForms = useTranslations("forms");
@@ -82,10 +111,24 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
     const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
 
+    // Where the address is on the map: the lookup in flight or its last answer, the map shown or
+    // not, and the address at a pin the owner put down.
+    const [lookupState, setLookupState] = useState<LookupState>("idle");
+    const [showMap, setShowMap] = useState(false);
+    const [pinAddress, setPinAddress] = useState<ReverseAddress | null>(null);
+    const lookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const suggestTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Only the latest lookup writes: an earlier one answering late must not move the pin back.
+    const lookupSeq = useRef(0);
+    // Whether this edit changed the address, so an unplaceable one is refused only then: an old
+    // property is not held up over an address nobody touched.
+    const addressTouched = useRef(false);
+
     const dialog = useFormDialog<PropertyFormData, Property>({
       schema: propertySchema,
       initialData: initialFormData,
-      onSubmit: async (data, isEdit) => {
+      onSubmit: async (submitted, isEdit) => {
+        const data = await placeBeforeSave(submitted);
         if (isEdit && dialog.editingItem) {
           await updateProperty(dialog.editingItem.id, data);
         } else {
@@ -104,14 +147,144 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
         dialog.openDialog();
         if (prefill) dialog.updateFormData(prefill);
       },
-      openEditDialog: (property) => dialog.openEditDialog(property),
+      openEditDialog: (property, options) => {
+        dialog.openEditDialog(property);
+        if (options?.map) setShowMap(true);
+      },
     }));
+
+    /**
+     * The data to save, placed on the map first when it has an address and no place yet. An
+     * address the owner typed or changed here that the map cannot find, or finds only its postal
+     * code or town, is refused on the address field, with the map open to put the pin by hand.
+     * The map out of reach refuses nothing: the Portfolio map places it later.
+     */
+    async function placeBeforeSave(data: PropertyFormData): Promise<PropertyFormData> {
+      if (data.latitude != null && data.longitude != null) {
+        if (addressTouched.current && data.locationPrecision === "area") refuse("approximateError");
+        return data;
+      }
+      if (!data.address.trim()) return data;
+      if (lookupTimer.current) clearTimeout(lookupTimer.current);
+      const seq = ++lookupSeq.current;
+      setLookupState("looking");
+      const result = await lookupAddress(csrfToken, data);
+      if (seq === lookupSeq.current) setLookupState(result.state);
+      if (result.state === "found") {
+        const place = {
+          latitude: result.found.latitude,
+          longitude: result.found.longitude,
+          locationPrecision: result.found.precision,
+        };
+        dialog.updateFormData(place);
+        if (addressTouched.current && result.found.precision === "area") refuse("approximateError");
+        return { ...data, ...place };
+      }
+      if (result.state === "notFound" && addressTouched.current) refuse("notFoundError");
+      return data;
+    }
+
+    function refuse(key: "notFoundError" | "approximateError"): never {
+      setShowMap(true);
+      throw new ZodError([
+        { code: "custom", path: ["address"], message: t(`location.${key}`), input: undefined },
+      ]);
+    }
+
+    /** The map asked about the address as it now stands, once typing pauses. */
+    function scheduleLookup(fields: AddressFields) {
+      if (lookupTimer.current) clearTimeout(lookupTimer.current);
+      if (fields.address.trim().length < 5) {
+        setLookupState("idle");
+        return;
+      }
+      lookupTimer.current = setTimeout(() => {
+        const seq = ++lookupSeq.current;
+        setLookupState("looking");
+        void lookupAddress(csrfToken, fields).then((result) => {
+          if (seq !== lookupSeq.current) return;
+          setLookupState(result.state);
+          if (result.state === "found") {
+            dialog.updateFormData({
+              latitude: result.found.latitude,
+              longitude: result.found.longitude,
+              locationPrecision: result.found.precision,
+            });
+          }
+        });
+      }, LOOKUP_DELAY_MS);
+    }
+
+    /**
+     * A change the owner typed to the address. The place found from the old words is dropped, so
+     * neither the pin nor a save keeps it; a pin the owner put down stays, since they are only
+     * correcting how the address reads.
+     */
+    function changeAddress(patch: Partial<AddressFields>) {
+      addressTouched.current = true;
+      const pinned = dialog.formData.locationPrecision === "pinned";
+      const next = { ...dialog.formData, ...patch };
+      dialog.updateFormData({
+        ...patch,
+        ...(pinned
+          ? {}
+          : {
+              latitude: undefined,
+              longitude: undefined,
+              locationPrecision: null,
+              addressVerified: false,
+            }),
+      });
+      if (!pinned) scheduleLookup(next);
+    }
+
+    /** The owner put the pin down: that is the place, and the address there is offered. */
+    async function pickOnMap(latitude: number, longitude: number) {
+      addressTouched.current = true;
+      if (lookupTimer.current) clearTimeout(lookupTimer.current);
+      lookupSeq.current++;
+      setLookupState("idle");
+      dialog.updateFormData({
+        latitude,
+        longitude,
+        locationPrecision: "pinned",
+        addressVerified: true,
+      });
+      const found = await reverseLookup(csrfToken, { latitude, longitude });
+      setPinAddress(found);
+      // Nothing typed yet: the address at the pin is the address.
+      if (found && !dialog.formData.address.trim()) applyPinAddress(found);
+    }
+
+    function applyPinAddress(found: ReverseAddress) {
+      dialog.updateFormData({
+        address: composeAddress(found),
+        streetAddress: found.streetAddress,
+        zipCode: found.zipCode,
+        city: found.city,
+      });
+      setPinAddress(null);
+    }
+
+    useEffect(
+      () => () => {
+        if (lookupTimer.current) clearTimeout(lookupTimer.current);
+        if (suggestTimer.current) clearTimeout(suggestTimer.current);
+      },
+      [],
+    );
 
     // Reset collapsible sections when dialog closes
     useEffect(() => {
       if (!dialog.isOpen) {
         setShowManualFields(false);
         setShowDetails(false);
+        setShowMap(false);
+        setPinAddress(null);
+        setLookupState("idle");
+        addressTouched.current = false;
+        lookupSeq.current++;
+        if (lookupTimer.current) clearTimeout(lookupTimer.current);
       }
       // On edit, auto-expand details if the property already has them filled
       if (dialog.isOpen && dialog.editingItem) {
@@ -122,13 +295,18 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
       }
     }, [dialog.isOpen, dialog.editingItem]);
 
-    const handleAddressSearch = async (query: string) => {
+    const handleAddressSearch = (query: string) => {
+      if (suggestTimer.current) clearTimeout(suggestTimer.current);
       if (query.length < 3) {
         setAddressSuggestions([]);
         setShowSuggestions(false);
         return;
       }
+      // Once typing pauses, not on every key: Nominatim asks for one request a second at most.
+      suggestTimer.current = setTimeout(() => void searchSuggestions(query), SUGGEST_DELAY_MS);
+    };
 
+    const searchSuggestions = async (query: string) => {
       try {
         const suggestions = await AddressVerificationService.searchAddresses(query);
         setAddressSuggestions(suggestions);
@@ -142,6 +320,11 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
 
     const handleAddressSelect = (suggestion: AddressSuggestion) => {
       const verifiedAddress = AddressVerificationService.parseAddressSuggestion(suggestion);
+      addressTouched.current = true;
+      if (lookupTimer.current) clearTimeout(lookupTimer.current);
+      lookupSeq.current++;
+      setLookupState("idle");
+      setPinAddress(null);
 
       dialog.updateFormData({
         address: suggestion.display_name,
@@ -151,8 +334,7 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
         latitude: verifiedAddress.latitude,
         longitude: verifiedAddress.longitude,
         addressVerified: verifiedAddress.verified,
-        buildingId: undefined,
-        buildingName: verifiedAddress.streetAddress,
+        locationPrecision: suggestionPrecision(suggestion),
       });
 
       setShowManualFields(false);
@@ -244,7 +426,7 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                         e.target.scrollIntoView({ behavior: "smooth", block: "center" })
                       }
                       onChange={(e) => {
-                        dialog.updateFormData({ address: e.target.value });
+                        changeAddress({ address: e.target.value });
                         handleAddressSearch(e.target.value);
                       }}
                       className={
@@ -275,6 +457,45 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                   {dialog.formErrors.address && (
                     <p className="text-sm text-destructive">{dialog.formErrors.address}</p>
                   )}
+                  <LocationStatus
+                    lookup={lookupState}
+                    precision={
+                      dialog.formData.latitude != null && dialog.formData.longitude != null
+                        ? (dialog.formData.locationPrecision ?? "street")
+                        : null
+                    }
+                    hasAddress={dialog.formData.address.trim().length > 0}
+                    mapOpen={showMap}
+                    onToggleMap={() => setShowMap((open) => !open)}
+                  />
+                  {showMap && (
+                    <div className="space-y-2">
+                      <LocationPicker
+                        latitude={dialog.formData.latitude}
+                        longitude={dialog.formData.longitude}
+                        onPick={(lat, lng) => void pickOnMap(lat, lng)}
+                      />
+                      <p className="text-xs text-[var(--color-muted-foreground)]">
+                        {t("location.pinHint")}
+                      </p>
+                      {pinAddress && (
+                        <div className="flex flex-col gap-2 border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                          <span className="min-w-0">
+                            {t("location.atPin", { address: composeAddress(pinAddress) })}
+                          </span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="shrink-0"
+                            onClick={() => applyPinAddress(pinAddress)}
+                          >
+                            {t("location.useAddress")}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Sub-fields: shown when not verified (user typed manually) or toggled open */}
@@ -286,11 +507,7 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                       <Input
                         id="streetAddress"
                         value={dialog.formData.streetAddress || ""}
-                        onChange={(e) =>
-                          dialog.updateFormData({
-                            streetAddress: e.target.value,
-                          })
-                        }
+                        onChange={(e) => changeAddress({ streetAddress: e.target.value })}
                         className={
                           dialog.formErrors.streetAddress ? "border-[var(--color-destructive)]" : ""
                         }
@@ -308,7 +525,7 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                           id="zipCode"
                           placeholder="1234-567"
                           value={dialog.formData.zipCode || ""}
-                          onChange={(e) => dialog.updateFormData({ zipCode: e.target.value })}
+                          onChange={(e) => changeAddress({ zipCode: e.target.value })}
                           className={
                             dialog.formErrors.zipCode ? "border-[var(--color-destructive)]" : ""
                           }
@@ -322,7 +539,7 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                         <Input
                           id="city"
                           value={dialog.formData.city || ""}
-                          onChange={(e) => dialog.updateFormData({ city: e.target.value })}
+                          onChange={(e) => changeAddress({ city: e.target.value })}
                           className={
                             dialog.formErrors.city ? "border-[var(--color-destructive)]" : ""
                           }
@@ -335,19 +552,58 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                   </div>
                 )}
 
-                {dialog.formData.buildingId && (
-                  <div className="space-y-2">
-                    <Label htmlFor="buildingName">{t("buildingName")}</Label>
-                    <Input
-                      id="buildingName"
-                      placeholder={t("buildingPlaceholder")}
-                      value={dialog.formData.buildingName || ""}
-                      onChange={(e) =>
-                        dialog.updateFormData({
-                          buildingName: e.target.value,
-                        })
-                      }
-                    />
+                {/* The building it is a fração of, and its permilagem there: what the building's
+                    shared expenses are split by. Offered once there is a building to choose. */}
+                {buildings.length > 0 && (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="buildingId">{t("building.label")}</Label>
+                      <Select
+                        value={dialog.formData.buildingId ?? NO_BUILDING}
+                        onValueChange={(value) =>
+                          dialog.updateFormData({
+                            buildingId: value === NO_BUILDING ? null : value,
+                          })
+                        }
+                      >
+                        <SelectTrigger id="buildingId">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={NO_BUILDING}>{t("building.none")}</SelectItem>
+                          {buildings.map((building) => (
+                            <SelectItem key={building.id} value={building.id}>
+                              {building.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {dialog.formData.buildingId && (
+                      <div className="space-y-2">
+                        <Label htmlFor="permilage">{t("building.permilage")}</Label>
+                        <Input
+                          id="permilage"
+                          type="number"
+                          inputMode="decimal"
+                          min="0"
+                          max="1000"
+                          step="0.01"
+                          value={dialog.formData.permilage ?? ""}
+                          onChange={(e) =>
+                            dialog.updateFormData({
+                              permilage: e.target.value === "" ? null : Number(e.target.value),
+                            })
+                          }
+                          className={
+                            dialog.formErrors.permilage ? "border-[var(--color-destructive)]" : ""
+                          }
+                        />
+                        <p className="text-xs text-[var(--color-muted-foreground)]">
+                          {t("building.permilageHint")}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

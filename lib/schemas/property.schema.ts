@@ -34,9 +34,14 @@ const propertyFields = z.object({
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
   addressVerified: z.boolean(),
+  // How exactly the coordinates place it (`lib/services/geocoding/nominatim.ts`): "pinned" is the
+  // owner's own pin on the map.
+  locationPrecision: z.enum(["exact", "street", "area", "pinned"]).nullish(),
 
-  // Building grouping
-  buildingId: z.string().optional(),
+  // Building grouping. Null takes the property out of its building.
+  buildingId: z.string().nullish(),
+  // The fração's permilagem in its building, what a building expense is split by.
+  permilage: z.number().gt(0, "Permilagem must be positive").max(1000).nullish(),
   buildingName: z.string().max(100, "Building name too long").optional(),
 
   // Property details

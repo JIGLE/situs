@@ -57,6 +57,7 @@ model User {
   // App-specific relations
   properties             Property[]
   buildings              Building[]
+  buildingExpenses       BuildingExpense[]
   tenants                Tenant[]
   receipts               Receipt[]
   expenses               Expense[]
@@ -224,29 +225,34 @@ model Building {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   properties Property[]
+  expenses   BuildingExpense[]
 
   @@index([userId])
   @@map("buildings")
 }
 
 model Property {
-  id              String  @id @default(cuid())
-  userId          String
-  name            String
-  address         String
+  id                String  @id @default(cuid())
+  userId            String
+  name              String
+  address           String
   // Enhanced address fields
-  streetAddress   String?
-  city            String?
-  zipCode         String?
-  country         String? @default("PT")
-  latitude        Float?
-  longitude       Float?
-  addressVerified Boolean @default(false)
+  streetAddress     String?
+  city              String?
+  zipCode           String?
+  country           String? @default("PT")
+  latitude          Float?
+  longitude         Float?
+  addressVerified   Boolean @default(false)
+  // How exactly the coordinates place it: "exact" (the door), "street", "area" (only the postal
+  // code or the town was found, so the pin is not the property), "pinned" (the owner put it on the
+  // map). NULL: no coordinates, or placed before this was recorded.
+  locationPrecision String?
   // Building grouping
-  buildingId      String?
-  buildingName    String?
+  buildingId        String?
+  buildingName      String?
 
   building Building? @relation(fields: [buildingId], references: [id], onDelete: SetNull)
 
@@ -263,6 +269,10 @@ model Property {
   createdByOwnerId      String? // Owner who created this property (auto managing owner)
   cadasterReference     String? // Artigo matricial
   fraction              String? // Fração autónoma, e.g. "A" or "1.º Esq."
+  // The fração's permilagem in its building (‰, from the título constitutivo or the caderneta):
+  // what a building expense is split by (lib/services/buildings/split.ts). NULL: not known, and the
+  // building's expenses are then split in equal parts.
+  permilage             Float?
   // Fiscal / rental regime
   rentalRegime          String                @default("standard") // "standard" | "acessivel" | "al" | "short_term"
 
@@ -658,6 +668,9 @@ model Expense {
   // The co-owner who paid it from their own pocket, to be given it back in the year's shares
   // (lib/services/owner-payouts/split.ts). NULL: paid from the account that collects the rent.
   paidByOwnerId              String?
+  // The building expense this is one unit's part of (lib/services/buildings/expenses.ts). Such a
+  // part is changed and deleted only through its building expense, which rewrites every part.
+  buildingExpenseId          String?
   createdAt                  DateTime  @default(now())
   updatedAt                  DateTime  @updatedAt
 
@@ -669,6 +682,7 @@ model Expense {
   childExpenses   Expense[]        @relation("RecurringExpenses")
   document        Document?        @relation(fields: [documentId], references: [id], onDelete: SetNull)
   paidBy          Owner?           @relation("ExpensesPaid", fields: [paidByOwnerId], references: [id], onDelete: SetNull)
+  buildingExpense BuildingExpense? @relation(fields: [buildingExpenseId], references: [id], onDelete: Cascade)
   // The bank movement that paid it, when one did.
   bankTransaction BankTransaction?
 
@@ -1097,4 +1111,35 @@ model TaxSubmissionLog {
   @@index([connectorId])
   @@index([subjectType, subjectId])
   @@map("tax_submission_logs")
+}
+
+// A cost of a whole building (condomínio, common-area electricity, the building's insurance, a
+// roof repair), recorded once and split into one Expense per unit, by permilagem where every unit
+// has one and in equal parts otherwise. Each part is an ordinary expense of its property, so the
+// co-owners' shares, the year's summary per property (Anexo F) and deductibility read it as any
+// other. Only this row and its parts are stored; the split is recomputed on every change.
+model BuildingExpense {
+  id           String   @id @default(cuid())
+  userId       String
+  buildingId   String
+  amount       Float
+  date         DateTime
+  category     String
+  description  String?
+  isDeductible Boolean  @default(true)
+  vendorName   String?
+  vendorVat    String?
+  documentId   String?
+  // "permilage" or "equal": how the parts were last split, so the screen can say so.
+  splitBasis   String   @default("equal")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  building Building  @relation(fields: [buildingId], references: [id], onDelete: Restrict)
+  parts    Expense[]
+
+  @@index([userId])
+  @@index([buildingId])
+  @@map("building_expenses")
 }

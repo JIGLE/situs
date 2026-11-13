@@ -23,7 +23,37 @@ export interface Coordinates {
   longitude: number;
 }
 
+/**
+ * How exactly a place found from an address stands for the property: "exact" is a house number or
+ * a building, "street" the street it is on, "area" only its postal code or town, a pin that is not
+ * the property at all. "pinned" is the owner's own pin on the map, which no lookup writes.
+ */
+export type LocationPrecision = "exact" | "street" | "area" | "pinned";
+
+export interface Located extends Coordinates {
+  precision: Exclude<LocationPrecision, "pinned">;
+  /** Nominatim's name for the place it found, for the owner to recognise. */
+  displayName: string;
+}
+
+/**
+ * Nominatim's place_rank as a precision: 30 is a house or building, 26–27 a street; anything below
+ * is a postcode, a parish or a town. A query that names no street can only find an area.
+ */
+export function precisionOf(
+  placeRank: unknown,
+  query: Record<string, string>,
+): Located["precision"] {
+  const namesStreet = "street" in query || "q" in query;
+  const rank = Number(placeRank);
+  if (!namesStreet || !Number.isFinite(rank)) return "area";
+  if (rank >= 28) return "exact";
+  if (rank >= 26) return "street";
+  return "area";
+}
+
 const NOMINATIM_SEARCH = "https://nominatim.openstreetmap.org/search";
+const NOMINATIM_REVERSE = "https://nominatim.openstreetmap.org/reverse";
 const USER_AGENT = "Situs Property Management/1.0 (self-hosted)";
 /** A little over the policy's one a second. */
 const MIN_INTERVAL_MS = 1100;
@@ -121,6 +151,12 @@ export async function geocode(
   input: GeocodeInput,
   deps: GeocodeDeps = {},
 ): Promise<Coordinates | null> {
+  const found = await locate(input, deps);
+  return found ? { latitude: found.latitude, longitude: found.longitude } : null;
+}
+
+/** `geocode`, saying how exactly the place found stands for the property, and what it is called. */
+export async function locate(input: GeocodeInput, deps: GeocodeDeps = {}): Promise<Located | null> {
   const key = addressKey(input);
   if (failed.has(key)) return null;
   const doFetch = deps.fetch ?? fetch;
@@ -143,16 +179,88 @@ export async function geocode(
       wait,
     );
     if (!response.ok) throw new Error(`Nominatim answered ${response.status}`);
-    const results = (await response.json()) as Array<{ lat?: string; lon?: string }>;
+    const results = (await response.json()) as Array<{
+      lat?: string;
+      lon?: string;
+      place_rank?: number;
+      display_name?: string;
+    }>;
     const first = Array.isArray(results) ? results[0] : undefined;
     const latitude = Number(first?.lat);
     const longitude = Number(first?.lon);
     if (first && Number.isFinite(latitude) && Number.isFinite(longitude)) {
-      return { latitude, longitude };
+      return {
+        latitude,
+        longitude,
+        precision: precisionOf(first.place_rank, query),
+        displayName: first.display_name ?? "",
+      };
     }
   }
   failed.add(key);
   return null;
+}
+
+/** The address at a point, split as the property form keeps it. */
+export interface ReverseAddress {
+  streetAddress: string;
+  zipCode: string;
+  city: string;
+  displayName: string;
+}
+
+interface NominatimAddress {
+  house_number?: string;
+  road?: string;
+  pedestrian?: string;
+  postcode?: string;
+  city?: string;
+  town?: string;
+  village?: string;
+  municipality?: string;
+  county?: string;
+}
+
+/**
+ * A Nominatim address as the form's fields, in Portuguese order: "Rua de Angola 25", "1170-020",
+ * "Lisboa". The town is the city where Nominatim names one, else the concelho.
+ */
+export function toReverseAddress(address: NominatimAddress, displayName: string): ReverseAddress {
+  const road = address.road ?? address.pedestrian ?? "";
+  const streetAddress = [road, address.house_number].filter(Boolean).join(" ");
+  const digits = (address.postcode ?? "").replace(/\D/g, "");
+  const zipCode = digits.length === 7 ? `${digits.slice(0, 4)}-${digits.slice(4)}` : "";
+  const city =
+    address.city ?? address.town ?? address.municipality ?? address.village ?? address.county ?? "";
+  return { streetAddress, zipCode, city, displayName };
+}
+
+/** What is at a point the owner picked on the map, or null when Nominatim names nothing there. */
+export async function reverseGeocode(
+  point: Coordinates,
+  deps: GeocodeDeps = {},
+): Promise<ReverseAddress | null> {
+  const doFetch = deps.fetch ?? fetch;
+  const wait = deps.wait ?? sleep;
+  const params = new URLSearchParams({
+    lat: String(point.latitude),
+    lon: String(point.longitude),
+    format: "jsonv2",
+    addressdetails: "1",
+    zoom: "18",
+  });
+  const response = await throttle(
+    () =>
+      doFetch(`${NOMINATIM_REVERSE}?${params}`, {
+        headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+        signal: AbortSignal.timeout(10_000),
+      }),
+    wait,
+  );
+  if (!response.ok) throw new Error(`Nominatim answered ${response.status}`);
+  const body = (await response.json()) as { address?: NominatimAddress; display_name?: string };
+  if (!body?.address) return null;
+  return toReverseAddress(body.address, body.display_name ?? "");
 }
 
 /** Whether this address already found nothing since the server started. */

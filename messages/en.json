@@ -1245,7 +1245,33 @@
     "editManually": "Edit manually",
     "hideFields": "Hide fields",
     "addDetails": "Add details (bedrooms, bathrooms, description)",
-    "hideDetails": "Hide details"
+    "hideDetails": "Hide details",
+    "location": {
+      "mapLabel": "Map to mark the property",
+      "pinTitle": "Property location",
+      "looking": "Looking it up on the map…",
+      "onMap": "Found on the map",
+      "onMapStreet": "Found the street, not the door. Check the pin on the map.",
+      "approximate": "Only the postal code or town was found. Mark the door on the map.",
+      "notFound": "Address not found on the map. Correct it or mark the spot on the map.",
+      "unreachable": "The map could not be reached just now.",
+      "notPlaced": "Not on the map yet.",
+      "pinned": "Marked by you on the map",
+      "pickOnMap": "Mark on the map",
+      "moveOnMap": "See on the map",
+      "hideMap": "Close map",
+      "pinHint": "Tap the map to drop the pin, or drag it to the door.",
+      "atPin": "At this spot: {address}",
+      "useAddress": "Use this address",
+      "notFoundError": "The map cannot find this address. Correct it or mark the spot on the map.",
+      "approximateError": "The map finds only the postal code or town. Correct the street or mark the door on the map."
+    },
+    "building": {
+      "label": "Building",
+      "none": "None (standalone)",
+      "permilage": "Permilage (‰)",
+      "permilageHint": "From the deed of horizontal property or the caderneta. Splits the building's expenses."
+    }
   },
   "financial": {
     "title": "Financials",
@@ -1760,6 +1786,10 @@
       "description": "“{name}” will be removed. A property with leases, receipts or expenses cannot be deleted.",
       "confirmLabel": "Delete",
       "done": "“{name}” deleted"
+    },
+    "location": {
+      "notOnMap": "Not on the map. Mark it on the map",
+      "approximate": "On the map by postal code only. Mark the door"
     }
   },
   "notificationCenter": {
