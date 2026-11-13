@@ -16,9 +16,6 @@ on:
 permissions:
   contents: read
 
-env:
-  NODE_VERSION: "22"
-
 jobs:
   lint-type:
     name: Lint & Type Check
@@ -30,7 +27,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
           cache: "npm"
 
       - name: Install dependencies
@@ -74,7 +71,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
           cache: "npm"
 
       - name: Install dependencies

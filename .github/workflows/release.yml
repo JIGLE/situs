@@ -72,7 +72,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
-          node-version: "22"
+          node-version-file: .nvmrc
           cache: "npm"
 
       # This is the only job in the repo that WRITES package-lock.json, so it is the only one
@@ -258,8 +258,6 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      ENABLE_RELEASE_NOTIFY: "false"
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -382,47 +380,3 @@ jobs:
           echo "## Release Published" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Version**: v${{ steps.gate.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY
-
-      - name: Notify running instance of new release (optional)
-        if: steps.gate.outputs.should_release == 'true' && vars.ENABLE_RELEASE_NOTIFY == 'true'
-        env:
-          UPDATE_WEBHOOK_SECRET: ${{ secrets.UPDATE_WEBHOOK_SECRET }}
-          UPDATE_WEBHOOK_URL: ${{ secrets.UPDATE_WEBHOOK_URL }}
-        run: |
-          # Only run if both webhook secrets are provided
-          if [ -z "$UPDATE_WEBHOOK_URL" ] || [ -z "$UPDATE_WEBHOOK_SECRET" ]; then
-            echo "Webhook secrets not configured, skipping notification"
-            exit 0
-          fi
-
-          PAYLOAD='{"tag_name": "v${{ steps.gate.outputs.new_version }}", "name":"v${{ steps.gate.outputs.new_version }}", "html_url": "https://github.com/${{ github.repository }}/releases/tag/v${{ steps.gate.outputs.new_version }}" }'
-          # Compute HMAC-SHA256 signature (hex) and send as X-Hub-Signature-256 header
-          SIG_HEX=$(printf '%s' "$PAYLOAD" | openssl dgst -sha256 -hmac "$UPDATE_WEBHOOK_SECRET" -hex | sed 's/^.* //') || true
-          SIG_HEADER="sha256=${SIG_HEX}"
-
-          # Retry up to 3 times with exponential backoff
-          MAX_RETRIES=3
-          RETRY=0
-          DELAY=5
-          while [ $RETRY -lt $MAX_RETRIES ]; do
-            HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X POST \
-              -H "Authorization: Bearer $UPDATE_WEBHOOK_SECRET" \
-              -H "X-Hub-Signature-256: $SIG_HEADER" \
-              -H "Content-Type: application/json" \
-              -d "$PAYLOAD" \
-              "$UPDATE_WEBHOOK_URL/api/updates" 2>/dev/null) || HTTP_CODE=0
-
-            if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-              echo "Webhook notification succeeded (HTTP ${HTTP_CODE})"
-              break
-            fi
-
-            RETRY=$((RETRY + 1))
-            if [ $RETRY -lt $MAX_RETRIES ]; then
-              echo "Webhook notification failed (HTTP ${HTTP_CODE}). Retrying in ${DELAY}s... (attempt ${RETRY}/${MAX_RETRIES})"
-              sleep $DELAY
-              DELAY=$((DELAY * 2))
-            else
-              echo "Webhook notification failed after ${MAX_RETRIES} attempts. Continuing release."
-            fi
-          done

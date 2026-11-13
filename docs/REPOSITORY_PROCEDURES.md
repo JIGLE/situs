@@ -97,9 +97,10 @@ The group cannot help while the plugins lag a TypeScript major, as they did for 
 
 ## 5. Images and releases
 
-**Every merge to `main` publishes a development image.** `deploy-ghcr.yml` runs on each push to
-`main` that changes more than docs and pushes `ghcr.io/jigle/situs:main` and `:sha-<short>`. Those
-tags never claim a release.
+**Every merge to `main` whose CI passes publishes a development image.** `deploy-ghcr.yml` starts
+when CI finishes on `main`, and when that run passed and the merge changed more than docs it pushes
+`ghcr.io/jigle/situs:main` and `:sha-<short>`, built from the commit CI tested. A merge whose CI
+fails publishes nothing. Those tags never claim a release.
 
 **Only a release writes `:<version>` and `:latest`:**
 
@@ -168,8 +169,8 @@ done
 
 A branch is listed when every one of its commits already has an equivalent patch on `main`, so
 merge-commit, rebase and single-commit squash merges are all caught. Anything listed can be
-deleted. It skips `gh-pages`, the Pages publish target and permanently divergent by design, and
-`dependabot/*`, which Dependabot owns (§4).
+deleted. It skips `gh-pages`, which never shares history with `main`, and `dependabot/*`, which
+Dependabot owns (§4).
 
 It replaced `git branch -r --merged origin/main`, which only sees branches that are ancestors of
 `main`. Release PRs are squash-merged, so that command printed nothing while `release/v1.24.0`

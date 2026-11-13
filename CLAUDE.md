@@ -393,7 +393,8 @@ step that judges a report fail when the report is missing, boot the app with
 `.github/actions/start-app`.
 
 **Publishing.** Every merge to `main` that changes more than docs publishes a development image,
-`ghcr.io/jigle/situs:main` and `:sha-<short>`. Only a release writes `:<version>` and `:latest`:
+`ghcr.io/jigle/situs:main` and `:sha-<short>`, once CI has passed on it (`deploy-ghcr.yml` starts
+on `workflow_run`; a red CI publishes nothing). Only a release writes `:<version>` and `:latest`:
 dispatch `release.yml` → merge its version-bump PR → `publish` tags `vX.Y.Z` → the tag starts
 `deploy-ghcr.yml`. The tag starts it only when the `RELEASE_TOKEN` secret is set; otherwise
 dispatch `deploy-ghcr.yml` against the tag ref. Full chain: `docs/REPOSITORY_PROCEDURES.md` §5.

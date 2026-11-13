@@ -14,9 +14,10 @@ Active workflows (`.github/workflows/`):
   verifies version integrity. On pushes that are not a version bump it reports release lag.
 - `deploy-ghcr.yml` — Builds the Docker image, scans it with Trivy, and pushes to GHCR. The ref
   decides the tags: a `v*` tag writes `:<version>` and `:latest`, `main` writes `:main` and
-  `:sha-<short>`, anything else `:sha-<short>`. It runs on a `v*` tag push, on a push to `main`
-  that changes more than docs, on manual dispatch and on `repository_dispatch`;
-  `docs/REPOSITORY_PROCEDURES.md` §5 has the release chain.
+  `:sha-<short>`, anything else `:sha-<short>`. It runs on a `v*` tag push, on manual dispatch,
+  and when CI finishes on `main` (`workflow_run`): then only if that CI run passed and the merge
+  changed more than docs, and it builds the commit CI tested. `docs/REPOSITORY_PROCEDURES.md` §5
+  has the release chain.
 - `reusable-verify.yml` — **Reusable only** (`workflow_call`), never triggers on its own. Holds
   the lint/type-check/test trio called by `ci.yml`. Its job names (`Lint & Type Check`,
   `Unit Tests`) are required status checks in `.github/BRANCH_PROTECTION.md` — don't rename them

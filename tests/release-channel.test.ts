@@ -55,28 +55,38 @@ function decisionScript(inputVersion: string): string {
 
   return (
     step.run
-      // `${{ … }}` is evaluated by Actions, not bash. Substitute the two that matter and blank
-      // the rest, so the branching logic itself is what runs.
-      .replace(/\$\{\{\s*github\.repository\s*\}\}/g, "JIGLE/situs")
-      .replace(/\$\{\{\s*github\.event\.inputs\.version[^}]*\}\}/g, inputVersion)
+      // `${{ … }}` is evaluated by Actions, not bash. Blank any that remain, so the branching
+      // logic itself is what runs. The inputs reach the script as environment variables
+      // (`tagsFor` sets them), never as pasted expressions; the last test below holds that.
       .replace(/\$\{\{[^}]*\}\}/g, "")
   );
 }
 
-/** Run the script for a ref and return the `tags=` value it would set. */
-function tagsFor(ref: string, inputVersion = ""): string[] {
+/**
+ * Run the script for a ref and return the `tags=` value it would set. `event` is what started the
+ * run: `workflow_run` is a merge to main whose CI passed, `workflow_dispatch` a manual run.
+ */
+function tagsFor(ref: string, inputVersion = "", event = "workflow_dispatch"): string[] {
   const dir = mkdtempSync(join(tmpdir(), "deploy-vars-"));
   const outputFile = join(dir, "github_output");
   writeFileSync(outputFile, "");
   const script = join(dir, "vars.sh");
   writeFileSync(script, decisionScript(inputVersion));
+  if (event === "workflow_run" && ref !== "refs/heads/main") {
+    throw new Error("tagsFor: a workflow_run here only ever comes from CI on main");
+  }
 
   execFileSync("bash", [script], {
     env: {
       ...process.env,
       GITHUB_REF: ref,
-      GITHUB_SHA: "abc1234def5678",
+      GITHUB_REPOSITORY: "JIGLE/situs",
+      BUILD_SHA: "abc1234def5678",
       GITHUB_OUTPUT: outputFile,
+      INPUT_VERSION: inputVersion,
+      INPUT_PLATFORMS: "",
+      INPUT_DRY_RUN: "",
+      EVENT: event,
     },
     stdio: "pipe",
   });
@@ -100,12 +110,20 @@ describe("release channel", () => {
     expect(claimsLatest(tags)).toBe(true);
   });
 
-  it("a push to main publishes :main and the commit, never :latest", () => {
-    const tags = tagsFor("refs/heads/main");
+  it("a merge to main whose CI passed publishes :main and the commit, never :latest", () => {
+    const tags = tagsFor("refs/heads/main", "", "workflow_run");
 
     expect(tags).toContain("ghcr.io/jigle/situs:main");
     expect(tags).toContain("ghcr.io/jigle/situs:sha-abc1234");
     expect(claimsLatest(tags)).toBe(false);
+  });
+
+  it("a manual dispatch from main does not move :main", () => {
+    // `:main` means "the newest merge CI passed". A dispatch did not come through CI, so it is
+    // named after its commit only.
+    const tags = tagsFor("refs/heads/main");
+
+    expect(tags).toEqual(["ghcr.io/jigle/situs:sha-abc1234"]);
   });
 
   it("a manual dispatch with a pre-release name takes only that name", () => {
@@ -144,5 +162,16 @@ describe("release channel", () => {
     ]) {
       expect(claimsLatest(tagsFor(ref)), `${ref} claimed :latest`).toBe(false);
     }
+    expect(claimsLatest(tagsFor("refs/heads/main", "", "workflow_run"))).toBe(false);
+  });
+
+  it("pastes no workflow input or event payload into the script", () => {
+    // A `${{ inputs.version }}` inside `run:` is substituted into the shell source before bash
+    // sees it, so a dispatch with `version: $(…)` would execute. They arrive through `env:`.
+    const workflow = load(readFileSync(WORKFLOW, "utf8")) as Workflow;
+    const step = workflow.jobs.deploy.steps?.find((s) => s.id === "vars");
+
+    expect(step?.run).toBeDefined();
+    expect(step?.run).not.toMatch(/\$\{\{[^}]*(inputs\.|github\.event\.)/);
   });
 });

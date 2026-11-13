@@ -27,11 +27,11 @@ apply a change that would delete data. See [Upgrading an older instance](#upgrad
 Three names, written by different things. Picking the wrong one is the most common way to end up
 running code you did not expect.
 
-| Tag                  | Written by                         | Use it for               |
-| -------------------- | ---------------------------------- | ------------------------ |
-| `:latest`, `:1.25.0` | a release tag only                 | production               |
-| `:main`              | every merge to `main`              | testing the newest code  |
-| `:sha-<short>`       | every merge, and manual dispatches | pinning one exact commit |
+| Tag                  | Written by                           | Use it for               |
+| -------------------- | ------------------------------------ | ------------------------ |
+| `:latest`, `:1.25.0` | a release tag only                   | production               |
+| `:main`              | every merge to `main` that passes CI | testing the newest code  |
+| `:sha-<short>`       | every merge, and manual dispatches   | pinning one exact commit |
 
 **Only a release can claim `:latest` or a bare version number.** A build from `main`, or a manual
 dispatch on anything but a release tag, never can — which is what stops a test image quietly
@@ -429,7 +429,8 @@ over and remove the old one afterwards — otherwise sign-in fails with `redirec
 Three paths put an image on GHCR:
 
 **A merge to `main` (the development channel).** Every merge that changes more than docs builds
-automatically and publishes `:main` and `:sha-<short>`. Nothing to dispatch — this is the normal
+automatically once CI has passed on it, and publishes `:main` and `:sha-<short>`; a merge whose CI
+fails publishes nothing, so `:main` stays on the last good build. Nothing to dispatch — this is the normal
 way to test merged code.
 
 **A release (what production should run).** Actions → **Release** → Run workflow → pick
