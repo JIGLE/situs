@@ -10,7 +10,7 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-      timezone: "America/New_York"
+      timezone: "Europe/Lisbon"
     # Raised from 2. A blocked group PR used to occupy one of only two slots and starve every
     # other update behind it — see the typescript-toolchain note below.
     open-pull-requests-limit: 5
@@ -101,7 +101,7 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-      timezone: "America/New_York"
+      timezone: "Europe/Lisbon"
     open-pull-requests-limit: 3
     rebase-strategy: "auto"
     commit-message:
@@ -121,7 +121,7 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-      timezone: "America/New_York"
+      timezone: "Europe/Lisbon"
     open-pull-requests-limit: 1
     rebase-strategy: "auto"
     commit-message:

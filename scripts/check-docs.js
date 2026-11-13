@@ -742,6 +742,20 @@ const RETIRED_CLAIMS = [
       "Finance's tabs are Ledger, Movements, Expenses and Reports; the receipts register and the " +
       "tax summary are in Reports (components/features/financial/financials-container.tsx)",
   },
+  {
+    pattern: /on manual dispatch and on `repository_dispatch`|runs on each push to\s+`main`/,
+    retired: "2026-11-13 (image waits for CI)",
+    because:
+      "deploy-ghcr.yml's development channel starts when CI finishes on main (workflow_run) and " +
+      "builds only a commit whose CI passed; the repository_dispatch trigger was removed, since " +
+      "nothing sent it",
+  },
+  {
+    pattern: /Pages publish target/,
+    retired: "2026-11-13 (gh-pages)",
+    because:
+      "gh-pages held the Helm chart index, dropped with Helm in #328; nothing publishes to it",
+  },
 ];
 
 /** Lines allowed to mention a retired claim, because they are the record of its retirement. */

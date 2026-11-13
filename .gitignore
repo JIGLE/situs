@@ -1,8 +1,6 @@
 # ===========================================
 # SITUS - GITIGNORE
 # ===========================================
-# Updated: February 4, 2026
-# Production-ready ignore rules
 
 # ===========================================
 # 1. Dependencies
@@ -109,14 +107,14 @@ security-report.json
 security-reports/
 
 # ===========================================
-# 11. Build Artifacts & Docker
+# 12. Build Artifacts & Docker
 # ===========================================
 situs_local_image.tar
 situs_image.tar
 /lib/generated/prisma
 
 # ===========================================
-# 12. Temporary & Local Files
+# 13. Temporary & Local Files
 # ===========================================
 verify-output.txt
 eslint-output.txt
@@ -133,7 +131,7 @@ final-test.txt
 /.cache/
 
 # ===========================================
-# 13. Legacy/Deprecated
+# 14. Legacy/Deprecated
 # ===========================================
 .eslintrc.cjs
 .eslintrc.json

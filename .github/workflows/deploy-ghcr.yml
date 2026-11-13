@@ -6,21 +6,26 @@ on:
     #
     # A TAG is a release: it may claim `:<version>` and `:latest`.
     #
-    # `main` is the development channel, added because there was no path at all from "merged" to
-    # "an image I can pull" without remembering to dispatch this workflow by hand — which is a
-    # thing to forget, and was forgotten. It publishes `:main` and `:sha-<short>` and can never
-    # claim a release name; see the tag-decision logic below.
-    #
-    # `paths-ignore` keeps a docs-only merge from spending ten minutes rebuilding an image whose
-    # contents cannot have changed.
+    # `main` is the development channel (below): it publishes `:main` and `:sha-<short>` and can
+    # never claim a release name; see the tag-decision logic further down.
     tags: ["v*"]
+
+  # `main` is the development channel, added because there was no path at all from "merged" to
+  # "an image I can pull" without remembering to dispatch this workflow by hand.
+  #
+  # It starts when CI FINISHES on main, not when the merge lands. It used to be `push: branches:
+  # [main]`, which ran beside CI rather than after it, so a commit whose CI failed was published as
+  # `:main` all the same — on 2026-11-13 CI went red on main at 15:02 and this workflow pushed the
+  # image from that commit nine minutes later. The `gate` job below only lets a successful CI run
+  # of a push through, and builds the commit that run tested (`head_sha`), not whatever main
+  # points at by the time this starts.
+  #
+  # `workflow_run` reads this file from the default branch, so editing this trigger on a branch
+  # changes nothing until it merges; `workflow_dispatch` with `dry_run` is the way to test a build.
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
-    paths-ignore:
-      - "docs/**"
-      - "**.md"
-      - ".github/ISSUE_TEMPLATE/**"
-  repository_dispatch:
-    types: [deploy-ghcr]
   workflow_dispatch:
     inputs:
       version:
@@ -57,22 +62,72 @@ concurrency:
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
-  deploy:
+  # Decides whether a development build is due. A tag push or a manual dispatch always builds; a
+  # finished CI run builds only when it was a push to main that succeeded and changed more than
+  # docs. The docs check replaces the `paths-ignore` the old `push` trigger carried, which
+  # `workflow_run` cannot express: a docs-only merge cannot change the image, so it should not
+  # spend ten minutes rebuilding it.
+  gate:
+    name: Decide whether to build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    outputs:
+      build: ${{ steps.decide.outputs.build }}
+    steps:
+      - name: Checkout
+        if: github.event_name == 'workflow_run'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 2
+
+      - name: Decide
+        id: decide
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != "workflow_run" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Every commit on main is a merge or squash of one pull request, so its first parent is
+          # the previous main and this diff is the whole merge.
+          CHANGED=$(git diff --name-only HEAD^1 HEAD)
+          echo "$CHANGED"
+          CODE=$(grep -vE '^docs/|\.md$|^\.github/ISSUE_TEMPLATE/' <<<"$CHANGED" || true)
+          if [ -z "$CODE" ]; then
+            echo "Docs-only merge — the image cannot have changed; not rebuilding."
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: gate
+    if: needs.gate.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    # No `id-token` or `attestations`: nothing here calls an attestation action. The SBOM and
+    # provenance below are BuildKit's own, pushed with the image under `packages: write`.
     permissions:
       contents: read
       packages: write
-      id-token: write
-      attestations: write
     timeout-minutes: 60
     env:
       REGISTRY: ghcr.io
       IMAGE_NAME: ${{ github.repository }}
+      # The commit being built. For a CI-triggered build it is the commit CI tested; `github.sha`
+      # there is the default branch's head when this run started, which may be a later merge.
+      BUILD_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ env.BUILD_SHA }}
           fetch-depth: 0
 
       - name: Log in to GHCR
@@ -86,12 +141,11 @@ jobs:
         if: contains(github.event.inputs.platforms || 'linux/amd64', 'arm64')
         uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
 
+      # No `driver-opts: image=moby/buildkit:latest` any more: every action here is pinned to a
+      # commit, and that line pulled whatever BuildKit was newest into the job that holds
+      # `packages: write`. The action's default is the stable BuildKit it was released with.
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
-        with:
-          driver-opts: |
-            image=moby/buildkit:latest
-            network=host
 
       # ── Tagging policy ────────────────────────────────────────────────────────────────
       #
@@ -112,11 +166,17 @@ jobs:
       # release. Use `dry_run: true` to prove the image builds without publishing at all.
       - name: Set variables
         id: vars
+        # Inputs reach the script as environment variables, never as `${{ }}` pasted into it: a
+        # pasted value is shell source, so a `version` holding `$(…)` would run.
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_PLATFORMS: ${{ inputs.platforms }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+          EVENT: ${{ github.event_name }}
         run: |
           set -euo pipefail
-          IMAGE_NAME_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          SHORT_SHA="${GITHUB_SHA::7}"
-          INPUT_VERSION="${{ github.event.inputs.version || github.event.client_payload.version || '' }}"
+          IMAGE_NAME_LOWER=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
+          SHORT_SHA="${BUILD_SHA::7}"
 
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             # The only path that may claim a release identity.
@@ -131,12 +191,13 @@ jobs:
             VERSION="sha-${SHORT_SHA}"
             TAGS="ghcr.io/${IMAGE_NAME_LOWER}:${VERSION}"
 
-            # A push to main additionally moves the development pointer, so "the newest merge"
-            # has a stable name to pull. Still not `:latest` — that stays reachable only from the
-            # tag branch above, which is what stops a test build becoming production by accident.
-            # Pulling `:main` requires imagePullPolicy=Always on the node, or the cached layer
-            # wins and the tag looks frozen (see docs/truenas.md).
-            if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            # A merge to main whose CI passed additionally moves the development pointer, so "the
+            # newest merge" has a stable name to pull. Still not `:latest` — that stays reachable
+            # only from the tag branch above, which is what stops a test build becoming
+            # production by accident. A manual dispatch never moves it, even from main: it did
+            # not come through CI. Pulling `:main` requires the pull policy Always, or the cached
+            # layer wins and the tag looks frozen (see docs/truenas.md).
+            if [[ "${EVENT}" == "workflow_run" ]]; then
               TAGS="${TAGS},ghcr.io/${IMAGE_NAME_LOWER}:main"
             fi
             if [[ -n "${INPUT_VERSION}" ]]; then
@@ -144,8 +205,8 @@ jobs:
             fi
           fi
 
-          PLATFORMS="${{ github.event.inputs.platforms || github.event.client_payload.platforms || 'linux/amd64' }}"
-          DRY_RUN="${{ github.event.inputs.dry_run || github.event.client_payload.dry_run || 'false' }}"
+          PLATFORMS="${INPUT_PLATFORMS:-linux/amd64}"
+          DRY_RUN="${INPUT_DRY_RUN:-false}"
           BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
@@ -176,7 +237,7 @@ jobs:
           build-args: |
             CACHE_BUST=${{ github.run_id }}-${{ github.run_number }}
             BUILD_VERSION=${{ steps.vars.outputs.version }}
-            GIT_COMMIT=${{ github.sha }}
+            GIT_COMMIT=${{ env.BUILD_SHA }}
             BUILD_TIME=${{ steps.vars.outputs.build_time }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -239,12 +300,12 @@ jobs:
             org.opencontainers.image.description=Sovereign Capital System — property income, receipts and tax evidence
             org.opencontainers.image.version=${{ steps.vars.outputs.version }}
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.revision=${{ env.BUILD_SHA }}
             org.opencontainers.image.created=${{ steps.vars.outputs.build_time }}
           build-args: |
             CACHE_BUST=${{ github.run_id }}-${{ github.run_number }}
             BUILD_VERSION=${{ steps.vars.outputs.version }}
-            GIT_COMMIT=${{ github.sha }}
+            GIT_COMMIT=${{ env.BUILD_SHA }}
             BUILD_TIME=${{ steps.vars.outputs.build_time }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

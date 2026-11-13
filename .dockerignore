@@ -16,3 +16,20 @@ env.local
 situs_local_image.tar
 *.tar
 *.log
+
+# Local state and tool output that must never reach a build context. The Dockerfile copies named
+# directories, so most of this is about upload size; `*.db` is about safety: a dev database
+# under prisma/ would otherwise be copied into the image with `COPY prisma`.
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+uploads/
+graphify-out/
+audit-*/
+audit-report/
+playwright-report/
+test-results/
+.claude/
+e2e/
+docs/

@@ -17,7 +17,10 @@ RUN apk add --no-cache python3 make g++ pkgconfig
 COPY package*.json ./
 COPY prisma ./prisma/
 COPY prisma.config.ts ./
-RUN npm install
+# `npm ci`, not `npm install`: install exactly the tree package-lock.json records, the one CI
+# tested, and fail if the two disagree. `npm install` resolves the ranges in package.json afresh
+# and may rewrite the lockfile, so an image could ship versions no CI run ever saw.
+RUN npm ci
 
 # Cache bust AFTER npm install so dependency layers are reused across runs.
 # Only application code rebuild is forced on every CI run.
@@ -76,7 +79,7 @@ RUN apk add --no-cache python3 make g++ pkgconfig
 COPY package*.json ./
 COPY prisma ./prisma/
 COPY prisma.config.ts ./
-RUN npm install
+RUN npm ci
 
 # Source code is mounted via docker-compose volumes, not COPY'd
 
@@ -102,7 +105,7 @@ LABEL org.opencontainers.image.title="Situs" \
       org.opencontainers.image.revision="${GIT_COMMIT}" \
       org.opencontainers.image.created="${BUILD_TIME}" \
       org.opencontainers.image.vendor="JIGLE" \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.licenses="LicenseRef-Proprietary"
 
 WORKDIR /app
 
