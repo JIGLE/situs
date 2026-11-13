@@ -21,4 +21,13 @@ npm ci --ignore-scripts
 echo "Generating Prisma client..."
 npx prisma generate
 
+# The code graph agents query before reading files (CLAUDE.md, "graphify"). Built from the code
+# alone, locally, in about ten seconds; a failure here costs the session nothing but the graph.
+echo "Building the graphify code graph..."
+bash scripts/graphify.sh update || echo "graphify: skipped (install or build failed)"
+# The venv's graphify is linked into ~/.local/bin; put it on the session's PATH.
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$CLAUDE_ENV_FILE"
+fi
+
 echo "Session start complete."

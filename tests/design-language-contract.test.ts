@@ -22,6 +22,7 @@ const NOT_DESIGN = new Set([
   "page-metadata-contract.test.ts",
   "pii-backfill-contract.test.ts",
   "receipt-writers-contract.test.ts",
+  "route-pathname-contract.test.ts",
 ]);
 
 const contracts = readdirSync(join(root, "tests")).filter((f) => f.endsWith("-contract.test.ts"));

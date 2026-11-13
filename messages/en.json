@@ -655,6 +655,7 @@
   },
   "onboarding": {
     "gettingStarted": "Getting Started",
+    "progress": "{done} of {total} complete",
     "complete": "complete",
     "setupComplete": "Setup Complete!",
     "allSet": "You're all set to manage your properties",
@@ -1228,7 +1229,7 @@
     "addressPlaceholder": "Start typing to search addresses…",
     "buildingName": "Building name (optional)",
     "buildingPlaceholder": "e.g. Downtown Apartments",
-    "streetAddress": "Street address",
+    "streetAddress": "Street and number",
     "postalCode": "Postal code",
     "commercial": "Commercial",
     "addressSearchFailed": "Address search failed.",
@@ -1735,12 +1736,15 @@
     "city": "City",
     "ownership": {
       "title": "Ownership",
-      "assigned": "{percent}% assigned",
+      "assigned": "{percent, number}% assigned",
       "none": "No owners assigned yet.",
       "assign": "Assign owner",
       "selectOwner": "Select owner…",
       "remove": "Remove owner",
-      "reachesFull": "Total will reach exactly 100% ✓"
+      "reachesFull": "Total will reach exactly 100% ✓",
+      "needOwnerAndPercent": "Select an owner and enter a percentage.",
+      "percentRange": "The percentage must be between 1 and 100.",
+      "wouldExceed": "The total would pass 100% (now {current}%)."
     },
     "paymentTimeline": "Payment timeline",
     "timelineReversed": "Reversed",

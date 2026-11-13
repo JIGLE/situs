@@ -2,31 +2,33 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { usePathname } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 import { ChevronRight, Home } from "lucide-react";
 import { cn } from "@/lib/utils/utils";
 import { useApp } from "@/lib/contexts/app-context";
 
-/** Human-readable labels for known route segments */
-const SEGMENT_LABELS: Record<string, string> = {
-  dashboard: "Dashboard",
-  overview: "Dashboard",
-  tenants: "Tenants",
-  people: "Tenants",
-  properties: "Properties",
-  portfolio: "Properties",
-  leases: "Leases",
-  financials: "Finance",
-  settings: "Settings",
-  owners: "Owners",
-  contracts: "Contracts",
-  documents: "Documents",
-  insights: "Intelligence",
-  analytics: "Intelligence",
-  reports: "Intelligence",
-  intelligence: "Intelligence",
-  brand: "Brand",
-};
+/**
+ * Route segments with a name of their own, as `navigation.*` keys: the same words the menu uses,
+ * so a crumb never reads in English on a Portuguese screen.
+ */
+const SEGMENT_KEYS = {
+  dashboard: "home",
+  overview: "home",
+  tenants: "people",
+  people: "people",
+  owners: "people",
+  properties: "portfolio",
+  portfolio: "portfolio",
+  buildings: "portfolio",
+  leases: "leases",
+  contracts: "contracts",
+  financials: "finance",
+  settings: "settings",
+  account: "account",
+  complete: "complete",
+  documents: "documents",
+  admin: "admin",
+} as const;
 
 export interface BreadcrumbOverride {
   /** The entity name to display for dynamic [id] segments, e.g. "Apt T2 Rua das Flores" */
@@ -44,7 +46,7 @@ interface BreadcrumbsProps {
 export function Breadcrumbs({ overrides, className }: BreadcrumbsProps) {
   const t = useTranslations("common");
   const tNav = useTranslations("navigation");
-  const pathname = usePathname();
+  const pathname = useRoutePathname();
   const { state } = useApp();
 
   // Split pathname: /properties/123 → ["properties", "123"]. This used to drop segments[0] as
@@ -67,8 +69,8 @@ export function Breadcrumbs({ overrides, className }: BreadcrumbsProps) {
     let label: string;
     if (override?.label) {
       label = override.label;
-    } else if (SEGMENT_LABELS[segment]) {
-      label = SEGMENT_LABELS[segment];
+    } else if (segment in SEGMENT_KEYS) {
+      label = tNav(SEGMENT_KEYS[segment as keyof typeof SEGMENT_KEYS]);
     } else {
       // Try to resolve the segment as an entity ID
       const property = state.properties?.find((p) => p.id === segment);
@@ -77,7 +79,7 @@ export function Breadcrumbs({ overrides, className }: BreadcrumbsProps) {
       label =
         property?.name ||
         tenant?.name ||
-        (lease ? `Lease ${lease.id.slice(0, 8)}` : null) ||
+        (lease ? `${tNav("leases")} ${lease.id.slice(0, 8)}` : null) ||
         decodeURIComponent(segment);
     }
 

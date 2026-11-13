@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 import { usePortalAccess } from "@/lib/contexts/portal-context";
 
 export function PortalAccessGuard({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const pathname = useRoutePathname();
   const router = useRouter();
   const { canAccessPath } = usePortalAccess();
 

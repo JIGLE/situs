@@ -361,11 +361,13 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
                   // The workspace runs to the rail's floor, so the map fills the screen beside it.
                   // One map element throughout: the summary above it comes and goes, and the
                   // detail lies over it, so choosing a property flies the same map to it.
+                  // `isolate` keeps Leaflet's panes (z 400–1000) and the detail (z 600) inside this
+                  // box: without it they outrank every dialog, sheet, menu and toast on the page.
                   <div className="hidden min-w-0 lg:flex lg:h-[var(--rail-height,calc(100dvh-9rem))] lg:flex-col lg:gap-4">
                     {!workspacePropertyId && workspaceDefault && (
                       <div className="flex-none">{renderDefault()}</div>
                     )}
-                    <div className="relative min-h-0 flex-1 border border-[var(--color-border)]">
+                    <div className="relative isolate min-h-0 flex-1 border border-[var(--color-border)]">
                       {/* The rail's search narrows the map too. */}
                       <PortfolioMap
                         properties={filteredProperties}

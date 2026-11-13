@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useState, useCallback, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { usePathname } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Globe, LogOut, Settings } from "lucide-react";
@@ -231,7 +231,7 @@ function isItemActive(item: PortalNavItem, pathname: string): boolean {
 export function Sidebar({ onTabChange }: SidebarProps): React.ReactElement {
   const [collapsed, setCollapsed] = useState(false);
   const { data: session } = useSession();
-  const pathname = usePathname();
+  const pathname = useRoutePathname();
   const { navigation } = usePortalAccess();
   const t = useTranslations("navigation");
 

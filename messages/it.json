@@ -655,6 +655,7 @@
   },
   "onboarding": {
     "gettingStarted": "Inizia qui",
+    "progress": "{done} di {total} completati",
     "complete": "completato",
     "setupComplete": "Configurazione completata!",
     "allSet": "Sei pronto per gestire i tuoi immobili",
@@ -1228,7 +1229,7 @@
     "addressPlaceholder": "Inizia a scrivere per cercare indirizzi…",
     "buildingName": "Nome dell'edificio (facoltativo)",
     "buildingPlaceholder": "es. Edificio Centro",
-    "streetAddress": "Indirizzo",
+    "streetAddress": "Via e numero civico",
     "postalCode": "Codice postale",
     "commercial": "Commerciale",
     "addressSearchFailed": "La ricerca dell'indirizzo non è riuscita.",
@@ -1735,12 +1736,15 @@
     "city": "Città",
     "ownership": {
       "title": "Proprietà",
-      "assigned": "{percent}% assegnato",
+      "assigned": "{percent, number}% assegnato",
       "none": "Nessun proprietario ancora assegnato.",
       "assign": "Assegna proprietario",
       "selectOwner": "Scegli proprietario…",
       "remove": "Rimuovi proprietario",
-      "reachesFull": "Il totale arriverà esattamente al 100% ✓"
+      "reachesFull": "Il totale arriverà esattamente al 100% ✓",
+      "needOwnerAndPercent": "Scegli un proprietario e indica la percentuale.",
+      "percentRange": "La percentuale deve essere tra 1 e 100.",
+      "wouldExceed": "Il totale supererebbe il 100% (ora {current}%)."
     },
     "paymentTimeline": "Cronologia dei pagamenti",
     "timelineReversed": "Stornato",

@@ -71,6 +71,11 @@ interface PropertyDetailViewProps {
   propertyId: string;
 }
 
+/** A percentage with at most one decimal, in the app's locale: "62,5" in Portuguese, not "62.5". */
+function formatShare(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value);
+}
+
 export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
   const { state, refreshData, deleteProperty } = useApp();
   const { success } = useToast();
@@ -199,16 +204,18 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
 
   const handleAssignOwner = async () => {
     if (!ownerAssignOwnerId || ownerAssignPct === "") {
-      setOwnerAssignError("Select an owner and enter a percentage.");
+      setOwnerAssignError(t("ownership.needOwnerAndPercent"));
       return;
     }
     const pct = Number(ownerAssignPct);
     if (pct <= 0 || pct > 100) {
-      setOwnerAssignError("Percentage must be between 1 and 100.");
+      setOwnerAssignError(t("ownership.percentRange"));
       return;
     }
     if (ownershipTotal + pct > 100.001) {
-      setOwnerAssignError(`Total would exceed 100% (current: ${ownershipTotal.toFixed(1)}%).`);
+      setOwnerAssignError(
+        t("ownership.wouldExceed", { current: formatShare(ownershipTotal, locale) }),
+      );
       return;
     }
     setOwnerAssignError("");
@@ -648,7 +655,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                         : "neutral"
                   }
                 >
-                  {t("ownership.assigned", { percent: ownershipTotal.toFixed(1) })}
+                  {t("ownership.assigned", { percent: Math.round(ownershipTotal * 10) / 10 })}
                 </StatusMark>
               </div>
               {propertyOwners.length === 0 ? (
@@ -803,7 +810,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                       : "text-[var(--color-destructive)]",
                 )}
               >
-                {collectionMetrics.collectionRate.toFixed(1)}%
+                {formatShare(collectionMetrics.collectionRate, locale)}%
               </p>
             </div>
           </div>

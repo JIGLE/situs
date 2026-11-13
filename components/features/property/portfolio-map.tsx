@@ -258,7 +258,7 @@ export function PortfolioMap({
   }, [missingKey, csrfToken]);
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[var(--color-canvas)]">
+    <div className="relative isolate h-full w-full overflow-hidden bg-[var(--color-canvas)]">
       <div
         ref={containerRef}
         className="h-full w-full"

@@ -2,7 +2,8 @@
 
 import { PageHeader } from "@/components/shared/page-header";
 import { useEffect, useRef, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 import { useTranslations } from "next-intl";
 import { Users, Briefcase, Plus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsMobileSelect, TabsTrigger } from "@/components/ui/tabs";
@@ -26,7 +27,7 @@ export function PeopleView(): React.ReactElement {
   const [activeTab, setActiveTab] = useTabPersistence("people", "tenants");
   const searchParams = useSearchParams();
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = useRoutePathname();
   const { state } = useApp();
   const { tenants, owners } = state;
   const tenantsViewRef = useRef<TenantsViewRef>(null);

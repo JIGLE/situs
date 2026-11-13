@@ -545,7 +545,7 @@ export function TenancySheet({ open, onOpenChange, lease, prefill }: TenancyShee
                       type="button"
                       variant="link"
                       size="sm"
-                      className="h-auto px-0"
+                      className="h-auto min-h-6 px-0"
                       onClick={() => {
                         setTenantMode(tenantMode === "new" ? "existing" : "new");
                         setErrors({});

@@ -281,6 +281,26 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                 {(showManualFields ||
                   (!dialog.formData.addressVerified && dialog.formData.address.length > 0)) && (
                   <div className="space-y-3 border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="streetAddress">{t("streetAddress")}</Label>
+                      <Input
+                        id="streetAddress"
+                        value={dialog.formData.streetAddress || ""}
+                        onChange={(e) =>
+                          dialog.updateFormData({
+                            streetAddress: e.target.value,
+                          })
+                        }
+                        className={
+                          dialog.formErrors.streetAddress ? "border-[var(--color-destructive)]" : ""
+                        }
+                      />
+                      {dialog.formErrors.streetAddress && (
+                        <p className="text-sm text-destructive">
+                          {dialog.formErrors.streetAddress}
+                        </p>
+                      )}
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label htmlFor="zipCode">{t("postalCode")}</Label>
@@ -297,9 +317,6 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                           <p className="text-sm text-destructive">{dialog.formErrors.zipCode}</p>
                         )}
                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label htmlFor="city">{tForms("city")}</Label>
                         <Input
@@ -312,29 +329,6 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                         />
                         {dialog.formErrors.city && (
                           <p className="text-sm text-destructive">{dialog.formErrors.city}</p>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="streetAddress">{t("streetAddress")}</Label>
-                        <Input
-                          id="streetAddress"
-                          value={dialog.formData.streetAddress || ""}
-                          onChange={(e) =>
-                            dialog.updateFormData({
-                              streetAddress: e.target.value,
-                            })
-                          }
-                          className={
-                            dialog.formErrors.streetAddress
-                              ? "border-[var(--color-destructive)]"
-                              : ""
-                          }
-                        />
-                        {dialog.formErrors.streetAddress && (
-                          <p className="text-sm text-destructive">
-                            {dialog.formErrors.streetAddress}
-                          </p>
                         )}
                       </div>
                     </div>

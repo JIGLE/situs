@@ -3,7 +3,8 @@
 import * as React from "react";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 import { useLocale, useTranslations } from "next-intl";
 import { ChevronDown, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 
@@ -68,7 +69,7 @@ export function OwnerSharesView(): React.ReactElement {
   const toast = useToast();
   const { token: csrfToken } = useCsrf();
   const confirmDialog = useConfirmDialog();
-  const pathname = usePathname();
+  const pathname = useRoutePathname();
   const searchParams = useSearchParams();
   const percent = (value: number) =>
     `${new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(value)}%`;

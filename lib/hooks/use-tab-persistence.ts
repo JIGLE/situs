@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 
 /**
  * Hook for persisting tab state across page reloads
@@ -15,7 +16,7 @@ export function useTabPersistence(
 ): [string, (tab: string) => void] {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = useRoutePathname();
   const hasHydratedFromStorage = useRef(false);
 
   // Get initial tab from URL or default only. Avoid reading localStorage during initial render

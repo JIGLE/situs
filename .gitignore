@@ -155,3 +155,6 @@ audit-*/
 # archived receipt PDFs land here the moment a receipt reaches "emitted". Never source,
 # and committing it would publish real records.
 uploads/
+
+# graphify code graph (rebuilt locally: scripts/graphify.sh)
+graphify-out/

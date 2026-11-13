@@ -1,6 +1,7 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 import { withoutEntityDetail } from "@/lib/utils/entity-detail-url";
 
 /**
@@ -12,7 +13,7 @@ import { withoutEntityDetail } from "@/lib/utils/entity-detail-url";
  */
 export function useEntityDetailClose(): () => void {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = useRoutePathname();
   const searchParams = useSearchParams();
 
   return () => {
