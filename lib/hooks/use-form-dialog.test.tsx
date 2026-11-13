@@ -100,3 +100,50 @@ describe("useFormDialog feedback", () => {
     expect(toast.error).toHaveBeenCalledWith(api.generic);
   });
 });
+
+/**
+ * Closing resets the form 200 ms later. That timer used to outlive the component, so a test that
+ * closed a dialog and finished set state after jsdom was gone ("window is not defined", an
+ * unhandled error that fails the run), and a dialog reopened inside the 200 ms was wiped.
+ */
+describe("useFormDialog close timer", () => {
+  function render() {
+    return renderHook(
+      () =>
+        useFormDialog<Form, { name: string }>({
+          schema,
+          initialData: { name: "" },
+          onSubmit: async () => {},
+        }),
+      { wrapper },
+    );
+  }
+
+  it("sets no state after unmount", () => {
+    vi.useFakeTimers();
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const { result, unmount } = render();
+      act(() => result.current.closeDialog());
+      unmount();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      consoleError.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps a record opened for editing right after a close", () => {
+    vi.useFakeTimers();
+    try {
+      const { result } = render();
+      act(() => result.current.closeDialog());
+      act(() => result.current.openEditDialog({ name: "Rui" }));
+      act(() => vi.advanceTimersByTime(300));
+      expect(result.current.isOpen).toBe(true);
+      expect(result.current.formData).toEqual({ name: "Rui" });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
