@@ -307,7 +307,11 @@ e2e/                    # Playwright E2E tests
   `POST /api/receipts/financas` (`lib/services/receipts/financas-receipts.ts`), which pays the month
   when nothing did, gives its number to the payment already there otherwise, and files the PDF as
   the receipt's archive. `Receipt.financasNumber` set is the matrix's deeper green, "recibo on
-  file"; a hand-recorded receipt's default `emitted` lifecycle does not count as one. Cadernetas prediais become properties the owner ticks in Portfolio ›
+  file"; a hand-recorded receipt's default `emitted` lifecycle does not count as one. A receipt a
+  recibo created has `source: "financas"`; **Remover recibo** in the month sheet
+  (`DELETE /api/receipts/financas`, `removeRecibo`) deletes that one with its money, takes only the
+  number off a payment that was there before, and deletes the PDF. Stored files live under
+  `DOCUMENT_STORAGE_PATH`, default `./data/documents` (the image's volume). Cadernetas prediais become properties the owner ticks in Portfolio ›
   New asset › Import from Finanças; a contract proof fills the New tenancy sheet, which saves as
   usual. The filled Modelo 2 form draws its values after all its labels, so it is read by position
   (`contract-form.ts`, over `readPdf`'s items), not as text. A value is read from its label to the next known label, never to a line end, and the

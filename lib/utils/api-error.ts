@@ -85,6 +85,7 @@ const REASON_KEY = new Map<
   | "rentIncreaseNotAhead"
   | "rentIncreaseApplied"
   | "leaseNotActive"
+  | "receiptFiled"
 >([
   ["tenant_has_history", "tenantHasHistory"],
   ["property_has_history", "propertyHasHistory"],
@@ -120,6 +121,7 @@ const REASON_KEY = new Map<
   ["receipt_not_paid", "receiptNotPaid"],
   ["receipt_month_untracked", "receiptMonthUntracked"],
   ["receipt_amount_unknown", "receiptAmountUnknown"],
+  ["receipt_filed", "receiptFiled"],
   ["last_admin", "lastAdmin"],
   ["account_exists", "accountExists"],
   ["account_changed", "accountChanged"],

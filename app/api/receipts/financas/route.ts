@@ -6,7 +6,7 @@ import { createSuccessResponse, parseBody, withErrorHandler } from "@/lib/utils/
 import { withRateLimit } from "@/lib/utils/rate-limit";
 import { parseRentReceipt } from "@/lib/services/financas-import/rent-receipt";
 import { readUploadedPdf } from "@/lib/services/financas-import/read-upload";
-import { registerReceipt } from "@/lib/services/receipts/financas-receipts";
+import { registerReceipt, removeRecibo } from "@/lib/services/receipts/financas-receipts";
 
 export const runtime = "nodejs";
 
@@ -56,5 +56,23 @@ async function handlePost(request: NextRequest): Promise<Response> {
   return createSuccessResponse(result);
 }
 
+const removeSchema = z.object({ receiptId: z.string().min(1).max(64) });
+
+/**
+ * DELETE /api/receipts/financas?receiptId= — take an uploaded recibo back off the ledger
+ * (`removeRecibo`): a payment it created goes with the money it put on the month, a payment that
+ * was there before keeps its money and loses only the recibo's number, and the PDF goes.
+ */
+async function handleDelete(request: NextRequest): Promise<Response> {
+  const authResult = await requireOwnerAccess(request);
+  if (authResult instanceof Response) return authResult;
+  const { scopeUserId } = authResult;
+
+  const params = new URL(request.url).searchParams;
+  const { receiptId } = parseBody({ receiptId: params.get("receiptId") ?? "" }, removeSchema);
+  return createSuccessResponse(await removeRecibo(scopeUserId, receiptId));
+}
+
 export const POST = withErrorHandler(withRateLimit(handlePost));
+export const DELETE = withErrorHandler(withRateLimit(handleDelete));
 export const OPTIONS = handleOptions;

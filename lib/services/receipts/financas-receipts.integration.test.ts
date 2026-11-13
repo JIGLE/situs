@@ -386,4 +386,134 @@ describe("recibos de renda uploaded — real Prisma client + real SQLite file", 
       leaseId: other.lease.id,
     });
   });
+
+  const upload = (w: Awaited<ReturnType<typeof world>>, month: number) =>
+    lib.registerReceipt(w.user.id, {
+      leaseId: w.lease.id,
+      month: { year: 2026, month },
+      parsed: recibo(`2026-${String(month).padStart(2, "0")}`),
+      pdf: PDF,
+      fileName: "recibo.pdf",
+    });
+
+  it("takes a payment back off the month when its PDF cannot be stored, so a retry starts clean", async () => {
+    const w = await world("no-storage");
+    const { documentService } = await import("@/lib/services/document-service");
+    const create = vi
+      .spyOn(documentService, "create")
+      .mockRejectedValueOnce(
+        Object.assign(new Error("EACCES: permission denied"), { code: "EACCES" }),
+      );
+
+    await expect(upload(w, 12)).rejects.toThrow(/EACCES/);
+    create.mockRestore();
+
+    expect(await prisma.receipt.count({ where: { leaseId: w.lease.id } })).toBe(0);
+    expect((await monthRow(w.lease.id, 12)).allocatedAmount).toBe(0);
+    expect((await upload(w, 12)).outcome).toBe("create");
+  });
+
+  it("files the PDF of a recibo already on file without one when it is uploaded again", async () => {
+    const w = await world("re-archive");
+    const first = await upload(w, 5);
+    const archive = await findExistingArchive(w.user.id, first.receiptIds[0]);
+    await prisma.document.delete({ where: { id: archive! } });
+
+    expect((await upload(w, 5)).outcome).toBe("duplicate");
+    expect(await findExistingArchive(w.user.id, first.receiptIds[0])).not.toBeNull();
+    expect(await prisma.receipt.count({ where: { leaseId: w.lease.id } })).toBe(1);
+  });
+
+  it("removes a recibo that paid the month: the payment and its PDF go, the month is owed again", async () => {
+    const w = await world("remove-create");
+    const { receiptIds } = await upload(w, 4);
+
+    expect(await lib.removeRecibo(w.user.id, receiptIds[0])).toEqual({
+      deleted: receiptIds,
+      detached: [],
+    });
+
+    expect(await prisma.receipt.count({ where: { leaseId: w.lease.id } })).toBe(0);
+    const april = await monthRow(w.lease.id, 4);
+    expect(april.allocatedAmount).toBe(0);
+    expect(april.status).not.toMatch(/paid/);
+    expect(await findExistingArchive(w.user.id, receiptIds[0])).toBeNull();
+    // And it can be uploaded again.
+    expect((await upload(w, 4)).outcome).toBe("create");
+  });
+
+  it("removing a recibo keeps the payment that was there before it, and its stage", async () => {
+    const w = await world("remove-attach");
+    const fromBank = await prisma.receipt.create({
+      data: {
+        userId: w.user.id,
+        tenantId: w.tenant.id,
+        propertyId: w.property.id,
+        leaseId: w.lease.id,
+        amount: RENT,
+        date: new Date("2026-01-03"),
+        type: "rent",
+        status: "paid",
+        lifecycle: "draft",
+        source: "automation",
+      },
+    });
+    await allocation.allocateReceipt(fromBank.id);
+    await upload(w, 1);
+
+    expect(await lib.removeRecibo(w.user.id, fromBank.id)).toEqual({
+      deleted: [],
+      detached: [fromBank.id],
+    });
+
+    expect(await prisma.receipt.findUniqueOrThrow({ where: { id: fromBank.id } })).toMatchObject({
+      financasNumber: null,
+      lifecycle: "draft",
+    });
+    expect((await monthRow(w.lease.id, 1)).allocatedAmount).toBe(RENT);
+    expect(await findExistingArchive(w.user.id, fromBank.id)).toBeNull();
+  });
+
+  it("waives again a month a removed recibo had brought back", async () => {
+    const w = await world("remove-waived");
+    const row = await monthRow(w.lease.id, 1);
+    await prisma.rentPeriod.update({ where: { id: row.id }, data: { status: "waived" } });
+    const { receiptIds } = await upload(w, 1);
+
+    await lib.removeRecibo(w.user.id, receiptIds[0]);
+
+    expect(await monthRow(w.lease.id, 1)).toMatchObject({ status: "waived", allocatedAmount: 0 });
+  });
+
+  it("removes an older recibo (made before receipts said where they came from) as one it created", async () => {
+    const w = await world("remove-legacy");
+    const { receiptIds } = await upload(w, 6);
+    await prisma.receipt.update({ where: { id: receiptIds[0] }, data: { source: "manual" } });
+
+    expect((await lib.removeRecibo(w.user.id, receiptIds[0])).deleted).toEqual(receiptIds);
+    expect((await monthRow(w.lease.id, 6)).allocatedAmount).toBe(0);
+  });
+
+  it("refuses to remove another owner's recibo, or a receipt with none", async () => {
+    const w = await world("remove-mine");
+    const other = await world("remove-theirs");
+    const { receiptIds } = await upload(w, 7);
+
+    await expect(lib.removeRecibo(other.user.id, receiptIds[0])).rejects.toThrow(/not found/i);
+    const plain = await prisma.receipt.create({
+      data: {
+        userId: w.user.id,
+        tenantId: w.tenant.id,
+        propertyId: w.property.id,
+        leaseId: w.lease.id,
+        amount: RENT,
+        date: new Date("2026-08-03"),
+        type: "rent",
+        status: "paid",
+      },
+    });
+    await expect(lib.removeRecibo(w.user.id, plain.id)).rejects.toMatchObject({
+      reason: "receipt_no_recibo",
+    });
+  });
 });

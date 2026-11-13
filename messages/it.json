@@ -823,6 +823,7 @@
       "rentIncreaseApplied": "Questo aggiornamento è già in vigore. Modifica il canone nel contratto.",
       "leaseNotActive": "Solo un contratto attivo può avere il canone aggiornato.",
       "receiptMonthUntracked": "Questo contratto non ha affitto in quel mese: non era ancora iniziato o era già finito. Scegli un altro mese.",
+      "receiptFiled": "Questa ricevuta è stata comunicata alle Finanças, quindi resta. Solo il Portale può annullarla.",
       "receiptAmountUnknown": "Non è stato possibile leggere l'importo di questa ricevuta. Registra il pagamento a mano.",
       "bankMovementNotOutgoing": "Solo il denaro in uscita può essere registrato come spesa.",
       "bankMovementLinked": "Questo movimento è già collegato. Scollegalo prima.",
@@ -1401,7 +1402,8 @@
       "sourceHeader": "Origine",
       "source": {
         "bank": "Banca",
-        "manual": "Manuale"
+        "manual": "Manuale",
+        "financas": "Finanças"
       },
       "noRentMonth": "Nessun mese di affitto",
       "void": "Annulla ricevuta",
@@ -1606,6 +1608,15 @@
       "uploadRecibo": "Carica ricevuta",
       "fromRecibo": "Dalla ricevuta d'affitto",
       "reciboNumber": "Ricevuta d'affitto n. {number}",
+      "removeRecibo": "Rimuovi ricevuta",
+      "removePayment": "Rimuovi pagamento",
+      "removeReciboTitle": "Rimuovere la ricevuta n. {number}?",
+      "removeReciboTitleNoNumber": "Rimuovere questa ricevuta?",
+      "removeReciboDescription": "Il suo PDF va con essa. Se è stata la ricevuta a registrare questo pagamento, anche il pagamento va via e il mese torna da pagare. Un pagamento che c'era già, dalla banca o registrato a mano, resta e perde solo la ricevuta.",
+      "removePaymentTitle": "Rimuovere questo pagamento?",
+      "removePaymentDescription": "I {amount} registrati a mano il {date} escono dal mese, che torna da pagare.",
+      "reciboRemoved": "Ricevuta rimossa.",
+      "paymentRemoved": "Pagamento rimosso.",
       "movements": {
         "title": "Movimenti bancari da associare",
         "open": "Associa un movimento bancario",
@@ -2289,7 +2300,8 @@
     "recordOwnerPayout": "Pagamento al proprietario registrato",
     "deleteOwnerPayout": "Pagamento al proprietario rimosso",
     "setRentCollector": "Incaricato degli affitti cambiato",
-    "uploadFinancasReceipt": "Ricevuta caricata dalle Finanças"
+    "uploadFinancasReceipt": "Ricevuta caricata dalle Finanças",
+    "removeFinancasReceipt": "Ricevuta delle Finanças rimossa"
   },
   "financasImport": {
     "title": "Importa da Finanças",
