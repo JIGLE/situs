@@ -153,7 +153,9 @@ export function OnboardingChecklist({
               {allComplete ? `🎉 ${t("setupComplete")}` : t("gettingStarted")}
             </h3>
             <p className="text-xs text-[var(--color-muted-foreground)]">
-              {allComplete ? t("allSet") : `${completedCount} of ${totalSteps} ${t("complete")}`}
+              {allComplete
+                ? t("allSet")
+                : t("progress", { done: completedCount, total: totalSteps })}
             </p>
           </div>
         </div>

@@ -49,7 +49,7 @@ function SeeAll({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className="flex items-center justify-end text-sm text-[var(--color-primary)] hover:underline max-md:min-h-11 max-md:min-w-11"
+      className="flex min-h-6 items-center justify-end text-sm text-[var(--color-primary)] hover:underline max-md:min-h-11 max-md:min-w-11"
     >
       {children}
     </Link>

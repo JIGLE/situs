@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils/utils";
 export function LegalLinks({ className }: { className?: string }): React.ReactElement {
   const t = useTranslations("legal");
   const link =
-    "inline-flex min-h-11 items-center px-1 underline-offset-4 hover:text-[var(--color-foreground)] hover:underline md:min-h-0";
+    "inline-flex min-h-11 items-center px-1 underline-offset-4 hover:text-[var(--color-foreground)] hover:underline md:min-h-6";
 
   return (
     <nav

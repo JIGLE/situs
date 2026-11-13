@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { usePathname } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -77,7 +77,7 @@ const GATE_EXEMPT = ["/admin"];
 
 export function AppDataGate({ children }: { children: React.ReactNode }) {
   const { state, refreshData } = useApp();
-  const pathname = usePathname();
+  const pathname = useRoutePathname();
   const t = useTranslations("common");
 
   const Skeleton = useMemo(() => skeletonFor(pathname ?? ""), [pathname]);

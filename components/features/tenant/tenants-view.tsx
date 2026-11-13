@@ -37,7 +37,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SearchFilter } from "@/components/ui/search-filter";
 import { BulkActionBar, getDefaultBulkActions } from "@/components/ui/bulk-action-bar";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 import { useLocale, useTranslations } from "next-intl";
 import { withEntityDetail } from "@/lib/utils/entity-detail-url";
 
@@ -199,7 +200,7 @@ export const TenantsView = forwardRef<TenantsViewRef, TenantsViewProps>(
 
     // Tenant detail overlay — opened via the shared `?detail=tenant:<id>` mechanism
     const router = useRouter();
-    const pathname = usePathname();
+    const pathname = useRoutePathname();
     const searchParams = useSearchParams();
     const openTenantOverlay = (tenantId: string) => {
       router.push(withEntityDetail(pathname, searchParams.toString(), "tenant", tenantId));

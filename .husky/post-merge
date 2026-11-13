@@ -1,0 +1,3 @@
+# Keep the graphify code graph current, in the background so git never waits on it. Does nothing
+# until graphify is installed (`npm run graph` installs it).
+(bash scripts/graphify.sh refresh >/dev/null 2>&1 &)

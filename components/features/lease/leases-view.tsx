@@ -40,7 +40,8 @@ import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusMark } from "@/components/ui/status-mark";
 import { leaseStatus } from "@/lib/utils/status-tone";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 import { useLocale, useTranslations } from "next-intl";
 import { withEntityDetail } from "@/lib/utils/entity-detail-url";
 
@@ -59,7 +60,7 @@ export function LeasesView({ embedded = false }: LeasesViewProps = {}): React.Re
   const { formatCurrency } = useCurrency();
   const confirmDialog = useConfirmDialog();
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = useRoutePathname();
   const searchParams = useSearchParams();
   const locale = useLocale();
   const tIncrease = useTranslations("leases.rentIncrease");

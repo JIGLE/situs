@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from "react";
 import { useSession } from "next-auth/react";
-import { usePathname } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 import { Building, Property, Tenant, Receipt, Owner, Expense, Lease } from "@/lib/types";
 import { useToast } from "./toast-context";
 import { useCsrf } from "./csrf-context";
@@ -55,7 +55,7 @@ export const AppContext = createContext<AppContextValue | null>(null);
 export function AppProvider({ children }: { children: ReactNode }): React.ReactElement {
   const [state, dispatch] = React.useReducer(appReducer, initialState);
   const { data: session } = useSession();
-  const pathname = usePathname();
+  const pathname = useRoutePathname();
   const { error: showError } = useToast();
   const { token: csrfToken } = useCsrf();
   const userId = (session?.user as { id?: string } | undefined)?.id;

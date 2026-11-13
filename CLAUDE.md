@@ -36,10 +36,33 @@ npm run type-check     # tsc --noEmit
 npm run hygiene        # docs, i18n, colour, currency, CSS, action, version and branch checks
 npm run verify:ci      # type-check + lint + format:check + hygiene + security:audit + test
 npm run audit:local    # mobile/desktop audit against a disposable app (see Responsive rules)
+npm run graph          # install graphify if missing and rebuild the code graph (see graphify)
 
 npx prisma db push     # Push schema changes to SQLite
 npx prisma generate    # Regenerate the Prisma client after schema changes
 ```
+
+## graphify: query the code graph before reading files
+
+`graphify-out/graph.json` is a knowledge graph of this repository's code (files, functions,
+components, who imports and calls whom), built locally with tree-sitter by
+[graphify](https://github.com/Graphify-Labs/graphify) — code only, no LLM, nothing leaves the
+machine. It exists to spend fewer tokens: a query returns the few files and lines that matter.
+
+- Before the first grep or file read for a question about the code, ask the graph:
+  `graphify query "<question>"`, `graphify explain "<symbol or file>"`,
+  `graphify path "<A>" "<B>"`. Then read only the lines it points to. Put this rule in any
+  subagent prompt that explores code.
+- `graphify-out/GRAPH_REPORT.md` is the broad map (most-connected nodes, communities); read it for
+  an architecture question, not by default.
+- It is gitignored and kept current where it is used: a cloud session's start hook builds it
+  (`.claude/hooks/session-start.sh`), `.husky/post-commit`, `post-merge` and `post-checkout`
+  rebuild it in the background once graphify is installed, and `npm run graph` does it by hand.
+  `scripts/graphify.sh` pins the version and installs it into a private venv linked at
+  `~/.local/bin/graphify`. After a large edit, `npm run graph` before querying again.
+- `.claude/settings.json` runs graphify's own PreToolUse hook (`hook-guard`), which reminds an
+  agent about the graph before a search or a file read; it does nothing when graphify is missing.
+- The graph knows code, not prose: docs, schema comments and this file are still read directly.
 
 ## Architecture
 
@@ -421,6 +444,11 @@ Each of these passed type-check, lint and the mobile audit while the running app
    `app/api/**` is correct — it is a log. `tests/error-copy-contract.test.ts`.
 3. **Dates take the app's locale, never the browser's.** Use `lib/utils/format-date.ts`, where
    `locale` is required. No contract test covers this rule yet.
+
+**Read the route through `useRoutePathname`** (`lib/hooks/use-route-pathname.ts`), never
+`usePathname` from `next/navigation`: on the server that returns the proxy's rewritten `/pt/...`
+path, so anything drawn from it differs from the browser's render and every page fails hydration.
+`tests/route-pathname-contract.test.ts`.
 
 **A stored enum is not a label** — `capitalize` and `replace(/_/g, " ")` are not a translation.
 When two components render one enum, extract the map (`lib/utils/receipt-labels.ts`).

@@ -2,7 +2,8 @@
 
 import { PageHeader } from "@/components/shared/page-header";
 import { useEffect, useRef, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 import { useTranslations } from "next-intl";
 import { Building2, FileUp, Home, Plus } from "lucide-react";
 import { PropertiesView, PropertiesViewRef } from "@/components/features/property/property-list";
@@ -39,7 +40,7 @@ const tabOf = (value: string | null): PortfolioTab =>
 export function AssetsView(): React.ReactElement {
   const { state, addBuilding } = useApp();
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = useRoutePathname();
   const searchParams = useSearchParams();
   // Leases is a tab here, not a menu entry of its own: a lease is a property's tenancy.
   // `?tab=leases` opens it, which is where `/leases` and its links (`?action=create`, …) land.
@@ -154,27 +155,34 @@ export function AssetsView(): React.ReactElement {
                       {t("newAsset")}
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-52">
+                  <DropdownMenuContent align="start" className="w-64">
                     <DropdownMenuItem onClick={() => propertiesViewRef.current?.openDialog()}>
                       <Home className="mr-2 h-3.5 w-3.5" />
-                      {t("newProperty")}
-                      <span className="ml-auto text-caption text-[var(--color-muted-foreground)]">
-                        {t("newPropertyHint")}
+                      {/* Stacked: side by side, the Portuguese label and hint each wrapped in two. */}
+                      <span className="flex flex-col">
+                        {t("newProperty")}
+                        <span className="text-caption text-[var(--color-muted-foreground)]">
+                          {t("newPropertyHint")}
+                        </span>
                       </span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setImportOpen(true)}>
                       <FileUp className="mr-2 h-3.5 w-3.5" />
-                      {t("importFinancas")}
-                      <span className="ml-auto text-caption text-[var(--color-muted-foreground)]">
-                        {t("importFinancasHint")}
+                      <span className="flex flex-col">
+                        {t("importFinancas")}
+                        <span className="text-caption text-[var(--color-muted-foreground)]">
+                          {t("importFinancasHint")}
+                        </span>
                       </span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setBuildingDialogOpen(true)}>
                       <Building2 className="mr-2 h-3.5 w-3.5" />
-                      {t("newBuilding")}
-                      <span className="ml-auto text-caption text-[var(--color-muted-foreground)]">
-                        {t("newBuildingHint")}
+                      <span className="flex flex-col">
+                        {t("newBuilding")}
+                        <span className="text-caption text-[var(--color-muted-foreground)]">
+                          {t("newBuildingHint")}
+                        </span>
                       </span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>

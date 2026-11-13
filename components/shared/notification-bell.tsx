@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 import { Bell } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,7 @@ export function NotificationBell({ className }: { className?: string } = {}): Re
   const tTypes = useTranslations("notifications");
   const locale = useLocale();
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = useRoutePathname();
   const searchParams = useSearchParams();
   const { token: csrfToken } = useCsrf();
 

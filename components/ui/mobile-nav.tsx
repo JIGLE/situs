@@ -10,7 +10,7 @@ import { LanguageSelector } from "@/components/shared/language-selector";
 import { SitusPortalMark } from "@/components/shared/situs-portal-logo";
 import { NotificationBell } from "@/components/shared/notification-bell";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 import { useLocale, useTranslations } from "next-intl";
 import { usePortalAccess } from "@/lib/contexts/portal-context";
 
@@ -32,7 +32,7 @@ export function MobileBottomNav({
   onTabChange,
 }: MobileNavProps): React.ReactElement {
   const { data: session } = useSession();
-  const pathname = usePathname();
+  const pathname = useRoutePathname();
   const { mobilePrimaryNavigation, mobileSecondaryNavigation } = usePortalAccess();
   const tNav = useTranslations("navigation");
   const user = session?.user;
@@ -234,7 +234,7 @@ export function MobileBottomNav({
  * Purely presentational: no menu toggle — navigation lives in the bottom bar.
  */
 export function MobileTopBar(): React.ReactElement {
-  const pathname = usePathname();
+  const pathname = useRoutePathname();
   const tNav = useTranslations("navigation");
   const { navigation } = usePortalAccess();
 

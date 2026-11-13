@@ -2,7 +2,7 @@
 
 import { PageHeader } from "@/components/shared/page-header";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 import { ChevronLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -28,7 +28,7 @@ const SECTIONS = [
 export function AdminShellNav() {
   const t = useTranslations("admin.shell");
   const tNav = useTranslations("navigation");
-  const pathname = usePathname();
+  const pathname = useRoutePathname();
   const current = pathname.replace(/\/$/, "") || "/admin";
 
   return (
@@ -37,7 +37,7 @@ export function AdminShellNav() {
           what the rail lights up while one is open: this is the way back to it. */}
       <Link
         href="/settings?tab=system"
-        className="-mb-2 inline-flex min-h-11 items-center gap-1 text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] md:min-h-0"
+        className="-mb-2 inline-flex min-h-11 items-center gap-1 text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] md:min-h-6"
       >
         <ChevronLeft aria-hidden className="h-4 w-4" />
         {tNav("settings")}

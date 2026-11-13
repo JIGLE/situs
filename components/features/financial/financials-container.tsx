@@ -3,7 +3,8 @@
 import { PageHeader } from "@/components/shared/page-header";
 import { useEffect, useEffectEvent, useState } from "react";
 import { useTranslations } from "next-intl";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 import { Tabs, TabsContent, TabsList, TabsMobileSelect, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ExportButton } from "@/components/ui/export-button";
@@ -49,7 +50,7 @@ export function FinancialsContainer() {
   const [activeTab, setActiveTab] = useTabPersistence("payments", "ledger");
   const searchParams = useSearchParams();
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = useRoutePathname();
   const tenantId = searchParams.get("tenantId") ?? undefined;
   const propertyId = searchParams.get("propertyId") ?? undefined;
   const tabParam = searchParams.get("tab");

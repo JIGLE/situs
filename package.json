@@ -46,6 +46,7 @@
     "currency:check": "node scripts/check-currency-literals.js",
     "actions:check": "python3 scripts/check-action-manifests.py",
     "actions:pinned": "node scripts/pin-actions.mjs --check",
+    "graph": "bash scripts/graphify.sh update",
     "hygiene": "npm run docs:check && npm run i18n:check:strict && npm run lint:colors && npm run currency:check && npm run css:check && npm run actions:check && npm run actions:pinned && npm run version:check && npm run branch:check",
     "css:check": "node scripts/check-class-contract.mjs --strict",
     "audit:selftest": "node scripts/mobile-audit.selftest.mjs",

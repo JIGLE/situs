@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 import { Building2, Users, UserCircle, FileText, FileIcon, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils/utils";
 import { StatusMark, type StatusTone } from "@/components/ui/status-mark";
@@ -64,7 +65,7 @@ export function EntityLink({
   variant = "card",
   className,
 }: EntityLinkProps) {
-  const pathname = usePathname();
+  const pathname = useRoutePathname();
   const searchParams = useSearchParams();
   const config = ENTITY_CONFIG[type];
   const Icon = config.icon;

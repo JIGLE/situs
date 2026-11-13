@@ -21,7 +21,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { LoadingState } from "@/components/ui/loading-state";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
 import { SearchFilter } from "@/components/ui/search-filter";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useRoutePathname } from "@/lib/hooks/use-route-pathname";
 import { useApp } from "@/lib/contexts/app-context";
 import { Owner } from "@/lib/types";
 import { ownerSchema, type OwnerFormData } from "@/lib/schemas/owner.schema";
@@ -55,7 +56,7 @@ export const OwnersView = forwardRef<OwnersViewRef, { density?: "comfortable" | 
 
     // Owner detail overlay — opened via the shared `?detail=owner:<id>` mechanism
     const router = useRouter();
-    const pathname = usePathname();
+    const pathname = useRoutePathname();
     const searchParams = useSearchParams();
     const openOwnerOverlay = (ownerId: string) => {
       router.push(withEntityDetail(pathname, searchParams.toString(), "owner", ownerId));
