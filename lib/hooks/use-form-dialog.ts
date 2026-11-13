@@ -129,6 +129,7 @@ export function useFormDialog<T extends Record<string, unknown>, E = T>({
   // Refs for timers and tracking
   const validationTimerRef = useRef<NodeJS.Timeout | null>(null);
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const resetTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedDataRef = useRef<string>(JSON.stringify(initialData));
 
   // Current persistence version (for cache invalidation)
@@ -470,23 +471,40 @@ export function useFormDialog<T extends Record<string, unknown>, E = T>({
     setEditingItem(null);
   }, [initialData]);
 
+  const cancelPendingReset = useCallback(() => {
+    if (resetTimerRef.current) {
+      clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = null;
+    }
+  }, []);
+
   const openDialog = useCallback(() => {
+    cancelPendingReset();
     resetForm();
     setIsOpen(true);
-  }, [resetForm]);
+  }, [cancelPendingReset, resetForm]);
 
   const closeDialog = useCallback(() => {
     setIsOpen(false);
-    setTimeout(resetForm, 200); // Delay reset to avoid visual glitch
-  }, [resetForm]);
+    cancelPendingReset();
+    // Delay reset to avoid visual glitch; cleared on unmount, so it never sets state after teardown.
+    resetTimerRef.current = setTimeout(() => {
+      resetTimerRef.current = null;
+      resetForm();
+    }, 200);
+  }, [cancelPendingReset, resetForm]);
 
-  const openEditDialog = useCallback((item: E, mapToFormData?: (item: E) => T) => {
-    const mappedData = mapToFormData ? mapToFormData(item) : (item as unknown as T);
-    setFormData(mappedData);
-    setEditingItem(item);
-    setFormErrors({});
-    setIsOpen(true);
-  }, []);
+  const openEditDialog = useCallback(
+    (item: E, mapToFormData?: (item: E) => T) => {
+      cancelPendingReset();
+      const mappedData = mapToFormData ? mapToFormData(item) : (item as unknown as T);
+      setFormData(mappedData);
+      setEditingItem(item);
+      setFormErrors({});
+      setIsOpen(true);
+    },
+    [cancelPendingReset],
+  );
 
   const updateFormData = useCallback(
     (updates: Partial<T>) => {
@@ -616,6 +634,9 @@ export function useFormDialog<T extends Record<string, unknown>, E = T>({
     return () => {
       if (autoSaveTimerRef.current) {
         clearTimeout(autoSaveTimerRef.current);
+      }
+      if (resetTimerRef.current) {
+        clearTimeout(resetTimerRef.current);
       }
     };
   }, []);

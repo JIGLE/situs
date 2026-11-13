@@ -48,6 +48,7 @@ export async function readPdf(bytes: Uint8Array): Promise<PdfContent> {
     }
     return { pages: Array.isArray(text) ? text : [text], items };
   } finally {
-    await pdf.destroy().catch(() => undefined);
+    // The loading task owns the worker; pdf.js 5 (unpdf 2) dropped the document's own destroy().
+    await pdf.loadingTask.destroy().catch(() => undefined);
   }
 }
