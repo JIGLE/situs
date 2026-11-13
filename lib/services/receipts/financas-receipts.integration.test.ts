@@ -257,9 +257,91 @@ describe("recibos de renda uploaded — real Prisma client + real SQLite file", 
     expect(await prisma.receipt.count({ where: { leaseId: w.lease.id } })).toBe(0);
   });
 
-  it("refuses a month the contract has no rent for", async () => {
-    const w = await world("outside");
+  it("moves an active contract's start back to an older recibo's month, waiving the months between", async () => {
+    const w = await world("before-start");
 
+    const proposal = await lib.proposeReceipt(w.user.id, recibo("2025-10", { rent: 700 }));
+    expect(proposal).toMatchObject({
+      leaseId: w.lease.id,
+      outcome: "extend",
+      term: { startDate: "2025-10-01", endDate: null },
+    });
+
+    const result = await lib.registerReceipt(w.user.id, {
+      leaseId: w.lease.id,
+      month: { year: 2025, month: 10 },
+      parsed: recibo("2025-10", { rent: 700, received: 700 }),
+      pdf: PDF,
+      fileName: "recibo.pdf",
+    });
+
+    expect(result.outcome).toBe("create");
+    const lease = await prisma.lease.findUniqueOrThrow({ where: { id: w.lease.id } });
+    expect(lease.startDate.toISOString().slice(0, 10)).toBe("2025-10-01");
+    const months = await prisma.rentPeriod.findMany({
+      where: { leaseId: w.lease.id, year: 2025 },
+      orderBy: { month: "asc" },
+    });
+    expect(months.map((m) => [m.month, m.status, m.allocatedAmount])).toEqual([
+      [10, "paid_late", 700],
+      [11, "waived", 0],
+      [12, "waived", 0],
+    ]);
+    // Received on the 4th, so paid late; and the recibo's rent is what that month owed, so it reads
+    // as paid, not part-paid.
+    expect(months[0].dueAmount).toBe(700);
+    expect((await monthRow(w.lease.id, 1)).allocatedAmount).toBe(0);
+
+    // A recibo for a month it waived on the way pays that month, at its own rent.
+    await lib.registerReceipt(w.user.id, {
+      leaseId: w.lease.id,
+      month: { year: 2025, month: 11 },
+      parsed: recibo("2025-11", { rent: 700, received: 700 }),
+      pdf: PDF,
+      fileName: "recibo.pdf",
+    });
+    const november = await prisma.rentPeriod.findFirstOrThrow({
+      where: { leaseId: w.lease.id, year: 2025, month: 11 },
+    });
+    expect([november.status, november.allocatedAmount, november.dueAmount]).toEqual([
+      "paid_late",
+      700,
+      700,
+    ]);
+    expect(await prisma.receipt.count({ where: { leaseId: w.lease.id } })).toBe(2);
+  });
+
+  it("carries a lapsed term forward a year at a time to take a later recibo", async () => {
+    const w = await world("after-end");
+
+    expect((await lib.proposeReceipt(w.user.id, recibo("2027-02"))).term).toEqual({
+      startDate: null,
+      endDate: "2027-12-31",
+    });
+    await lib.registerReceipt(w.user.id, {
+      leaseId: w.lease.id,
+      month: { year: 2027, month: 2 },
+      parsed: recibo("2027-02"),
+      pdf: PDF,
+      fileName: "recibo.pdf",
+    });
+
+    const lease = await prisma.lease.findUniqueOrThrow({ where: { id: w.lease.id } });
+    expect(lease.endDate.toISOString().slice(0, 10)).toBe("2027-12-31");
+    const february = await prisma.rentPeriod.findFirstOrThrow({
+      where: { leaseId: w.lease.id, year: 2027, month: 2 },
+    });
+    expect([february.status, february.allocatedAmount]).toEqual(["paid_late", RENT]);
+  });
+
+  it("refuses a month a contract that is not active has no rent for", async () => {
+    const w = await world("outside");
+    await prisma.lease.update({ where: { id: w.lease.id }, data: { status: "terminated" } });
+
+    expect(await lib.proposeReceipt(w.user.id, recibo("2025-12"))).toMatchObject({
+      outcome: "no_month",
+      inactive: true,
+    });
     await expect(
       lib.registerReceipt(w.user.id, {
         leaseId: w.lease.id,
