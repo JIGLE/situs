@@ -212,7 +212,7 @@ export function ReceiptUploadSheet({
       outcome !== "paid" &&
       outcome !== "no_month" &&
       // A recibo outside the contract's dates waits for the owner's tick to move them.
-      (outcome !== "extend" || row.allowTermChange)
+      (outcome !== "extend" || !row.proposed?.term?.startDate || row.allowTermChange)
     );
   });
 
@@ -225,7 +225,9 @@ export function ReceiptUploadSheet({
           row.file,
           row.leaseId,
           row.month,
-          outcomeOf(row) === "extend" && row.allowTermChange,
+          outcomeOf(row) === "extend" &&
+            Boolean(row.proposed?.term?.startDate) &&
+            row.allowTermChange,
         );
         change(row.key, { done: result.outcome, error: undefined });
         if (result.outcome === "create" || result.outcome === "attach") registered += 1;
@@ -258,7 +260,6 @@ export function ReceiptUploadSheet({
     if (outcome === "create") return { text: t("outcome.create", { month }), tone: "plain" };
     if (outcome === "extend") {
       const start = row.proposed?.leaseStart;
-      const end = row.proposed?.leaseEnd;
       return row.proposed?.term?.startDate
         ? {
             text: t("outcome.beforeStart", {
@@ -267,10 +268,9 @@ export function ReceiptUploadSheet({
             }),
             tone: "warn",
           }
-        : {
-            text: t("outcome.afterEnd", { month, end: end ? formatDate(end, locale) : "—" }),
-            tone: "warn",
-          };
+        : // A contract renews on its own: a month after its stored end is in force, so this is
+          // only the payment, as for any month.
+          { text: t("outcome.create", { month }), tone: "plain" };
     }
     if (outcome === "attach") return { text: t("outcome.attach", { month }), tone: "plain" };
     if (outcome === "duplicate") return { text: t("outcome.duplicate"), tone: "done" };
@@ -393,7 +393,7 @@ export function ReceiptUploadSheet({
                         {said.text}
                       </p>
                     )}
-                    {!row.done && outcomeOf(row) === "extend" && row.proposed?.term && (
+                    {!row.done && outcomeOf(row) === "extend" && row.proposed?.term?.startDate && (
                       <div className="flex items-start gap-3">
                         <Checkbox
                           id={`term-${row.key}`}
@@ -408,13 +408,7 @@ export function ReceiptUploadSheet({
                           htmlFor={`term-${row.key}`}
                           className="text-xs font-normal leading-snug max-md:pt-3"
                         >
-                          {row.proposed.term.startDate
-                            ? t("moveStart", {
-                                month: monthLabel(row.month),
-                              })
-                            : t("moveEnd", {
-                                end: formatDate(row.proposed.term.endDate, locale),
-                              })}
+                          {t("moveStart", { month: monthLabel(row.month) })}
                         </Label>
                       </div>
                     )}

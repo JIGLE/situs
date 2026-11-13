@@ -327,7 +327,7 @@ describe("recibos de renda uploaded — real Prisma client + real SQLite file", 
     expect(await prisma.receipt.count({ where: { leaseId: w.lease.id } })).toBe(2);
   });
 
-  it("carries a lapsed term forward a year at a time to take a later recibo", async () => {
+  it("carries a lapsed term forward a year at a time, with no tick: the contract renews on its own", async () => {
     const w = await world("after-end");
 
     expect((await lib.proposeReceipt(w.user.id, recibo("2027-02"))).term).toEqual({
@@ -340,7 +340,6 @@ describe("recibos de renda uploaded — real Prisma client + real SQLite file", 
       parsed: recibo("2027-02"),
       pdf: PDF,
       fileName: "recibo.pdf",
-      allowTermChange: true,
     });
 
     const lease = await prisma.lease.findUniqueOrThrow({ where: { id: w.lease.id } });

@@ -19,11 +19,11 @@
  * (the waived row only copied today's rent).
  *
  * - **extend**: an active contract has no month for it, because the recibo is older than the
- *   contract's start in Situs (often typed as its latest renewal) or later than its end. A recibo
- *   never moves a contract's dates on its own: without the owner's tick on its line
- *   (`allowTermChange`) the month is refused. With it, the term is moved to cover the month: the
- *   start back to that month, or the end forward a year at a time, as the contract renews
- *   (art. 1096 CC).
+ *   contract's start in Situs (often typed as its latest renewal) or later than its end.
+ *   - After the end: an active contract renews on its own until the owner ends it (art. 1096 CC),
+ *     so the month is in force. The end is carried forward a year at a time, with no question.
+ *   - Before the start: a recibo never moves a contract's start on its own. Without the owner's
+ *     tick on its line (`allowTermChange`) the month is refused; with it, the start moves back.
  *   The months a new start adds before the old one were never tracked, so they are waived like
  *   the months before "Track rent from" (`settleRentBefore`); a later recibo for one brings it back.
  *   Then the recibo pays its month as in **create**.
@@ -401,7 +401,10 @@ export async function registerReceipt(
   }
   // A month the term was moved to take was never tracked either.
   let untracked = false;
-  if (state.outcome === "extend" && !input.allowTermChange) {
+  // An active contract renews on its own until the owner ends it, so a month after its stored end
+  // is still in force: the end is carried forward with no question. Only a month before its start
+  // waits for the owner's tick.
+  if (state.outcome === "extend" && state.term?.startDate && !input.allowTermChange) {
     throw new ConflictError("The month is outside the contract's term", "receipt_month_untracked");
   }
   if (state.outcome === "extend" && state.term) {

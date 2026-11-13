@@ -2357,7 +2357,6 @@
       "outcome": {
         "create": "Marca {month} como pagado",
         "beforeStart": "En Situs este contrato empieza el {start}, después de {month}. Elija otro contrato o mes, o corrija la fecha de inicio.",
-        "afterEnd": "En Situs este contrato termina el {end}, antes de {month}. Elija otro contrato o mes, o prolongue el contrato.",
         "attach": "Añade el recibo al pago ya registrado de {month}",
         "duplicate": "Ya registrado: nada cambia",
         "noMonth": "Este contrato no tiene renta en {month}. Elija otro mes u otro contrato.",
@@ -2365,8 +2364,7 @@
         "chosen": "Se registrará en {month}",
         "paid": "Ya pagado en {month}: nada cambia"
       },
-      "moveStart": "Adelantar el inicio del contrato a {month} y marcar ese mes como pagado",
-      "moveEnd": "Prolongar el contrato hasta el {end} y marcar el mes como pagado"
+      "moveStart": "Adelantar el inicio del contrato a {month} y marcar ese mes como pagado"
     }
   },
   "buildings": {

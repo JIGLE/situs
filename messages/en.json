@@ -2357,7 +2357,6 @@
       "outcome": {
         "create": "Marks {month} as paid",
         "beforeStart": "In Situs this contract starts on {start}, after {month}. Choose another contract or month, or correct the start date.",
-        "afterEnd": "In Situs this contract ends on {end}, before {month}. Choose another contract or month, or extend the contract.",
         "attach": "Adds the recibo to the payment already recorded for {month}",
         "duplicate": "Already registered: nothing changes",
         "noMonth": "This contract has no rent in {month}. Choose another month or contract.",
@@ -2365,8 +2364,7 @@
         "chosen": "Will be registered in {month}",
         "paid": "Already paid in {month}: nothing changes"
       },
-      "moveStart": "Move the contract's start back to {month} and mark that month paid",
-      "moveEnd": "Extend the contract to {end} and mark the month paid"
+      "moveStart": "Move the contract's start back to {month} and mark that month paid"
     }
   },
   "buildings": {
