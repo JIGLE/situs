@@ -381,16 +381,21 @@ export const PropertiesView = forwardRef<PropertiesViewRef, PropertiesViewProps>
                           ref={panelRef}
                           className="absolute inset-y-3 right-3 z-[600] w-[clamp(560px,62%,880px)] max-w-[calc(100%-1.5rem)] overflow-y-auto border border-[var(--color-border)] bg-[var(--color-card-solid)] p-4 motion-safe:animate-fade-in lg:p-6"
                         >
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={closeWorkspace}
-                            aria-label={tMap("closeDetail")}
-                            title={tMap("closeDetail")}
-                            className="absolute right-2 top-2 z-10"
-                          >
-                            <X className="size-4" />
-                          </Button>
+                          {/* Sticky and above the detail's own sticky header (z-20): at z-10 and
+                              absolute, the header's solid background covered it, and scrolling
+                              the panel carried it away. The zero-height row takes no room. */}
+                          <div className="sticky top-0 z-30 flex h-0 justify-end">
+                            <Button
+                              variant="outline"
+                              size="icon-sm"
+                              onClick={closeWorkspace}
+                              aria-label={tMap("closeDetail")}
+                              title={tMap("closeDetail")}
+                              className="bg-[var(--color-card-solid)]"
+                            >
+                              <X className="size-4" />
+                            </Button>
+                          </div>
                           <PropertyDetailView propertyId={workspacePropertyId} />
                         </div>
                       )}
