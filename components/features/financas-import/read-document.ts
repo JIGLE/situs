@@ -56,8 +56,14 @@ export async function registerRentReceipt(
   file: File,
   leaseId: string,
   month: string,
+  allowTermChange = false,
 ): Promise<RegisterReceiptResult> {
-  const query = new URLSearchParams({ leaseId, month, name: file.name.slice(0, 200) });
+  const query = new URLSearchParams({
+    leaseId,
+    month,
+    name: file.name.slice(0, 200),
+    allowTermChange: allowTermChange ? "1" : "0",
+  });
   const res = await fetch(`/api/receipts/financas?${query}`, {
     method: "POST",
     headers: csrfHeaders({ "Content-Type": "application/pdf" }),

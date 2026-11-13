@@ -2356,15 +2356,17 @@
       "done": "Registrata in {month}",
       "outcome": {
         "create": "Segna {month} come pagato",
-        "extendStart": "Segna {month} come pagato e anticipa l'inizio del contratto a quel mese",
-        "extendEnd": "Segna {month} come pagato e proroga il contratto fino al {end}",
+        "beforeStart": "In Situs questo contratto inizia il {start}, dopo {month}. Scegli un altro contratto o mese, o correggi la data di inizio.",
+        "afterEnd": "In Situs questo contratto termina il {end}, prima di {month}. Scegli un altro contratto o mese, o proroga il contratto.",
         "attach": "Aggiunge la ricevuta al pagamento già registrato di {month}",
         "duplicate": "Già registrata: non cambia nulla",
         "noMonth": "Questo contratto non ha affitto in {month}. Scegli un altro mese o contratto.",
         "inactive": "Questo contratto non è attivo, quindi non ha canone in {month}. Attivalo o scegli un altro contratto.",
         "chosen": "Sarà registrata in {month}",
         "paid": "Già pagato in {month}: non cambia nulla"
-      }
+      },
+      "moveStart": "Anticipa l'inizio del contratto a {month} e segna quel mese come pagato",
+      "moveEnd": "Proroga il contratto fino al {end} e segna il mese come pagato"
     }
   },
   "buildings": {

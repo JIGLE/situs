@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { CheckCircle2, FileUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -47,7 +48,11 @@ interface Row {
     outcome: ReceiptUploadOutcome;
     term: TermChange | null;
     inactive: boolean;
+    leaseStart: string | null;
+    leaseEnd: string | null;
   } | null;
+  /** The owner ticked moving the contract's dates to take this recibo's month. */
+  allowTermChange: boolean;
   /** The month's rent, when it differs from the recibo's. */
   dueAmount: number | null;
   /** Several contracts may be the one: the owner is asked to check. */
@@ -164,10 +169,13 @@ export function ReceiptUploadSheet({
                   outcome: proposal.outcome,
                   term: proposal.term,
                   inactive: proposal.inactive,
+                  leaseStart: proposal.leaseStart,
+                  leaseEnd: proposal.leaseEnd,
                 }
               : null,
           dueAmount: proposal.dueAmount,
           ambiguous: proposal.candidates.length > 1,
+          allowTermChange: false,
         });
       } catch (err) {
         const status = failureStatus(err);
@@ -202,7 +210,9 @@ export function ReceiptUploadSheet({
       /^\d{4}-\d{2}$/.test(row.month) &&
       outcome !== "duplicate" &&
       outcome !== "paid" &&
-      outcome !== "no_month"
+      outcome !== "no_month" &&
+      // A recibo outside the contract's dates waits for the owner's tick to move them.
+      (outcome !== "extend" || row.allowTermChange)
     );
   });
 
@@ -211,7 +221,12 @@ export function ReceiptUploadSheet({
     let registered = 0;
     for (const row of ready) {
       try {
-        const result = await registerRentReceipt(row.file, row.leaseId, row.month);
+        const result = await registerRentReceipt(
+          row.file,
+          row.leaseId,
+          row.month,
+          outcomeOf(row) === "extend" && row.allowTermChange,
+        );
         change(row.key, { done: result.outcome, error: undefined });
         if (result.outcome === "create" || result.outcome === "attach") registered += 1;
       } catch (err) {
@@ -241,13 +256,21 @@ export function ReceiptUploadSheet({
     const outcome = outcomeOf(row);
     const month = monthLabel(row.month);
     if (outcome === "create") return { text: t("outcome.create", { month }), tone: "plain" };
-    const term = row.proposed?.term;
-    if (outcome === "extend" && term?.startDate) {
-      return { text: t("outcome.extendStart", { month }), tone: "plain" };
-    }
-    if (outcome === "extend" && term?.endDate) {
-      const end = formatDate(term.endDate, locale);
-      return { text: t("outcome.extendEnd", { month, end }), tone: "plain" };
+    if (outcome === "extend") {
+      const start = row.proposed?.leaseStart;
+      const end = row.proposed?.leaseEnd;
+      return row.proposed?.term?.startDate
+        ? {
+            text: t("outcome.beforeStart", {
+              month,
+              start: start ? formatDate(start, locale) : "—",
+            }),
+            tone: "warn",
+          }
+        : {
+            text: t("outcome.afterEnd", { month, end: end ? formatDate(end, locale) : "—" }),
+            tone: "warn",
+          };
     }
     if (outcome === "attach") return { text: t("outcome.attach", { month }), tone: "plain" };
     if (outcome === "duplicate") return { text: t("outcome.duplicate"), tone: "done" };
@@ -369,6 +392,31 @@ export function ReceiptUploadSheet({
                         )}
                         {said.text}
                       </p>
+                    )}
+                    {!row.done && outcomeOf(row) === "extend" && row.proposed?.term && (
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          id={`term-${row.key}`}
+                          checked={row.allowTermChange}
+                          onCheckedChange={(checked) =>
+                            change(row.key, { allowTermChange: checked === true })
+                          }
+                          disabled={saving}
+                          wrapperClassName="mt-0.5 max-md:min-h-11 max-md:min-w-11 max-md:mt-0 justify-center"
+                        />
+                        <Label
+                          htmlFor={`term-${row.key}`}
+                          className="text-xs font-normal leading-snug max-md:pt-3"
+                        >
+                          {row.proposed.term.startDate
+                            ? t("moveStart", {
+                                month: monthLabel(row.month),
+                              })
+                            : t("moveEnd", {
+                                end: formatDate(row.proposed.term.endDate, locale),
+                              })}
+                        </Label>
+                      </div>
                     )}
                     {!row.done && row.ambiguous && (
                       <p className="text-xs text-[var(--semantic-warning-readable)]">

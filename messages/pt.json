@@ -2356,15 +2356,17 @@
       "done": "Registado em {month}",
       "outcome": {
         "create": "Marca {month} como pago",
-        "extendStart": "Marca {month} como pago e antecipa o início do contrato para esse mês",
-        "extendEnd": "Marca {month} como pago e prolonga o contrato até {end}",
+        "beforeStart": "Este contrato começa a {start} no Situs, depois de {month}. Escolha outro contrato ou mês, ou corrija a data de início.",
+        "afterEnd": "Este contrato termina a {end} no Situs, antes de {month}. Escolha outro contrato ou mês, ou prolongue o contrato.",
         "attach": "Junta o recibo ao pagamento já registado de {month}",
         "duplicate": "Já registado: nada muda",
         "noMonth": "Este contrato não tem renda em {month}. Escolha outro mês ou contrato.",
         "inactive": "Este contrato não está ativo, por isso não tem renda em {month}. Ative-o ou escolha outro contrato.",
         "chosen": "Será registado em {month}",
         "paid": "Já pago em {month}: nada muda"
-      }
+      },
+      "moveStart": "Antecipar o início do contrato para {month} e marcar esse mês como pago",
+      "moveEnd": "Prolongar o contrato até {end} e marcar o mês como pago"
     }
   },
   "buildings": {

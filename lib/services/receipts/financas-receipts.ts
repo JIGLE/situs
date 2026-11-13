@@ -20,8 +20,10 @@
  *
  * - **extend**: an active contract has no month for it, because the recibo is older than the
  *   contract's start in Situs (often typed as its latest renewal) or later than its end. A recibo
- *   from Finanças proves the tenancy ran that month, so the term is moved to cover it: the start
- *   back to that month, or the end forward a year at a time, as the contract renews (art. 1096 CC).
+ *   never moves a contract's dates on its own: without the owner's tick on its line
+ *   (`allowTermChange`) the month is refused. With it, the term is moved to cover the month: the
+ *   start back to that month, or the end forward a year at a time, as the contract renews
+ *   (art. 1096 CC).
  *   The months a new start adds before the old one were never tracked, so they are waived like
  *   the months before "Track rent from" (`settleRentBefore`); a later recibo for one brings it back.
  *   Then the recibo pays its month as in **create**.
@@ -85,6 +87,9 @@ export interface ReceiptProposal {
   term: TermChange | null;
   /** `no_month`: the contract is not active, so it owes no rent at all. */
   inactive: boolean;
+  /** The proposed contract's term in Situs ("YYYY-MM-DD"), to set beside the recibo's month. */
+  leaseStart: string | null;
+  leaseEnd: string | null;
 }
 
 interface LeaseRow extends ReceiptMatchLease {
@@ -297,6 +302,8 @@ export async function proposeReceipt(
         : null,
     term: state?.term ?? null,
     inactive: state?.inactive ?? false,
+    leaseStart: lease ? lease.startDate.slice(0, 10) : null,
+    leaseEnd: lease ? lease.endDate.slice(0, 10) : null,
   };
 }
 
@@ -307,6 +314,11 @@ export interface RegisterReceiptInput {
   /** The recibo itself, kept as the receipt's archive. */
   pdf: Buffer;
   fileName: string;
+  /**
+   * The owner ticked "move the contract's dates" on this recibo's line. Without it, a month
+   * outside the contract's term is refused, as before.
+   */
+  allowTermChange?: boolean;
 }
 
 export interface RegisterReceiptResult {
@@ -389,6 +401,9 @@ export async function registerReceipt(
   }
   // A month the term was moved to take was never tracked either.
   let untracked = false;
+  if (state.outcome === "extend" && !input.allowTermChange) {
+    throw new ConflictError("The month is outside the contract's term", "receipt_month_untracked");
+  }
   if (state.outcome === "extend" && state.term) {
     untracked = true;
     await extendTerm(userId, lease, state.term, month, now);
