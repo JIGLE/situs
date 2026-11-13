@@ -45,7 +45,7 @@ const propertyFields = z.object({
   buildingName: z.string().max(100, "Building name too long").optional(),
 
   // Property details
-  type: z.enum(["apartment", "house", "condo", "townhouse", "commercial", "other"]),
+  type: z.enum(["apartment", "house", "condo", "townhouse", "commercial", "garage", "other"]),
   // Unknown is null, not 0: Finanças does not say how many rooms a property has, and 0 reads as a studio.
   bedrooms: z.number().min(0).max(20).nullish(),
   bathrooms: z.number().min(0).max(20).nullish(),

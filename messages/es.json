@@ -1226,7 +1226,8 @@
       "condo": "Condominio",
       "townhouse": "Casa Adosada",
       "other": "Otro",
-      "commercial": "Comercial"
+      "commercial": "Comercial",
+      "garage": "Garaje"
     },
     "namePlaceholder": "p. ej. Piso 4B, Bajo con jardín, Unidad 12",
     "addressPlaceholder": "Empieza a escribir para buscar direcciones…",
@@ -1757,7 +1758,9 @@
       "totalExpenses": "Gastos Totales",
       "netOperatingIncome": "Ingreso Operativo Neto",
       "collectionRate": "Tasa de Cobro",
-      "noData": "Aún no hay datos financieros para esta propiedad."
+      "noData": "Aún no hay datos financieros para esta propiedad.",
+      "expenses": "Gastos",
+      "noExpenses": "No hay gastos registrados en este inmueble."
     },
     "month": {
       "subtitle": "Mes de referencia de {property}",
@@ -1778,8 +1781,6 @@
       "percentRange": "El porcentaje debe estar entre 1 y 100.",
       "wouldExceed": "El total superaría el 100% (ahora {current}%)."
     },
-    "paymentTimeline": "Cronología de pagos",
-    "timelineReversed": "Revertido",
     "ledger": {
       "title": "Libro de alquileres · meses de referencia",
       "current": "Actual: {month}",
@@ -1797,7 +1798,15 @@
       "notOnMap": "No está en el mapa. Marcar en el mapa",
       "approximate": "En el mapa solo por código postal. Marcar el portal"
     },
-    "building": "Edificio"
+    "building": "Edificio",
+    "buildingSection": {
+      "none": "Inmueble independiente",
+      "permilage": "{value}‰ del edificio",
+      "noPermilage": "Sin coeficiente",
+      "units": "{count, plural, one {# unidad} other {# unidades}}",
+      "shared": "gastos comunes {year}: {amount}"
+    },
+    "auditEmpty": "Todos los cambios en este inmueble, sus arrendamientos, pagos y gastos aparecerán aquí."
   },
   "notificationCenter": {
     "title": "Notificaciones",
@@ -2296,6 +2305,7 @@
       "apartment": "Apartamento",
       "house": "Casa",
       "commercial": "Comercial",
+      "garage": "Garaje",
       "other": "Otro"
     },
     "article": "Artículo {article}",

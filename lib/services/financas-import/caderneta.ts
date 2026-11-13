@@ -335,7 +335,7 @@ export interface PropertyDraft {
   streetAddress: string;
   city: string;
   zipCode: string;
-  type: "apartment" | "house" | "commercial" | "other";
+  type: "apartment" | "house" | "commercial" | "garage" | "other";
   bedrooms: number | null;
   cadasterReference: string;
   fraction: string;
@@ -353,6 +353,8 @@ function typeOf(
   const p = (propertyType ?? "").toLowerCase();
   if (p.includes("terreno")) return "other";
   if (u.includes("habita")) return divided ? "apartment" : "house";
+  // A parking space or garage, on its own article or as a fração ("Estacionamento", "Garagem").
+  if (/garag|estacionamento|aparcamento|parqueamento/.test(u)) return "garage";
   if (/com[ée]rcio|servi[çc]o|ind[úu]stri|armaz/.test(u)) return "commercial";
   if (!u) return divided ? "apartment" : "house";
   return "other";

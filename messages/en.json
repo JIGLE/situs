@@ -1226,7 +1226,8 @@
       "condo": "Condo",
       "townhouse": "Townhouse",
       "other": "Other",
-      "commercial": "Commercial"
+      "commercial": "Commercial",
+      "garage": "Garage"
     },
     "namePlaceholder": "e.g. Apt 4B, Garden Flat, Unit 12",
     "addressPlaceholder": "Start typing to search addresses…",
@@ -1757,7 +1758,9 @@
       "totalExpenses": "Total Expenses",
       "netOperatingIncome": "Net Operating Income",
       "collectionRate": "Collection Rate",
-      "noData": "No financial data available for this property yet."
+      "noData": "No financial data available for this property yet.",
+      "expenses": "Expenses",
+      "noExpenses": "No expenses recorded for this property."
     },
     "month": {
       "subtitle": "Reference month for {property}",
@@ -1778,8 +1781,6 @@
       "percentRange": "The percentage must be between 1 and 100.",
       "wouldExceed": "The total would pass 100% (now {current}%)."
     },
-    "paymentTimeline": "Payment timeline",
-    "timelineReversed": "Reversed",
     "ledger": {
       "title": "Rent ledger · reference months",
       "current": "Current: {month}",
@@ -1797,7 +1798,15 @@
       "notOnMap": "Not on the map. Mark it on the map",
       "approximate": "On the map by postal code only. Mark the door"
     },
-    "building": "Building"
+    "building": "Building",
+    "buildingSection": {
+      "none": "Not in a building",
+      "permilage": "{value}‰ of the building",
+      "noPermilage": "No permilage",
+      "units": "{count, plural, one {# unit} other {# units}}",
+      "shared": "shared costs {year}: {amount}"
+    },
+    "auditEmpty": "Every change to this property, its tenancies, payments and expenses will appear here."
   },
   "notificationCenter": {
     "title": "Notifications",
@@ -2296,6 +2305,7 @@
       "apartment": "Apartment",
       "house": "House",
       "commercial": "Commercial",
+      "garage": "Garage",
       "other": "Other"
     },
     "article": "Article {article}",

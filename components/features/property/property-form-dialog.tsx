@@ -388,6 +388,7 @@ export const PropertyFormDialog = forwardRef<PropertyFormDialogRef>(
                       <SelectItem value="condo">{t("types.condo")}</SelectItem>
                       <SelectItem value="townhouse">{t("types.townhouse")}</SelectItem>
                       <SelectItem value="commercial">{t("types.commercial")}</SelectItem>
+                      <SelectItem value="garage">{t("types.garage")}</SelectItem>
                       <SelectItem value="other">{t("types.other")}</SelectItem>
                     </SelectContent>
                   </Select>
