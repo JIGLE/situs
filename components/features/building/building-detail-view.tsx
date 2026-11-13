@@ -373,7 +373,7 @@ export function BuildingDetailView({ buildingId }: { buildingId: string }): Reac
                 <li key={expense.id} className="space-y-1 px-3 py-2">
                   <div className="flex items-start gap-3">
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium">
+                      <span className="block text-sm font-medium break-words">
                         {key ? tCategories(key) : expense.category}
                         {expense.description ? ` · ${expense.description}` : ""}
                       </span>

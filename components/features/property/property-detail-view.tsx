@@ -318,7 +318,7 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                 <span>{property.address}</span>
               </div>
               {property.buildingId && property.buildingName && (
-                <div className="mt-1 flex items-center gap-2 text-sm text-[var(--color-muted-foreground)]">
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--color-muted-foreground)]">
                   <span>{t("building")}:</span>
                   <EntityLink
                     type="building"

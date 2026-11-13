@@ -200,7 +200,7 @@ export function BuildingExpenseForm({
         />
       </div>
 
-      <fieldset className="space-y-2">
+      <fieldset className="min-w-0 space-y-2">
         <legend className="text-sm font-medium">{t("sharedBy")}</legend>
         <ul className="divide-y divide-[var(--color-border)] border border-[var(--color-border)]">
           {units.map((unit) => {
@@ -220,11 +220,14 @@ export function BuildingExpenseForm({
                   aria-label={unit.name}
                   wrapperClassName="max-md:min-h-11 max-md:min-w-11 justify-center"
                 />
-                <span className="min-w-0 flex-1 truncate text-sm">{names.get(unit.id)}</span>
-                <span className="shrink-0 text-xs text-[var(--color-muted-foreground)] tabular-nums">
-                  {unit.permilage != null ? `${unit.permilage}‰` : "—"}
+                {/* The permilagem under the name: beside it, a phone had room for four letters. */}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm">{names.get(unit.id)}</span>
+                  <span className="block text-xs text-[var(--color-muted-foreground)] tabular-nums">
+                    {unit.permilage != null ? `${unit.permilage}‰` : "—"}
+                  </span>
                 </span>
-                <span className="w-24 shrink-0 text-right text-sm tabular-nums">
+                <span className="shrink-0 text-right text-sm tabular-nums">
                   {part && amountOk ? formatCurrency(part.amount) : ""}
                 </span>
               </li>

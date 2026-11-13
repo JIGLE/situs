@@ -1267,7 +1267,9 @@
       "atPin": "En este punto: {address}",
       "useAddress": "Usar esta dirección",
       "notFoundError": "El mapa no encuentra esta dirección. Corríjala o marque el lugar en el mapa.",
-      "approximateError": "El mapa solo encuentra el código postal o la localidad. Corrija la calle o marque el portal en el mapa."
+      "approximateError": "El mapa solo encuentra el código postal o la localidad. Corrija la calle o marque el portal en el mapa.",
+      "zoomIn": "Acercar",
+      "zoomOut": "Alejar"
     },
     "building": {
       "label": "Edificio",
@@ -1706,7 +1708,7 @@
     "paidFromBank": "Pagado por el banco",
     "notSeenInBank": "No visto en el banco",
     "paidByOwner": "Pagado por {name}",
-    "buildingPart": "Parte de un gasto del edificio {building} ({total})"
+    "buildingPart": "Parte de un gasto de {building} ({total})"
   },
   "propertyDetail": {
     "tabs": {

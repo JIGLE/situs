@@ -4,6 +4,8 @@ import "leaflet/dist/leaflet.css";
 import { useEffect, useRef, useState } from "react";
 import type { Map as LeafletMap, Marker } from "leaflet";
 import { useTranslations } from "next-intl";
+import { Minus, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/contexts/theme-context";
 import { PORTUGAL_CENTER, TILE_FILTER, TILE_URL } from "./map-tiles";
 
@@ -56,6 +58,8 @@ export function LocationPicker({
         center: PORTUGAL_CENTER,
         zoom: 6,
         attributionControl: false,
+        // Drawn below in the app's own buttons: Leaflet's are white boxes on every theme.
+        zoomControl: false,
         // A page scroll over the map in the form should scroll the form.
         scrollWheelZoom: "center",
       });
@@ -130,6 +134,27 @@ export function LocationPicker({
         aria-label={t("mapLabel")}
         data-audit-map=""
       />
+      <div className="absolute left-2 top-2 z-[500] flex flex-col border border-[var(--color-border)] bg-[var(--color-surface-solid)]">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t("zoomIn")}
+          onClick={() => mapRef.current?.zoomIn()}
+        >
+          <Plus className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className="border-t border-[var(--color-border)]"
+          aria-label={t("zoomOut")}
+          onClick={() => mapRef.current?.zoomOut()}
+        >
+          <Minus className="size-4" />
+        </Button>
+      </div>
       <p className="absolute bottom-0 left-0 z-[500] bg-[var(--color-surface-solid)]/80 px-1.5 text-xs text-[var(--color-muted-foreground)]">
         ©{" "}
         <a

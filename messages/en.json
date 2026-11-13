@@ -1267,7 +1267,9 @@
       "atPin": "At this spot: {address}",
       "useAddress": "Use this address",
       "notFoundError": "The map cannot find this address. Correct it or mark the spot on the map.",
-      "approximateError": "The map finds only the postal code or town. Correct the street or mark the door on the map."
+      "approximateError": "The map finds only the postal code or town. Correct the street or mark the door on the map.",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out"
     },
     "building": {
       "label": "Building",
@@ -1706,7 +1708,7 @@
     "paidFromBank": "Paid from the bank",
     "notSeenInBank": "Not seen in the bank",
     "paidByOwner": "Paid by {name}",
-    "buildingPart": "Part of a {building} building expense ({total})"
+    "buildingPart": "Part of a {building} expense ({total})"
   },
   "propertyDetail": {
     "tabs": {
