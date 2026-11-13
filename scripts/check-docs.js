@@ -46,6 +46,15 @@ const INDEX_EXEMPT = new Set([
  */
 const RETIRED_CLAIMS = [
   {
+    // Start-up schema sync: a refused push now stops the start; nothing forces data loss by default.
+    pattern:
+      /forces the sync, dropping what is gone|retries with `--accept-data-loss`|AUTO_DB_SCHEMA_SYNC_FORCE=false` stops it|runs an additive `prisma db push`/,
+    retired: "2026-11-13 (safe schema update on start)",
+    because:
+      "scripts/schema-sync.js backs the database up, pushes without --accept-data-loss and stops " +
+      "the start on a refusal; AUTO_DB_SCHEMA_SYNC_FORCE now defaults to false and is an opt-in",
+  },
+  {
     // UX simplification, PR 2: a tenancy is one sheet, and the wizard machinery went with it.
     pattern: /useMultiStepForm|use-multi-step-form|MultiStepFormContainer|Wizard Page/,
     retired: "2026-11-11 (New tenancy sheet)",

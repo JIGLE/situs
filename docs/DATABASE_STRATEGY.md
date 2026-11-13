@@ -110,13 +110,14 @@ runs PostgreSQL) requires:
 ## How the schema reaches a database
 
 The image applies `prisma/schema.prisma` itself, on every start: `prestart` runs
-`scripts/ensure-sqlite.js`, which pushes the schema into an empty file (`AUTO_DB_INIT`, default
-on) and then runs an additive `prisma db push` (`AUTO_DB_SCHEMA_SYNC`, default on). When the
-additive push cannot apply — the schema dropped or retyped a column — it copies the file to
-`<file>.bak-<timestamp>` and retries with `--accept-data-loss`, which drops what the schema no
-longer has. `AUTO_DB_SCHEMA_SYNC_FORCE=false` stops it before that step instead, leaving the app on
-a schema it cannot fully query. It proceeds with the forced push even if the copy fails, so keep
-your own backups (below) rather than relying on that copy.
+`scripts/ensure-sqlite.js`, which creates the file and calls `scripts/schema-sync.js`. That asks
+`prisma migrate diff` (read-only) what would change; when something does, it copies the database
+to `<data dir>/backups/` with `VACUUM INTO` and checks the copy, runs `prisma db push` without
+`--accept-data-loss`, and asks `migrate diff` again. In production any failure stops the start: a
+push that would drop data is refused and changes nothing, a push that fails partway puts the copy
+back, and no copy means no change. `AUTO_DB_INIT` (empty file) and `AUTO_DB_SCHEMA_SYNC` (existing
+file) default on; `AUTO_DB_SCHEMA_SYNC_FORCE=true` is the deliberate, one-start way to accept a
+reported data loss.
 
 In development, apply schema changes with `npx prisma db push`.
 

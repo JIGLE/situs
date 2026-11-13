@@ -125,6 +125,10 @@ COPY --from=builder /app/public ./public
 
 # Copy prisma schema and node_modules from builder so runtime can run `npx prisma`/scripts that need the schema
 COPY --from=builder --chown=nextjs:nextjs /app/prisma ./prisma
+# Prisma 7 reads the database URL only from prisma.config.ts; without it every `prisma db push` and
+# `migrate diff` that prestart runs fails. The standalone output happens to trace it today; this
+# keeps it in the image when that tracing changes.
+COPY --from=builder --chown=nextjs:nextjs /app/prisma.config.ts ./
 COPY --from=builder --chown=nextjs:nextjs /app/scripts ./scripts
 COPY --from=builder --chown=nextjs:nextjs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nextjs /app/package*.json ./

@@ -17,9 +17,10 @@ path.
 5. Add the environment variables below
 6. Install
 
-The container initialises its own database on first start — `prestart` runs `prisma db push` when
-the SQLite file has no tables, and adds any missing columns on every subsequent start. No init job,
-no manual step.
+The container creates its own database on first start and updates it on every start after an
+upgrade — no init job, no `npx prisma db push` by hand. Before it changes an existing database it
+copies it to `backups/` in the same dataset, and it refuses (the app does not start) rather than
+apply a change that would delete data. See [Upgrading an older instance](#upgrading-an-older-instance).
 
 ## Which tag
 
@@ -96,6 +97,7 @@ the header is ignored entirely. Getting it wrong lets a caller pick their own ra
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Enables Google sign-in — see below                                                                                                          |
 | `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`       | Email delivery over SMTP (Brevo, Resend, SES — any provider)                                                                                |
 | `AUTO_DB_INIT`, `AUTO_DB_SCHEMA_SYNC`       | Both default `true`; set `false` to manage schema yourself                                                                                  |
+| `AUTO_DB_SCHEMA_SYNC_FORCE`                 | Default `false`. `true` for one start lets an update delete the data it reports, after the backup; remove it afterwards                     |
 
 > `NEXT_PUBLIC_ENABLE_DEMO_LOGIN` no longer exists. The sign-in form now resolves demo
 > availability from `ENABLE_DEMO_LOGIN` on the server per request, so one variable controls both
@@ -460,13 +462,23 @@ Either check releases manually or run a container auto-updater alongside it.
 Changing the image tag is the whole upgrade ([Updating](#updating)), with two things to know when
 the instance is old.
 
-**The first start of a new version can drop data its schema no longer has.** `prestart` syncs the
-schema on every start. When the additive sync cannot apply — the new version removed or retyped a
-table or column, as the 2026-09 scope cutdown did — it copies `situs.sqlite` to
-`situs.sqlite.bak-<timestamp>` beside it and forces the sync, dropping what is gone. It goes ahead
-even if that copy fails, so snapshot the dataset before the first start. To look before anything is
-dropped, set `AUTO_DB_SCHEMA_SYNC_FORCE=false`: the app then keeps the old schema, and fails on
-whatever needs the new one, until you remove the variable.
+**The first start of a new version updates the database, and never deletes data on its own.** On
+every start `prestart` asks Prisma what this version changes. When something changes it first
+copies the database to `backups/situs-before-update-<time>-<id>.sqlite` in the same dataset
+(checked, and the last five kept), then applies the change with a plain `prisma db push`, then
+checks the database matches. The log says each step under `[database]`.
+
+- **A change that would delete data** (a table or column the new version no longer has, still
+  holding values) is refused: nothing changes, and the app does not start, so TrueNAS shows it
+  stopped or restarting and the log names what would be lost. Go back to the previous image tag,
+  or, to accept the loss, set `AUTO_DB_SCHEMA_SYNC_FORCE=true`, start once, and remove it.
+- **A change that fails halfway** puts the backup back and stops, so the app never runs on a
+  half-updated database.
+- **A backup that cannot be made** (a full or read-only dataset) stops the start before anything
+  changes.
+
+Periodic snapshots of the dataset are still the backup to rely on; the copy in `backups/` covers
+the update itself.
 
 **Then run the backfills that apply**, in this order. Each is idempotent and safe to re-run. The
 first two run inside the container from the TrueNAS shell (`docker ps` shows its name), with the
@@ -503,13 +515,9 @@ container's own environment, and take `--dry-run`:
 hard stop, not a crash — set it (see [Environment variables](#environment-variables)).
 
 **All API routes return 500 "Authentication failed".** The database has no tables. Confirm the
-`/app/data` mount is writable by 1001:1001, then restart so `prestart` can run, or initialise
-manually:
-
-```bash
-# From the TrueNAS shell, against the running container
-docker exec -it <container> npx prisma db push --schema=prisma/schema.prisma
-```
+`/app/data` mount is writable by 1001:1001, then restart so `prestart` can create them. Images
+built before the 2026-11 start fix never ran that step (prestart stopped one step early), which is
+why upgrades used to need `docker exec -it <container> npx prisma db push` by hand.
 
 **App reports healthy, sign-in works, every data route 500s — and the mounted dataset is empty.**
 The database was never created, because the host directory is not writable by the container. The
@@ -562,8 +570,9 @@ image is too old to have that page, the container log carries the same informati
 The column `main.<table>.<column>` does not exist in the current database
 ```
 
-The fix is a restart with `AUTO_DB_SCHEMA_SYNC` at its default (`true`), which applies additive
-changes on start. If it is set to `false`, that is the cause.
+The fix is a restart with `AUTO_DB_SCHEMA_SYNC` at its default (`true`), which applies the change
+on start. If it is set to `false`, that is the cause. If the app then does not start, the log's
+`[database]` lines say why (most often a change it refused because it would delete data).
 
 A second, rarer cause looks identical from the browser: `PII_ENCRYPTION_KEY` was changed on an
 instance that already had encrypted rows. That only breaks models with protected fields — tenants,
