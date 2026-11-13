@@ -221,6 +221,8 @@ export interface Expense {
   recurrenceDay?: number;
   recurrenceEnd?: string | null;
   parentExpenseId?: string | null;
+  /** A co-owner who paid it themselves; the year's shares give it back to them. */
+  paidByOwnerId?: string | null;
   /** The bank movement that paid it, when one did. */
   bankTransactionId?: string | null;
   /** A recurring month the bank should have shown being paid by now, and did not. */

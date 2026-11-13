@@ -49,6 +49,9 @@ import {
   type ExpenseFormData,
 } from "@/lib/schemas/expense.schema";
 
+/** Pago por's value for the account that collects the rent: a Select item cannot be empty. */
+const ACCOUNT_PAID = "account";
+
 /** The invoice the open form came from, or that the owner attached to it. */
 export interface PendingInvoice extends InvoiceRead {
   /** Its place in the files picked together: "2 of 3". */
@@ -131,6 +134,7 @@ function toFormData(expense: Expense): ExpenseFormData {
     isDeductible: expense.isDeductible ?? true,
     vendorName: expense.vendorName ?? "",
     vendorVat: expense.vendorVat ?? "",
+    paidByOwnerId: expense.paidByOwnerId ?? null,
     isRecurring: !!expense.isRecurring,
     recurrenceRule: expense.recurrenceRule ?? undefined,
     recurrenceDay: expense.recurrenceDay ?? undefined,
@@ -387,6 +391,17 @@ export function ExpenseDialog({
   // A copy a recurring expense made is one month's cost: it does not repeat itself.
   const isCopy = !!editingItem?.parentExpenseId;
   const frequent = useMemo(() => frequentCategories(state.expenses ?? []), [state.expenses]);
+  // The property's owners, for Pago por: asked only of a property with more than one, and always
+  // listing the one already chosen, should their share have ended since.
+  const payers = useMemo(
+    () =>
+      (state.owners ?? []).filter(
+        (owner) =>
+          owner.id === formData.paidByOwnerId ||
+          (owner.properties ?? []).some((share) => share.propertyId === formData.propertyId),
+      ),
+    [state.owners, formData.propertyId, formData.paidByOwnerId],
+  );
   // The amount as typed ("3200,00"), read on every keystroke; the field is keyed by the expense
   // so that opening another one starts it from that expense's amount.
   const amountDefault = formData.amount
@@ -488,7 +503,10 @@ export function ExpenseDialog({
                     <Label htmlFor="expense-property">{t("expenseForm.property")}</Label>
                     <Select
                       value={formData.propertyId}
-                      onValueChange={(value) => updateFormData({ propertyId: value })}
+                      // Who paid is one of the property's owners: another property, another list.
+                      onValueChange={(value) =>
+                        updateFormData({ propertyId: value, paidByOwnerId: null })
+                      }
                     >
                       <SelectTrigger id="expense-property" className={invalid("propertyId")}>
                         <SelectValue placeholder={t("expenseForm.selectProperty")} />
@@ -664,6 +682,33 @@ export function ExpenseDialog({
                   />
                 </div>
               </div>
+
+              {payers.length > 1 ? (
+                <div className="space-y-2">
+                  <Label htmlFor="expense-paid-by">{t("expenseForm.paidBy")}</Label>
+                  <Select
+                    value={formData.paidByOwnerId ?? ACCOUNT_PAID}
+                    onValueChange={(value) =>
+                      updateFormData({ paidByOwnerId: value === ACCOUNT_PAID ? null : value })
+                    }
+                  >
+                    <SelectTrigger id="expense-paid-by">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ACCOUNT_PAID}>{t("expenseForm.paidByAccount")}</SelectItem>
+                      {payers.map((owner) => (
+                        <SelectItem key={owner.id} value={owner.id}>
+                          {owner.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-[var(--color-muted-foreground)]">
+                    {t("expenseForm.paidByHint")}
+                  </p>
+                </div>
+              ) : null}
 
               <div className="flex items-center justify-between gap-3">
                 <div className="space-y-0.5">

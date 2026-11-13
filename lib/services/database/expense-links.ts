@@ -14,7 +14,12 @@ import { ResourceNotFoundError, ValidationError } from "@/lib/utils/error-handli
  */
 export async function assertExpenseLinks(
   userId: string,
-  links: { propertyId: string; leaseId?: string | null; documentId?: string | null },
+  links: {
+    propertyId: string;
+    leaseId?: string | null;
+    documentId?: string | null;
+    paidByOwnerId?: string | null;
+  },
 ): Promise<void> {
   await assertOwnsRelations(userId, { propertyId: links.propertyId });
   const prisma = getPrismaClient();
@@ -27,6 +32,22 @@ export async function assertExpenseLinks(
     if (!lease) throw new ResourceNotFoundError("Lease not found");
     if (lease.propertyId !== links.propertyId) {
       throw new ValidationError("The lease is not on this expense's property", "leaseId");
+    }
+  }
+
+  // Who paid it is one of this account's owners, with a share (now or once) in this property: the
+  // year's split gives it back to them out of that property's money.
+  if (links.paidByOwnerId) {
+    const share = await prisma.propertyOwner.findFirst({
+      where: {
+        ownerId: links.paidByOwnerId,
+        propertyId: links.propertyId,
+        owner: { userId },
+      },
+      select: { id: true },
+    });
+    if (!share) {
+      throw new ValidationError("The owner has no share in this property", "paidByOwnerId");
     }
   }
 

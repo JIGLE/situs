@@ -1545,7 +1545,10 @@
       "vendorVat": "Supplier NIF",
       "optional": "optional",
       "fromBank": "From the bank: {payee} · {date}",
-      "fromBankHint": "Saving links this movement to the expense, so it is counted once and leaves the inbox."
+      "fromBankHint": "Saving links this movement to the expense, so it is counted once and leaves the inbox.",
+      "paidBy": "Paid by",
+      "paidByAccount": "The rent account",
+      "paidByHint": "When a co-owner paid it themselves, their share for the year gives it back to them."
     },
     "matrix": {
       "cellLabel": "{month}: {status}, {paid} of {due} paid",
@@ -1671,7 +1674,8 @@
       "label": "Invoice"
     },
     "paidFromBank": "Paid from the bank",
-    "notSeenInBank": "Not seen in the bank"
+    "notSeenInBank": "Not seen in the bank",
+    "paidByOwner": "Paid by {name}"
   },
   "propertyDetail": {
     "tabs": {
