@@ -3,6 +3,9 @@
 import { useState, useMemo, useRef } from "react";
 import {
   Building2,
+  Car,
+  House,
+  Store,
   MapPinOff,
   MapPin,
   Bed,
@@ -27,7 +30,6 @@ import { useCsrf } from "@/lib/contexts/csrf-context";
 import { useCurrency } from "@/lib/contexts/currency-context";
 import { Tabs, TabsContent, TabsList, TabsMobileSelect, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -49,7 +51,6 @@ import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { useTabPersistence } from "@/lib/hooks/use-tab-persistence";
 import { EntityLink } from "@/components/shared/entity-link";
-import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
 import { usePropertyActivity } from "@/lib/hooks/use-property-activity";
 import { AuditTrail } from "@/components/shared/audit-trail";
 import { TenancySheet } from "@/components/features/lease/tenancy-sheet";
@@ -63,11 +64,21 @@ import { PropertyYearStrip, type YearStripSelection } from "./property-year-stri
 import { expenseCategoryKey } from "@/lib/utils/expense-labels";
 import { rentPeriodStatusKey } from "@/lib/utils/rent-period-labels";
 import { joinContact } from "@/lib/utils/contact";
-import { formatMonthYear } from "@/lib/utils/format-date";
 import { StatusMark } from "@/components/ui/status-mark";
 import { propertyStatus } from "@/lib/utils/status-tone";
 import { incomeTotal } from "@/lib/utils/receipt-income";
-import type { Expense } from "@/lib/types";
+import type { Expense, Property } from "@/lib/types";
+
+/** The header's picture of the property: a garage is not a block of flats. */
+const TYPE_ICON: Record<Property["type"], React.ComponentType<{ className?: string }>> = {
+  apartment: Building2,
+  condo: Building2,
+  house: House,
+  townhouse: House,
+  commercial: Store,
+  garage: Car,
+  other: Building2,
+};
 
 interface PropertyDetailViewProps {
   propertyId: string;
@@ -166,6 +177,30 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
     () => state.expenses.filter((e) => e.propertyId === propertyId),
     [state.expenses, propertyId],
   );
+  const expensesNewestFirst = useMemo(
+    () => [...relatedExpenses].sort((a, b) => Date.parse(b.date) - Date.parse(a.date)),
+    [relatedExpenses],
+  );
+  // The building it is a fração of: how many units share its costs, and this unit's part of
+  // them this year. The parts are ordinary expenses of this property (`Expense.building`).
+  const building = useMemo(() => {
+    const property = state.properties.find((p) => p.id === propertyId);
+    if (!property?.buildingId) return null;
+    const year = new Date().getFullYear();
+    const sharedThisYear = relatedExpenses.filter(
+      (e) => e.building && new Date(e.date).getFullYear() === year,
+    );
+    return {
+      id: property.buildingId,
+      name:
+        property.buildingName ??
+        state.buildings.find((b) => b.id === property.buildingId)?.name ??
+        "",
+      units: state.properties.filter((p) => p.buildingId === property.buildingId).length,
+      year,
+      sharedTotal: sharedThisYear.reduce((sum, e) => sum + e.amount, 0),
+    };
+  }, [state.properties, state.buildings, propertyId, relatedExpenses]);
   // A unit's part of a building expense opens the building, where the whole cost is changed.
   const openExpense = (expense: Expense) =>
     expense.building
@@ -290,6 +325,8 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
     );
   }
 
+  const TypeIcon = TYPE_ICON[property.type] ?? Building2;
+
   return (
     // `@container`: this view renders at two very different widths — inside the portfolio
     // workspace (~1100px on a 1440px window, narrower still while the rail was docked) and as a
@@ -306,31 +343,17 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
       <div className="flex flex-col gap-4 sticky top-0 z-20 bg-[var(--color-card-solid)]">
         <div className="flex flex-col gap-4 @lg:flex-row @lg:items-start @lg:justify-between">
           <div className="flex items-start gap-4">
-            <div className="p-3 lg:p-4 bg-[var(--color-info-muted)]">
-              <Building2 className="h-8 w-8 lg:h-10 lg:w-10 text-[var(--color-info)]" />
+            <div className="shrink-0 p-3 bg-[var(--color-info-muted)]">
+              <TypeIcon className="h-7 w-7 lg:h-8 lg:w-8 text-[var(--color-info)]" aria-hidden />
             </div>
             <div className="min-w-0">
-              <h1 className="text-2xl lg:text-3xl font-bold text-[var(--color-foreground)]">
+              <h1 className="text-2xl lg:text-3xl font-bold text-[var(--color-foreground)] break-words">
                 {property.name}
               </h1>
               <div className="flex items-center gap-2 mt-1 text-sm text-[var(--color-muted-foreground)]">
-                <MapPin className="h-4 w-4 shrink-0" />
-                <span>{property.address}</span>
+                <MapPin className="h-4 w-4 shrink-0" aria-hidden />
+                <span className="min-w-0">{property.address}</span>
               </div>
-              {property.buildingId && property.buildingName && (
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--color-muted-foreground)]">
-                  <span>{t("building")}:</span>
-                  <EntityLink
-                    type="building"
-                    id={property.buildingId}
-                    title={property.buildingName}
-                    variant="badge"
-                  />
-                  {property.permilage != null && (
-                    <span className="tabular-nums">{property.permilage}‰</span>
-                  )}
-                </div>
-              )}
               {/* Not on the map, or only its postal code or town is: one tap to put the pin. */}
               {(property.latitude == null || property.locationPrecision === "area") && (
                 <button
@@ -358,9 +381,12 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                     <Bath className="h-3.5 w-3.5" /> {property.bathrooms}
                   </span>
                 )}
-                <span className="text-sm font-medium">
-                  {tLeases("perMonth", { amount: formatCurrency(property.rent) })}
-                </span>
+                {/* A vacant unit lets for nothing yet: "0,00 €/mês" read as a rent of zero. */}
+                {property.rent > 0 && (
+                  <span className="text-sm font-medium tabular-nums">
+                    {tLeases("perMonth", { amount: formatCurrency(property.rent) })}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -527,6 +553,22 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                     <dd className="text-sm font-medium">{property.city}</dd>
                   </div>
                 )}
+                {/* In a building, the building has its own section below. A unit not in one,
+                    while there are buildings to choose, gets one tap to the form's choice. */}
+                {!building && state.buildings.length > 0 && (
+                  <div className="flex items-baseline gap-2">
+                    <dt className="mono-label">{t("building")}</dt>
+                    <dd className="text-sm">
+                      <button
+                        type="button"
+                        onClick={() => editFormDialogRef.current?.openEditDialog(property)}
+                        className="text-[var(--color-muted-foreground)] underline underline-offset-2 hover:text-[var(--color-foreground)] max-md:inline-flex max-md:min-h-11 max-md:items-center"
+                      >
+                        {t("buildingSection.none")}
+                      </button>
+                    </dd>
+                  </div>
+                )}
               </dl>
               {property.description && (
                 <p className="max-w-[72ch] text-sm text-[var(--color-muted-foreground)]">
@@ -582,17 +624,15 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
             {/* People & contracts — folds the former standalone Tenants and
                 Leases tabs in here (Overview absorbs them per the tab merge). */}
             <section className="space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="text-sm font-semibold text-[var(--color-muted-foreground)]">
+              {/* Same height as the ownership heading beside it, so the two lists start level.
+                  New tenancy is not up here: it sat both here and in the empty state below, two
+                  buttons for one action. It is the empty state's action, or the quiet line under
+                  the contracts once there are some. */}
+              <div className="flex min-h-7 items-center justify-between gap-2">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-muted-foreground)]">
+                  <FileText className="h-4 w-4" aria-hidden />
                   {t("related")}
                 </h3>
-                {/* Opens in place, with this property filled in: the tenant and the lease are
-                    made together. Tenants below open the shared `?detail=tenant:<id>` overlay on
-                    click (EntityLink), which is the edit path. */}
-                <Button size="sm" variant="outline" onClick={() => setTenancyOpen(true)}>
-                  <Plus className="mr-1.5 h-3.5 w-3.5" />
-                  {tLeases("sheet.title")}
-                </Button>
               </div>
               {relatedTenants.map((tenant) => (
                 <EntityLink
@@ -655,27 +695,38 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                   </div>
                 );
               })}
-              {relatedTenants.length === 0 && relatedLeases.length === 0 && (
+              {relatedTenants.length === 0 && relatedLeases.length === 0 ? (
                 <div className="border border-dashed border-[var(--color-border)] p-4 text-center space-y-2">
                   <p className="text-sm text-[var(--color-muted-foreground)]">
                     {property.status === "vacant" ? t("vacantNotice") : t("noRelatedEntities")}
                   </p>
-                  {property.status === "vacant" && (
-                    <Button size="sm" variant="outline" onClick={() => setTenancyOpen(true)}>
-                      <FileText className="h-3.5 w-3.5 mr-1.5" />
-                      {tLeases("sheet.title")}
-                    </Button>
-                  )}
+                  {/* Opens in place, with this property filled in: the tenant and the lease are
+                      made together. */}
+                  <Button size="sm" variant="outline" onClick={() => setTenancyOpen(true)}>
+                    <Plus className="h-3.5 w-3.5 mr-1.5" />
+                    {tLeases("sheet.title")}
+                  </Button>
                 </div>
+              ) : (
+                // Another tenancy (a renewal is the lease's own Renovar): quiet, under the list.
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-[var(--color-muted-foreground)]"
+                  onClick={() => setTenancyOpen(true)}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1.5" />
+                  {tLeases("sheet.title")}
+                </Button>
               )}
             </section>
 
             {/* Ownership & revenue share — the other half of the row, same section shape as its
                 neighbour so the two read as a pair rather than a card stacked under a card. */}
             <section className="space-y-3">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex min-h-7 items-center justify-between gap-2">
                 <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-muted-foreground)]">
-                  <Users className="h-4 w-4" />
+                  <Users className="h-4 w-4" aria-hidden />
                   {t("ownership.title")}
                 </h3>
                 <StatusMark
@@ -695,7 +746,12 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                   {t("ownership.none")}
                 </p>
               ) : (
-                <div className="space-y-2">
+                // Scrolls inside its own box: a property with many co-owners used to stretch the
+                // whole detail, which then scrolled the year strip and tabs away with it.
+                <div
+                  className="max-h-60 space-y-2 overflow-y-auto overscroll-contain pr-1"
+                  data-testid="ownership-list"
+                >
                   {propertyOwners.map(({ owner, assignment }) => {
                     const ownerIncome =
                       incomeTotal(relatedReceipts) * (assignment.ownershipPercentage / 100);
@@ -709,16 +765,16 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
                             {owner.name}
                           </p>
                           {owner.email && (
-                            <p className="text-xs text-[var(--color-muted-foreground)]">
+                            <p className="truncate text-xs text-[var(--color-muted-foreground)]">
                               {owner.email}
                             </p>
                           )}
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-sm font-semibold text-[var(--color-foreground)]">
-                            {assignment.ownershipPercentage}%
+                          <p className="text-sm font-semibold tabular-nums text-[var(--color-foreground)]">
+                            {formatShare(assignment.ownershipPercentage, locale)}%
                           </p>
-                          <p className="text-xs text-[var(--color-success)]">
+                          <p className="text-xs tabular-nums text-[var(--color-success)]">
                             {formatCurrency(ownerIncome)}
                           </p>
                         </div>
@@ -788,22 +844,43 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
               )}
             </section>
           </div>
+
+          {building && (
+            <section className="space-y-3" aria-labelledby="property-building-heading">
+              <h3
+                id="property-building-heading"
+                className="flex items-center gap-2 text-sm font-semibold text-[var(--color-muted-foreground)]"
+              >
+                <Building2 className="h-4 w-4" aria-hidden />
+                {t("building")}
+              </h3>
+              <EntityLink
+                type="building"
+                id={building.id}
+                title={building.name}
+                subtitle={[
+                  property.permilage != null
+                    ? t("buildingSection.permilage", {
+                        value: formatShare(property.permilage, locale),
+                      })
+                    : t("buildingSection.noPermilage"),
+                  t("buildingSection.units", { count: building.units }),
+                  t("buildingSection.shared", {
+                    year: building.year,
+                    amount: formatCurrency(building.sharedTotal),
+                  }),
+                ].join(" · ")}
+                variant="full"
+              />
+            </section>
+          )}
         </TabsContent>
 
         {/* Money Tab — Payments/P&L merged with the former standalone Expenses
             tab, per the tab merge (Overview/Money/Audit). */}
         <TabsContent value="finance" className="space-y-6">
-          {/* Money-tab actions: the expense dialog opens from here, where expenses live. */}
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={expenseDialog.openDialog}>
-              <Wrench className="mr-1.5 h-3.5 w-3.5" />
-              {t("actions.addExpense")}
-            </Button>
-          </div>
-
           {/* P&L row — the same `panel` + mono-label + light tabular treatment the rest of the
-              app uses. These were four bordered Cards at text-2xl/bold, which shouted louder
-              than the transactions they summarise. */}
+              app uses. */}
           <div className="grid grid-cols-2 gap-3 @2xl:grid-cols-4">
             <div className="panel p-3">
               <p className="mono-label">{t("finance.totalRevenue")}</p>
@@ -847,126 +924,69 @@ export function PropertyDetailView({ propertyId }: PropertyDetailViewProps) {
             </div>
           </div>
 
-          {/* The standalone Expenses list that used to sit here is gone: every row it rendered
-              also appears in Recent transactions below, so each expense was on screen twice,
-              and its header repeated the totalExpenses figure already in the P&L row above.
-              Transactions now carry the expense description so no detail was lost with it. */}
-
-          {relatedReceipts.length === 0 && relatedExpenses.length === 0 ? (
-            <EmptyStateIllustration entityType="receipts" />
+          {/* Expenses only. The payments received and the allocation timeline that sat here
+              repeated the rent months above, which show each month's money and open it to
+              record a payment; neither list offered an action of its own. */}
+          {relatedExpenses.length === 0 ? (
+            <div className="border border-dashed border-[var(--color-border)] p-4 text-center space-y-2">
+              <p className="text-sm text-[var(--color-muted-foreground)]">
+                {t("finance.noExpenses")}
+              </p>
+              <Button variant="outline" size="sm" onClick={expenseDialog.openDialog}>
+                <Wrench className="mr-1.5 h-3.5 w-3.5" />
+                {t("actions.addExpense")}
+              </Button>
+            </div>
           ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>{tFin("recentTransactions")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[
-                    ...relatedReceipts.map((r) => ({ ...r, txType: "receipt" as const })),
-                    ...relatedExpenses.map((e) => ({ ...e, txType: "expense" as const })),
-                  ]
-                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                    .slice(0, 10)
-                    .map((tx) => (
-                      // An expense opens in its form, to change or delete it; a payment has
-                      // its own screens.
-                      <div
-                        key={tx.id}
-                        {...(tx.txType === "expense"
-                          ? {
-                              role: "button",
-                              tabIndex: 0,
-                              onClick: () => openExpense(tx),
-                              onKeyDown: (e: React.KeyboardEvent) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                  e.preventDefault();
-                                  openExpense(tx);
-                                }
-                              },
-                            }
-                          : {})}
-                        className={cn(
-                          "flex items-center justify-between py-2 border-b border-[var(--color-border)] last:border-0",
-                          tx.txType === "expense" &&
-                            "min-h-11 cursor-pointer hover:bg-[var(--color-surface-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:outline-none",
-                        )}
-                      >
-                        <div>
-                          <p className="text-sm font-medium">
-                            {tx.txType === "receipt"
-                              ? tFin("paymentReceived")
-                              : expenseCategoryLabel(tx.category)}
-                          </p>
-                          {tx.txType === "expense" && tx.description && (
-                            <p className="text-xs text-[var(--color-muted-foreground)]">
-                              {tx.description}
-                            </p>
-                          )}
-                          <p className="text-xs text-[var(--color-muted-foreground)]">
-                            {new Date(tx.date).toLocaleDateString(locale)}
-                          </p>
-                        </div>
-                        <span
-                          className={cn(
-                            "text-sm font-semibold",
-                            tx.txType === "receipt"
-                              ? "text-[var(--color-success)]"
-                              : "text-[var(--color-destructive)]",
-                          )}
-                        >
-                          {tx.txType === "receipt" ? "+" : "-"}
-                          {formatCurrency(tx.amount)}
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* PaymentTimeline — reference-month allocation events for this property's ledger */}
-          {activity && activity.timeline.length > 0 && (
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)]">
-              <div className="border-b border-[var(--color-border)] px-4 py-3">
-                <p className="mono-label">{t("paymentTimeline")}</p>
+            <section className="space-y-3">
+              <div className="flex min-h-7 items-center justify-between gap-2">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-muted-foreground)]">
+                  <Wrench className="h-4 w-4" aria-hidden />
+                  {t("finance.expenses")}
+                </h3>
+                <Button variant="outline" size="sm" onClick={expenseDialog.openDialog}>
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  {t("actions.addExpense")}
+                </Button>
               </div>
-              <div className="divide-y divide-[var(--color-border)]">
-                {activity.timeline.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"
+              <div className="max-h-96 divide-y divide-[var(--color-border)] overflow-y-auto overscroll-contain border border-[var(--color-border)]">
+                {expensesNewestFirst.map((expense) => (
+                  // An expense opens in its form, to change or delete it; a building expense's
+                  // part opens the building, where the whole cost is changed.
+                  <button
+                    key={expense.id}
+                    type="button"
+                    onClick={() => openExpense(expense)}
+                    className="flex min-h-11 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-[var(--color-surface-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:outline-none"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 shrink-0 bg-[var(--ui-accent)]" />
-                      <span>
-                        {entry.reversedAt ? t("timelineReversed") : t("month.allocated")} ·{" "}
-                        {formatMonthYear(entry.period.year, entry.period.month, locale)}
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium">
+                        {expenseCategoryLabel(expense.category)}
                       </span>
-                    </div>
-                    <span
-                      className={cn(
-                        "tabular-nums",
-                        entry.reversedAt
-                          ? "text-[var(--color-muted-foreground)] line-through"
-                          : "text-[var(--color-foreground)]",
-                      )}
-                    >
-                      {formatCurrency(entry.amount)}
+                      <span className="block truncate text-xs text-[var(--color-muted-foreground)]">
+                        {[
+                          formatDay(expense.date),
+                          expense.building ? expense.building.name : null,
+                          expense.description || null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
                     </span>
-                  </div>
+                    <span className="shrink-0 text-sm font-semibold tabular-nums text-[var(--color-destructive)]">
+                      −{formatCurrency(expense.amount)}
+                    </span>
+                  </button>
                 ))}
               </div>
-            </div>
+            </section>
           )}
         </TabsContent>
 
         {/* Audit Tab — the shared AuditTrail component (GET /api/audit-trail), scoped to
             this property plus its tenants/leases/receipts/expenses (Migration A resourceId keys). */}
         <TabsContent value="audit">
-          <AuditTrail
-            resourceIds={auditResourceIds}
-            emptyDescription="A full activity history for this property — payment allocations, receipt emissions, document changes and manual overrides — will appear here."
-          />
+          <AuditTrail resourceIds={auditResourceIds} emptyDescription={t("auditEmpty")} />
         </TabsContent>
       </Tabs>
     </div>

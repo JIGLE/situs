@@ -1226,7 +1226,8 @@
       "condo": "Condominio",
       "townhouse": "Villetta a schiera",
       "other": "Altro",
-      "commercial": "Commerciale"
+      "commercial": "Commerciale",
+      "garage": "Garage"
     },
     "namePlaceholder": "es. Appartamento 4B, Piano terra, Unità 12",
     "addressPlaceholder": "Inizia a scrivere per cercare indirizzi…",
@@ -1757,7 +1758,9 @@
       "totalExpenses": "Spese totali",
       "netOperatingIncome": "Reddito operativo netto",
       "collectionRate": "Tasso di riscossione",
-      "noData": "Nessun dato finanziario disponibile per questo immobile ancora."
+      "noData": "Nessun dato finanziario disponibile per questo immobile ancora.",
+      "expenses": "Spese",
+      "noExpenses": "Nessuna spesa registrata per questo immobile."
     },
     "month": {
       "subtitle": "Mese di riferimento di {property}",
@@ -1778,8 +1781,6 @@
       "percentRange": "La percentuale deve essere tra 1 e 100.",
       "wouldExceed": "Il totale supererebbe il 100% (ora {current}%)."
     },
-    "paymentTimeline": "Cronologia dei pagamenti",
-    "timelineReversed": "Stornato",
     "ledger": {
       "title": "Registro affitti · mesi di riferimento",
       "current": "Corrente: {month}",
@@ -1797,7 +1798,15 @@
       "notOnMap": "Non è sulla mappa. Segnalo sulla mappa",
       "approximate": "Sulla mappa solo per CAP. Segna il civico"
     },
-    "building": "Edificio"
+    "building": "Edificio",
+    "buildingSection": {
+      "none": "Immobile indipendente",
+      "permilage": "{value}‰ dell'edificio",
+      "noPermilage": "Senza millesimi",
+      "units": "{count, plural, one {# unità} other {# unità}}",
+      "shared": "spese comuni {year}: {amount}"
+    },
+    "auditEmpty": "Tutte le modifiche a questo immobile, ai suoi contratti, pagamenti e spese appariranno qui."
   },
   "notificationCenter": {
     "title": "Notifiche",
@@ -2296,6 +2305,7 @@
       "apartment": "Appartamento",
       "house": "Casa",
       "commercial": "Commerciale",
+      "garage": "Garage",
       "other": "Altro"
     },
     "article": "Articolo {article}",

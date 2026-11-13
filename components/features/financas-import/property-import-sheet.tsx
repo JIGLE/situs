@@ -50,7 +50,7 @@ interface Row {
   failed?: boolean;
 }
 
-const TYPES = ["apartment", "house", "commercial", "other"] as const;
+const TYPES = ["apartment", "house", "commercial", "garage", "other"] as const;
 
 export interface PropertyImportSheetProps {
   open: boolean;

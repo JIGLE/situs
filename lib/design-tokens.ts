@@ -21,6 +21,7 @@ export const tokens = {
     apartment: "#6366F1",
     house: "#10B981",
     commercial: "#F59E0B",
+    garage: "#64748B",
     other: "#94A3B8",
   } as Record<string, string>,
 

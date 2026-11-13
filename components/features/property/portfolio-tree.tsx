@@ -16,8 +16,9 @@ const RENEWAL_WINDOW_MS = 60 * 24 * 60 * 60 * 1000;
 /**
  * Structural Portfolio Inventory — the Situs tree view.
  *
- * Hierarchy is derived from real data, not stored: country → cluster
- * (building, or city for standalone properties) → asset. Each asset carries
+ * Hierarchy is derived from real data, not stored: country → city → asset, where a building
+ * is a heading inside its city with its units listed under it. Only the country and the city
+ * fold; a building does not, since it groups a city's units rather than hiding them. Each asset carries
  * an attention strip of square status dots: danger = tenant payment overdue,
  * info = lease renewal due.
  *
@@ -43,12 +44,20 @@ interface AssetNode {
   renewalDue: boolean;
 }
 
+/** A building inside its city: a heading, not a fold, with its units under it. */
+interface BuildingGroup {
+  id: string;
+  name: string;
+  assets: AssetNode[];
+}
+
 interface ClusterNode {
   key: string;
   label: string;
-  /** Set when the cluster is a building rather than a town. */
-  buildingId?: string;
+  /** The city's properties in no building. */
   assets: AssetNode[];
+  buildings: BuildingGroup[];
+  assetCount: number;
 }
 
 interface CountryNode {
@@ -101,64 +110,86 @@ export function PortfolioTree({
       }
     }
 
-    const countries = new Map<string, Map<string, ClusterNode>>();
-    for (const property of properties) {
-      const building = property.buildingId ? buildingsById.get(property.buildingId) : undefined;
-      const code = (property.country || building?.country || "PT").toUpperCase().slice(0, 2);
-      const clusterKey = building ? `b:${building.id}` : `c:${property.city || "—"}`;
-      const clusterLabel = building?.name || property.city || t("unclustered");
+    interface CityDraft {
+      label: string;
+      assets: AssetNode[];
+      buildings: Map<string, BuildingGroup>;
+    }
+    const countries = new Map<string, Map<string, CityDraft>>();
+    const cityOf = (code: string, city: string | undefined): CityDraft => {
+      let cities = countries.get(code);
+      if (!cities) {
+        cities = new Map();
+        countries.set(code, cities);
+      }
+      const label = city?.trim() || t("unclustered");
+      const key = label.toLocaleLowerCase(locale);
+      let draft = cities.get(key);
+      if (!draft) {
+        draft = { label, assets: [], buildings: new Map() };
+        cities.set(key, draft);
+      }
+      return draft;
+    };
+    const groupOf = (building: Building, firstUnit?: Property): BuildingGroup => {
+      const code = (building.country || firstUnit?.country || "PT").toUpperCase().slice(0, 2);
+      const city = cityOf(code, building.city || firstUnit?.city);
+      let group = city.buildings.get(building.id);
+      if (!group) {
+        group = { id: building.id, name: building.name, assets: [] };
+        city.buildings.set(building.id, group);
+      }
+      return group;
+    };
 
-      let clusters = countries.get(code);
-      if (!clusters) {
-        clusters = new Map();
-        countries.set(code, clusters);
-      }
-      let cluster = clusters.get(clusterKey);
-      if (!cluster) {
-        cluster = { key: clusterKey, label: clusterLabel, buildingId: building?.id, assets: [] };
-        clusters.set(clusterKey, cluster);
-      }
-      cluster.assets.push({
+    for (const property of properties) {
+      const asset: AssetNode = {
         property,
         overdue: overdueByProperty.has(property.id),
         renewalDue: renewalDueByProperty.has(property.id),
-      });
+      };
+      const building = property.buildingId ? buildingsById.get(property.buildingId) : undefined;
+      if (building) {
+        // A building sits in one city, its own or its first unit's, with all its units.
+        groupOf(building, property).assets.push(asset);
+        continue;
+      }
+      const code = (property.country || "PT").toUpperCase().slice(0, 2);
+      cityOf(code, property.city).assets.push(asset);
     }
 
     // A building with no unit yet is listed too, so it can be opened to choose its units.
     const placedBuildings = new Set(properties.map((p) => p.buildingId).filter(Boolean));
     for (const building of buildings) {
-      if (placedBuildings.has(building.id)) continue;
-      const code = (building.country || "PT").toUpperCase().slice(0, 2);
-      let clusters = countries.get(code);
-      if (!clusters) {
-        clusters = new Map();
-        countries.set(code, clusters);
-      }
-      clusters.set(`b:${building.id}`, {
-        key: `b:${building.id}`,
-        label: building.name,
-        buildingId: building.id,
-        assets: [],
-      });
+      if (!placedBuildings.has(building.id)) groupOf(building);
     }
 
+    const byName = (a: AssetNode, b: AssetNode) =>
+      a.property.name.localeCompare(b.property.name, locale, { numeric: true });
     return Array.from(countries.entries())
-      .map(([code, clusters]) => {
-        const clusterList = Array.from(clusters.values())
-          .map((c) => ({
-            ...c,
-            assets: [...c.assets].sort((a, b) => a.property.name.localeCompare(b.property.name)),
-          }))
-          .sort((a, b) => a.label.localeCompare(b.label));
+      .map(([code, cities]) => {
+        const clusterList: ClusterNode[] = Array.from(cities.entries())
+          .map(([key, c]) => {
+            const groups = Array.from(c.buildings.values())
+              .map((g) => ({ ...g, assets: [...g.assets].sort(byName) }))
+              .sort((a, b) => a.name.localeCompare(b.name, locale));
+            return {
+              key: `c:${key}`,
+              label: c.label,
+              assets: [...c.assets].sort(byName),
+              buildings: groups,
+              assetCount: c.assets.length + groups.reduce((sum, g) => sum + g.assets.length, 0),
+            };
+          })
+          .sort((a, b) => a.label.localeCompare(b.label, locale));
         return {
           code,
           label: countryLabel(code, locale),
           clusters: clusterList,
-          assetCount: clusterList.reduce((sum, c) => sum + c.assets.length, 0),
+          assetCount: clusterList.reduce((sum, c) => sum + c.assetCount, 0),
         };
       })
-      .sort((a, b) => a.label.localeCompare(b.label));
+      .sort((a, b) => a.label.localeCompare(b.label, locale));
   }, [properties, buildings, tenants, leases, t, locale]);
 
   /** One property's row; `indent` places its label under its cluster's, or flush when flat. */
@@ -187,7 +218,10 @@ export function PortfolioTree({
                 place of "occupied", which it implies, and names the dot a phone
                 has no hover to explain. */}
           <span className="block truncate text-xs text-[var(--color-muted-foreground)] lg:hidden">
-            {tLeases("perMonth", { amount: formatCurrency(property.rent) })} ·{" "}
+            {/* No rent yet (a vacant unit, a garage not let) says nothing rather than "0,00 €". */}
+            {property.rent > 0 && (
+              <>{tLeases("perMonth", { amount: formatCurrency(property.rent) })} · </>
+            )}
             {overdue ? (
               <span className="text-[var(--semantic-danger-readable)]">{t("dotOverdue")}</span>
             ) : (
@@ -226,7 +260,11 @@ export function PortfolioTree({
 
   // One country and one group (no buildings, one city or none): the two heading rows above the
   // properties said nothing, so the list is shown flat.
-  if (tree.length === 1 && tree[0].clusters.length === 1 && !tree[0].clusters[0].buildingId) {
+  if (
+    tree.length === 1 &&
+    tree[0].clusters.length === 1 &&
+    tree[0].clusters[0].buildings.length === 0
+  ) {
     return (
       <div role="tree" aria-label={t("title")} className="py-2">
         {tree[0].clusters[0].assets.map((asset) => renderAsset(asset, "pl-3"))}
@@ -268,47 +306,60 @@ export function PortfolioTree({
                 const clusterNodeCollapsed = collapsedNodes.has(clusterKey);
                 return (
                   <div key={cluster.key} role="treeitem" aria-expanded={!clusterNodeCollapsed}>
-                    {/* Cluster row — chevron at 24px, label at 46px. A building's row also opens
-                        the building, beside the toggle rather than inside it. */}
-                    <div className="flex items-stretch">
-                      <button
-                        type="button"
-                        onClick={() => toggleNode(clusterKey)}
-                        className="flex min-w-0 flex-1 items-center gap-2 border-l-2 border-transparent py-1.5 pl-6 pr-2 text-left transition-colors hover:bg-[var(--color-hover)] max-md:min-h-11"
-                      >
-                        {clusterNodeCollapsed ? (
-                          <ChevronRight
-                            className="h-3.5 w-3.5 shrink-0 text-[var(--color-muted-foreground)]"
-                            aria-hidden="true"
-                          />
-                        ) : (
-                          <ChevronDown
-                            className="h-3.5 w-3.5 shrink-0 text-[var(--color-muted-foreground)]"
-                            aria-hidden="true"
-                          />
-                        )}
-                        <span className="min-w-0 flex-1 truncate text-sm text-[var(--color-muted-foreground)]">
-                          {cluster.label}
-                        </span>
-                        <span className="mono-label">{cluster.assets.length}</span>
-                      </button>
-                      {cluster.buildingId && onOpenBuilding && (
-                        <button
-                          type="button"
-                          onClick={() => onOpenBuilding(cluster.buildingId!)}
-                          aria-label={t("openBuilding", { name: cluster.label })}
-                          title={t("openBuilding", { name: cluster.label })}
-                          className="flex w-8 shrink-0 items-center justify-center text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-foreground)] max-md:min-h-11 max-md:w-11"
-                        >
-                          <Building2 className="h-3.5 w-3.5" aria-hidden="true" />
-                        </button>
+                    {/* City row — chevron at 24px, label at 46px. */}
+                    <button
+                      type="button"
+                      onClick={() => toggleNode(clusterKey)}
+                      className="flex w-full items-center gap-2 border-l-2 border-transparent py-1.5 pl-6 pr-2 text-left transition-colors hover:bg-[var(--color-hover)] max-md:min-h-11"
+                    >
+                      {clusterNodeCollapsed ? (
+                        <ChevronRight
+                          className="h-3.5 w-3.5 shrink-0 text-[var(--color-muted-foreground)]"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <ChevronDown
+                          className="h-3.5 w-3.5 shrink-0 text-[var(--color-muted-foreground)]"
+                          aria-hidden="true"
+                        />
                       )}
-                    </div>
+                      <span className="min-w-0 flex-1 truncate text-sm text-[var(--color-muted-foreground)]">
+                        {cluster.label}
+                      </span>
+                      <span className="mono-label">{cluster.assetCount}</span>
+                    </button>
 
-                    {/* Asset rows — label at 56px, one step past its cluster's label so the
+                    {/* Asset rows — label at 56px, one step past its city's label so the
                         hierarchy survives without a chevron of its own to mark the level. */}
-                    {!clusterNodeCollapsed &&
-                      cluster.assets.map((asset) => renderAsset(asset, "pl-14"))}
+                    {!clusterNodeCollapsed && (
+                      <>
+                        {cluster.assets.map((asset) => renderAsset(asset, "pl-14"))}
+                        {cluster.buildings.map((group) => (
+                          <div key={group.id} role="group" aria-label={group.name}>
+                            {/* The building is a heading inside its city, not a fold: it opens
+                                the building, and its units are always listed under it. */}
+                            <button
+                              type="button"
+                              onClick={() => onOpenBuilding?.(group.id)}
+                              disabled={!onOpenBuilding}
+                              title={t("openBuilding", { name: group.name })}
+                              aria-label={t("openBuilding", { name: group.name })}
+                              className="mt-1 flex w-full items-center gap-2 border-l-2 border-transparent py-1.5 pl-14 pr-2 text-left transition-colors hover:bg-[var(--color-hover)] disabled:hover:bg-transparent max-md:min-h-11"
+                            >
+                              <Building2
+                                className="h-3.5 w-3.5 shrink-0 text-[var(--color-muted-foreground)]"
+                                aria-hidden="true"
+                              />
+                              <span className="min-w-0 flex-1 truncate text-xs font-semibold text-[var(--color-muted-foreground)]">
+                                {group.name}
+                              </span>
+                              <span className="mono-label">{group.assets.length}</span>
+                            </button>
+                            {group.assets.map((asset) => renderAsset(asset, "pl-[4.75rem]"))}
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </div>
                 );
               })}

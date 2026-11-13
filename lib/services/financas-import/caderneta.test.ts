@@ -137,6 +137,17 @@ describe("cadernetaDrafts", () => {
     });
   });
 
+  it("reads a parking space's fração as a garage", () => {
+    const garage = FRACTION.replace("Afectação: Habitação", "Afectação: Estacionamento").replace(
+      "Tipologia/Divisões: T2 ",
+      "",
+    );
+    expect(cadernetaDrafts(parseCaderneta(garage))[0]).toMatchObject({ type: "garage" });
+    expect(
+      cadernetaDrafts(parseCaderneta(FRACTION.replace("Habitação", "Garagem")))[0],
+    ).toMatchObject({ type: "garage" });
+  });
+
   it("takes a fraction's own address, not the building's many or the land registry's number", () => {
     const [draft] = cadernetaDrafts(parseCaderneta(MANY_ADDRESSES));
     expect(draft).toMatchObject({

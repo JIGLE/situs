@@ -44,7 +44,7 @@ export interface Property {
   permilage?: number | null;
   buildingName?: string;
 
-  type: "apartment" | "house" | "condo" | "townhouse" | "commercial" | "other";
+  type: "apartment" | "house" | "condo" | "townhouse" | "commercial" | "garage" | "other";
   bedrooms: number | null;
   bathrooms: number | null;
   rent: number;

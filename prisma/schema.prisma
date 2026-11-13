@@ -876,6 +876,7 @@ enum PropertyType {
   condo
   townhouse
   commercial
+  garage
   other
 }
 
