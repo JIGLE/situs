@@ -50,6 +50,15 @@ vi.mock("@/components/features/financas-import/apply-shares", async (original) =
 
 const pt = ptMessages.leases.sheet;
 
+/**
+ * Puts a value in a field as one paste rather than a keystroke at a time: each keystroke re-renders
+ * the whole sheet, and typed out, the first test ran past Vitest's 5s limit on a busy CI runner.
+ */
+async function fill(user: ReturnType<typeof userEvent.setup>, field: HTMLElement, value: string) {
+  await user.click(field);
+  await user.paste(value);
+}
+
 beforeAll(() => {
   // Radix measures its popovers; jsdom has no ResizeObserver.
   globalThis.ResizeObserver ??= class {
@@ -81,8 +90,8 @@ describe("TenancySheet", () => {
     expect(screen.getByLabelText(/Renda mensal/)).toHaveValue(850);
     expect(screen.getByLabelText(/Caução/)).toHaveValue(850);
 
-    await user.type(screen.getByPlaceholderText(pt.namePlaceholder), "Ana Costa");
-    await user.type(screen.getByLabelText("NIF"), "123456789");
+    await fill(user, screen.getByPlaceholderText(pt.namePlaceholder), "Ana Costa");
+    await fill(user, screen.getByLabelText("NIF"), "123456789");
     await user.click(screen.getByRole("button", { name: pt.submit }));
 
     await waitFor(() => expect(app.addLease).toHaveBeenCalledTimes(1));
@@ -123,7 +132,7 @@ describe("TenancySheet", () => {
       { initialLocale: "pt" },
     );
 
-    await user.type(screen.getByPlaceholderText(pt.namePlaceholder), "Ana Costa");
+    await fill(user, screen.getByPlaceholderText(pt.namePlaceholder), "Ana Costa");
     await user.click(screen.getByRole("button", { name: pt.submit }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith(pt.error.saveFailed));
 
