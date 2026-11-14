@@ -823,6 +823,7 @@
       "rentIncreaseApplied": "This increase has already taken effect. Change the rent on the lease instead.",
       "leaseNotActive": "Only an active lease can have its rent updated.",
       "receiptMonthUntracked": "This contract has no rent for that month: it had not started yet, or had already ended. Choose another month.",
+      "receiptFiled": "This receipt was filed with Finanças, so it stays. Only the Portal can void it.",
       "receiptAmountUnknown": "The amount on this recibo could not be read. Record the payment by hand instead.",
       "bankMovementNotOutgoing": "Only money going out can be recorded as an expense.",
       "bankMovementLinked": "This movement is already linked. Unlink it first.",
@@ -1401,7 +1402,8 @@
       "sourceHeader": "Source",
       "source": {
         "bank": "Bank",
-        "manual": "Manual"
+        "manual": "Manual",
+        "financas": "Finanças"
       },
       "noRentMonth": "No rent month",
       "void": "Void",
@@ -1606,6 +1608,15 @@
       "uploadRecibo": "Upload recibo",
       "fromRecibo": "From the recibo de renda",
       "reciboNumber": "Recibo de renda no. {number}",
+      "removeRecibo": "Remove recibo",
+      "removePayment": "Remove payment",
+      "removeReciboTitle": "Remove recibo no. {number}?",
+      "removeReciboTitleNoNumber": "Remove this recibo?",
+      "removeReciboDescription": "Its PDF goes with it. If the recibo recorded this payment, the payment goes too and the month is owed again. A payment that was already there, from the bank or recorded by hand, stays and only loses the recibo.",
+      "removePaymentTitle": "Remove this payment?",
+      "removePaymentDescription": "The {amount} recorded by hand on {date} comes off the month, which is owed again.",
+      "reciboRemoved": "Recibo removed.",
+      "paymentRemoved": "Payment removed.",
       "movements": {
         "title": "Bank movements waiting",
         "open": "Link a bank movement",
@@ -2289,7 +2300,8 @@
     "recordOwnerPayout": "Owner payout recorded",
     "deleteOwnerPayout": "Owner payout removed",
     "setRentCollector": "Rent collector changed",
-    "uploadFinancasReceipt": "Recibo uploaded from Finanças"
+    "uploadFinancasReceipt": "Recibo uploaded from Finanças",
+    "removeFinancasReceipt": "Recibo from Finanças removed"
   },
   "financasImport": {
     "title": "Import from Finanças",

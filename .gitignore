@@ -149,9 +149,10 @@ eslint.config.cjs
 audit-report/
 audit-*/
 
-# Document storage root (DOCUMENT_STORAGE_PATH). Runtime landlord/tenant documents —
-# archived receipt PDFs land here the moment a receipt reaches "emitted". Never source,
-# and committing it would publish real records.
+# Document storage root (DOCUMENT_STORAGE_PATH, default ./data/documents; ./uploads before it).
+# Runtime landlord/tenant documents — archived receipt PDFs land here the moment a receipt
+# reaches "emitted". Never source, and committing it would publish real records.
+/data/
 uploads/
 
 # graphify code graph (rebuilt locally: scripts/graphify.sh)

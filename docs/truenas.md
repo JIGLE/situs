@@ -520,6 +520,10 @@ hard stop, not a crash — set it (see [Environment variables](#environment-vari
 built before the 2026-11 start fix never ran that step (prestart stopped one step early), which is
 why upgrades used to need `docker exec -it <container> npx prisma db push` by hand.
 
+**Uploading a recibo answers "O servidor teve um problema" (500).** Images before the 2026-11-13
+fix filed uploaded PDFs under `/app/uploads`, which the app's user cannot create. They now go to
+`/app/data/documents`, on the mounted dataset; `DOCUMENT_STORAGE_PATH` moves them elsewhere.
+
 **App reports healthy, sign-in works, every data route 500s — and the mounted dataset is empty.**
 The database was never created, because the host directory is not writable by the container. The
 container runs as uid/gid **1001:1001**; a freshly created dataset is typically owned by root with
