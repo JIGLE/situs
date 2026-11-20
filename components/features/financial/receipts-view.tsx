@@ -369,7 +369,13 @@ export function ReceiptsView(props: ReceiptsViewProps) {
   );
 
   const sourceLabel = (receipt: Receipt) =>
-    t(receipt.source === "automation" ? "source.bank" : "source.manual");
+    t(
+      receipt.source === "automation"
+        ? "source.bank"
+        : receipt.source === "financas"
+          ? "source.financas"
+          : "source.manual",
+    );
 
   /** The rent month it paid; otherwise its type, or for rent that paid no month, that it did not. */
   const rentMonthLabel = (receipt: Receipt) => {

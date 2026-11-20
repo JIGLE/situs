@@ -72,6 +72,7 @@ export const AUDIT_ACTION_KEY = {
   SUBMIT_RECEIPT: "submitReceipt",
   ARCHIVE_RECEIPT: "archiveReceipt",
   UPLOAD_FINANCAS_RECEIPT: "uploadFinancasReceipt",
+  REMOVE_FINANCAS_RECEIPT: "removeFinancasReceipt",
   VOID_RECEIPT: "voidReceipt",
   TRANSITION_RECEIPT_LIFECYCLE: "transitionReceiptLifecycle",
   SET_TAX_CREDENTIALS: "setTaxCredentials",

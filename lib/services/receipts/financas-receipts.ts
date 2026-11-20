@@ -40,7 +40,13 @@ import {
 } from "@/lib/services/allocation/service";
 import { logAudit } from "@/lib/services/audit-log";
 import { documentService } from "@/lib/services/document-service";
-import { ARCHIVE_MARKER_PREFIX, transitionReceipt } from "@/lib/services/receipts/service";
+import { removeDocuments } from "@/lib/services/document-service";
+import { receiptService } from "@/lib/services/database/receipt/service";
+import {
+  ARCHIVE_MARKER_PREFIX,
+  findExistingArchive,
+  transitionReceipt,
+} from "@/lib/services/receipts/service";
 import type { ParsedRentReceipt } from "@/lib/services/financas-import/rent-receipt";
 import {
   leasesForReceipt,
@@ -169,6 +175,8 @@ interface MonthState {
   unnumbered: { id: string; lifecycle: string }[];
   term?: TermChange;
   inactive?: boolean;
+  /** `duplicate`: the receipt that already carries this recibo's number. */
+  sameReceiptId?: string;
 }
 
 interface TermLease {
@@ -228,6 +236,7 @@ async function monthState(
         dueAmount: null,
         waived: false,
         unnumbered: [],
+        sameReceiptId: same.id,
       };
     }
   }
@@ -351,10 +360,6 @@ export async function registerReceipt(
   if (state.outcome === "no_month") {
     throw new ConflictError("The contract has no rent for that month", "receipt_month_untracked");
   }
-  if (state.outcome === "duplicate" || state.outcome === "paid") {
-    return { outcome: state.outcome, receiptIds: [] };
-  }
-
   const archive = (receiptId: string) =>
     documentService.create(userId, {
       name: input.fileName.slice(0, 200) || `Recibo ${monthKey(month)}`,
@@ -365,6 +370,15 @@ export async function registerReceipt(
       propertyId: lease.propertyId,
       tenantId: lease.tenantId,
     });
+
+  if (state.outcome === "duplicate" || state.outcome === "paid") {
+    // The recibo is on file but its PDF is not: an earlier upload stopped after the payment was
+    // written (the storage it files PDFs in could not be written). Uploading it again files it.
+    if (state.sameReceiptId && !(await findExistingArchive(userId, state.sameReceiptId))) {
+      await archive(state.sameReceiptId);
+    }
+    return { outcome: state.outcome, receiptIds: [] };
+  }
 
   if (state.outcome === "attach") {
     const [first] = state.unnumbered;
@@ -390,6 +404,8 @@ export async function registerReceipt(
         month: monthKey(month),
         number: parsed.number,
         receiptIds: state.unnumbered.map((r) => r.id),
+        // What removing the recibo puts back: a bank draft it marked emitted returns to its stage.
+        lifecycles: Object.fromEntries(state.unnumbered.map((r) => [r.id, r.lifecycle])),
       },
     });
     return { outcome: "attach", receiptIds: state.unnumbered.map((r) => r.id) };
@@ -423,7 +439,8 @@ export async function registerReceipt(
   // A month waived when tracking began is owed again: the recibo says it was paid, and the rent it
   // states is what the month owed (an untracked month only copied today's rent). Allocation writes
   // its status afresh from what it owes and what fills it.
-  if ((state.waived || untracked) && state.periodId) {
+  const wasWaived = state.waived || untracked;
+  if (wasWaived && state.periodId) {
     await prisma.rentPeriod.update({
       where: { id: state.periodId },
       data: { status: "upcoming", dueAmount: amount },
@@ -441,7 +458,8 @@ export async function registerReceipt(
       type: "rent",
       status: "paid",
       lifecycle: "emitted",
-      source: "manual",
+      // The recibo is the payment: removing it removes the receipt (`removeRecibo`).
+      source: FINANCAS_SOURCE,
       referenceMonth: monthKey(month),
       financasNumber: parsed.number ?? "",
       description: parsed.number ? `Recibo de renda n.º ${parsed.number}` : "Recibo de renda",
@@ -449,7 +467,15 @@ export async function registerReceipt(
     select: { id: true },
   });
   await allocateReceipt(receipt.id);
-  await archive(receipt.id);
+  try {
+    await archive(receipt.id);
+  } catch (error) {
+    // Without its PDF the upload did not happen: take the payment back off the month, so a retry
+    // starts clean rather than finding a recibo "already on file" with nothing to show for it.
+    await receiptService.delete(userId, receipt.id);
+    if (wasWaived && state.periodId) await rewaive(state.periodId);
+    throw error;
+  }
   await logAudit({
     userId,
     action: "UPLOAD_FINANCAS_RECEIPT",
@@ -460,9 +486,160 @@ export async function registerReceipt(
       leaseId: lease.id,
       month: monthKey(month),
       number: parsed.number,
+      // The month was waived (before tracking began): removing the recibo waives it again.
+      wasWaived,
     },
   });
   return { outcome: "create", receiptIds: [receipt.id] };
+}
+
+/** `Receipt.source` of a receipt an uploaded recibo created: the recibo is the payment. */
+export const FINANCAS_SOURCE = "financas";
+
+/** Waive a month again once nothing pays it, as it was before a recibo brought it back. */
+async function rewaive(periodId: string): Promise<boolean> {
+  const prisma = getPrismaClient();
+  const live = await prisma.paymentAllocation.count({
+    where: { rentPeriodId: periodId, reversedAt: null },
+  });
+  if (live > 0) return false;
+  await prisma.rentPeriod.update({ where: { id: periodId }, data: { status: "waived" } });
+  return true;
+}
+
+export interface RemoveReciboResult {
+  /** Receipts the recibo created, deleted with the money they put on the month. */
+  deleted: string[];
+  /** Payments that were there before it, which lose only its number. */
+  detached: string[];
+}
+
+/**
+ * Take an uploaded recibo back off the ledger: undo what `registerReceipt` did, and nothing else.
+ *
+ * The recibo is named by any receipt that carries its number; every receipt on the same contract
+ * with that number is part of the same upload.
+ *  - A receipt the recibo **created** (`source` financas, or an older one whose upload the audit
+ *    trail records as `create`) is deleted, which reverses the money it put on the month. A month
+ *    that was waived before the recibo brought it back is waived again.
+ *  - A payment that was **already there** (a bank movement, one recorded by hand), or one a bank
+ *    movement was linked to since, stays, with its money: it loses the recibo's number, and a bank draft the upload marked emitted goes back to
+ *    the stage it had.
+ * The PDFs filed as their archives go too. A contract's dates a recibo moved stay: an active
+ * contract renews on its own, so the later end is right whatever the recibo was.
+ *
+ * Refused for a receipt filed with AT (submitted, accepted), as any delete of one is.
+ */
+export async function removeRecibo(userId: string, receiptId: string): Promise<RemoveReciboResult> {
+  const prisma = getPrismaClient();
+  const named = await prisma.receipt.findFirst({
+    where: { id: receiptId, userId },
+    select: { id: true, leaseId: true, financasNumber: true },
+  });
+  if (!named) throw new ResourceNotFoundError("Receipt");
+  if (named.financasNumber == null) {
+    throw new ConflictError("The receipt has no recibo from Finanças", "receipt_no_recibo");
+  }
+  const receipts = named.financasNumber
+    ? await prisma.receipt.findMany({
+        where: {
+          userId,
+          leaseId: named.leaseId,
+          financasNumber: named.financasNumber,
+          lifecycle: { not: "voided" },
+        },
+        select: { id: true, source: true, lifecycle: true, rentPeriodId: true },
+      })
+    : await prisma.receipt.findMany({
+        where: { id: named.id, userId },
+        select: { id: true, source: true, lifecycle: true, rentPeriodId: true },
+      });
+  if (receipts.some((r) => r.lifecycle === "submitted" || r.lifecycle === "accepted")) {
+    throw new ConflictError("A receipt filed with AT is not removed", "receipt_filed");
+  }
+
+  const ids = receipts.map((r) => r.id);
+  const uploads = await prisma.auditLog.findMany({
+    where: { userId, action: "UPLOAD_FINANCAS_RECEIPT" },
+    select: { resourceType: true, resourceId: true, details: true },
+    orderBy: { createdAt: "desc" },
+  });
+  const created = new Map<string, { wasWaived: boolean }>();
+  const lifecycles = new Map<string, string>();
+  for (const row of uploads) {
+    let details: Record<string, unknown> = {};
+    try {
+      details = row.details ? (JSON.parse(row.details) as Record<string, unknown>) : {};
+    } catch {
+      continue;
+    }
+    if (row.resourceType === "receipt" && row.resourceId && details.outcome === "create") {
+      if (!created.has(row.resourceId)) {
+        created.set(row.resourceId, { wasWaived: details.wasWaived === true });
+      }
+    }
+    if (
+      details.outcome === "attach" &&
+      details.lifecycles &&
+      typeof details.lifecycles === "object"
+    ) {
+      for (const [id, stage] of Object.entries(details.lifecycles as Record<string, unknown>)) {
+        if (typeof stage === "string" && !lifecycles.has(id)) lifecycles.set(id, stage);
+      }
+    }
+  }
+
+  const archives = await prisma.document.findMany({
+    where: {
+      userId,
+      type: "receipt",
+      description: { in: ids.map((id) => `${ARCHIVE_MARKER_PREFIX}${id}`) },
+    },
+    select: { id: true },
+  });
+
+  const result: RemoveReciboResult = { deleted: [], detached: [] };
+  for (const receipt of receipts) {
+    const madeByRecibo = receipt.source === FINANCAS_SOURCE || created.has(receipt.id);
+    // A movement linked to it since is the money arriving: the payment stays, as one already
+    // there would.
+    const banked = await prisma.bankTransaction.count({ where: { userId, receiptId: receipt.id } });
+    if (madeByRecibo && banked === 0) {
+      const periods = await prisma.paymentAllocation.findMany({
+        where: { receiptId: receipt.id, reversedAt: null },
+        select: { rentPeriodId: true },
+      });
+      await receiptService.delete(userId, receipt.id);
+      if (created.get(receipt.id)?.wasWaived) {
+        for (const periodId of new Set(periods.map((p) => p.rentPeriodId))) {
+          await rewaive(periodId);
+        }
+      }
+      result.deleted.push(receipt.id);
+    } else {
+      const before = lifecycles.get(receipt.id);
+      await prisma.receipt.update({
+        where: { id: receipt.id },
+        data: {
+          financasNumber: null,
+          ...(before === "draft" || before === "review" ? { lifecycle: before } : {}),
+        },
+      });
+      result.detached.push(receipt.id);
+    }
+  }
+  await removeDocuments(
+    userId,
+    archives.map((a) => a.id),
+  );
+  await logAudit({
+    userId,
+    action: "REMOVE_FINANCAS_RECEIPT",
+    resourceType: "lease",
+    resourceId: named.leaseId ?? undefined,
+    details: { number: named.financasNumber, ...result },
+  });
+  return result;
 }
 
 const termDates = (lease: Pick<TermLease, "startDate" | "endDate">, term: TermChange) => ({

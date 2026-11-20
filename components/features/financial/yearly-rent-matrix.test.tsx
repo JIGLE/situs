@@ -129,7 +129,7 @@ const MONTH = {
 };
 
 let monthResponse: { status: number; body: unknown };
-const fetchMock = vi.fn(async (url: string) => {
+const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => {
   const { status, body } = url.startsWith("/api/finance/rent-matrix/month")
     ? monthResponse
     : { status: 200, body: { data: MATRIX } };
@@ -368,6 +368,75 @@ describe("YearlyRentMatrix", () => {
       expect(await within(sheet).findByText(/Emitido/)).toBeInTheDocument();
       expect(within(sheet).queryByText("Registado à mão")).toBeNull();
       expect(within(sheet).queryByText(/Movimento bancário/)).toBeNull();
+    });
+  });
+
+  describe("removing a payment", () => {
+    const withPayment = (receipt: Record<string, unknown>, movements: unknown[] = []) => {
+      monthResponse = {
+        status: 200,
+        body: {
+          data: {
+            ...MONTH,
+            payments: [
+              {
+                ...MONTH.payments[0],
+                receipt: { ...MONTH.payments[0].receipt, ...receipt },
+                movements,
+              },
+            ],
+          },
+        },
+      };
+      nav.search = "month=lease-1:2026-08";
+      document.cookie = "csrf-token=test-token";
+    };
+    const deletes = () =>
+      fetchMock.mock.calls
+        .filter(([, init]) => (init as RequestInit | undefined)?.method === "DELETE")
+        .map(([url]) => url);
+
+    it("removes a recibo from Finanças through the recibo's own undo, after asking", async () => {
+      withPayment({ source: "financas", financasNumber: "123" });
+      const user = render();
+
+      const sheet = await screen.findByRole("dialog", { name: /agosto de 2026/ });
+      await user.click(await within(sheet).findByRole("button", { name: "Remover recibo" }));
+      expect(deletes()).toEqual([]);
+      const confirm = await screen.findByRole("alertdialog", { name: /recibo n\.º 123/ });
+      await user.click(within(confirm).getByRole("button", { name: "Remover recibo" }));
+
+      await waitFor(() =>
+        expect(deletes()).toEqual(["/api/receipts/financas?receiptId=receipt-1"]),
+      );
+    });
+
+    it("removes a payment recorded by hand as a receipt", async () => {
+      withPayment({ source: "manual" });
+      const user = render();
+
+      const sheet = await screen.findByRole("dialog", { name: /agosto de 2026/ });
+      await user.click(await within(sheet).findByRole("button", { name: "Remover pagamento" }));
+      const confirm = await screen.findByRole("alertdialog");
+      await user.click(within(confirm).getByRole("button", { name: "Remover pagamento" }));
+
+      await waitFor(() => expect(deletes()).toEqual(["/api/receipts/receipt-1"]));
+    });
+
+    it("offers no removal for a payment that came from the bank", async () => {
+      withPayment({ source: "automation" }, [
+        {
+          bookingDate: "2026-08-04",
+          counterpartyName: "ANA COSTA",
+          reference: null,
+          accountLabel: "Conta ordenado",
+        },
+      ]);
+      render();
+
+      const sheet = await screen.findByRole("dialog", { name: /agosto de 2026/ });
+      await within(sheet).findByText(/Movimento bancário/);
+      expect(within(sheet).queryByRole("button", { name: /Remover/ })).toBeNull();
     });
   });
 

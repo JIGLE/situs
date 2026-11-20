@@ -58,7 +58,14 @@ export interface CreateDocumentData {
 // Storage Configuration
 // ============================================================================
 
-const STORAGE_BASE_PATH = process.env.DOCUMENT_STORAGE_PATH || "./uploads/documents";
+/**
+ * Where stored files go. The default sits under `./data`, which in the image is `/app/data`: the
+ * one directory mounted as a volume, and the only one the app's user (1001) can write. It was
+ * `./uploads/documents`, i.e. `/app/uploads`, which the image never creates and that user cannot
+ * create in the root-owned `/app`, so every first write failed (EACCES) and the request answered
+ * 500; and a file written there would have been lost with the container.
+ */
+const STORAGE_BASE_PATH = process.env.DOCUMENT_STORAGE_PATH || "./data/documents";
 const MAX_FILE_SIZE = parseInt(process.env.MAX_DOCUMENT_SIZE || "10485760", 10); // 10MB default
 const ALLOWED_MIME_TYPES = [
   "application/pdf",
@@ -104,6 +111,23 @@ export async function removeUserDocuments(userId: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * Delete `userId`'s documents named by `ids`: the rows, then their files. A file that is already
+ * gone is no failure. Returns how many rows went.
+ */
+export async function removeDocuments(userId: string, ids: string[]): Promise<number> {
+  if (ids.length === 0) return 0;
+  const prisma = getPrismaClient();
+  const docs = await prisma.document.findMany({
+    where: { userId, id: { in: ids } },
+    select: { id: true, storagePath: true },
+  });
+  if (docs.length === 0) return 0;
+  await prisma.document.deleteMany({ where: { userId, id: { in: docs.map((d) => d.id) } } });
+  await Promise.all(docs.map((d) => rm(d.storagePath, { force: true }).catch(() => undefined)));
+  return docs.length;
 }
 
 /**

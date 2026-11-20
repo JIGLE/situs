@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { FileUp, Landmark, Plus } from "lucide-react";
+import { FileUp, Landmark, Plus, Trash2 } from "lucide-react";
 
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -13,8 +14,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { RentMonth } from "@/lib/services/allocation/rent-matrix";
+import { useToast } from "@/lib/contexts/toast-context";
+import { useConfirmDialog } from "@/lib/hooks/use-confirm-dialog";
 import { apiFetch } from "@/lib/utils/api-client";
-import { useApiError } from "@/lib/utils/api-error";
+import { useApiError, wasReported } from "@/lib/utils/api-error";
 import { formatEuro } from "@/lib/utils/currency";
 import { formatDate, formatMonthYear } from "@/lib/utils/format-date";
 import { receiptLifecycleKey } from "@/lib/utils/receipt-labels";
@@ -60,8 +63,11 @@ export function RentMonthSheet({ monthRef, open, onClose, onChanged }: Props) {
   const tPeriod = useTranslations("rentPeriodStatus");
   const tReceipts = useTranslations("financial.receipts");
   const tCommon = useTranslations("common");
+  const tActions = useTranslations("actions");
   const locale = useLocale();
   const apiError = useApiError();
+  const toast = useToast();
+  const confirmDialog = useConfirmDialog();
   const [data, setData] = useState<RentMonth | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);
@@ -97,6 +103,50 @@ export function RentMonthSheet({ monthRef, open, onClose, onChanged }: Props) {
   const reload = () => {
     if (monthRef) void load(monthRef);
     onChanged();
+  };
+
+  type Payment = RentMonth["payments"][number];
+
+  /**
+   * Take a payment's recibo off the month (and the payment, when the recibo recorded it), or a
+   * payment recorded by hand. A bank movement's payment is undone from the movement, not here.
+   */
+  const askRemove = (payment: Payment) => {
+    const receipt = payment.receipt;
+    if (!receipt) return;
+    const recibo = receipt.financasNumber != null;
+    confirmDialog.confirm(
+      {
+        title: recibo
+          ? receipt.financasNumber
+            ? t("removeReciboTitle", { number: receipt.financasNumber })
+            : t("removeReciboTitleNoNumber")
+          : t("removePaymentTitle"),
+        description: recibo
+          ? t("removeReciboDescription")
+          : t("removePaymentDescription", {
+              amount: formatEuro(receipt.amount),
+              date: formatDate(receipt.date, locale),
+            }),
+        confirmLabel: recibo ? t("removeRecibo") : t("removePayment"),
+        cancelLabel: tActions("cancel"),
+        variant: "destructive",
+      },
+      async () => {
+        try {
+          if (recibo) {
+            const query = new URLSearchParams({ receiptId: receipt.id });
+            await apiFetch(`/api/receipts/financas?${query}`, { method: "DELETE" });
+          } else {
+            await apiFetch(`/api/receipts/${receipt.id}`, { method: "DELETE" });
+          }
+          toast.success(recibo ? t("reciboRemoved") : t("paymentRemoved"));
+          reload();
+        } catch (err) {
+          if (!wasReported(err)) toast.error(apiError(err));
+        }
+      },
+    );
   };
 
   const period = data?.period ?? null;
@@ -179,7 +229,18 @@ export function RentMonthSheet({ monthRef, open, onClose, onChanged }: Props) {
                             .filter(Boolean)
                             .join(" · "),
                         );
-                        if (origins.length === 0 && payment.receipt?.source === "manual") {
+                        const byHand =
+                          payment.receipt?.source === "manual" &&
+                          payment.receipt.financasNumber == null &&
+                          payment.movements.length === 0;
+                        const removable =
+                          payment.receipt != null &&
+                          (payment.receipt.financasNumber != null || byHand);
+                        if (
+                          origins.length === 0 &&
+                          (payment.receipt?.source === "manual" ||
+                            payment.receipt?.source === "financas")
+                        ) {
                           origins.push(
                             payment.receipt.financasNumber != null
                               ? t("fromRecibo")
@@ -216,6 +277,19 @@ export function RentMonthSheet({ monthRef, open, onClose, onChanged }: Props) {
                                 {origin}
                               </p>
                             ))}
+                            {removable ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="-ml-2 mt-1 text-[var(--semantic-danger-readable)]"
+                                onClick={() => askRemove(payment)}
+                              >
+                                <Trash2 className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                                {payment.receipt?.financasNumber != null
+                                  ? t("removeRecibo")
+                                  : t("removePayment")}
+                              </Button>
+                            ) : null}
                           </li>
                         );
                       })}
@@ -291,6 +365,8 @@ export function RentMonthSheet({ monthRef, open, onClose, onChanged }: Props) {
         preset={data ? { leaseId: data.lease.id, amount: owed || undefined } : undefined}
         onRecorded={reload}
       />
+
+      <ConfirmationDialog dialog={confirmDialog} />
 
       <ReceiptUploadSheet
         open={uploading}

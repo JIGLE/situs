@@ -24,6 +24,7 @@ situs_local_image.tar
 *.db-journal
 *.db-wal
 *.db-shm
+/data/
 uploads/
 graphify-out/
 audit-*/

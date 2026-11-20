@@ -823,6 +823,7 @@
       "rentIncreaseApplied": "Esta actualización ya está en vigor. Cambie la renta en el contrato.",
       "leaseNotActive": "Solo un contrato activo puede actualizar su renta.",
       "receiptMonthUntracked": "Este contrato no tiene renta en ese mes: aún no había empezado o ya había terminado. Elija otro mes.",
+      "receiptFiled": "Este recibo se comunicó a Finanças, así que se queda. Solo el Portal puede anularlo.",
       "receiptAmountUnknown": "No se pudo leer el importe de este recibo. Registre el pago a mano.",
       "bankMovementNotOutgoing": "Solo el dinero que sale puede registrarse como gasto.",
       "bankMovementLinked": "Este movimiento ya está vinculado. Desvincúlalo primero.",
@@ -1401,7 +1402,8 @@
       "sourceHeader": "Origen",
       "source": {
         "bank": "Banco",
-        "manual": "Manual"
+        "manual": "Manual",
+        "financas": "Finanças"
       },
       "noRentMonth": "Sin mes de renta",
       "void": "Anular",
@@ -1606,6 +1608,15 @@
       "uploadRecibo": "Cargar recibo",
       "fromRecibo": "Del recibo de renta",
       "reciboNumber": "Recibo de renta n.º {number}",
+      "removeRecibo": "Quitar recibo",
+      "removePayment": "Quitar pago",
+      "removeReciboTitle": "¿Quitar el recibo n.º {number}?",
+      "removeReciboTitleNoNumber": "¿Quitar este recibo?",
+      "removeReciboDescription": "Su PDF se va con él. Si el recibo registró este pago, el pago también se va y el mes vuelve a estar pendiente. Un pago que ya estaba, del banco o registrado a mano, se queda y solo pierde el recibo.",
+      "removePaymentTitle": "¿Quitar este pago?",
+      "removePaymentDescription": "Los {amount} registrados a mano el {date} salen del mes, que vuelve a estar pendiente.",
+      "reciboRemoved": "Recibo quitado.",
+      "paymentRemoved": "Pago quitado.",
       "movements": {
         "title": "Movimientos bancarios por asociar",
         "open": "Asociar movimiento bancario",
@@ -2289,7 +2300,8 @@
     "recordOwnerPayout": "Pago a propietario registrado",
     "deleteOwnerPayout": "Pago a propietario eliminado",
     "setRentCollector": "Cobrador de las rentas cambiado",
-    "uploadFinancasReceipt": "Recibo cargado de Finanças"
+    "uploadFinancasReceipt": "Recibo cargado de Finanças",
+    "removeFinancasReceipt": "Recibo de Finanças eliminado"
   },
   "financasImport": {
     "title": "Importar de Finanças",
