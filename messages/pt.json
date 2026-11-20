@@ -824,6 +824,7 @@
       "leaseNotActive": "Só um contrato ativo pode ter a renda atualizada.",
       "receiptMonthUntracked": "Este contrato não tem renda nesse mês: ainda não tinha começado, ou já tinha acabado. Escolha outro mês.",
       "receiptFiled": "Este recibo foi comunicado às Finanças, por isso fica. Só o Portal o pode anular.",
+      "documentStorageUnavailable": "O servidor não conseguiu guardar o PDF, por isso nada foi registado. Verifique o volume de dados da aplicação (DOCUMENT_STORAGE_PATH) e tente de novo.",
       "receiptAmountUnknown": "Não foi possível ler o valor deste recibo. Registe o pagamento à mão.",
       "bankMovementNotOutgoing": "Só dinheiro que sai pode ser registado como despesa.",
       "bankMovementLinked": "Este movimento já está ligado. Desligue-o primeiro.",

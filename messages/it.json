@@ -824,6 +824,7 @@
       "leaseNotActive": "Solo un contratto attivo può avere il canone aggiornato.",
       "receiptMonthUntracked": "Questo contratto non ha affitto in quel mese: non era ancora iniziato o era già finito. Scegli un altro mese.",
       "receiptFiled": "Questa ricevuta è stata comunicata alle Finanças, quindi resta. Solo il Portale può annullarla.",
+      "documentStorageUnavailable": "Il server non è riuscito a salvare il PDF, quindi non è stato registrato nulla. Controlli il volume dati dell'app (DOCUMENT_STORAGE_PATH) e riprovi.",
       "receiptAmountUnknown": "Non è stato possibile leggere l'importo di questa ricevuta. Registra il pagamento a mano.",
       "bankMovementNotOutgoing": "Solo il denaro in uscita può essere registrato come spesa.",
       "bankMovementLinked": "Questo movimento è già collegato. Scollegalo prima.",

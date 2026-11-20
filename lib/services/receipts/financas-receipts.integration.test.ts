@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { execSync } from "node:child_process";
-import { mkdtempSync, rmSync, existsSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync, existsSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -410,6 +410,26 @@ describe("recibos de renda uploaded — real Prisma client + real SQLite file", 
 
     expect(await prisma.receipt.count({ where: { leaseId: w.lease.id } })).toBe(0);
     expect((await monthRow(w.lease.id, 12)).allocatedAmount).toBe(0);
+    expect((await upload(w, 12)).outcome).toBe("create");
+  });
+
+  it("answers a storage folder it cannot write with a reason, and writes nothing", async () => {
+    const w = await world("blocked-storage");
+    // A file where the owner's folder should be: creating the folder fails, as a volume the
+    // server cannot write does.
+    const base = process.env.DOCUMENT_STORAGE_PATH as string;
+    mkdirSync(base, { recursive: true });
+    const blocked = path.join(base, w.user.id);
+    writeFileSync(blocked, "");
+
+    await expect(upload(w, 12)).rejects.toMatchObject({
+      name: "ServiceUnavailableError",
+      reason: "document_storage_unavailable",
+    });
+    expect(await prisma.receipt.count({ where: { leaseId: w.lease.id } })).toBe(0);
+    expect((await monthRow(w.lease.id, 12)).allocatedAmount).toBe(0);
+
+    rmSync(blocked);
     expect((await upload(w, 12)).outcome).toBe("create");
   });
 

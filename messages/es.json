@@ -824,6 +824,7 @@
       "leaseNotActive": "Solo un contrato activo puede actualizar su renta.",
       "receiptMonthUntracked": "Este contrato no tiene renta en ese mes: aún no había empezado o ya había terminado. Elija otro mes.",
       "receiptFiled": "Este recibo se comunicó a Finanças, así que se queda. Solo el Portal puede anularlo.",
+      "documentStorageUnavailable": "El servidor no pudo guardar el PDF, así que no se registró nada. Revise el volumen de datos de la aplicación (DOCUMENT_STORAGE_PATH) e inténtelo de nuevo.",
       "receiptAmountUnknown": "No se pudo leer el importe de este recibo. Registre el pago a mano.",
       "bankMovementNotOutgoing": "Solo el dinero que sale puede registrarse como gasto.",
       "bankMovementLinked": "Este movimiento ya está vinculado. Desvincúlalo primero.",

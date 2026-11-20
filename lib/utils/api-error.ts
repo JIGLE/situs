@@ -86,6 +86,7 @@ const REASON_KEY = new Map<
   | "rentIncreaseApplied"
   | "leaseNotActive"
   | "receiptFiled"
+  | "documentStorageUnavailable"
 >([
   ["tenant_has_history", "tenantHasHistory"],
   ["property_has_history", "propertyHasHistory"],
@@ -122,6 +123,7 @@ const REASON_KEY = new Map<
   ["receipt_month_untracked", "receiptMonthUntracked"],
   ["receipt_amount_unknown", "receiptAmountUnknown"],
   ["receipt_filed", "receiptFiled"],
+  ["document_storage_unavailable", "documentStorageUnavailable"],
   ["last_admin", "lastAdmin"],
   ["account_exists", "accountExists"],
   ["account_changed", "accountChanged"],
