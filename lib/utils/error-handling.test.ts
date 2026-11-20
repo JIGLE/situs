@@ -10,6 +10,7 @@ import {
   DatabaseError,
   Logger,
   ConflictError,
+  ServiceUnavailableError,
   createErrorResponse,
   createSuccessResponse,
   withErrorHandler,
@@ -176,6 +177,17 @@ describe("createErrorResponse", () => {
     const res = createErrorResponse(new ConflictError("kept", "tenant_has_history"), 500);
     expect(res.status).toBe(409);
     expect(await parseBody(res)).toEqual({ error: "kept", reason: "tenant_has_history" });
+  });
+
+  it("ServiceUnavailableError → 503, with its reason for the client to say", async () => {
+    const res = createErrorResponse(
+      new ServiceUnavailableError("no disk", "document_storage_unavailable"),
+    );
+    expect(res.status).toBe(503);
+    expect(await parseBody(res)).toEqual({
+      error: "no disk",
+      reason: "document_storage_unavailable",
+    });
   });
 
   it("AuthenticationError → 401", async () => {

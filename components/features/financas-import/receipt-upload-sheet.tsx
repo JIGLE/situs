@@ -233,6 +233,15 @@ export function ReceiptUploadSheet({
         if (result.outcome === "create" || result.outcome === "attach") registered += 1;
       } catch (err) {
         change(row.key, { error: apiError(err) });
+        // Signed out: every recibo after this one would be refused the same way. Say so on each
+        // and stop, so the owner signs in again and registers the rest, rather than meeting a wall
+        // of the same error.
+        if (failureStatus(err) === 401) {
+          const message = apiError(err);
+          const left = new Set(ready.slice(ready.indexOf(row) + 1).map((r) => r.key));
+          setRows((prev) => prev.map((r) => (left.has(r.key) ? { ...r, error: message } : r)));
+          break;
+        }
       }
     }
     setSaving(false);

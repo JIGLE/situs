@@ -57,6 +57,20 @@ export class ConflictError extends Error {
   }
 }
 
+/**
+ * Something this server needs is out of reach (a 503), for a reason the screen can explain: the
+ * request was fine and nothing was saved, so trying again once it is fixed is the answer.
+ */
+export class ServiceUnavailableError extends Error {
+  constructor(
+    message: string,
+    public reason: string,
+  ) {
+    super(message);
+    this.name = "ServiceUnavailableError";
+  }
+}
+
 export class DatabaseError extends Error {
   constructor(
     message: string,
@@ -139,6 +153,9 @@ export function createErrorResponse(
   } else if (error instanceof ConflictError) {
     message = error.message;
     status = 409;
+  } else if (error instanceof ServiceUnavailableError) {
+    message = error.message;
+    status = 503;
   } else if (error instanceof DatabaseError) {
     message = "Database operation failed";
     status = 500;
@@ -148,7 +165,9 @@ export function createErrorResponse(
     JSON.stringify({
       error: message,
       ...(error instanceof ValidationError && error.field && { field: error.field }),
-      ...(error instanceof ConflictError && { reason: error.reason }),
+      ...((error instanceof ConflictError || error instanceof ServiceUnavailableError) && {
+        reason: error.reason,
+      }),
     }),
     {
       status,

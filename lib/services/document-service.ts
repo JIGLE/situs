@@ -9,6 +9,7 @@ import { join, extname, dirname, resolve, sep } from "path";
 import { existsSync } from "fs";
 import { randomBytes } from "crypto";
 import { assertOwnsRelations } from "./database/assert-owned";
+import { Logger, ServiceUnavailableError } from "@/lib/utils/error-handling";
 
 // ============================================================================
 // Types
@@ -238,9 +239,24 @@ export const documentService = {
     const fileName = generateFileName(data.name, userId);
     const storagePath = getStoragePath(userId, fileName, data.type);
 
-    // Ensure directory exists and write file
-    await ensureDirectory(dirname(storagePath));
-    await writeFile(storagePath, content);
+    // Ensure directory exists and write file. A folder the server cannot write (a missing volume,
+    // its permissions, a full disk) is the server's set-up, not the request: it answers a 503 with
+    // a reason the screen explains, rather than a bare 500.
+    try {
+      await ensureDirectory(dirname(storagePath));
+      await writeFile(storagePath, content);
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException | null)?.code ?? "unknown";
+      Logger.error("Document storage cannot be written", {
+        code,
+        directory: dirname(storagePath),
+        hint: "Set DOCUMENT_STORAGE_PATH to a folder on a writable volume (default ./data/documents)",
+      });
+      throw new ServiceUnavailableError(
+        `Document storage cannot be written (${code})`,
+        "document_storage_unavailable",
+      );
+    }
 
     // Create database record
     const doc = await prisma.document.create({

@@ -824,6 +824,7 @@
       "leaseNotActive": "Only an active lease can have its rent updated.",
       "receiptMonthUntracked": "This contract has no rent for that month: it had not started yet, or had already ended. Choose another month.",
       "receiptFiled": "This receipt was filed with Finanças, so it stays. Only the Portal can void it.",
+      "documentStorageUnavailable": "The server could not store the PDF, so nothing was saved. Check the app's data volume (DOCUMENT_STORAGE_PATH) and try again.",
       "receiptAmountUnknown": "The amount on this recibo could not be read. Record the payment by hand instead.",
       "bankMovementNotOutgoing": "Only money going out can be recorded as an expense.",
       "bankMovementLinked": "This movement is already linked. Unlink it first.",
